@@ -6,14 +6,14 @@ from pathlib import Path
 from backend.app.config import DB_PATH
 from longevidade.db.schema import initialize_db
 
-from backend.app.routers import metrics, labs, phenoage, n_of_1, cgm, reports, profile, ai
+from backend.app.routers import metrics, labs, phenoage, n_of_1, cgm, reports, profile, ai, supplements, compliance
 
 # Inicializa o banco de dados na inicialização do servidor
 initialize_db(DB_PATH)
 
 app = FastAPI(
     title="Sistema Longevidade — Blueprint Protocol API",
-    version="2.0.0",
+    version="2.5.0",
     description="API local e auditável para inteligência e monitoramento de longevidade com Copiloto IA."
 )
 
@@ -33,6 +33,8 @@ app.include_router(cgm.router)
 app.include_router(reports.router)
 app.include_router(profile.router)
 app.include_router(ai.router)
+app.include_router(supplements.router)
+app.include_router(compliance.router)
 
 @app.get("/api/health")
 def health_check():
