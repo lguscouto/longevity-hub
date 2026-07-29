@@ -49,6 +49,14 @@ export default function App() {
   const [showAISettings, setShowAISettings] = useState(false);
   const [doctorBriefingMd, setDoctorBriefingMd] = useState('');
 
+  const [aiChatMessages, setAiChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
+    {
+      sender: 'ai',
+      text: 'Olá! Sou o seu Copiloto de Inteligência de Longevidade. Analiso continuamente seus biomarcadores de exames, idade epigenética PhenoAge, curvas de glicemia CGM e variabilidade cardíaca (HRV) para guiar seu protocolo. Como posso ajudar hoje?',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+
   const fetchAllData = async () => {
     try {
       const [resMetrics, resLabs, resPheno, resExp, resCgm, resProf] = await Promise.all([
@@ -355,7 +363,11 @@ export default function App() {
         )}
 
         {activeTab === 'ai' && (
-          <AICopilotView onOpenSettings={() => setShowAISettings(true)} />
+          <AICopilotView
+            onOpenSettings={() => setShowAISettings(true)}
+            chatMessages={aiChatMessages}
+            setChatMessages={setAiChatMessages}
+          />
         )}
 
         {activeTab === 'n-of-1' && (

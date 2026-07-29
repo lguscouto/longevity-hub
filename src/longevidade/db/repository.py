@@ -25,8 +25,18 @@ class LongevityRepository:
         with self._get_connection() as conn:
             row = conn.execute(sql).fetchone()
             if row:
-                return dict(row)
-            return {"id": 1, "name": "Paciente", "chronological_age": 40.0, "height_cm": 170.0, "target_weight_kg": 75.0}
+                res = dict(row)
+                birthdate_str = res.get("birthdate")
+                if birthdate_str:
+                    try:
+                        from datetime import date
+                        bdate = date.fromisoformat(birthdate_str[:10])
+                        today = date.today()
+                        res["chronological_age"] = float(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)))
+                    except Exception:
+                        pass
+                return res
+            return {"id": 1, "name": "Paciente", "chronological_age": 32.0, "height_cm": 170.0, "target_weight_kg": 75.0}
 
     def upsert_user_profile(self, data: Dict[str, Any]) -> None:
         fields = [

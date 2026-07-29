@@ -15,6 +15,8 @@ interface AIResponseData {
 
 interface AICopilotViewProps {
   onOpenSettings: () => void;
+  chatMessages: Array<{ sender: 'user' | 'ai'; text: string; time: string }>;
+  setChatMessages: React.Dispatch<React.SetStateAction<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>>;
 }
 
 const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
@@ -148,7 +150,7 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
   return <div className="space-y-0.5">{elements}</div>;
 };
 
-export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) => {
+export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, chatMessages, setChatMessages }) => {
   const [activeProvider, setActiveProvider] = useState<string>('openrouter');
   const [selectedModel, setSelectedModel] = useState<string>('deepseek/deepseek-v4-pro');
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
@@ -157,28 +159,40 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) 
   const [data, setData] = useState<AIResponseData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Chat State
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
-    {
-      sender: 'ai',
-      text: 'Olá! Sou o seu Copiloto de Inteligência de Longevidade. Analiso continuamente seus biomarcadores de exames, idade epigenética PhenoAge, curvas de glicemia CGM e variabilidade cardíaca (HRV) para guiar seu protocolo. Como posso ajudar hoje?',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
   const [chatInput, setChatInput] = useState<string>('');
   const [isSendingChat, setIsSendingChat] = useState<boolean>(false);
 
-  const loadSettings = async () => {
+  const loadSettingsAndHistory = async () => {
     try {
-      const res = await fetch('/api/ai/settings').then(r => r.json());
-      if (res) {
-        setActiveProvider(res.active_provider || 'openrouter');
-        setSelectedModel(res.selected_model || 'deepseek/deepseek-v4-pro');
+      const [resSettings, resHistory] = await Promise.all([
+        fetch('/api/ai/settings').then(r => r.json()),
+        fetch('/api/ai/history').then(r => r.json())
+      ]);
+
+      if (resSettings) {
+        setActiveProvider(resSettings.active_provider || 'openrouter');
+        setSelectedModel(resSettings.selected_model || 'deepseek/deepseek-v4-pro');
         const keyConfigured =
-          (res.active_provider === 'openai' && res.has_openai_key) ||
-          (res.active_provider === 'anthropic' && res.has_anthropic_key) ||
-          (res.active_provider === 'openrouter' && res.has_openrouter_key);
+          (resSettings.active_provider === 'openai' && resSettings.has_openai_key) ||
+          (resSettings.active_provider === 'anthropic' && resSettings.has_anthropic_key) ||
+          (resSettings.active_provider === 'openrouter' && resSettings.has_openrouter_key);
         setHasApiKey(keyConfigured);
+      }
+
+      if (resHistory && Array.isArray(resHistory) && resHistory.length > 0 && chatMessages.length <= 1) {
+        const loaded: Array<{ sender: 'user' | 'ai'; text: string; time: string }> = [chatMessages[0]];
+        [...resHistory].reverse().forEach((item: any) => {
+          const t = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          if (item.user_prompt && item.user_prompt !== "Análise geral automatizada de 30 dias") {
+            loaded.push({ sender: 'user', text: item.user_prompt, time: t });
+          }
+          if (item.insight_text) {
+            loaded.push({ sender: 'ai', text: item.insight_text, time: t });
+          }
+        });
+        if (loaded.length > 1) {
+          setChatMessages(loaded);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -186,7 +200,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) 
   };
 
   useEffect(() => {
-    loadSettings();
+    loadSettingsAndHistory();
   }, []);
 
   const handleGenerateAnalysis = async () => {
