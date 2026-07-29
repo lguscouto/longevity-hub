@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Pill, CheckCircle2, Circle, Plus, Sparkles, Clock, RefreshCw, AlertCircle } from 'lucide-react';
+import { Pill, CheckCircle2, Circle, Plus, Sparkles, Clock, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
 
 interface Supplement {
   id: number;
@@ -15,10 +15,131 @@ interface SupplementStackWidgetProps {
   selectedDate: string;
 }
 
+const FormattedAnalysis: React.FC<{ text: string }> = ({ text }) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+
+  let inTable = false;
+  let tableHeader: string[] = [];
+  let tableRows: string[][] = [];
+  let currentKey = 0;
+
+  const renderInline = (rawStr: string) => {
+    const parts = rawStr.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={idx} className="text-cyan-300 font-bold">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
+  const flushTable = () => {
+    if (tableRows.length > 0 || tableHeader.length > 0) {
+      elements.push(
+        <div key={`table-${currentKey++}`} className="my-2.5 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/90">
+          <table className="w-full text-[11px] border-collapse">
+            {tableHeader.length > 0 && (
+              <thead>
+                <tr className="bg-slate-900 border-b border-slate-800 text-slate-200 font-bold text-left">
+                  {tableHeader.map((col, cIdx) => (
+                    <th key={cIdx} className="p-2 border-r last:border-r-0 border-slate-800">
+                      {renderInline(col.trim())}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {tableRows.map((row, rIdx) => (
+                <tr key={rIdx} className="border-b last:border-b-0 border-slate-800/60 hover:bg-slate-900/50">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="p-2 border-r last:border-r-0 border-slate-800/60 text-slate-300">
+                      {renderInline(cell.trim())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    inTable = false;
+    tableHeader = [];
+    tableRows = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line.startsWith('|') && line.endsWith('|')) {
+      const cells = line.split('|').filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+      if (line.includes('---')) continue;
+      if (!inTable) {
+        inTable = true;
+        tableHeader = cells;
+      } else {
+        tableRows.push(cells);
+      }
+      continue;
+    } else if (inTable) {
+      flushTable();
+    }
+
+    if (!line) {
+      elements.push(<div key={`sp-${currentKey++}`} className="h-1.5" />);
+      continue;
+    }
+
+    if (line.startsWith('### ')) {
+      elements.push(
+        <h4 key={`h3-${currentKey++}`} className="font-extrabold text-white text-xs mt-3 mb-1.5 border-b border-slate-800 pb-1 flex items-center gap-1.5">
+          {renderInline(line.replace('### ', ''))}
+        </h4>
+      );
+      continue;
+    }
+
+    if (line.startsWith('## ')) {
+      elements.push(
+        <h3 key={`h2-${currentKey++}`} className="font-black text-cyan-300 text-sm mt-3.5 mb-1.5 border-b border-cyan-500/20 pb-1">
+          {renderInline(line.replace('## ', ''))}
+        </h3>
+      );
+      continue;
+    }
+
+    if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
+      const cleanLine = line.replace(/^[-*]\s+|\d+\.\s+/, '');
+      elements.push(
+        <div key={`li-${currentKey++}`} className="flex items-start gap-1.5 ml-2 my-0.5 text-slate-300 text-[11px]">
+          <span className="text-cyan-400 font-bold">•</span>
+          <span>{renderInline(cleanLine)}</span>
+        </div>
+      );
+      continue;
+    }
+
+    elements.push(
+      <p key={`p-${currentKey++}`} className="my-1 leading-relaxed text-slate-300 text-[11px]">
+        {renderInline(line)}
+      </p>
+    );
+  }
+
+  if (inTable) flushTable();
+
+  return <div className="space-y-0.5">{elements}</div>;
+};
+
 export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ selectedDate }) => {
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [takenIds, setTakenIds] = useState<number[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteConfirmSupp, setDeleteConfirmSupp] = useState<{ id: number; name: string } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
@@ -48,7 +169,6 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
   }, [selectedDate]);
 
   const handleToggleLog = async (id: number) => {
-    // Optimistic UI Update
     setTakenIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
@@ -80,6 +200,21 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
         setFormData({ name: '', dosage: '', frequency: 'Diário', timing: 'Manhã', notes: '' });
         await loadData();
       }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteSupplement = async () => {
+    if (!deleteConfirmSupp) return;
+    try {
+      await fetch('/api/supplements/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supplement_id: deleteConfirmSupp.id })
+      });
+      setDeleteConfirmSupp(null);
+      await loadData();
     } catch (e) {
       console.error(e);
     }
@@ -146,20 +281,21 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
         </div>
       </div>
 
-      {/* Análise de IA em Destaque */}
+      {/* Análise de IA Formatada em Destaque */}
       {aiAnalysis && (
-        <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-slate-200 space-y-2 relative">
+        <div className="p-5 rounded-2xl bg-slate-950 border border-cyan-500/40 text-xs text-slate-200 space-y-3 relative shadow-2xl">
           <button
             onClick={() => setAiAnalysis(null)}
-            className="absolute top-2 right-2 text-slate-400 hover:text-white text-xs"
+            className="absolute top-3 right-3 p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            title="Fechar Parecer"
           >
             ✕
           </button>
-          <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
-            <Sparkles className="h-4 w-4" /> Parecer de Inteligência Artificial da Pilha:
+          <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-sm border-b border-slate-800 pb-2">
+            <Sparkles className="h-4 w-4 text-cyan-400" /> Parecer Estruturado da Inteligência Artificial
           </div>
-          <div className="whitespace-pre-wrap leading-relaxed text-slate-300 max-h-48 overflow-y-auto pr-1">
-            {aiAnalysis}
+          <div className="max-h-96 overflow-y-auto pr-2 space-y-1">
+            <FormattedAnalysis text={aiAnalysis} />
           </div>
         </div>
       )}
@@ -172,23 +308,23 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             <div
               key={supp.id}
               onClick={() => handleToggleLog(supp.id)}
-              className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
+              className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-2 group ${
                 isTaken
                   ? 'bg-emerald-950/20 border-emerald-500/40 text-white'
                   : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300'
               }`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 {isTaken ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
                 ) : (
                   <Circle className="h-5 w-5 text-slate-600 shrink-0" />
                 )}
-                <div>
-                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-white truncate">
                     {supp.name}
                   </h4>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 flex-wrap">
                     <span className="font-semibold text-cyan-400">{supp.dosage}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
@@ -198,15 +334,48 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
                 </div>
               </div>
 
-              {supp.notes && (
-                <span className="text-[9px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 max-w-[90px] truncate" title={supp.notes}>
-                  {supp.notes}
-                </span>
-              )}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {supp.notes && (
+                  <span className="text-[9px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 max-w-[80px] truncate" title={supp.notes}>
+                    {supp.notes}
+                  </span>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirmSupp({ id: supp.id, name: supp.name });
+                  }}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition opacity-80 group-hover:opacity-100"
+                  title="Excluir Suplemento"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Modal Confirmar Exclusão */}
+      {deleteConfirmSupp && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center">
+            <div className="h-12 w-12 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Excluir Suplemento?</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Deseja remover <strong>"{deleteConfirmSupp.name}"</strong> da sua pilha ativa?
+              </p>
+            </div>
+            <div className="flex justify-center gap-2 pt-2">
+              <button onClick={() => setDeleteConfirmSupp(null)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+              <button onClick={handleDeleteSupplement} className="px-4 py-2 rounded-xl bg-rose-500 text-white font-bold text-xs shadow-lg">Sim, Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Adicionar Suplemento */}
       {showAddModal && (

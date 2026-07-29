@@ -341,6 +341,12 @@ class LongevityRepository:
             conn.commit()
             return cursor.lastrowid
 
+    def delete_supplement(self, supplement_id: int) -> None:
+        sql = "DELETE FROM supplement_stack WHERE id = ?;"
+        with self._get_connection() as conn:
+            conn.execute(sql, (supplement_id,))
+            conn.commit()
+
     def toggle_supplement_log(self, supplement_id: int, taken_at_date: str, status: str = "tomado") -> None:
         sql_check = "SELECT id FROM supplement_logs WHERE supplement_id = ? AND taken_at_date = ?;"
         with self._get_connection() as conn:

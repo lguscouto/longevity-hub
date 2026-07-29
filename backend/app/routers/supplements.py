@@ -43,10 +43,20 @@ def get_logs_for_date(date_str: str):
     repo = LongevityRepository(DB_PATH)
     return repo.get_supplement_logs_for_date(date_str)
 
-@router.post("/toggle")
-def toggle_supplement_log(input_data: ToggleLogInput):
+class DeleteSupplementInput(BaseModel):
+    supplement_id: int
+
+@router.delete("/{supplement_id}")
+def delete_supplement(supplement_id: int):
     initialize_db(DB_PATH)
     repo = LongevityRepository(DB_PATH)
-    target_date = input_data.date_ref or date.today().isoformat()
-    repo.toggle_supplement_log(input_data.supplement_id, target_date)
-    return {"status": "ok", "message": "Status do suplemento alterado"}
+    repo.delete_supplement(supplement_id)
+    return {"status": "ok", "message": "Suplemento removido com sucesso"}
+
+@router.post("/delete")
+def delete_supplement_post(input_data: DeleteSupplementInput):
+    initialize_db(DB_PATH)
+    repo = LongevityRepository(DB_PATH)
+    repo.delete_supplement(input_data.supplement_id)
+    return {"status": "ok", "message": "Suplemento removido com sucesso"}
+
