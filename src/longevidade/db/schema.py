@@ -1,6 +1,6 @@
 """
 Esquema do banco de dados SQLite para o projeto Longevidade.
-Contém definições de tabelas auditáveis, incluindo IA, Suplementos, KDM Age e Protocolo Compliance.
+Contém definições de tabelas auditáveis, incluindo IA, Suplementos, Hormônios, Audit Logs, KDM Age e Protocolo Compliance.
 """
 
 import sqlite3
@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS supplement_stack (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     dosage TEXT NOT NULL,
+    category TEXT DEFAULT 'Suplemento',
     frequency TEXT DEFAULT 'Diário',
     timing TEXT DEFAULT 'Manhã',
     start_date TEXT NOT NULL,
@@ -187,6 +188,17 @@ CREATE TABLE IF NOT EXISTS supplement_logs (
     status TEXT DEFAULT 'tomado',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (supplement_id) REFERENCES supplement_stack (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS supplement_audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    supplement_id INTEGER,
+    compound_name TEXT NOT NULL,
+    category TEXT DEFAULT 'Suplemento',
+    action_type TEXT NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS pipeline_run (
@@ -230,6 +242,13 @@ def initialize_db(db_path: str | Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as conn:
         conn.executescript(SCHEMA_SQL)
+        
+        # Migração defensiva: adiciona a coluna 'category' em supplement_stack se não existir
+        try:
+            conn.execute("ALTER TABLE supplement_stack ADD COLUMN category TEXT DEFAULT 'Suplemento';")
+        except sqlite3.OperationalError:
+            pass
+
         # Garante linha inicial no user_profile se vazia
         conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 32.0, 170.0, 75.0);")
         # Garante linha inicial nas configurações de IA se vazia
@@ -239,14 +258,14 @@ def initialize_db(db_path: str | Path) -> None:
         count_supps = conn.execute("SELECT COUNT(*) FROM supplement_stack;").fetchone()[0]
         if count_supps == 0:
             supps = [
-                ("NMN (Nicotinamida Mononucleotídeo)", "500 mg", "Diário", "Manhã (Jejum)", "2026-06-01", "Potencializador NAD+"),
-                ("Ômega-3 (EPA/DHA)", "2000 mg", "Diário", "Almoço", "2026-06-01", "Saúde cardiovascular & anti-inflamatório"),
-                ("Berberina HCL", "500 mg", "Diário", "Jantar", "2026-06-15", "Otimização glicêmica & sensibilidade à insulina"),
-                ("Creatina Monohidratada", "5 g", "Diário", "Manhã", "2026-06-01", "Neuroproteção & força muscular"),
-                ("Glicinato de Magnésio", "400 mg", "Diário", "Noite", "2026-06-01", "Relaxamento muscular & indução ao sono")
+                ("NMN (Nicotinamida Mononucleotídeo)", "500 mg", "Suplemento", "Diário", "Manhã (Jejum)", "2026-06-01", "Potencializador NAD+"),
+                ("Ômega-3 (EPA/DHA)", "2000 mg", "Suplemento", "Diário", "Almoço", "2026-06-01", "Saúde cardiovascular & anti-inflamatório"),
+                ("Berberina HCL", "500 mg", "Suplemento", "Diário", "Jantar", "2026-06-15", "Otimização glicêmica & sensibilidade à insulina"),
+                ("Creatina Monohidratada", "5 g", "Suplemento", "Diário", "Manhã", "2026-06-01", "Neuroproteção & força muscular"),
+                ("Glicinato de Magnésio", "400 mg", "Suplemento", "Diário", "Noite", "2026-06-01", "Relaxamento muscular & indução ao sono")
             ]
             conn.executemany(
-                "INSERT INTO supplement_stack (name, dosage, frequency, timing, start_date, notes) VALUES (?, ?, ?, ?, ?, ?);",
+                "INSERT INTO supplement_stack (name, dosage, category, frequency, timing, start_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 supps
             )
 

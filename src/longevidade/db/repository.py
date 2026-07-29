@@ -327,25 +327,80 @@ class LongevityRepository:
             return [dict(r) for r in rows]
 
     def add_supplement(self, data: Dict[str, Any]) -> int:
+        category = data.get("category", "Suplemento")
         sql = """
-        INSERT INTO supplement_stack (name, dosage, frequency, timing, start_date, notes, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO supplement_stack (name, dosage, category, frequency, timing, start_date, notes, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         values = (
-            data["name"], data["dosage"], data.get("frequency", "Diário"),
+            data["name"], data["dosage"], category, data.get("frequency", "Diário"),
             data.get("timing", "Manhã"), data.get("start_date", "2026-06-01"),
             data.get("notes"), data.get("is_active", 1)
         )
         with self._get_connection() as conn:
             cursor = conn.execute(sql, values)
+            supp_id = cursor.lastrowid
+            
+            # Log de Auditoria
+            conn.execute(
+                "INSERT INTO supplement_audit_logs (supplement_id, compound_name, category, action_type, new_value) VALUES (?, ?, ?, ?, ?);",
+                (supp_id, data["name"], category, "ADICIONADO", f"Dose: {data['dosage']} ({data.get('timing', 'Manhã')})")
+            )
             conn.commit()
-            return cursor.lastrowid
+            return supp_id
+
+    def update_supplement(self, supplement_id: int, data: Dict[str, Any]) -> None:
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM supplement_stack WHERE id = ?;", (supplement_id,)).fetchone()
+            if not row:
+                return
+            old_item = dict(row)
+
+            new_name = data.get("name", old_item["name"])
+            new_dosage = data.get("dosage", old_item["dosage"])
+            new_category = data.get("category", old_item.get("category", "Suplemento"))
+            new_frequency = data.get("frequency", old_item["frequency"])
+            new_timing = data.get("timing", old_item["timing"])
+            new_notes = data.get("notes", old_item.get("notes"))
+            new_is_active = data.get("is_active", old_item["is_active"])
+
+            sql_update = """
+            UPDATE supplement_stack SET
+            name = ?, dosage = ?, category = ?, frequency = ?, timing = ?, notes = ?, is_active = ?
+            WHERE id = ?;
+            """
+            conn.execute(sql_update, (new_name, new_dosage, new_category, new_frequency, new_timing, new_notes, new_is_active, supplement_id))
+
+            # Audit Log para alteração de dose ou horário
+            if old_item["dosage"] != new_dosage:
+                conn.execute(
+                    "INSERT INTO supplement_audit_logs (supplement_id, compound_name, category, action_type, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?);",
+                    (supplement_id, new_name, new_category, "DOSE_ALTERADA", old_item["dosage"], new_dosage)
+                )
+            elif old_item["timing"] != new_timing:
+                conn.execute(
+                    "INSERT INTO supplement_audit_logs (supplement_id, compound_name, category, action_type, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?);",
+                    (supplement_id, new_name, new_category, "HORARIO_ALTERADO", old_item["timing"], new_timing)
+                )
+            conn.commit()
 
     def delete_supplement(self, supplement_id: int) -> None:
-        sql = "DELETE FROM supplement_stack WHERE id = ?;"
         with self._get_connection() as conn:
-            conn.execute(sql, (supplement_id,))
-            conn.commit()
+            row = conn.execute("SELECT name, category, dosage FROM supplement_stack WHERE id = ?;", (supplement_id,)).fetchone()
+            if row:
+                c_name, c_cat, c_dose = row["name"], row["category"] or "Suplemento", row["dosage"]
+                conn.execute("DELETE FROM supplement_stack WHERE id = ?;", (supplement_id,))
+                conn.execute(
+                    "INSERT INTO supplement_audit_logs (supplement_id, compound_name, category, action_type, old_value) VALUES (?, ?, ?, ?, ?);",
+                    (supplement_id, c_name, c_cat, "REMOVIDO", f"Dose: {c_dose}")
+                )
+                conn.commit()
+
+    def get_supplement_audit_logs(self, limit: int = 50) -> List[Dict[str, Any]]:
+        sql = "SELECT * FROM supplement_audit_logs ORDER BY id DESC LIMIT ?;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+            return [dict(r) for r in rows]
 
     def toggle_supplement_log(self, supplement_id: int, taken_at_date: str, status: str = "tomado") -> None:
         sql_check = "SELECT id FROM supplement_logs WHERE supplement_id = ? AND taken_at_date = ?;"
