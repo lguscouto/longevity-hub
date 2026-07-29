@@ -47,6 +47,37 @@ def test_supplements_endpoints():
     assert isinstance(supps, list)
     assert len(supps) > 0
 
+def test_supplement_update_and_audit_logs():
+    # 1. Adiciona um composto (Hormônio)
+    add_payload = {
+        "name": "Testosterona Gel 1%",
+        "dosage": "50 mg",
+        "category": "Hormônio",
+        "timing": "Manhã"
+    }
+    res_add = client.post("/api/supplements", json=add_payload)
+    assert res_add.status_code == 200
+    supp_id = res_add.json()["id"]
+
+    # 2. Atualiza a dose
+    update_payload = {
+        "supplement_id": supp_id,
+        "dosage": "100 mg",
+        "category": "Hormônio"
+    }
+    res_update = client.post("/api/supplements/update", json=update_payload)
+    assert res_update.status_code == 200
+
+    # 3. Consulta histórico auditável
+    res_audit = client.get("/api/supplements/audit-logs")
+    assert res_audit.status_code == 200
+    logs = res_audit.json()
+    assert isinstance(logs, list)
+    assert len(logs) >= 2
+    actions = [l["action_type"] for l in logs]
+    assert "ADICIONADO" in actions
+    assert "DOSE_ALTERADA" in actions
+
 def test_compliance_endpoints():
     payload = {
         "date_ref": "2026-07-29",
