@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
-  CartesianGrid, BarChart, Bar, LineChart, Line
+  CartesianGrid, BarChart, Bar, LineChart, Line, Legend
 } from 'recharts';
 
 import { Header } from './components/Header';
@@ -190,6 +190,13 @@ export default function App() {
     }
   };
 
+  const formatSleepStr = (mins?: number) => {
+    if (!mins) return '4h 30m';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}h ${m}m`;
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
       <Header
@@ -213,62 +220,74 @@ export default function App() {
               onDaysRangeChange={setDaysRange}
             />
 
-            {/* Top Stat Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Top 6 Stat Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <MetricCard
-                title="Passos Diários"
-                value={activeMetric.steps ? activeMetric.steps.toLocaleString() : '10,480'}
+                title="PASSOS 24H"
+                value={activeMetric.steps ? activeMetric.steps.toLocaleString() : '4.100'}
                 unit="passos"
                 icon={Footprints}
-                trend={activeMetric.date_ref ? `Data: ${activeMetric.date_ref}` : '+8% vs semana anterior'}
+                subtitle="Meta: 10.000"
                 color="emerald"
               />
 
               <MetricCard
-                title="Variabilidade Cardíaca (HRV)"
-                value={activeMetric.hrv_ms ? `${activeMetric.hrv_ms} ms` : '68 ms'}
-                unit="rMSSD"
+                title="RHR REPOUSO"
+                value={activeMetric.rhr_bpm ? `${activeMetric.rhr_bpm} bpm` : '68 bpm'}
                 icon={Heart}
-                trend="Recuperação Autonômica Alta"
+                subtitle="Alvo: < 55 bpm"
                 color="rose"
               />
 
               <MetricCard
-                title="Frequência Cardíaca de Repouso"
-                value={activeMetric.rhr_bpm ? `${activeMetric.rhr_bpm} bpm` : '52 bpm'}
-                unit="bpm"
+                title="HRV NOTURNA"
+                value={activeMetric.hrv_ms ? `${activeMetric.hrv_ms} ms` : '30 ms'}
                 icon={Activity}
-                trend="Cardioproteção Otimizada"
-                color="emerald"
+                subtitle="Variabilidade FC"
+                color="cyan"
               />
 
               <MetricCard
-                title="Idade Biológica PhenoAge"
-                value={latestPheno.pheno_age ? `${latestPheno.pheno_age} anos` : '34.2 anos'}
-                unit="anos"
-                icon={Sparkles}
-                trend={latestPheno.age_delta ? `Rejuvenescimento de ${Math.abs(latestPheno.age_delta)} anos` : 'Rejuvenescimento de -5.8 anos'}
-                color="cyan"
+                title="SONO TOTAL"
+                value={formatSleepStr(activeMetric.sleep_minutes)}
+                icon={Moon}
+                subtitle="Monitorado"
+                color="violet"
+              />
+
+              <MetricCard
+                title="VO2 MAX"
+                value={activeMetric.vo2_max ? `${activeMetric.vo2_max} mL/kg/min` : '41.08 mL/kg/min'}
+                icon={Flame}
+                subtitle="Capacidade Cardiorespiratória"
+                color="amber"
+              />
+
+              <MetricCard
+                title="PRESSÃO ARTERIAL"
+                value={activeMetric.systolic_bp && activeMetric.diastolic_bp ? `${activeMetric.systolic_bp}/${activeMetric.diastolic_bp}` : '(Sem dados)'}
+                icon={Shield}
+                subtitle="Use +Registrar para aferir"
+                color="emerald"
               />
             </div>
 
-            {/* Middle Section: PhenoAge Widget + Sleep Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <PhenoAgeWidget latestRecord={latestPheno} onRecalculate={handleRecalculatePheno} />
-              </div>
+            {/* Middle Section 1: PhenoAge Banner Card */}
+            <PhenoAgeWidget latestRecord={latestPheno} onRecalculate={handleRecalculatePheno} />
 
-              {/* Sleep & HRV Chart */}
-              <div className="lg:col-span-2 glass-card p-6 flex flex-col justify-between">
+            {/* Middle Section 2: 2 Gráficos Lado a Lado (HRV vs RHR + Fases do Sono) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Gráfico 1: HRV vs RHR */}
+              <div className="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Moon className="h-5 w-5 text-indigo-400" /> Sono & Variabilidade de Frequência Cardíaca (HRV)
+                      <Activity className="h-5 w-5 text-cyan-400" /> HRV (Variabilidade FC) vs RHR (Repouso)
                     </h3>
-                    <p className="text-xs text-slate-400">Tendência dos últimos {daysRange} dias sincronizados via Amazfit Zepp & Google Fit</p>
+                    <p className="text-xs text-slate-400">Recuperação do sistema nervoso autônomo ({daysRange}d)</p>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    Sincronizado
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    Zepp / Amazfit
                   </span>
                 </div>
 
@@ -277,8 +296,8 @@ export default function App() {
                     <AreaChart data={[...metrics].reverse()}>
                       <defs>
                         <linearGradient id="colorHrv" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
@@ -287,8 +306,40 @@ export default function App() {
                       <Tooltip
                         contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
                       />
-                      <Area type="monotone" dataKey="hrv_ms" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorHrv)" name="HRV (ms)" />
+                      <Area type="monotone" dataKey="hrv_ms" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorHrv)" name="HRV (ms)" />
                     </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Gráfico 2: Distribuição de Fases do Sono */}
+              <div className="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Moon className="h-5 w-5 text-indigo-400" /> Distribuição de Fases do Sono
+                    </h3>
+                    <p className="text-xs text-slate-400">Minutos em Sono Profundo, REM e Leve ({daysRange}d)</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    Monitoramento
+                  </span>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[...metrics].reverse()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                      <XAxis dataKey="date_ref" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                      <Bar dataKey="sleep_deep_min" stackId="a" fill="#8b5cf6" name="Sono Profundo (min)" />
+                      <Bar dataKey="sleep_rem_min" stackId="a" fill="#06b6d4" name="Sono REM (min)" />
+                      <Bar dataKey="sleep_light_min" stackId="a" fill="#475569" name="Sono Leve (min)" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
