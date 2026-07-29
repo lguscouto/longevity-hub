@@ -1,6 +1,6 @@
 """
 Construtor de Contexto Clínico do Paciente para o Módulo de IA.
-Agrega dados do SQLite (Perfil, PhenoAge, KDM Age, Wearables, Exames, Razões Cardiovasculares, Suplementos, Compliance, CGM).
+Agrega dados do SQLite (Perfil, PhenoAge, KDM Age, Wearables, Exames, Razões Cardiovasculares, Suplementos, Hormônios, Audit Logs, Compliance, CGM).
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
     experiments = repo.get_n_of_1_experiments()
     supplements = repo.get_supplements(only_active=True)
     compliance_list = repo.get_daily_compliance_history(days=14)
+    audit_logs = repo.get_supplement_audit_logs(limit=25)
 
     # 1. Perfil Básico
     lines = ["=== PERFIL DO PACIENTE ==="]
@@ -116,13 +117,38 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
     else:
         lines.append("Nenhum exame de sangue registrado.")
 
-    # 5. Pilha de Suplementação Ativa
-    lines.append("\n=== PILHA DE SUPLEMENTAÇÃO ATIVA (FASE 3) ===")
+    # 5. Pilha Ativa de Suplementos & Hormônios
+    lines.append("\n=== PILHA ATIVA DE SUPLEMENTOS & HORMÔNIOS ===")
     if supplements:
         for s in supplements:
-            lines.append(f"- {s.get('name')}: {s.get('dosage')} ({s.get('timing')}) | Início: {s.get('start_date')} | Nota: {s.get('notes', '-')}")
+            cat = s.get("category", "Suplemento")
+            lines.append(f"- [{cat.upper()}] {s.get('name')}: {s.get('dosage')} (Horário: {s.get('timing')}) | Início: {s.get('start_date')} | Nota: {s.get('notes', '-')}")
     else:
-        lines.append("Nenhum suplemento ativo registrado.")
+        lines.append("Nenhum composto ativo registrado.")
+
+    # 5.1 Histórico Auditável de Alterações de Suplementos e Hormônios
+    lines.append("\n=== HISTÓRICO AUDITÁVEL DE ALTERAÇÕES DE SUPLEMENTOS E HORMÔNIOS ===")
+    if audit_logs:
+        for log in audit_logs:
+            c_name = log.get("compound_name", "Composto")
+            c_cat = log.get("category", "Suplemento")
+            action = log.get("action_type")
+            old_val = log.get("old_value")
+            new_val = log.get("new_value")
+            created = str(log.get("created_at", ""))[:16]
+
+            if action == "ADICIONADO":
+                lines.append(f"- [{created}] {c_name} ({c_cat}): ADICIONADO à pilha ({new_val})")
+            elif action == "DOSE_ALTERADA":
+                lines.append(f"- [{created}] {c_name} ({c_cat}): DOSE ALTERADA — De '{old_val}' Para '{new_val}'")
+            elif action == "HORARIO_ALTERADO":
+                lines.append(f"- [{created}] {c_name} ({c_cat}): HORÁRIO ALTERADO — De '{old_val}' Para '{new_val}'")
+            elif action == "REMOVIDO":
+                lines.append(f"- [{created}] {c_name} ({c_cat}): REMOVIDO da pilha (Dose anterior: {old_val})")
+            else:
+                lines.append(f"- [{created}] {c_name} ({c_cat}): {action} (De: {old_val} -> Para: {new_val})")
+    else:
+        lines.append("Nenhum registro no histórico de auditoria.")
 
     # 6. Conformidade Diária Blueprint (Score)
     lines.append("\n=== CONFORMIDADE DIÁRIA DO PROTOCOLO BLUEPRINT ===")
