@@ -17,6 +17,137 @@ interface AICopilotViewProps {
   onOpenSettings: () => void;
 }
 
+const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
+  if (!text) return null;
+
+  // Processa linha a linha identificando tabelas, cabeçalhos, listas e negrito
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+
+  let inTable = false;
+  let tableHeader: string[] = [];
+  let tableRows: string[][] = [];
+  let currentKey = 0;
+
+  const renderFormattedInlineText = (rawStr: string) => {
+    // Substitui **texto** por <strong>
+    const parts = rawStr.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={idx} className="text-cyan-300 font-bold">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
+  const flushTable = () => {
+    if (tableRows.length > 0 || tableHeader.length > 0) {
+      elements.push(
+        <div key={`table-${currentKey++}`} className="my-2 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80">
+          <table className="w-full text-[11px] border-collapse">
+            {tableHeader.length > 0 && (
+              <thead>
+                <tr className="bg-slate-900 border-b border-slate-800 text-slate-300 font-bold text-left">
+                  {tableHeader.map((col, cIdx) => (
+                    <th key={cIdx} className="p-2 border-r last:border-r-0 border-slate-800">
+                      {renderFormattedInlineText(col.trim())}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {tableRows.map((row, rIdx) => (
+                <tr key={rIdx} className="border-b last:border-b-0 border-slate-800/60 hover:bg-slate-900/50">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="p-2 border-r last:border-r-0 border-slate-800/60 text-slate-300">
+                      {renderFormattedInlineText(cell.trim())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    inTable = false;
+    tableHeader = [];
+    tableRows = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Detecta tabela Markdown (ex: | Métrica | Valor |)
+    if (line.startsWith('|') && line.endsWith('|')) {
+      const cells = line.split('|').filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+      // Ignora linha divisória Markdown (ex: |---|---|)
+      if (line.includes('---')) {
+        continue;
+      }
+      if (!inTable) {
+        inTable = true;
+        tableHeader = cells;
+      } else {
+        tableRows.push(cells);
+      }
+      continue;
+    } else if (inTable) {
+      flushTable();
+    }
+
+    if (!line) {
+      elements.push(<div key={`sp-${currentKey++}`} className="h-1.5" />);
+      continue;
+    }
+
+    // Cabeçalhos (### Título)
+    if (line.startsWith('### ')) {
+      elements.push(
+        <h4 key={`h3-${currentKey++}`} className="font-extrabold text-white text-xs mt-3 mb-1.5 border-b border-slate-800 pb-1">
+          {renderFormattedInlineText(line.replace('### ', ''))}
+        </h4>
+      );
+      continue;
+    }
+
+    if (line.startsWith('## ')) {
+      elements.push(
+        <h3 key={`h2-${currentKey++}`} className="font-black text-cyan-300 text-sm mt-3 mb-1.5 border-b border-cyan-500/20 pb-1">
+          {renderFormattedInlineText(line.replace('## ', ''))}
+        </h3>
+      );
+      continue;
+    }
+
+    // Tópicos com lista (- item ou * item)
+    if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
+      const cleanLine = line.replace(/^[-*]\s+|\d+\.\s+/, '');
+      elements.push(
+        <div key={`li-${currentKey++}`} className="flex items-start gap-1.5 ml-2 my-0.5 text-slate-300">
+          <span className="text-cyan-400 font-bold">•</span>
+          <span>{renderFormattedInlineText(cleanLine)}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Parágrafo normal
+    elements.push(
+      <p key={`p-${currentKey++}`} className="my-1 leading-relaxed text-slate-300">
+        {renderFormattedInlineText(line)}
+      </p>
+    );
+  }
+
+  if (inTable) {
+    flushTable();
+  }
+
+  return <div className="space-y-0.5">{elements}</div>;
+};
+
 export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) => {
   const [activeProvider, setActiveProvider] = useState<string>('openrouter');
   const [selectedModel, setSelectedModel] = useState<string>('deepseek/deepseek-v4-pro');
@@ -265,7 +396,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) 
         </div>
 
         {/* Coluna Direita: Chat Interativo com o Copiloto (1 Col) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col h-[580px] shadow-xl">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col h-[650px] shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -276,6 +407,12 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) 
 
           {/* Sugestões Rápidas de Perguntas */}
           <div className="flex flex-wrap gap-1.5 mb-3">
+            <button
+              onClick={() => handleSendChatMessage('Como foi meu sono nos últimos 3 dias?')}
+              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 transition"
+            >
+              🌙 Sono últimos 3 dias
+            </button>
             <button
               onClick={() => handleSendChatMessage('Como posso melhorar minha HRV noturna nos próximos 7 dias?')}
               className="text-[11px] px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 transition"
@@ -288,12 +425,6 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) 
             >
               🩸 Analisar ApoB
             </button>
-            <button
-              onClick={() => handleSendChatMessage('O que os dados do meu sono indicam sobre recuperação?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 transition"
-            >
-              🌙 Diagnóstico de Sono
-            </button>
           </div>
 
           {/* Mensagens do Chat */}
@@ -304,13 +435,13 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings }) 
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`p-3.5 rounded-2xl max-w-[90%] leading-relaxed ${
+                  className={`p-3.5 rounded-2xl max-w-[95%] leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-cyan-500 text-slate-950 font-semibold rounded-br-none shadow-md'
                       : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
                   }`}
                 >
-                  {msg.text}
+                  <FormattedChatMessage text={msg.text} />
                 </div>
                 <span className="text-[9px] text-slate-500 mt-1 px-1">{msg.time}</span>
               </div>

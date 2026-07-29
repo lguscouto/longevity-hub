@@ -1,6 +1,6 @@
 """
 Construtor de Contexto Clínico do Paciente para o Módulo de IA.
-Agrega dados do SQLite (Perfil, PhenoAge, Wearables, Exames, CGM) em formato resumido para os prompts.
+Agrega dados do SQLite (Perfil, PhenoAge, Wearables, Exames, CGM) em formato resumido e detalhado dia a dia.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from longevidade.db.repository import LongevityRepository
 
 
 def build_patient_clinical_context(db_path: str | Path) -> str:
-    """Busca o estado clínico do paciente no banco de dados SQLite e formata como texto sintético."""
+    """Busca o estado clínico do paciente no banco de dados SQLite e formata como texto sintético detalhado."""
     repo = LongevityRepository(db_path)
 
     profile = repo.get_user_profile()
@@ -41,7 +41,7 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
         lines.append("Nenhum histórico de PhenoAge gravado até o momento.")
 
     # 3. Métricas Médias de Wearables (Últimos 30 dias)
-    lines.append("\n=== MONITORAMENTO DE WEARABLES (ÚLTIMOS 30 DIAS) ===")
+    lines.append("\n=== RESUMO DE WEARABLES (MÉDIAS DE 30 DIAS) ===")
     if daily_list:
         valid_steps = [m['steps'] for m in daily_list if m.get('steps')]
         valid_hrv = [m['hrv_ms'] for m in daily_list if m.get('hrv_ms')]
@@ -62,6 +62,28 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
         if valid_bp:
             latest_bp = valid_bp[0]
             lines.append(f"Última Pressão Arterial: {latest_bp[0]}/{latest_bp[1]} mmHg")
+
+        # 3.1 REGISTROS DIÁRIOS DETALHADOS DIA A DIA (ÚLTIMOS 14 DIAS)
+        lines.append("\n=== REGISTROS DIÁRIOS DETALHADOS DIA A DIA (ÚLTIMOS 14 DIAS) ===")
+        for m in daily_list[:14]:
+            d_ref = m.get("date_ref", "N/A")
+            st = m.get("steps") if m.get("steps") is not None else "-"
+            slp_min = m.get("sleep_minutes")
+            slp_str = f"{int(slp_min // 60)}h {int(slp_min % 60)}m" if slp_min else "-"
+            hrv = m.get("hrv_ms") if m.get("hrv_ms") is not None else "-"
+            rhr = m.get("rhr_bpm") if m.get("rhr_bpm") is not None else "-"
+            bp_sys = m.get("systolic_bp")
+            bp_dia = m.get("diastolic_bp")
+            bp_str = f"{bp_sys}/{bp_dia}" if (bp_sys and bp_dia) else "-"
+
+            deep = m.get("sleep_deep_min") or "-"
+            rem = m.get("sleep_rem_min") or "-"
+            light = m.get("sleep_light_min") or "-"
+
+            lines.append(
+                f"- Data: {d_ref} | Sono Total: {slp_str} (Profundo: {deep}m, REM: {rem}m, Leve: {light}m) | "
+                f"HRV: {hrv} ms | RHR: {rhr} bpm | Passos: {st} | PA: {bp_str}"
+            )
     else:
         lines.append("Nenhuma métrica diária sincronizada recente.")
 
