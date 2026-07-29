@@ -1,6 +1,6 @@
 """
 Esquema do banco de dados SQLite para o projeto Longevidade.
-Contém definições de tabelas auditáveis, incluindo IA e rotinas de inicialização.
+Contém definições de tabelas auditáveis, incluindo IA, Suplementos, KDM Age e Protocolo Compliance.
 """
 
 import sqlite3
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
     id INTEGER PRIMARY KEY DEFAULT 1,
     name TEXT DEFAULT 'Paciente',
     email TEXT,
-    birthdate TEXT DEFAULT '1986-07-28',
-    chronological_age REAL DEFAULT 40.0,
+    birthdate TEXT DEFAULT '1994-03-22',
+    chronological_age REAL DEFAULT 32.0,
     height_cm REAL DEFAULT 170.0,
     current_weight_kg REAL,
     target_weight_kg REAL DEFAULT 75.0,
@@ -80,6 +80,17 @@ CREATE TABLE IF NOT EXISTS phenoage_records (
     rdw_pct REAL,
     alk_phos_ul REAL,
     wbc_1000ul REAL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS kdm_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    calculated_at TEXT NOT NULL,
+    chronological_age REAL NOT NULL,
+    kdm_age REAL NOT NULL,
+    kdm_delta REAL NOT NULL,
+    biomarkers_used TEXT,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -157,6 +168,27 @@ CREATE TABLE IF NOT EXISTS protocol_compliance (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS supplement_stack (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dosage TEXT NOT NULL,
+    frequency TEXT DEFAULT 'Diário',
+    timing TEXT DEFAULT 'Manhã',
+    start_date TEXT NOT NULL,
+    is_active INTEGER DEFAULT 1,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS supplement_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    supplement_id INTEGER NOT NULL,
+    taken_at_date TEXT NOT NULL,
+    status TEXT DEFAULT 'tomado',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplement_id) REFERENCES supplement_stack (id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS pipeline_run (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -199,7 +231,23 @@ def initialize_db(db_path: str | Path) -> None:
     with sqlite3.connect(path) as conn:
         conn.executescript(SCHEMA_SQL)
         # Garante linha inicial no user_profile se vazia
-        conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 40.0, 170.0, 75.0);")
+        conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 32.0, 170.0, 75.0);")
         # Garante linha inicial nas configurações de IA se vazia
         conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-pro');")
+        
+        # Garante inserção de suplementos básicos Blueprint se a tabela estiver vazia
+        count_supps = conn.execute("SELECT COUNT(*) FROM supplement_stack;").fetchone()[0]
+        if count_supps == 0:
+            supps = [
+                ("NMN (Nicotinamida Mononucleotídeo)", "500 mg", "Diário", "Manhã (Jejum)", "2026-06-01", "Potencializador NAD+"),
+                ("Ômega-3 (EPA/DHA)", "2000 mg", "Diário", "Almoço", "2026-06-01", "Saúde cardiovascular & anti-inflamatório"),
+                ("Berberina HCL", "500 mg", "Diário", "Jantar", "2026-06-15", "Otimização glicêmica & sensibilidade à insulina"),
+                ("Creatina Monohidratada", "5 g", "Diário", "Manhã", "2026-06-01", "Neuroproteção & força muscular"),
+                ("Glicinato de Magnésio", "400 mg", "Diário", "Noite", "2026-06-01", "Relaxamento muscular & indução ao sono")
+            ]
+            conn.executemany(
+                "INSERT INTO supplement_stack (name, dosage, frequency, timing, start_date, notes) VALUES (?, ?, ?, ?, ?, ?);",
+                supps
+            )
+
         conn.commit()

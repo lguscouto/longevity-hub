@@ -318,3 +318,103 @@ class LongevityRepository:
         with self._get_connection() as conn:
             conn.execute(sql, (source, records_inserted, status, logs))
             conn.commit()
+
+    # --- SUPLEMENTOS & COMPLIANCE (FASE 3) ---
+    def get_supplements(self, only_active: bool = True) -> List[Dict[str, Any]]:
+        sql = "SELECT * FROM supplement_stack WHERE is_active = 1 ORDER BY timing ASC, name ASC;" if only_active else "SELECT * FROM supplement_stack ORDER BY is_active DESC, id ASC;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql).fetchall()
+            return [dict(r) for r in rows]
+
+    def add_supplement(self, data: Dict[str, Any]) -> int:
+        sql = """
+        INSERT INTO supplement_stack (name, dosage, frequency, timing, start_date, notes, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
+        """
+        values = (
+            data["name"], data["dosage"], data.get("frequency", "Diário"),
+            data.get("timing", "Manhã"), data.get("start_date", "2026-06-01"),
+            data.get("notes"), data.get("is_active", 1)
+        )
+        with self._get_connection() as conn:
+            cursor = conn.execute(sql, values)
+            conn.commit()
+            return cursor.lastrowid
+
+    def toggle_supplement_log(self, supplement_id: int, taken_at_date: str, status: str = "tomado") -> None:
+        sql_check = "SELECT id FROM supplement_logs WHERE supplement_id = ? AND taken_at_date = ?;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql_check, (supplement_id, taken_at_date)).fetchone()
+            if row:
+                conn.execute("DELETE FROM supplement_logs WHERE id = ?;", (row["id"],))
+            else:
+                conn.execute("INSERT INTO supplement_logs (supplement_id, taken_at_date, status) VALUES (?, ?, ?);", (supplement_id, taken_at_date, status))
+            conn.commit()
+
+    def get_supplement_logs_for_date(self, taken_at_date: str) -> List[int]:
+        sql = "SELECT supplement_id FROM supplement_logs WHERE taken_at_date = ? AND status = 'tomado';"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (taken_at_date,)).fetchall()
+            return [r["supplement_id"] for r in rows]
+
+    def save_daily_compliance(self, data: Dict[str, Any]) -> None:
+        sql = """
+        INSERT INTO protocol_compliance (
+            date_ref, sleep_schedule_ok, supplements_ok, exercise_ok, fasting_window_ok, compliance_score, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(date_ref) DO UPDATE SET
+        sleep_schedule_ok = excluded.sleep_schedule_ok,
+        supplements_ok = excluded.supplements_ok,
+        exercise_ok = excluded.exercise_ok,
+        fasting_window_ok = excluded.fasting_window_ok,
+        compliance_score = excluded.compliance_score,
+        notes = excluded.notes;
+        """
+        score = (
+            (1 if data.get("sleep_schedule_ok") else 0) +
+            (1 if data.get("supplements_ok") else 0) +
+            (1 if data.get("exercise_ok") else 0) +
+            (1 if data.get("fasting_window_ok") else 0)
+        ) * 25.0
+
+        values = (
+            data["date_ref"],
+            1 if data.get("sleep_schedule_ok") else 0,
+            1 if data.get("supplements_ok") else 0,
+            1 if data.get("exercise_ok") else 0,
+            1 if data.get("fasting_window_ok") else 0,
+            score,
+            data.get("notes")
+        )
+        with self._get_connection() as conn:
+            conn.execute(sql, values)
+            conn.commit()
+
+    def get_daily_compliance_history(self, days: int = 14) -> List[Dict[str, Any]]:
+        sql = "SELECT * FROM protocol_compliance ORDER BY date_ref DESC LIMIT ?;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (days,)).fetchall()
+            return [dict(r) for r in rows]
+
+    # --- KDM BIOLOGICAL AGE (FASE 3) ---
+    def save_kdm_record(self, data: Dict[str, Any]) -> int:
+        sql = """
+        INSERT INTO kdm_records (calculated_at, chronological_age, kdm_age, kdm_delta, biomarkers_used, notes)
+        VALUES (?, ?, ?, ?, ?, ?);
+        """
+        values = (
+            data["calculated_at"], data["chronological_age"],
+            data["kdm_age"], data["kdm_delta"],
+            data.get("biomarkers_used", ""), data.get("notes")
+        )
+        with self._get_connection() as conn:
+            cursor = conn.execute(sql, values)
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_latest_kdm_record(self) -> Optional[Dict[str, Any]]:
+        sql = "SELECT * FROM kdm_records ORDER BY id DESC LIMIT 1;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql).fetchone()
+            return dict(row) if row else None
+
