@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import threading
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Dict
@@ -15,8 +16,7 @@ from typing import Any, Dict
 from longevidade.db.repository import LongevityRepository
 
 
-def trigger_zepp_cloud_fetch(zepp_scripts_dir: Path) -> None:
-    """Aciona o script zepp_cron.py do projeto Zepp para baixar novos dados da nuvem."""
+def _run_zepp_cron_background(zepp_scripts_dir: Path) -> None:
     cron_script = zepp_scripts_dir / "zepp_cron.py"
     if cron_script.is_file():
         try:
@@ -29,6 +29,12 @@ def trigger_zepp_cloud_fetch(zepp_scripts_dir: Path) -> None:
             )
         except Exception:
             pass
+
+
+def trigger_zepp_cloud_fetch(zepp_scripts_dir: Path) -> None:
+    """Aciona o script zepp_cron.py em segundo plano sem travar a requisição HTTP."""
+    thread = threading.Thread(target=_run_zepp_cron_background, args=(zepp_scripts_dir,), daemon=True)
+    thread.start()
 
 
 def import_zepp_data(zepp_data_dir: str | Path, repo: LongevityRepository, days: int = 30) -> int:

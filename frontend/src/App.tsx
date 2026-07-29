@@ -20,9 +20,13 @@ import { SyncProgressModal } from './components/SyncProgressModal';
 import { ProfileView } from './components/ProfileView';
 import { AICopilotView } from './components/AICopilotView';
 import { AISettingsModal } from './components/AISettingsModal';
+import { DateNavigator } from './components/DateNavigator';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'labs' | 'ai' | 'n-of-1' | 'profile'>('overview');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [daysRange, setDaysRange] = useState<number>(30);
+
   const [metrics, setMetrics] = useState<any[]>([]);
   const [labs, setLabs] = useState<any[]>([]);
   const [phenoHistory, setPhenoHistory] = useState<any[]>([]);
@@ -48,7 +52,7 @@ export default function App() {
   const fetchAllData = async () => {
     try {
       const [resMetrics, resLabs, resPheno, resExp, resCgm, resProf] = await Promise.all([
-        fetch('/api/metrics').then(r => r.json()),
+        fetch(`/api/metrics?days=${daysRange}`).then(r => r.json()),
         fetch('/api/labs').then(r => r.json()),
         fetch('/api/phenoage/history').then(r => r.json()),
         fetch('/api/n-of-1').then(r => r.json()),
@@ -69,9 +73,10 @@ export default function App() {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [daysRange]);
 
   const latestMetric = metrics[0] || {};
+  const activeMetric = metrics.find(m => m.date_ref === selectedDate) || latestMetric;
   const latestPheno = phenoHistory[0] || {};
 
   const handleSyncZepp = async () => {
@@ -80,7 +85,7 @@ export default function App() {
     setIsSyncModalOpen(true);
 
     try {
-      const res = await fetch('/api/metrics/sync', { method: 'POST' });
+      const res = await fetch('/api/metrics/sync/zepp', { method: 'POST' });
       const data = await res.json();
       setSyncResult(data);
       if (data.status === 'ok') {
@@ -200,20 +205,28 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 space-y-8">
         {activeTab === 'overview' && (
           <>
+            {/* Navegador de Datas & Filtro de Período */}
+            <DateNavigator
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              daysRange={daysRange}
+              onDaysRangeChange={setDaysRange}
+            />
+
             {/* Top Stat Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               <MetricCard
                 title="Passos Diários"
-                value={latestMetric.steps ? latestMetric.steps.toLocaleString() : '10,480'}
+                value={activeMetric.steps ? activeMetric.steps.toLocaleString() : '10,480'}
                 unit="passos"
                 icon={Footprints}
-                trend="+8% vs semana anterior"
+                trend={activeMetric.date_ref ? `Data: ${activeMetric.date_ref}` : '+8% vs semana anterior'}
                 color="emerald"
               />
 
               <MetricCard
                 title="Variabilidade Cardíaca (HRV)"
-                value={latestMetric.hrv_ms ? `${latestMetric.hrv_ms} ms` : '68 ms'}
+                value={activeMetric.hrv_ms ? `${activeMetric.hrv_ms} ms` : '68 ms'}
                 unit="rMSSD"
                 icon={Heart}
                 trend="Recuperação Autonômica Alta"
@@ -222,7 +235,7 @@ export default function App() {
 
               <MetricCard
                 title="Frequência Cardíaca de Repouso"
-                value={latestMetric.rhr_bpm ? `${latestMetric.rhr_bpm} bpm` : '52 bpm'}
+                value={activeMetric.rhr_bpm ? `${activeMetric.rhr_bpm} bpm` : '52 bpm'}
                 unit="bpm"
                 icon={Activity}
                 trend="Cardioproteção Otimizada"
@@ -252,7 +265,7 @@ export default function App() {
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <Moon className="h-5 w-5 text-indigo-400" /> Sono & Variabilidade de Frequência Cardíaca (HRV)
                     </h3>
-                    <p className="text-xs text-slate-400">Tendência dos últimos 14 dias sincronizados via Amazfit Zepp</p>
+                    <p className="text-xs text-slate-400">Tendência dos últimos {daysRange} dias sincronizados via Amazfit Zepp & Google Fit</p>
                   </div>
                   <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                     Sincronizado
