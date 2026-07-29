@@ -21,6 +21,8 @@ import { ProfileView } from './components/ProfileView';
 import { AICopilotView } from './components/AICopilotView';
 import { AISettingsModal } from './components/AISettingsModal';
 import { DateNavigator } from './components/DateNavigator';
+import { SupplementStackWidget } from './components/SupplementStackWidget';
+import { DailyComplianceWidget } from './components/DailyComplianceWidget';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'labs' | 'ai' | 'n-of-1' | 'profile'>('overview');
@@ -280,8 +282,15 @@ export default function App() {
               />
             </div>
 
-            {/* Middle Section 1: PhenoAge Banner Card */}
-            <PhenoAgeWidget latestRecord={latestPheno} onRecalculate={handleRecalculatePheno} />
+            {/* Middle Section 1: PhenoAge Widget + Daily Compliance Score Widget */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
+                <PhenoAgeWidget latestRecord={latestPheno} onRecalculate={handleRecalculatePheno} />
+              </div>
+              <div className="lg:col-span-2">
+                <DailyComplianceWidget selectedDate={selectedDate} />
+              </div>
+            </div>
 
             {/* Middle Section 2: 2 Gráficos Lado a Lado (HRV vs RHR + Fases do Sono) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -352,6 +361,9 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Pilha de Suplementos (Supplement Stack Tracker) */}
+            <SupplementStackWidget selectedDate={selectedDate} />
 
             {/* CGM Section */}
             <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchAllData} />

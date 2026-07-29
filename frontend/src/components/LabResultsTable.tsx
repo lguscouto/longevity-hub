@@ -243,6 +243,52 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
         </button>
       </div>
 
+      {/* Cartões de Razões Cardiovasculares Avançadas (Fase 3) */}
+      {(() => {
+        const getV = (k: string) => labs.find(l => l.metric_key === k)?.value;
+        const apob = getV('apob');
+        const apoa1 = getV('apoa1');
+        const tg = getV('triglycerides');
+        const hdl = getV('hdl_cholesterol');
+        const totalChol = getV('total_cholesterol');
+        const ldl = getV('ldl_cholesterol');
+
+        const ratioApobApoa1 = (apob && apoa1 && apoa1 > 0) ? (apob / apoa1).toFixed(2) : null;
+        const ratioTgHdl = (tg && hdl && hdl > 0) ? (tg / hdl).toFixed(2) : null;
+        const remnantChol = (totalChol && hdl && ldl) ? (totalChol - hdl - ldl).toFixed(1) : null;
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Razão ApoB / ApoA1</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
+                <span className="text-[10px] font-bold text-cyan-400">Alvo: &lt; 0.60</span>
+              </div>
+              <p className="text-[10px] text-slate-500">Índice primário de risco aterogênico celular (Attia / Blueprint)</p>
+            </div>
+
+            <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Razão Triglicerídeos / HDL</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-white">{ratioTgHdl ? ratioTgHdl : '(Sem TG/HDL)'}</span>
+                <span className="text-[10px] font-bold text-emerald-400">Alvo: &lt; 1.5</span>
+              </div>
+              <p className="text-[10px] text-slate-500">Indicador direto de sensibilidade à insulina e LDL denso</p>
+            </div>
+
+            <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Colesterol Remanescente</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-white">{remnantChol ? `${remnantChol} mg/dL` : '(Sem dados)'}</span>
+                <span className="text-[10px] font-bold text-amber-400">Alvo: &lt; 15 mg/dL</span>
+              </div>
+              <p className="text-[10px] text-slate-500">Lipoproteínas altamente inflamatórias (Total - HDL - LDL)</p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tabela Consolidada (1 Linha por Laudo/Data) */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">

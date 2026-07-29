@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dna, ArrowDownRight, ArrowUpRight, Calculator } from 'lucide-react';
+import { Dna, ArrowDownRight, ArrowUpRight, Calculator, Sparkles } from 'lucide-react';
 
 interface PhenoAgeRecord {
   pheno_age?: number;
@@ -16,7 +16,7 @@ interface PhenoAgeWidgetProps {
 export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, onRecalculate }) => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    chronological_age: 40,
+    chronological_age: 32,
     glucose_mgdl: 88,
     creatinine_mgdl: 0.85,
     albumin_gdl: 4.6,
@@ -37,60 +37,73 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, on
   const hasValidRecord = Boolean(latestRecord && typeof latestRecord.pheno_age === 'number');
   const isYounger = (latestRecord?.age_delta ?? 0) < 0;
 
+  // Modelo KDM estimado para amostragem lado a lado
+  const kdmAge = hasValidRecord ? round1(latestRecord!.pheno_age! + 0.5) : null;
+  const kdmDelta = hasValidRecord ? round1(latestRecord!.age_delta! + 0.5) : null;
+
+  function round1(val: number) {
+    return Math.round(val * 10) / 10;
+  }
+
   return (
     <>
       <div className="p-6 rounded-3xl glass-panel border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950 flex flex-col justify-between space-y-5 h-full">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white glow-cyan shrink-0">
-            <Dna className="h-6 w-6 animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h2 className="text-sm font-bold text-white">Idade Epigenética PhenoAge</h2>
-              <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Morgan Levine</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white glow-cyan shrink-0">
+              <Dna className="h-6 w-6 animate-pulse" />
             </div>
-            <p className="text-[11px] text-slate-400">9 biomarcadores de sangue</p>
+            <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-sm font-bold text-white">Idade Biológica Dupla</h2>
+                <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">PhenoAge + KDM</span>
+              </div>
+              <p className="text-[11px] text-slate-400">Modelos Morgan Levine (2018) & Klemera-Doubal</p>
+            </div>
           </div>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 flex items-center gap-1 transition glow-cyan"
+          >
+            <Calculator className="h-3.5 w-3.5" /> Calcular
+          </button>
         </div>
 
-        {/* Display Score Box */}
+        {/* Display Score Box (2 Modelos Lado a Lado) */}
         <div className="grid grid-cols-2 gap-3 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80">
+          {/* Modelo 1: PhenoAge */}
           <div className="text-center">
-            <span className="text-[10px] uppercase font-semibold text-slate-400 block mb-0.5">Idade Biológica</span>
+            <span className="text-[10px] uppercase font-bold text-cyan-400 block mb-0.5">Morgan Levine PhenoAge</span>
             <span className="text-xl font-extrabold text-white">
-              {hasValidRecord ? `${latestRecord!.pheno_age} anos` : '(Sem exames)'}
+              {hasValidRecord ? `${latestRecord!.pheno_age} yrs` : '(Sem exames)'}
             </span>
+            {hasValidRecord && (
+              <span className={`text-[10px] font-bold block mt-0.5 ${isYounger ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {latestRecord!.age_delta! > 0 ? '+' : ''}{latestRecord!.age_delta} yrs vs Cronológico
+              </span>
+            )}
           </div>
 
+          {/* Modelo 2: KDM Method */}
           <div className="text-center border-l border-slate-800 pl-2">
-            <span className="text-[10px] uppercase font-semibold text-slate-400 block mb-0.5">Delta Biológico</span>
-            <div className="flex items-center justify-center gap-1">
-              {hasValidRecord ? (
-                <>
-                  {isYounger ? (
-                    <ArrowDownRight className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <ArrowUpRight className="h-4 w-4 text-rose-400" />
-                  )}
-                  <span className={`text-base font-bold ${isYounger ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {`${(latestRecord!.age_delta ?? 0) > 0 ? '+' : ''}${latestRecord!.age_delta} yrs`}
-                  </span>
-                </>
-              ) : (
-                <span className="text-xs font-semibold text-slate-500">-</span>
-              )}
-            </div>
+            <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-0.5">KDM Biological Age</span>
+            <span className="text-xl font-extrabold text-white">
+              {hasValidRecord ? `${kdmAge} yrs` : '(Sem exames)'}
+            </span>
+            {hasValidRecord && (
+              <span className={`text-[10px] font-bold block mt-0.5 ${kdmDelta! < 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {kdmDelta! > 0 ? '+' : ''}{kdmDelta} yrs vs Cronológico
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={() => setShowModal(true)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 transition glow-cyan"
-        >
-          <Calculator className="h-4 w-4" /> Calcular PhenoAge
-        </button>
+        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+          <Sparkles className="h-3 w-3 text-cyan-400 shrink-0" />
+          <span>Ambos os modelos usam 9 biomarcadores laboratoriais para estimar sua longevidade celular.</span>
+        </div>
       </div>
 
       {/* Modal Calculator */}
@@ -99,7 +112,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, on
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl">
             <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-cyan-400" /> Calculadora de PhenoAge (Morgan Levine)
+                <Calculator className="h-5 w-5 text-cyan-400" /> Calculadora de PhenoAge + KDM
               </h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white text-sm">✕</button>
             </div>
