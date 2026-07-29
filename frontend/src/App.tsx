@@ -21,11 +21,11 @@ import { ProfileView } from './components/ProfileView';
 import { AICopilotView } from './components/AICopilotView';
 import { AISettingsModal } from './components/AISettingsModal';
 import { DateNavigator } from './components/DateNavigator';
-import { SupplementStackWidget } from './components/SupplementStackWidget';
+import { SupplementsView } from './components/SupplementsView';
 import { DailyComplianceWidget } from './components/DailyComplianceWidget';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'labs' | 'ai' | 'n-of-1' | 'profile'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'labs' | 'supplements' | 'ai' | 'n-of-1' | 'profile'>('overview');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [daysRange, setDaysRange] = useState<number>(30);
 
@@ -362,9 +362,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Pilha de Suplementos (Supplement Stack Tracker) */}
-            <SupplementStackWidget selectedDate={selectedDate} />
-
             {/* CGM Section */}
             <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchAllData} />
           </>
@@ -372,6 +369,10 @@ export default function App() {
 
         {activeTab === 'labs' && (
           <LabResultsTable labs={labs} onAddBatchLabs={handleAddBatchLabs} onRefreshData={fetchAllData} />
+        )}
+
+        {activeTab === 'supplements' && (
+          <SupplementsView selectedDate={selectedDate} />
         )}
 
         {activeTab === 'ai' && (

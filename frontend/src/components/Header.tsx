@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, ShieldCheck, RefreshCw, FileText, PlusCircle, Dna, FlaskConical, Stethoscope, User, Sparkles, Settings } from 'lucide-react';
+import { Activity, ShieldCheck, RefreshCw, FileText, PlusCircle, Dna, FlaskConical, Stethoscope, User, Sparkles, Settings, Pill } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -57,6 +57,16 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Dna className="h-4 w-4" /> Exames & PhenoAge
+          </button>
+          <button
+            onClick={() => setActiveTab('supplements')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'supplements'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <Pill className="h-4 w-4" /> Suplementos & Hormônios
           </button>
           <button
             onClick={() => setActiveTab('ai')}
