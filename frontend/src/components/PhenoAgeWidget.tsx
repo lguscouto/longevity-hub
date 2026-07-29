@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Dna, ArrowDownRight, ArrowUpRight, Calculator, CheckCircle2 } from 'lucide-react';
+import { Dna, ArrowDownRight, ArrowUpRight, Calculator } from 'lucide-react';
 
 interface PhenoAgeRecord {
-  pheno_age: number;
-  chronological_age: number;
-  age_delta: number;
+  pheno_age?: number;
+  chronological_age?: number;
+  age_delta?: number;
   calculated_at?: string;
 }
 
@@ -34,65 +34,66 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, on
     setShowModal(false);
   };
 
+  const hasValidRecord = Boolean(latestRecord && typeof latestRecord.pheno_age === 'number');
   const isYounger = (latestRecord?.age_delta ?? 0) < 0;
 
   return (
     <>
-      <div className="p-6 rounded-3xl glass-panel border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white glow-cyan">
-              <Dna className="h-8 w-8 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white">Idade Epigenética PhenoAge</h2>
-                <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Morgan Levine Alg.</span>
-              </div>
-              <p className="text-xs text-slate-400">Estimativa biológica via 9 biomarcadores de sangue</p>
-            </div>
+      <div className="p-6 rounded-3xl glass-panel border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950 flex flex-col justify-between space-y-5 h-full">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white glow-cyan shrink-0">
+            <Dna className="h-6 w-6 animate-pulse" />
           </div>
-
-          {/* Display Score */}
-          <div className="flex items-center gap-6 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-            <div className="text-center">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">Idade Biológica</span>
-              <span className="text-2xl font-extrabold text-white">{latestRecord ? `${latestRecord.pheno_age} anos` : '(Sem dados)'}</span>
+          <div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-sm font-bold text-white">Idade Epigenética PhenoAge</h2>
+              <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Morgan Levine</span>
             </div>
-
-            <div className="h-8 w-[1px] bg-slate-800" />
-
-            <div className="text-center">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">Delta Rejuvenescimento</span>
-              <div className="flex items-center justify-center gap-1">
-                {latestRecord ? (
-                  <>
-                    {isYounger ? (
-                      <ArrowDownRight className="h-5 w-5 text-emerald-400" />
-                    ) : (
-                      <ArrowUpRight className="h-5 w-5 text-rose-400" />
-                    )}
-                    <span className={`text-xl font-bold ${isYounger ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {`${latestRecord.age_delta > 0 ? '+' : ''}${latestRecord.age_delta} yrs`}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-xs font-semibold text-slate-500">(Sem dados)</span>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 transition glow-cyan"
-            >
-              <Calculator className="h-4 w-4" /> Calcular PhenoAge
-            </button>
+            <p className="text-[11px] text-slate-400">9 biomarcadores de sangue</p>
           </div>
         </div>
+
+        {/* Display Score Box */}
+        <div className="grid grid-cols-2 gap-3 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80">
+          <div className="text-center">
+            <span className="text-[10px] uppercase font-semibold text-slate-400 block mb-0.5">Idade Biológica</span>
+            <span className="text-xl font-extrabold text-white">
+              {hasValidRecord ? `${latestRecord!.pheno_age} anos` : '(Sem exames)'}
+            </span>
+          </div>
+
+          <div className="text-center border-l border-slate-800 pl-2">
+            <span className="text-[10px] uppercase font-semibold text-slate-400 block mb-0.5">Delta Biológico</span>
+            <div className="flex items-center justify-center gap-1">
+              {hasValidRecord ? (
+                <>
+                  {isYounger ? (
+                    <ArrowDownRight className="h-4 w-4 text-emerald-400" />
+                  ) : (
+                    <ArrowUpRight className="h-4 w-4 text-rose-400" />
+                  )}
+                  <span className={`text-base font-bold ${isYounger ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {`${(latestRecord!.age_delta ?? 0) > 0 ? '+' : ''}${latestRecord!.age_delta} yrs`}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs font-semibold text-slate-500">-</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 transition glow-cyan"
+        >
+          <Calculator className="h-4 w-4" /> Calcular PhenoAge
+        </button>
       </div>
 
-      {/* Modal Calculator Rendered outside card overflow context */}
+      {/* Modal Calculator */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl">
