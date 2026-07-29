@@ -1,6 +1,6 @@
 # System Design & Development (SDD) — Módulo de Inteligência Artificial para o Longevidade Hub
 
-**Versão**: 2.0.0  
+**Versão**: 2.1.0  
 **Data**: 29/07/2026  
 **Status**: Aprovado para Desenvolvimento  
 **Localização**: `E:\antigravity\projetos\longevidade\docs\sdd.md`
@@ -25,11 +25,11 @@ O **Módulo de Inteligência Artificial do Longevidade Hub** visa atuar como um 
 graph TD
     A[Frontend React — Aba IA / Copiloto & Configurações] -->|REST API / Async Stream| B[Backend FastAPI — AI Router]
     B --> C[AI Context Builder — Agregador de Dados do Banco]
-    C -->|Busca Métricas, Labs, PhenoAge, CGM| D[(SQLite longevity.sqlite3)]
+    C -->|Busca Métricas, Labs, PhenoAge, CGM, Stack, KDM| D[(SQLite longevity.sqlite3)]
     B --> E[Multi-Provider LLM Client Manager]
     E -->|OpenAI SDK / HTTP| F[OpenAI API — GPT-4o / GPT-4o-mini]
     E -->|Anthropic SDK / HTTP| G[Anthropic API — Claude 3.5 Sonnet]
-    E -->|OpenRouter API| H[OpenRouter API — Modelos Unificados]
+    E -->|OpenRouter API| H[OpenRouter API — DeepSeek v4 Pro / Gemini 2.5 Flash]
     B --> I[AI Insights Storage & History]
     I --> D
 ```
@@ -50,7 +50,7 @@ O sistema suportará 3 provedores principais por meio de uma interface abstrata 
 - Tabela SQLite: `ai_settings`
   - `id`: INTEGER PRIMARY KEY (1)
   - `active_provider`: TEXT (`openai`, `anthropic`, `openrouter`)
-  - `selected_model`: TEXT (ex: `gpt-4o-mini`)
+  - `selected_model`: TEXT (ex: `deepseek/deepseek-v4-pro`)
   - `openai_api_key`: TEXT (criptografado / obfuscated)
   - `anthropic_api_key`: TEXT (criptografado / obfuscated)
   - `openrouter_api_key`: TEXT (criptografado / obfuscated)
@@ -61,19 +61,21 @@ O sistema suportará 3 provedores principais por meio de uma interface abstrata 
 
 ## 4. Construtor de Contexto Clínico (AI Context Builder)
 
-O **AI Context Builder** é a peça central responsável por varrer o banco de dados SQLite e construir um prompt enriquecido com os dados do usuário dos últimos 30 dias:
+O **AI Context Builder** é a peça central responsável por varrer o banco de dados SQLite e construir um prompt enriquecido com os dados do usuário dos últimos 30 dias + detalhamento diário de 14 dias:
 
 1. **Perfil do Paciente**: Nome, Idade Cronológica, Altura, Peso Atual, IMC, Meta de Peso.
-2. **PhenoAge & Epigenética**: Última idade biológica calculada, Delta de Rejuvenescimento, 9 biomarcadores de sangue da fórmula.
+2. **PhenoAge & KDM Epigenética**: Idade biológica Morgan Levine PhenoAge + Idade biológica KDM (Klemera-Doubal) + Deltas de Rejuvenescimento.
 3. **Métricas Diárias de Wearables**:
    - HRV Noturna Média e tendência (ms)
    - Frequência Cardíaca de Repouso (RHR bpm)
    - Passos médios por dia
    - Horas e fases de sono (Profundo, REM, Leve)
    - Pressão Arterial média (Sistólica / Diastólica)
-4. **Exames Laboratoriais**: Alvos fora da faixa de longevidade (ex: ApoB > 60 mg/dL, PCR > 0.5 mg/L).
-5. **Glicemia Contínua (CGM)**: Glicemia Média 24h, Time-in-Range (%), Variabilidade (CV %).
-6. **Experimentos N-of-1**: Intervenções ativas e resultados estatísticos.
+4. **Exames Laboratoriais & Razões Cardiovasculares**: Alvos de longevidade + Razão ApoB/ApoA1 + Razão TG/HDL + Colesterol Remanescente.
+5. **Pilha de Suplementação Ativa**: Lista de suplementos diários, dosagens e data de início.
+6. **Conformidade Diária Blueprint**: Score médio de 0 a 100% no cumprimento de protocolo.
+7. **Glicemia Contínua (CGM)**: Glicemia Média 24h, Time-in-Range (%), Variabilidade (CV %).
+8. **Experimentos N-of-1**: Intervenções ativas e resultados estatísticos.
 
 ---
 
@@ -81,7 +83,7 @@ O **AI Context Builder** é a peça central responsável por varrer o banco de d
 
 1. **Aba "IA & Copiloto" no Header**:
    - **Dashboard de Insights**: Cartões com recomendações de rotina, sono, nutrição e suplementação priorizados por urgência e impacto de longevidade.
-   - **Chat Interativo com o Copiloto**: Fazer perguntas sobre seus próprios dados ("Como posso melhorar minha HRV nos próximos 7 dias?", "O que meu laudo de exames indica?").
+   - **Chat Interativo com o Copiloto**: Fazer perguntas sobre seus próprios dados ("A berberina está ajudando na minha glicemia?", "O que minha HRV indica?").
    - **Gerador de Relatório de Consulta Médica (AI Clinical Briefing)**: Criação de relatório sumarizado de alto nível em linguagem médica para levar à consulta.
 2. **Modal de Configuração de Provedores e Chaves de API**:
    - Seleção do Provedor Ativo (OpenAI / Anthropic / OpenRouter).
@@ -103,8 +105,8 @@ O **AI Context Builder** é a peça central responsável por varrer o banco de d
 ```sql
 CREATE TABLE IF NOT EXISTS ai_settings (
     id INTEGER PRIMARY KEY DEFAULT 1,
-    active_provider TEXT DEFAULT 'openai',
-    selected_model TEXT DEFAULT 'gpt-4o-mini',
+    active_provider TEXT DEFAULT 'openrouter',
+    selected_model TEXT DEFAULT 'deepseek/deepseek-v4-pro',
     openai_api_key TEXT,
     anthropic_api_key TEXT,
     openrouter_api_key TEXT,
@@ -143,3 +145,16 @@ CREATE TABLE IF NOT EXISTS ai_insights_history (
 > Todas as tarefas e subtarefas concluídas durante o desenvolvimento DEVEM ser comitadas no Git imediatamente após a validação do código. Isso garante rastreabilidade total e permite reverter alterações com segurança caso ocorra qualquer problema.
 > - Padrão de mensagem: `feat(ai): <descrição concisa da tarefa/subtarefa>`
 > - Verificação pós-commit: Confirmar árvore limpa via `git status`.
+
+---
+
+## 10. Alinhamento Arquitetural das Novas Adições (Fase 3) com a IA Embutida
+
+As 4 novas adições médicas (Supplement Stack, Algoritmo KDM, Índices Cardiovasculares e Score Blueprint) estão **100% alinhadas e integradas nativamente à inteligência artificial**:
+
+| Novo Recurso (Fase 3) | Integração com o AI Context Builder | Impacto nas Respostas da IA |
+| :--- | :--- | :--- |
+| **1. Supplement Stack Tracker** | Injeta a lista completa de suplementos ativos, dosagens e datas de início sob o bloco `=== PILHA DE SUPLEMENTAÇÃO ATIVA ===`. | A IA passa a correlacionar suplementos específicos com mudanças de exames e HRV (ex: *"Sua introdução de NMN em 15/06 coincide com uma elevação na HRV..."*). |
+| **2. KDM Biological Age** | Passa a idade biológica do modelo KDM lado a lado com a Morgan Levine PhenoAge. | A IA realiza análises comparativas de dupla validação da taxa de envelhecimento biológico. |
+| **3. Índices Cardiovasculares Avançados** | Fornece as razões calculadas `ApoB/ApoA1`, `Triglicerídeos/HDL` e `Colesterol Remanescente`. | A IA emite alertas vasculares mais precisos segundo o protocolo de aterosclerose de Peter Attia. |
+| **4. Daily Blueprint Score** | Envia a pontuação de conformidade dos últimos 14 dias sob `=== CONFORMIDADE DO PROTOCOLO BLUEPRINT ===`. | A IA avalia a relação entre disciplina de rotina (ex: > 90% compliance) e melhoria de biomarcadores. |
