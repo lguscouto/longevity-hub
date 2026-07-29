@@ -220,3 +220,62 @@ def get_ai_history():
     initialize_db(DB_PATH)
     repo = LongevityRepository(DB_PATH)
     return repo.get_ai_insights_history(limit=30)
+
+
+@router.post("/analyze-supplements")
+def analyze_supplements():
+    initialize_db(DB_PATH)
+    repo = LongevityRepository(DB_PATH)
+
+    settings = repo.get_ai_settings()
+    provider = settings.get("active_provider", "openrouter")
+    model = settings.get("selected_model", "deepseek/deepseek-v4-pro")
+
+    api_key_field = f"{provider}_api_key"
+    api_key = settings.get(api_key_field)
+
+    if not api_key:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Nenhuma chave de API configurada para o provedor '{provider}'."
+        )
+
+    context_text = build_patient_clinical_context(DB_PATH)
+    system_prompt = settings.get("system_prompt_custom") or DEFAULT_LONGEVITY_SYSTEM_PROMPT
+    prompt = (
+        f"DADOS DO PACIENTE:\n{context_text}\n\n"
+        "TAREFA:\n"
+        "Faça uma análise profunda e detalhada da pilha de suplementação ativa do paciente. "
+        "Avalie a cronobiologia dos horários de tomada (Manhã, Almoço, Jantar, Noite), sinergias entre os compostos, "
+        "potenciais concorrências de absorção e o impacto previsto sobre os biomarcadores laboratoriais e HRV. "
+        "Responda em formato Markdown estruturado com tabela se conveniente."
+    )
+
+    reply, err = generate_llm_response(
+        provider=provider,
+        api_key=api_key,
+        model=model,
+        system_prompt=system_prompt,
+        user_prompt=prompt
+    )
+
+    if err or not reply:
+        raise HTTPException(status_code=500, detail=f"Erro ao analisar suplementos ({provider}): {err}")
+
+    repo.save_ai_insight({
+        "provider_used": provider,
+        "model_used": model,
+        "category": "suplementos",
+        "headline": "Otimização de Pilha de Suplementos por IA",
+        "insight_text": reply,
+        "actionable_steps": "Ajuste os horários e doses conforme indicado no relatório.",
+        "user_prompt": "Análise da Pilha de Suplementação Ativa"
+    })
+
+    return {
+        "status": "ok",
+        "provider": provider,
+        "model": model,
+        "analysis": reply
+    }
+
