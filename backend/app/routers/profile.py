@@ -1,0 +1,116 @@
+from fastapi import APIRouter
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
+import json
+from pathlib import Path
+from datetime import date, datetime
+
+from backend.app.config import DB_PATH, BASE_DIR
+from longevidade.db.schema import initialize_db
+from longevidade.db.repository import LongevityRepository
+
+router = APIRouter(prefix="/api/profile", tags=["Profile"])
+
+GOOGLE_CONFIG_DIR = BASE_DIR.parent / "google health" / "config"
+GOOGLE_TOKEN_FILE = GOOGLE_CONFIG_DIR / "google_token.json"
+GOOGLE_DATA_DIR = BASE_DIR.parent / "google health" / "data"
+
+class UserProfileInput(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    birthdate: Optional[str] = None
+    chronological_age: Optional[float] = None
+    height_cm: Optional[float] = None
+    target_weight_kg: Optional[float] = None
+    gender: Optional[str] = None
+
+@router.get("", response_model=Dict[str, Any])
+def get_profile():
+    initialize_db(DB_PATH)
+    repo = LongevityRepository(DB_PATH)
+    profile = repo.get_user_profile()
+
+    # Tenta obter peso mais recente das métricas diárias se ausente
+    daily = repo.get_daily_metrics(days=30)
+    latest_weight = next((m["weight_kg"] for m in daily if m.get("weight_kg") is not None), None)
+
+    # Tenta extrair peso do google_weight.json se ainda ausente
+    if latest_weight is None and (GOOGLE_DATA_DIR / "google_weight.json").is_file():
+        try:
+            payload = json.loads((GOOGLE_DATA_DIR / "google_weight.json").read_text(encoding="utf-8"))
+            for b in reversed(payload.get("bucket", [])):
+                for ds in b.get("dataset", []):
+                    for pt in ds.get("point", []):
+                        for val in pt.get("value", []):
+                            v = val.get("fpVal") or val.get("intVal")
+                            if v:
+                                latest_weight = float(v)
+                                break
+                    if latest_weight: break
+                if latest_weight: break
+        except Exception:
+            pass
+
+    # Tenta extrair altura do google_height.json se presente
+    google_height_cm = None
+    if (GOOGLE_DATA_DIR / "google_height.json").is_file():
+        try:
+            payload = json.loads((GOOGLE_DATA_DIR / "google_height.json").read_text(encoding="utf-8"))
+            for b in reversed(payload.get("bucket", [])):
+                for ds in b.get("dataset", []):
+                    for pt in ds.get("point", []):
+                        for val in pt.get("value", []):
+                            v = val.get("fpVal") or val.get("intVal")
+                            if v:
+                                # Se estiver em metros (ex: 1.70), converte para cm (170.0)
+                                google_height_cm = float(v) * 100.0 if float(v) < 3.0 else float(v)
+                                break
+                    if google_height_cm: break
+                if google_height_cm: break
+        except Exception:
+            pass
+
+    current_weight = latest_weight or profile.get("current_weight_kg")
+    height_cm = google_height_cm or profile.get("height_cm") or 170.0
+
+    # Cálculo do IMC
+    bmi = None
+    if current_weight and height_cm and height_cm > 0:
+        height_m = height_cm / 100.0
+        bmi = round(current_weight / (height_m * height_m), 1)
+
+    # Cálculo da Idade Cronológica via Data de Nascimento
+    chrono_age = profile.get("chronological_age") or 40.0
+    birthdate_str = profile.get("birthdate")
+    if birthdate_str:
+        try:
+            bdate = date.fromisoformat(birthdate_str[:10])
+            today = date.today()
+            chrono_age = round(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)), 1)
+        except Exception:
+            pass
+
+    google_token_present = GOOGLE_TOKEN_FILE.is_file()
+
+    return {
+        "name": profile.get("name") or "Paciente Longevidade",
+        "email": profile.get("email") or "googlefit@longevidade.local",
+        "birthdate": birthdate_str or "1986-07-28",
+        "chronological_age": chrono_age,
+        "height_cm": height_cm,
+        "current_weight_kg": current_weight,
+        "target_weight_kg": profile.get("target_weight_kg") or 75.0,
+        "bmi": bmi,
+        "gender": profile.get("gender") or "Masculino",
+        "avatar_url": profile.get("avatar_url"),
+        "google_connected": google_token_present,
+        "source": "Google Fit & Hub Longevidade"
+    }
+
+@router.post("")
+def update_profile(input_data: UserProfileInput):
+    initialize_db(DB_PATH)
+    repo = LongevityRepository(DB_PATH)
+    data = input_data.model_dump(exclude_unset=True)
+    repo.upsert_user_profile(data)
+    return {"status": "ok", "message": "Perfil atualizado com sucesso"}
