@@ -85,7 +85,7 @@ def test_clinical_context_builder():
         context = build_patient_clinical_context(db_path)
         assert "PERFIL DO PACIENTE" in context
         assert "Apolipoproteína B: 58.0 mg/dL" in context
-        assert "IDADE EPIGENÉTICA PHENOAGE" in context
+        assert "IDADE EPIGENÉTICA E BIOLÓGICA (PHENOAGE + KDM)" in context
 
     finally:
         gc.collect()
