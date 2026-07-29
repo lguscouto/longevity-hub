@@ -1,6 +1,6 @@
 """
 Esquema do banco de dados SQLite para o projeto Longevidade.
-Contém definições de tabelas auditáveis e rotinas de inicialização.
+Contém definições de tabelas auditáveis, incluindo IA e rotinas de inicialização.
 """
 
 import sqlite3
@@ -165,6 +165,30 @@ CREATE TABLE IF NOT EXISTS pipeline_run (
     status TEXT NOT NULL,
     logs TEXT
 );
+
+CREATE TABLE IF NOT EXISTS ai_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    active_provider TEXT DEFAULT 'openrouter',
+    selected_model TEXT DEFAULT 'deepseek/deepseek-v4-pro',
+    openai_api_key TEXT,
+    anthropic_api_key TEXT,
+    openrouter_api_key TEXT,
+    system_prompt_custom TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ai_insights_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    provider_used TEXT NOT NULL,
+    model_used TEXT NOT NULL,
+    category TEXT NOT NULL,
+    headline TEXT NOT NULL,
+    insight_text TEXT NOT NULL,
+    actionable_steps TEXT,
+    user_prompt TEXT,
+    tokens_used INTEGER DEFAULT 0
+);
 """
 
 
@@ -176,4 +200,6 @@ def initialize_db(db_path: str | Path) -> None:
         conn.executescript(SCHEMA_SQL)
         # Garante linha inicial no user_profile se vazia
         conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 40.0, 170.0, 75.0);")
+        # Garante linha inicial nas configurações de IA se vazia
+        conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-pro');")
         conn.commit()

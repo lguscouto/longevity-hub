@@ -26,7 +26,7 @@ class LongevityRepository:
             row = conn.execute(sql).fetchone()
             if row:
                 return dict(row)
-            return {"id": 1, "name": "Paciente", "chronological_age": 40.0, "height_cm": 178.0, "target_weight_kg": 75.0}
+            return {"id": 1, "name": "Paciente", "chronological_age": 40.0, "height_cm": 170.0, "target_weight_kg": 75.0}
 
     def upsert_user_profile(self, data: Dict[str, Any]) -> None:
         fields = [
@@ -148,10 +148,10 @@ class LongevityRepository:
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         values = (
-            data.get("calculated_at"),
-            data.get("chronological_age"),
-            data.get("pheno_age"),
-            data.get("age_delta"),
+            data["calculated_at"],
+            data["chronological_age"],
+            data["pheno_age"],
+            data["age_delta"],
             data.get("glucose_mgdl"),
             data.get("creatinine_mgdl"),
             data.get("albumin_gdl"),
@@ -237,6 +237,67 @@ class LongevityRepository:
 
     def get_cgm_summaries(self, limit: int = 30) -> List[Dict[str, Any]]:
         sql = "SELECT * FROM cgm_daily_summary ORDER BY date_ref DESC LIMIT ?;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+            return [dict(row) for row in rows]
+
+    # --- AI SETTINGS & HISTORY ---
+    def get_ai_settings(self) -> Dict[str, Any]:
+        sql = "SELECT * FROM ai_settings WHERE id = 1;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql).fetchone()
+            if row:
+                res = dict(row)
+                # Obfuscate API keys before sending to UI if present
+                return res
+            return {
+                "id": 1,
+                "active_provider": "openrouter",
+                "selected_model": "deepseek/deepseek-v4-pro",
+                "openai_api_key": None,
+                "anthropic_api_key": None,
+                "openrouter_api_key": None,
+                "system_prompt_custom": None
+            }
+
+    def upsert_ai_settings(self, data: Dict[str, Any]) -> None:
+        fields = [
+            "active_provider", "selected_model", "openai_api_key",
+            "anthropic_api_key", "openrouter_api_key", "system_prompt_custom"
+        ]
+        columns = [f for f in fields if f in data]
+        if not columns:
+            return
+        update_set = ", ".join(f"{col} = ?" for col in columns)
+        sql = f"UPDATE ai_settings SET {update_set}, updated_at = CURRENT_TIMESTAMP WHERE id = 1;"
+        values = [data[col] for col in columns]
+        with self._get_connection() as conn:
+            conn.execute(sql, values)
+            conn.commit()
+
+    def save_ai_insight(self, data: Dict[str, Any]) -> int:
+        sql = """
+        INSERT INTO ai_insights_history (
+            provider_used, model_used, category, headline, insight_text, actionable_steps, user_prompt, tokens_used
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        values = (
+            data.get("provider_used", "openrouter"),
+            data.get("model_used", "deepseek/deepseek-v4-pro"),
+            data.get("category", "geral"),
+            data.get("headline", "Insight de Longevidade"),
+            data.get("insight_text", ""),
+            data.get("actionable_steps", ""),
+            data.get("user_prompt"),
+            data.get("tokens_used", 0)
+        )
+        with self._get_connection() as conn:
+            cursor = conn.execute(sql, values)
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_ai_insights_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        sql = "SELECT * FROM ai_insights_history ORDER BY id DESC LIMIT ?;"
         with self._get_connection() as conn:
             rows = conn.execute(sql, (limit,)).fetchall()
             return [dict(row) for row in rows]
