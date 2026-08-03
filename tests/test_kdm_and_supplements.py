@@ -1,37 +1,58 @@
-import pytest
-from fastapi.testclient import TestClient
-
-from backend.app.main import app
-from longevidade.calculators.kdm_age import calculate_kdm_biological_age
 from longevidade.calculators.cardio_ratios import calculate_cardiovascular_ratios
+from longevidade.calculators.kdm_age import calculate_kdm_biological_age
 
-client = TestClient(app)
+
+def _synthetic_kdm_history():
+    rows = []
+    base_age = 30.0
+    for step in range(4):
+        age = base_age + step * 3.0
+        rows.append(
+            {
+                "age": age,
+                "glucose_mgdl": 86.0 + step * 0.7,
+                "creatinine_mgdl": 0.82 + step * 0.01,
+                "albumin_gdl": 4.8 - step * 0.03,
+                "hscrp_mgl": 0.30 + step * 0.03,
+                "rdw_pct": 11.9 + step * 0.08,
+                "alk_phos_ul": 58.0 + step * 1.5,
+                "wbc_1000ul": 5.1 + step * 0.08,
+                "rhr_bpm": 50.0 + step * 0.4,
+                "systolic_bp": 110.0 + step * 1.2,
+            }
+        )
+    return rows
+
 
 def test_kdm_biological_age_calculation():
-    labs = {
+    latest = {
         "glucose_mgdl": 88.0,
         "creatinine_mgdl": 0.85,
-        "albumin_gdl": 4.6,
-        "hscrp_mgl": 0.4,
-        "rdw_pct": 12.2,
+        "albumin_gdl": 4.7,
+        "hscrp_mgl": 0.33,
+        "rdw_pct": 12.1,
         "alk_phos_ul": 62.0,
-        "wbc_1000ul": 5.5,
-        "rhr_bpm": 52.0
+        "wbc_1000ul": 5.4,
+        "rhr_bpm": 52.0,
+        "systolic_bp": 114.0,
     }
-    res = calculate_kdm_biological_age(32.0, labs)
+    res = calculate_kdm_biological_age(39.0, latest, historical_data=_synthetic_kdm_history())
+    assert res["status"] == "complete"
     assert "kdm_age" in res
     assert "kdm_delta" in res
     assert res["biomarkers_count"] > 0
     assert isinstance(res["kdm_age"], float)
+    assert res["missing_biomarkers"] == []
+
 
 def test_cardiovascular_ratios():
     labs_map = {
         "apob": {"value": 58.0},
         "apoa1": {"value": 110.0},
-        "triglycerides": {"value": 75.0},
-        "hdl_cholesterol": {"value": 65.0},
+        "tg": {"value": 75.0},
+        "hdl": {"value": 65.0},
         "total_cholesterol": {"value": 160.0},
-        "ldl_cholesterol": {"value": 80.0}
+        "ldl": {"value": 80.0},
     }
     res = calculate_cardiovascular_ratios(labs_map)
     assert res["apob_apoa1_ratio"] == 0.53
@@ -40,35 +61,34 @@ def test_cardiovascular_ratios():
     assert res["tg_hdl_status"] == "Ótimo (Sensibilidade à Insulina Alta)"
     assert res["remnant_cholesterol"] == 15.0
 
-def test_supplements_endpoints():
+
+def test_supplements_endpoints(client):
     response = client.get("/api/supplements")
     assert response.status_code == 200
     supps = response.json()
     assert isinstance(supps, list)
     assert len(supps) > 0
 
-def test_supplement_update_and_audit_logs():
-    # 1. Adiciona um composto (Hormônio)
+
+def test_supplement_update_and_audit_logs(client):
     add_payload = {
         "name": "Testosterona Gel 1%",
         "dosage": "50 mg",
         "category": "Hormônio",
-        "timing": "Manhã"
+        "timing": "Manhã",
     }
     res_add = client.post("/api/supplements", json=add_payload)
     assert res_add.status_code == 200
     supp_id = res_add.json()["id"]
 
-    # 2. Atualiza a dose
     update_payload = {
         "supplement_id": supp_id,
         "dosage": "100 mg",
-        "category": "Hormônio"
+        "category": "Hormônio",
     }
     res_update = client.post("/api/supplements/update", json=update_payload)
     assert res_update.status_code == 200
 
-    # 3. Consulta histórico auditável
     res_audit = client.get("/api/supplements/audit-logs")
     assert res_audit.status_code == 200
     logs = res_audit.json()
@@ -78,13 +98,14 @@ def test_supplement_update_and_audit_logs():
     assert "ADICIONADO" in actions
     assert "DOSE_ALTERADA" in actions
 
-def test_compliance_endpoints():
+
+def test_compliance_endpoints(client):
     payload = {
         "date_ref": "2026-07-29",
         "sleep_schedule_ok": True,
         "supplements_ok": True,
         "exercise_ok": True,
-        "fasting_window_ok": True
+        "fasting_window_ok": True,
     }
     res_post = client.post("/api/compliance", json=payload)
     assert res_post.status_code == 200

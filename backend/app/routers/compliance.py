@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import date
 
-from backend.app.config import DB_PATH
+from backend.app.config import get_db_path
 from longevidade.db.schema import initialize_db
 from longevidade.db.repository import LongevityRepository
 
@@ -19,8 +19,9 @@ class DailyComplianceInput(BaseModel):
 
 @router.post("")
 def save_compliance(input_data: DailyComplianceInput):
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     data = input_data.model_dump()
     if not data.get("date_ref"):
         data["date_ref"] = date.today().isoformat()
@@ -29,6 +30,7 @@ def save_compliance(input_data: DailyComplianceInput):
 
 @router.get("/history", response_model=List[Dict[str, Any]])
 def get_compliance_history(days: int = 14):
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     return repo.get_daily_compliance_history(days=days)

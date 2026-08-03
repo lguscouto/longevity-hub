@@ -3,22 +3,47 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-main: #f4f7fb;
+    --text-main: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --glass-panel-bg: #ffffff;
+    --glass-panel-border: #dbe3ee;
+    --glass-card-bg: #ffffff;
+    --glass-card-border: #e2e8f0;
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg-main: #0B0F17;
+    --text-main: #F1F5F9;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --glass-panel-bg: rgba(19, 27, 41, 0.7);
+    --glass-panel-border: rgba(255, 255, 255, 0.08);
+    --glass-card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+    --glass-card-border: rgba(255, 255, 255, 0.06);
+    color-scheme: dark;
+  }
+
   body {
-    background-color: #0B0F17;
-    color: #F1F5F9;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 }
 
 .glass-panel {
-  background: rgba(19, 27, 41, 0.7);
+  background: var(--glass-panel-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-panel-border);
 }
 
 .glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  background: var(--glass-card-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-card-border);
 }
 
 .glow-emerald {

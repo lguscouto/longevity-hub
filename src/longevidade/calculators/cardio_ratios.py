@@ -6,12 +6,19 @@ Baseado nas diretrizes de cardiologia de longevidade (Dr. Peter Attia & Protocol
 from __future__ import annotations
 from typing import Dict, Any, Optional
 
+from longevidade.ingestion.lab_normalization import normalize_lab_map
+
+
 def calculate_cardiovascular_ratios(labs_map: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Calcula as razões ApoB/ApoA1, Triglicerídeos/HDL e Colesterol Remanescente.
+    Calcula ApoB/ApoA1, Triglicerídeos/HDL e Colesterol Remanescente usando
+    chaves canônicas. Aliases legados como `hdl` e `ldl` são normalizados antes
+    do cálculo para evitar indicadores vazios com dados disponíveis.
     """
+    canonical_labs = normalize_lab_map(labs_map)
+
     def get_val(key: str) -> Optional[float]:
-        item = labs_map.get(key)
+        item = canonical_labs.get(key)
         if item and item.get("value") is not None:
             try:
                 return float(item["value"])
@@ -48,7 +55,7 @@ def calculate_cardiovascular_ratios(labs_map: Dict[str, Dict[str, Any]]) -> Dict
         elif tg_hdl <= 3.0:
             tg_hdl_status = "Aceitável"
         else:
-            tg_hdl_status = "Resistência à Insulina Probável"
+            tg_hdl_status = "Resistência à Insulina Provável"
 
     # 3. Colesterol Remanescente (Total - HDL - LDL)
     remnant_chol = None
@@ -68,5 +75,5 @@ def calculate_cardiovascular_ratios(labs_map: Dict[str, Dict[str, Any]]) -> Dict
         "tg_hdl_ratio": tg_hdl,
         "tg_hdl_status": tg_hdl_status,
         "remnant_cholesterol": remnant_chol,
-        "remnant_status": remnant_status
+        "remnant_status": remnant_status,
     }

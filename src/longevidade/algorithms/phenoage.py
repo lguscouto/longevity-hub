@@ -1,15 +1,20 @@
 """
-Algoritmo de Morgan Levine (PhenoAge) para estimativa de idade biológica epigenética
+Algoritmo de Morgan Levine (PhenoAge) para estimativa de idade biológica
 baseado em 9 marcadores de exames de sangue.
 
-Referência: Levine, M. E., et al. (2018). An epigenetic biomarker of aging for lifespan and healthspan.
-Aging Cell, 17(4), e12784.
+Referência: Levine, M. E., et al. (2018). An epigenetic biomarker of aging for
+lifespan and healthspan. Aging Cell, 17(4), e12784.
 """
 
 from __future__ import annotations
 
 import math
-from typing import TypedDict
+from typing import Any, TypedDict
+
+from longevidade.ingestion.lab_normalization import (
+    PHENOAGE_REQUIRED_MARKERS,
+    validate_phenoage_inputs,
+)
 
 
 class PhenoAgeInput(TypedDict, total=False):
@@ -37,29 +42,50 @@ _REF_ALP_UL = 65.0
 _REF_WBC_1000UL = 6.0
 
 
-def calculate_phenoage(data: PhenoAgeInput) -> dict[str, float]:
-    """Calcula a PhenoAge e a diferença relativa em relação à idade cronológica.
+def _incomplete_phenoage(data: PhenoAgeInput, missing: list[str], used: list[str]) -> dict[str, Any]:
+    chrono_age = float(data.get("chronological_age", 40.0))
+    return {
+        "status": "incomplete",
+        "reason": "missing_required_biomarkers",
+        "pheno_age": None,
+        "chronological_age": round(chrono_age, 2),
+        "age_delta": None,
+        "mortality_risk_10yr_pct": None,
+        "missing_biomarkers": missing,
+        "missing": missing,
+        "biomarkers_used": used,
+        "required_biomarkers": list(PHENOAGE_REQUIRED_MARKERS),
+    }
 
-    Quando os marcadores estão otimizados (ex: menor glicose, menor hs-CRP, maior albumina),
-    a PhenoAge resultante é inferior à idade cronológica (rejuvenescimento biológico).
+
+def calculate_phenoage(data: PhenoAgeInput) -> dict[str, Any]:
+    """Calcula a PhenoAge ou retorna estado incompleto explícito.
+
+    A função não preenche biomarcadores laboratoriais ausentes com defaults. Isso
+    evita gerar uma idade biológica enganosa a partir de painel parcial.
     """
+    validation = validate_phenoage_inputs(data)
+    if validation["status"] != "complete":
+        return _incomplete_phenoage(data, validation["missing"], validation["biomarkers_used"])
+
+    values = validation["values"]
     chrono_age = float(data.get("chronological_age", 40.0))
 
     # Conversão de unidades padrão da literatura
-    glucose = float(data.get("glucose_mgdl", 90.0)) * 0.0555
-    creatinine = float(data.get("creatinine_mgdl", 0.9)) * 88.4
-    albumin = float(data.get("albumin_gdl", 4.5)) * 10.0
-    hscrp_mgdl = max(0.001, float(data.get("hscrp_mgl", 0.5)) / 10.0)
-    lymph = float(data.get("lymphocyte_pct", 30.0))
-    mcv = float(data.get("mcv_fl", 89.0))
-    rdw = float(data.get("rdw_pct", 12.5))
-    alk_phos = float(data.get("alk_phos_ul", 65.0))
-    wbc = float(data.get("wbc_1000ul", 6.0))
+    glucose = float(values["glucose_mgdl"]) * 0.0555
+    creatinine = float(values["creatinine_mgdl"]) * 88.4
+    albumin = float(values["albumin_gdl"]) * 10.0
+    hscrp_mgdl = max(0.001, float(values["hscrp_mgl"]) / 10.0)
+    lymph = float(values["lymphocyte_pct"])
+    mcv = float(values["mcv_fl"])
+    rdw = float(values["rdw_pct"])
+    alk_phos = float(values["alk_phos_ul"])
+    wbc = float(values["wbc_1000ul"])
 
     ln_crp = math.log(hscrp_mgdl)
     ref_ln_crp = math.log(_REF_CRP_MGDL)
 
-    # Desvio relativo de risco (delta_xb) em relação ao baseline de referência
+    # Desvio relativo de risco (delta_xb) em relação ao baseline de referência.
     delta_xb = (
         + 0.02688 * (mcv - _REF_MCV_FL)
         + 0.3306 * (rdw - _REF_RDW_PCT)
@@ -72,16 +98,22 @@ def calculate_phenoage(data: PhenoAgeInput) -> dict[str, float]:
         + 0.0954 * (ln_crp - ref_ln_crp)
     )
 
-    # Coeficiente de avanço biológico por unidade de desvio de risco (Levine et al. 2018)
+    # Coeficiente de avanço biológico por unidade de desvio de risco.
     pheno_age = chrono_age + (delta_xb / 0.09165)
     age_delta = pheno_age - chrono_age
 
-    # Risco de mortalidade estimado proporcional
+    # Risco de mortalidade estimado proporcional.
     mortality_risk_pct = max(0.1, min(99.0, 5.0 * math.exp(delta_xb)))
 
     return {
+        "status": "complete",
+        "reason": None,
         "pheno_age": round(pheno_age, 2),
         "chronological_age": round(chrono_age, 2),
         "age_delta": round(age_delta, 2),
         "mortality_risk_10yr_pct": round(mortality_risk_pct, 2),
+        "missing_biomarkers": [],
+        "missing": [],
+        "biomarkers_used": list(PHENOAGE_REQUIRED_MARKERS),
+        "required_biomarkers": list(PHENOAGE_REQUIRED_MARKERS),
     }

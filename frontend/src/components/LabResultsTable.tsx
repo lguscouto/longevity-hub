@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Dna, Plus, AlertCircle, CheckCircle2, Zap, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
 
+import { ApiError, requestJson } from '../lib/api';
+
 interface LabResult {
   id?: number;
   collected_at: string;
@@ -28,6 +30,39 @@ interface MarkerMeta {
   ref_max?: number;
   optimal: number;
   category: string;
+}
+
+const LAB_KEY_ALIASES: Record<string, string> = {
+  glucose_mgdl: 'fasting_glucose',
+  fasting_glucose: 'fasting_glucose',
+  creatinine_mgdl: 'creatinine',
+  creatinine: 'creatinine',
+  albumin_gdl: 'albumin',
+  albumin: 'albumin',
+  hscrp_mgl: 'hscrp',
+  hscrp: 'hscrp',
+  rdw_pct: 'rdw',
+  rdw: 'rdw',
+  mcv_fl: 'mcv',
+  mcv: 'mcv',
+  alk_phos_ul: 'alk_phos',
+  alk_phos: 'alk_phos',
+  wbc_1000ul: 'wbc',
+  wbc: 'wbc',
+  hdl: 'hdl_cholesterol',
+  hdl_cholesterol: 'hdl_cholesterol',
+  ldl: 'ldl_cholesterol',
+  ldl_cholesterol: 'ldl_cholesterol',
+  total_cholesterol: 'total_cholesterol',
+  apob: 'apob',
+  apoa1: 'apoa1',
+  triglycerides: 'triglycerides',
+  lpa: 'lpa',
+}
+
+const normalizeLabMetricKey = (key: string) => {
+  const normalized = key.toLowerCase().trim().replace(/\s+/g, '_').replace(/-/g, '_')
+  return LAB_KEY_ALIASES[normalized] ?? normalized
 }
 
 const LAB_MARKERS_GROUPS: { groupName: string; icon: string; items: MarkerMeta[] }[] = [
@@ -91,9 +126,11 @@ const LAB_MARKERS_GROUPS: { groupName: string; icon: string; items: MarkerMeta[]
     icon: "🫀",
     items: [
       { key: "apob", name: "Apolipoproteína B (ApoB)", unit: "mg/dL", ref_min: 60, ref_max: 130, optimal: 60.0, category: "Cardiovascular" },
+      { key: "apoa1", name: "Apolipoproteína A1 (ApoA1)", unit: "mg/dL", ref_min: 120, ref_max: 180, optimal: 150.0, category: "Cardiovascular" },
       { key: "lpa", name: "Lipoproteína (a) [Lp(a)]", unit: "nmol/L", ref_min: 0, ref_max: 75, optimal: 30.0, category: "Cardiovascular" },
-      { key: "ldl", name: "Colesterol LDL", unit: "mg/dL", ref_min: 70, ref_max: 130, optimal: 70.0, category: "Cardiovascular" },
-      { key: "hdl", name: "Colesterol HDL", unit: "mg/dL", ref_min: 40, ref_max: 90, optimal: 60.0, category: "Cardiovascular" },
+      { key: "total_cholesterol", name: "Colesterol Total", unit: "mg/dL", ref_min: 125, ref_max: 200, optimal: 160.0, category: "Cardiovascular" },
+      { key: "ldl_cholesterol", name: "Colesterol LDL", unit: "mg/dL", ref_min: 70, ref_max: 130, optimal: 70.0, category: "Cardiovascular" },
+      { key: "hdl_cholesterol", name: "Colesterol HDL", unit: "mg/dL", ref_min: 40, ref_max: 90, optimal: 60.0, category: "Cardiovascular" },
       { key: "triglycerides", name: "Triglicérides", unit: "mg/dL", ref_min: 50, ref_max: 150, optimal: 80.0, category: "Cardiovascular" }
     ]
   },
@@ -121,10 +158,18 @@ const LAB_MARKERS_GROUPS: { groupName: string; icon: string; items: MarkerMeta[]
   }
 ];
 
+const MARKER_META_BY_KEY = new Map<string, MarkerMeta>(
+  LAB_MARKERS_GROUPS.flatMap((group) => group.items.map((item) => [item.key, item] as const)),
+)
+
+const getMarkerMeta = (metricKey: string) => MARKER_META_BY_KEY.get(normalizeLabMetricKey(metricKey))
+
+const getMetricDisplayName = (lab: LabResult) => getMarkerMeta(lab.metric_key)?.name ?? lab.metric_name
+
 // Helper para saber se resultado é ótimo
 const isMarkerOptimal = (lab: LabResult) => {
   if (lab.optimal_target === undefined || lab.optimal_target === null) return false;
-  const k = (lab.metric_key || '').toLowerCase();
+  const k = normalizeLabMetricKey(lab.metric_key || '');
   if (k.includes('hscrp') || k.includes('pcr') || k.includes('apob') || k.includes('lpa') || k.includes('hba1c') || k.includes('insulin') || k.includes('homocysteine') || k.includes('homa') || k.includes('ldl') || k.includes('triglycerides')) {
     return lab.value <= lab.optimal_target;
   }
@@ -139,6 +184,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
   const [collectedAt, setCollectedAt] = useState(new Date().toISOString().slice(0, 10));
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Agrupamento dos exames por data da coleta (collected_at)
   const groupedLabs: Record<string, LabResult[]> = {};
@@ -208,16 +254,17 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
     if (!deleteConfirmDate) return;
     setIsDeleting(true);
     try {
-      await fetch('/api/labs/delete', {
+      await requestJson('/api/labs/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ collected_at: deleteConfirmDate })
       });
       setDeleteConfirmDate(null);
+      setDeleteError(null);
       if (selectedPanelDate === deleteConfirmDate) setSelectedPanelDate(null);
       if (onRefreshData) onRefreshData();
-    } catch (err) {
-      console.error(err);
+    } catch (caught) {
+      setDeleteError(caught instanceof ApiError ? caught.message : 'Falha ao excluir o laudo.');
     } finally {
       setIsDeleting(false);
     }
@@ -226,13 +273,13 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
   const filledCount = Object.values(formValues).filter(v => v !== '' && !isNaN(Number(v))).length;
 
   return (
-    <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
+    <div className="glass-panel rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Dna className="h-5 w-5 text-cyan-400" /> Exames Laboratoriais & Alvos de Longevidade
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Dna className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Exames Laboratoriais & Alvos de Longevidade
           </h3>
-          <p className="text-xs text-slate-400">Histórico de laudos em ordem cronológica (mais recente ao mais antigo)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Histórico de laudos em ordem cronológica (mais recente ao mais antigo)</p>
         </div>
 
         <button
@@ -243,9 +290,15 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
         </button>
       </div>
 
+      {deleteError && (
+        <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-800 dark:text-rose-300">
+          {deleteError}
+        </div>
+      )}
+
       {/* Cartões de Razões Cardiovasculares Avançadas (Fase 3) */}
       {(() => {
-        const getV = (k: string) => labs.find(l => l.metric_key === k)?.value;
+        const getV = (k: string) => labs.find(l => normalizeLabMetricKey(l.metric_key) === k)?.value;
         const apob = getV('apob');
         const apoa1 = getV('apoa1');
         const tg = getV('triglycerides');
@@ -253,35 +306,37 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
         const totalChol = getV('total_cholesterol');
         const ldl = getV('ldl_cholesterol');
 
-        const ratioApobApoa1 = (apob && apoa1 && apoa1 > 0) ? (apob / apoa1).toFixed(2) : null;
-        const ratioTgHdl = (tg && hdl && hdl > 0) ? (tg / hdl).toFixed(2) : null;
-        const remnantChol = (totalChol && hdl && ldl) ? (totalChol - hdl - ldl).toFixed(1) : null;
+        const hasNumber = (value: number | undefined): value is number => typeof value === 'number' && Number.isFinite(value);
+
+        const ratioApobApoa1 = (hasNumber(apob) && hasNumber(apoa1) && apoa1 > 0) ? (apob / apoa1).toFixed(2) : null;
+        const ratioTgHdl = (hasNumber(tg) && hasNumber(hdl) && hdl > 0) ? (tg / hdl).toFixed(2) : null;
+        const remnantChol = (hasNumber(totalChol) && hasNumber(hdl) && hasNumber(ldl)) ? (totalChol - hdl - ldl).toFixed(1) : null;
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Razão ApoB / ApoA1</span>
+            <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-xl font-extrabold text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
-                <span className="text-[10px] font-bold text-cyan-400">Alvo: &lt; 0.60</span>
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
+                <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">Alvo: &lt; 0.60</span>
               </div>
               <p className="text-[10px] text-slate-500">Índice primário de risco aterogênico celular (Attia / Blueprint)</p>
             </div>
 
-            <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Razão Triglicerídeos / HDL</span>
+            <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão Triglicerídeos / HDL</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-xl font-extrabold text-white">{ratioTgHdl ? ratioTgHdl : '(Sem TG/HDL)'}</span>
-                <span className="text-[10px] font-bold text-emerald-400">Alvo: &lt; 1.5</span>
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioTgHdl ? ratioTgHdl : '(Sem TG/HDL)'}</span>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Alvo: &lt; 1.5</span>
               </div>
               <p className="text-[10px] text-slate-500">Indicador direto de sensibilidade à insulina e LDL denso</p>
             </div>
 
-            <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Colesterol Remanescente</span>
+            <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Colesterol Remanescente</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-xl font-extrabold text-white">{remnantChol ? `${remnantChol} mg/dL` : '(Sem dados)'}</span>
-                <span className="text-[10px] font-bold text-amber-400">Alvo: &lt; 15 mg/dL</span>
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">{remnantChol ? `${remnantChol} mg/dL` : '(Sem dados)'}</span>
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Alvo: &lt; 15 mg/dL</span>
               </div>
               <p className="text-[10px] text-slate-500">Lipoproteínas altamente inflamatórias (Total - HDL - LDL)</p>
             </div>
@@ -293,7 +348,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
               <th className="pb-3">Data do Laudo</th>
               <th className="pb-3">Exame / Descrição</th>
               <th className="pb-3">Destaques Principais</th>
@@ -301,7 +356,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
               <th className="pb-3 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {sortedDates.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-slate-500">
@@ -317,26 +372,26 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                 const attentionCount = totalCount - optimalCount;
 
                 // Seleciona no máximo 3 mini-badges para manter a linha enxuta
-                const keyPriorities = ['fasting_glucose', 'apob', 'testosterone_total', 'hscrp', 'hba1c'];
+                const keyPriorities = ['glucose_mgdl', 'fasting_glucose', 'apob', 'testosterone_total', 'hscrp', 'hba1c'];
                 const highlightItems = [...groupItems]
                   .sort((a, b) => {
-                    const idxA = keyPriorities.indexOf(a.metric_key);
-                    const idxB = keyPriorities.indexOf(b.metric_key);
+                    const idxA = keyPriorities.indexOf(normalizeLabMetricKey(a.metric_key));
+                    const idxB = keyPriorities.indexOf(normalizeLabMetricKey(b.metric_key));
                     return (idxA > -1 ? idxA : 99) - (idxB > -1 ? idxB : 99);
                   })
                   .slice(0, 3);
 
                 return (
-                  <tr key={dt} className="hover:bg-slate-900/50 transition cursor-pointer" onClick={() => setSelectedPanelDate(dt)}>
+                  <tr key={dt} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition cursor-pointer" onClick={() => setSelectedPanelDate(dt)}>
                     {/* Data */}
-                    <td className="py-4 text-white font-mono font-bold">{dt}</td>
+                    <td className="py-4 text-slate-900 dark:text-white font-mono font-bold">{dt}</td>
 
                     {/* Descrição */}
                     <td className="py-4">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-cyan-400" />
-                        <span className="font-bold text-slate-200">Painel Completo de Sangue</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700 font-semibold">
+                        <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">Painel Completo de Sangue</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
                           {totalCount} exames
                         </span>
                       </div>
@@ -346,8 +401,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                     <td className="py-4">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {highlightItems.map((item, i) => (
-                          <span key={i} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-950 text-slate-300 border border-slate-800">
-                            <strong className="text-cyan-400">{item.metric_name.split(' ')[0]}:</strong> {item.value} {item.unit}
+                          <span key={i} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
+                            <strong className="text-cyan-600 dark:text-cyan-400">{getMetricDisplayName(item).split(' ')[0]}:</strong> {item.value} {item.unit}
                           </span>
                         ))}
                       </div>
@@ -356,11 +411,11 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                     {/* Status Consolidado */}
                     <td className="py-4">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                           <CheckCircle2 className="h-3 w-3" /> {optimalCount} Ótimos
                         </span>
                         {attentionCount > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                             <AlertCircle className="h-3 w-3" /> {attentionCount} Atenção
                           </span>
                         )}
@@ -372,9 +427,9 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setSelectedPanelDate(dt)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
                         >
-                          <Eye className="h-3.5 w-3.5 text-cyan-400" /> Ver Laudo Completo
+                          <Eye className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Ver Laudo Completo
                         </button>
 
                         <button
@@ -396,28 +451,28 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
 
       {/* Modal de Detalhes do Laudo */}
       {selectedPanelDate && groupedLabs[selectedPanelDate] && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <FileText className="h-6 w-6 text-cyan-400" /> Laudo Médico — {selectedPanelDate}
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="h-6 w-6 text-cyan-600 dark:text-cyan-400" /> Laudo Médico — {selectedPanelDate}
                 </h3>
-                <p className="text-xs text-slate-400">Total de {groupedLabs[selectedPanelDate].length} biomarcadores registrados nesta data</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Total de {groupedLabs[selectedPanelDate].length} biomarcadores registrados nesta data</p>
               </div>
-              <button onClick={() => setSelectedPanelDate(null)} className="text-slate-400 hover:text-white text-lg">✕</button>
+              <button onClick={() => setSelectedPanelDate(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg">✕</button>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-6 pr-2">
               {LAB_MARKERS_GROUPS.map((group, idx) => {
                 const groupKeys = group.items.map(i => i.key);
-                const matchingResults = groupedLabs[selectedPanelDate].filter(r => groupKeys.includes(r.metric_key));
+                const matchingResults = groupedLabs[selectedPanelDate].filter(r => groupKeys.includes(normalizeLabMetricKey(r.metric_key)));
 
                 if (matchingResults.length === 0) return null;
 
                 return (
                   <div key={idx} className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/80 pb-2">
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
                       <span>{group.icon}</span> {group.groupName} ({matchingResults.length})
                     </h4>
 
@@ -425,31 +480,31 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                       {matchingResults.map((item, i) => {
                         const isOpt = isMarkerOptimal(item);
                         return (
-                          <div key={i} className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                          <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
                             <div>
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-bold text-white truncate" title={item.metric_name}>
-                                  {item.metric_name}
+                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate" title={getMetricDisplayName(item)}>
+                                  {getMetricDisplayName(item)}
                                 </span>
                                 {isOpt ? (
-                                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
                                     <CheckCircle2 className="h-3 w-3" /> Ótimo
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-amber-400 font-bold flex items-center gap-0.5">
+                                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
                                     <AlertCircle className="h-3 w-3" /> Atenção
                                   </span>
                                 )}
                               </div>
 
-                              <div className="text-xl font-extrabold text-cyan-300">
-                                {item.value} <span className="text-xs text-slate-400 font-medium">{item.unit}</span>
+                              <div className="text-xl font-extrabold text-cyan-700 dark:text-cyan-300">
+                                {item.value} <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{item.unit}</span>
                               </div>
                             </div>
 
-                            <div className="mt-2 pt-2 border-t border-slate-800/60 text-[10px] text-slate-500 flex justify-between">
+                            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-[10px] text-slate-500 flex justify-between">
                               <span>Ref: {item.ref_min !== undefined ? `${item.ref_min} - ${item.ref_max}` : '-'}</span>
-                              <span className="font-semibold text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
                             </div>
                           </div>
                         );
@@ -460,10 +515,10 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
               })}
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end">
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setSelectedPanelDate(null)}
-                className="px-5 py-2 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs"
+                className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
               >
                 Fechar Laudo
               </button>
@@ -474,27 +529,27 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
 
       {/* Modal de Confirmação de Exclusão */}
       {deleteConfirmDate && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-400">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
               <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Confirmar Exclusão de Laudo</h3>
-                <p className="text-xs text-slate-400">Ação irreversível de banco de dados</p>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Confirmar Exclusão de Laudo</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Ação irreversível de banco de dados</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-              Tem certeza que deseja excluir todos os <strong className="text-white">{groupedLabs[deleteConfirmDate]?.length || 0} exames</strong> registrados no laudo do dia <strong className="text-cyan-400">{deleteConfirmDate}</strong>?
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+              Tem certeza que deseja excluir todos os <strong className="text-slate-900 dark:text-white">{groupedLabs[deleteConfirmDate]?.length || 0} exames</strong> registrados no laudo do dia <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>?
             </p>
 
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmDate(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs"
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition"
               >
                 Cancelar
               </button>
@@ -514,26 +569,27 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
 
       {/* Modal de Inclusão em Lote */}
       {showBatchModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Dna className="h-6 w-6 text-cyan-400" /> Registrar Painel Completo de Exames de Sangue
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" /> Registrar Painel Completo de Exames de Sangue
                 </h3>
-                <p className="text-xs text-slate-400">Preencha apenas os marcadores realizados no seu laudo médico</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Preencha apenas os marcadores realizados no seu laudo médico</p>
               </div>
-              <button onClick={() => setShowBatchModal(false)} className="text-slate-400 hover:text-white text-lg">✕</button>
+              <button onClick={() => setShowBatchModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg">✕</button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/60 p-3 rounded-2xl border border-slate-800 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
               <div className="flex items-center gap-2">
-                <label className="text-slate-400 font-semibold">Data da Coleta:</label>
+                <label htmlFor="lab-collected-at" className="text-slate-600 dark:text-slate-400 font-semibold">Data da Coleta:</label>
                 <input
+                  id="lab-collected-at"
                   type="date"
                   value={collectedAt}
                   onChange={e => setCollectedAt(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-medium"
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
                 />
               </div>
 
@@ -541,15 +597,15 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                 <button
                   type="button"
                   onClick={handleFillPhenoAgePreset}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-semibold transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 font-semibold transition"
                 >
-                  <Zap className="h-3.5 w-3.5 text-cyan-400" /> 9 Marcadores PhenoAge
+                  <Zap className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> 9 Marcadores PhenoAge
                 </button>
 
                 <button
                   type="button"
                   onClick={handleClearForm}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition border border-slate-200 dark:border-slate-700"
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Limpar Tudo
                 </button>
@@ -559,26 +615,27 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
             <form onSubmit={handleBatchSubmit} className="flex-1 overflow-y-auto space-y-6 pr-2">
               {LAB_MARKERS_GROUPS.map((group, idx) => (
                 <div key={idx} className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/80 pb-2">
+                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
                     <span>{group.icon}</span> {group.groupName}
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {group.items.map((item) => (
-                      <div key={item.key} className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 hover:border-slate-700 transition">
-                        <label className="block text-xs font-bold text-white mb-1 truncate" title={item.name}>
+                      <div key={item.key} className="bg-slate-50 dark:bg-slate-950/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
+                        <label htmlFor={`lab-marker-${item.key}`} className="block text-xs font-bold text-slate-900 dark:text-white mb-1 truncate" title={item.name}>
                           {item.name}
                         </label>
                         <div className="flex items-center gap-2">
                           <input
+                            id={`lab-marker-${item.key}`}
                             type="number"
                             step="0.01"
                             placeholder="Vazio"
                             value={formValues[item.key] || ''}
                             onChange={e => handleInputChange(item.key, e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-semibold text-xs focus:border-cyan-500 focus:outline-none"
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus:outline-none"
                           />
-                          <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">{item.unit}</span>
+                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
                         </div>
                         <span className="text-[9px] text-slate-500 mt-1 block">
                           Alvo: {item.optimal} {item.unit}
@@ -589,8 +646,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                 </div>
               ))}
 
-              <div className="sticky bottom-0 bg-slate-900 pt-3 border-t border-slate-800 flex items-center justify-between">
-                <span className="text-xs font-bold text-cyan-400">
+              <div className="sticky bottom-0 bg-white dark:bg-slate-900 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
                   {filledCount} marcador(es) pronto(s) para salvar
                 </span>
 
@@ -598,7 +655,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
                   <button
                     type="button"
                     onClick={() => setShowBatchModal(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs"
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition"
                   >
                     Cancelar
                   </button>

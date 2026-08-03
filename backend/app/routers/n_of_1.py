@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
-from backend.app.config import DB_PATH
+from backend.app.config import get_db_path
 from longevidade.db.schema import initialize_db
 from longevidade.db.repository import LongevityRepository
 from longevidade.algorithms.n_of_1 import analyze_n_of_1
@@ -22,14 +22,16 @@ class NOf1ExperimentInput(BaseModel):
 
 @router.get("", response_model=List[Dict[str, Any]])
 def get_experiments():
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     return repo.get_n_of_1_experiments()
 
 @router.post("")
 def create_experiment(input_data: NOf1ExperimentInput):
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
 
     # Busca métricas diárias no banco para o período de controle e tratamento
     all_metrics = repo.get_daily_metrics(days=365)

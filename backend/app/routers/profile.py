@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from datetime import date, datetime
 
-from backend.app.config import DB_PATH, BASE_DIR
+from backend.app.config import get_db_path, BASE_DIR
 from longevidade.db.schema import initialize_db
 from longevidade.db.repository import LongevityRepository
 
@@ -26,8 +26,9 @@ class UserProfileInput(BaseModel):
 
 @router.get("", response_model=Dict[str, Any])
 def get_profile():
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     profile = repo.get_user_profile()
 
     # Tenta obter peso mais recente das métricas diárias se ausente
@@ -109,8 +110,9 @@ def get_profile():
 
 @router.post("")
 def update_profile(input_data: UserProfileInput):
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     data = input_data.model_dump(exclude_unset=True)
     repo.upsert_user_profile(data)
     return {"status": "ok", "message": "Perfil atualizado com sucesso"}

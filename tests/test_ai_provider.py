@@ -1,14 +1,18 @@
-import pytest
-import os
-import tempfile
 import gc
+import os
+import sqlite3
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from longevidade.db.schema import initialize_db
-from longevidade.db.repository import LongevityRepository
+import pytest
+
+from backend.app.config import get_db_path
 from longevidade.ai.context_builder import build_patient_clinical_context
 from longevidade.ai.provider_factory import generate_llm_response, validate_provider_connection
+from longevidade.ai.secrets_store import MemorySecretsStore, mask_secret
+from longevidade.db.repository import LongevityRepository
+from longevidade.db.schema import initialize_db
 
 
 def test_ai_db_settings_and_history():
@@ -18,24 +22,36 @@ def test_ai_db_settings_and_history():
 
     try:
         initialize_db(db_path)
-        repo = LongevityRepository(db_path)
+        secret_store = MemorySecretsStore()
+        repo = LongevityRepository(db_path, secrets_store=secret_store)
 
-        # 1. Configurações de IA Padrão
+        # 1. Configurações de IA Padrão sem segredos em texto claro
         settings = repo.get_ai_settings()
         assert settings["active_provider"] == "openrouter"
         assert settings["selected_model"] == "deepseek/deepseek-v4-pro"
+        assert settings["has_openai_key"] is False
+        assert "openai_api_key" not in settings
 
-        # 2. Atualiza Configurações
+        # 2. Atualiza Configurações: a chave vai para o cofre, não para o SQLite
         repo.upsert_ai_settings({
             "active_provider": "openai",
             "selected_model": "gpt-4o-mini",
-            "openai_api_key": "sk-proj-testkey123456"
+            "privacy_mode": "minimal",
+            "openai_api_key": "fixture-secret-value"
         })
 
         updated = repo.get_ai_settings()
         assert updated["active_provider"] == "openai"
         assert updated["selected_model"] == "gpt-4o-mini"
-        assert updated["openai_api_key"] == "sk-proj-testkey123456"
+        assert updated["privacy_mode"] == "minimal"
+        assert updated["has_openai_key"] is True
+        assert repo.get_ai_secret("openai") == "fixture-secret-value"
+        assert secret_store.get("openai") == "fixture-secret-value"
+
+        with sqlite3.connect(db_path) as conn:
+            row = conn.execute("SELECT openai_api_key, has_openai_key FROM ai_settings WHERE id = 1;").fetchone()
+            assert row[0] is None
+            assert row[1] == 1
 
         # 3. Salva Insight no Histórico
         insight_id = repo.save_ai_insight({
@@ -61,6 +77,38 @@ def test_ai_db_settings_and_history():
                 os.unlink(db_path)
             except OSError:
                 pass
+
+
+def test_ai_settings_route_masks_secret_store_values(client, monkeypatch):
+    from backend.app.routers import ai as ai_router
+
+    secret_store = MemorySecretsStore()
+    monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
+
+    response = client.post(
+        "/api/ai/settings",
+        json={
+            "active_provider": "openai",
+            "selected_model": "gpt-4o-mini",
+            "privacy_mode": "minimal",
+            "openai_api_key": "fixture-secret-value",
+        },
+    )
+    assert response.status_code == 200
+    assert secret_store.get("openai") == "fixture-secret-value"
+
+    settings_response = client.get("/api/ai/settings")
+    assert settings_response.status_code == 200
+    payload = settings_response.json()
+    assert payload["has_openai_key"] is True
+    assert payload["privacy_mode"] == "minimal"
+    assert payload["openai_api_key_masked"] == mask_secret("fixture-secret-value")
+    assert "fixture-secret-value" not in settings_response.text
+
+    with sqlite3.connect(get_db_path()) as conn:
+        row = conn.execute("SELECT openai_api_key, has_openai_key FROM ai_settings WHERE id = 1;").fetchone()
+        assert row[0] is None
+        assert row[1] == 1
 
 
 def test_clinical_context_builder():

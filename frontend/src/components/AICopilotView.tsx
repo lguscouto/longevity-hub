@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Sparkles, RefreshCw, Send, Settings, ShieldCheck, Heart, Activity, Zap, Moon, FileText, ChevronRight, Cpu } from 'lucide-react';
 
+import { ApiError, requestJson } from '../lib/api';
+
 interface InsightItem {
   category: string;
   headline: string;
@@ -11,6 +13,31 @@ interface InsightItem {
 interface AIResponseData {
   summary?: string;
   insights?: InsightItem[];
+}
+
+type PrivacyMode = 'minimal' | 'full';
+
+interface AISettingsResponse {
+  active_provider?: string;
+  selected_model?: string;
+  privacy_mode?: string;
+  has_openai_key?: boolean;
+  has_anthropic_key?: boolean;
+  has_openrouter_key?: boolean;
+}
+
+const PRIVACY_MODE_LABELS: Record<PrivacyMode, string> = {
+  minimal: 'privacidade mínima',
+  full: 'privacidade completa',
+};
+
+const PRIVACY_MODE_DESCRIPTIONS: Record<PrivacyMode, string> = {
+  minimal: 'Modo mínimo: não envia nome, nascimento ou histórico completo; usa apenas o contexto essencial.',
+  full: 'Modo completo: opt-in para enviar contexto ampliado de perfil e histórico quando necessário.',
+};
+
+function normalizePrivacyMode(mode?: string): PrivacyMode {
+  return mode === 'full' ? 'full' : 'minimal';
 }
 
 interface AICopilotViewProps {
@@ -36,7 +63,7 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
     const parts = rawStr.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, idx) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={idx} className="text-cyan-300 font-bold">{part.slice(2, -2)}</strong>;
+        return <strong key={idx} className="text-cyan-700 dark:text-cyan-300 font-bold">{part.slice(2, -2)}</strong>;
       }
       return part;
     });
@@ -45,13 +72,13 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
   const flushTable = () => {
     if (tableRows.length > 0 || tableHeader.length > 0) {
       elements.push(
-        <div key={`table-${currentKey++}`} className="my-2 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80">
+        <div key={`table-${currentKey++}`} className="my-2 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80">
           <table className="w-full text-[11px] border-collapse">
             {tableHeader.length > 0 && (
               <thead>
-                <tr className="bg-slate-900 border-b border-slate-800 text-slate-300 font-bold text-left">
+                <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-left">
                   {tableHeader.map((col, cIdx) => (
-                    <th key={cIdx} className="p-2 border-r last:border-r-0 border-slate-800">
+                    <th key={cIdx} className="p-2 border-r last:border-r-0 border-slate-200 dark:border-slate-800">
                       {renderFormattedInlineText(col.trim())}
                     </th>
                   ))}
@@ -60,9 +87,9 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
             )}
             <tbody>
               {tableRows.map((row, rIdx) => (
-                <tr key={rIdx} className="border-b last:border-b-0 border-slate-800/60 hover:bg-slate-900/50">
+                <tr key={rIdx} className="border-b last:border-b-0 border-slate-200 dark:border-slate-800/60 hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
                   {row.map((cell, cIdx) => (
-                    <td key={cIdx} className="p-2 border-r last:border-r-0 border-slate-800/60 text-slate-300">
+                    <td key={cIdx} className="p-2 border-r last:border-r-0 border-slate-200 dark:border-slate-800/60 text-slate-700 dark:text-slate-300">
                       {renderFormattedInlineText(cell.trim())}
                     </td>
                   ))}
@@ -107,7 +134,7 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
     // Cabeçalhos (### Título)
     if (line.startsWith('### ')) {
       elements.push(
-        <h4 key={`h3-${currentKey++}`} className="font-extrabold text-white text-xs mt-3 mb-1.5 border-b border-slate-800 pb-1">
+        <h4 key={`h3-${currentKey++}`} className="font-extrabold text-slate-900 dark:text-white text-xs mt-3 mb-1.5 border-b border-slate-200 dark:border-slate-800 pb-1">
           {renderFormattedInlineText(line.replace('### ', ''))}
         </h4>
       );
@@ -116,7 +143,7 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
 
     if (line.startsWith('## ')) {
       elements.push(
-        <h3 key={`h2-${currentKey++}`} className="font-black text-cyan-300 text-sm mt-3 mb-1.5 border-b border-cyan-500/20 pb-1">
+        <h3 key={`h2-${currentKey++}`} className="font-black text-cyan-700 dark:text-cyan-300 text-sm mt-3 mb-1.5 border-b border-cyan-500/20 pb-1">
           {renderFormattedInlineText(line.replace('## ', ''))}
         </h3>
       );
@@ -127,8 +154,8 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
     if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
       const cleanLine = line.replace(/^[-*]\s+|\d+\.\s+/, '');
       elements.push(
-        <div key={`li-${currentKey++}`} className="flex items-start gap-1.5 ml-2 my-0.5 text-slate-300">
-          <span className="text-cyan-400 font-bold">•</span>
+        <div key={`li-${currentKey++}`} className="flex items-start gap-1.5 ml-2 my-0.5 text-slate-700 dark:text-slate-300">
+          <span className="text-cyan-600 dark:text-cyan-400 font-bold">•</span>
           <span>{renderFormattedInlineText(cleanLine)}</span>
         </div>
       );
@@ -137,7 +164,7 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
 
     // Parágrafo normal
     elements.push(
-      <p key={`p-${currentKey++}`} className="my-1 leading-relaxed text-slate-300">
+      <p key={`p-${currentKey++}`} className="my-1 leading-relaxed text-slate-700 dark:text-slate-300">
         {renderFormattedInlineText(line)}
       </p>
     );
@@ -153,6 +180,7 @@ const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
 export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, chatMessages, setChatMessages }) => {
   const [activeProvider, setActiveProvider] = useState<string>('openrouter');
   const [selectedModel, setSelectedModel] = useState<string>('deepseek/deepseek-v4-pro');
+  const [privacyMode, setPrivacyMode] = useState<PrivacyMode>('minimal');
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -165,21 +193,22 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
   const loadSettingsAndHistory = async () => {
     try {
       const [resSettings, resHistory] = await Promise.all([
-        fetch('/api/ai/settings').then(r => r.json()),
-        fetch('/api/ai/history').then(r => r.json())
+        requestJson<AISettingsResponse>('/api/ai/settings'),
+        requestJson<any[]>('/api/ai/history')
       ]);
 
       if (resSettings) {
         setActiveProvider(resSettings.active_provider || 'openrouter');
         setSelectedModel(resSettings.selected_model || 'deepseek/deepseek-v4-pro');
+        setPrivacyMode(normalizePrivacyMode(resSettings.privacy_mode));
         const keyConfigured =
           (resSettings.active_provider === 'openai' && resSettings.has_openai_key) ||
           (resSettings.active_provider === 'anthropic' && resSettings.has_anthropic_key) ||
           (resSettings.active_provider === 'openrouter' && resSettings.has_openrouter_key);
-        setHasApiKey(keyConfigured);
+        setHasApiKey(Boolean(keyConfigured));
       }
 
-      if (resHistory && Array.isArray(resHistory) && resHistory.length > 0 && chatMessages.length <= 1) {
+      if (Array.isArray(resHistory) && resHistory.length > 0 && chatMessages.length <= 1) {
         const loaded: Array<{ sender: 'user' | 'ai'; text: string; time: string }> = [chatMessages[0]];
         [...resHistory].reverse().forEach((item: any) => {
           const t = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -194,8 +223,8 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
           setChatMessages(loaded);
         }
       }
-    } catch (e) {
-      console.error(e);
+    } catch (caught) {
+      setErrorMsg(caught instanceof ApiError ? caught.message : 'Falha ao carregar configurações e histórico da IA.');
     }
   };
 
@@ -203,28 +232,41 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
     loadSettingsAndHistory();
   }, []);
 
+  const privacyModeLabel = PRIVACY_MODE_LABELS[privacyMode];
+  const privacyModeDescription = PRIVACY_MODE_DESCRIPTIONS[privacyMode];
+
+  const confirmExternalAIRequest = (actionLabel: string) => window.confirm(
+    `Antes de ${actionLabel}, confirme o envio de contexto para IA externa.\n\n` +
+    `Provedor: ${activeProvider.toUpperCase()}\n` +
+    `Modelo: ${selectedModel}\n` +
+    `Modo: ${privacyModeLabel}\n\n` +
+    `${privacyModeDescription}\n\nDeseja continuar?`
+  );
+
   const handleGenerateAnalysis = async () => {
+    if (!confirmExternalAIRequest('gerar os insights de saúde dos últimos 30 dias')) return;
+
     setIsGenerating(true);
     setErrorMsg(null);
 
     try {
-      const res = await fetch('/api/ai/generate-insights', { method: 'POST' });
-      const body = await res.json();
-      if (!res.ok) {
-        setErrorMsg(body.detail || 'Falha ao gerar insights de IA.');
-      } else {
+      const body = await requestJson<{ result?: AIResponseData; detail?: string }>('/api/ai/generate-insights', { method: 'POST' });
+      if (body.result) {
         setData(body.result);
+      } else {
+        setErrorMsg(body.detail || 'Falha ao gerar insights de IA.');
       }
-    } catch (err) {
-      setErrorMsg('Erro de conexão ao comunicar com a IA.');
+    } catch (caught) {
+      setErrorMsg(caught instanceof ApiError ? caught.message : 'Erro de conexão ao comunicar com a IA.');
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleSendChatMessage = async (promptText?: string) => {
-    const textToSend = promptText || chatInput;
-    if (!textToSend.trim()) return;
+    const textToSend = (promptText ?? chatInput).trim();
+    if (!textToSend) return;
+    if (!confirmExternalAIRequest('enviar sua mensagem ao chat do Copiloto')) return;
 
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setChatMessages(prev => [...prev, { sender: 'user', text: textToSend, time: userTime }]);
@@ -232,30 +274,23 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
     setIsSendingChat(true);
 
     try {
-      const res = await fetch('/api/ai/chat', {
+      const body = await requestJson<{ reply?: string; detail?: string }>('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: textToSend })
       });
-      const body = await res.json();
 
-      const aiTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      if (!res.ok) {
-        setChatMessages(prev => [
-          ...prev,
-          { sender: 'ai', text: `⚠️ Erro: ${body.detail || 'Falha na resposta do Copiloto.'}`, time: aiTime }
-        ]);
-      } else {
-        setChatMessages(prev => [
-          ...prev,
-          { sender: 'ai', text: body.reply, time: aiTime }
-        ]);
-      }
-    } catch (e) {
       const aiTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setChatMessages(prev => [
         ...prev,
-        { sender: 'ai', text: '⚠️ Erro de conexão com o servidor.', time: aiTime }
+        { sender: 'ai', text: body.reply ?? '⚠️ Resposta vazia do servidor.', time: aiTime }
+      ]);
+    } catch (caught) {
+      const aiTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const detail = caught instanceof ApiError ? caught.message : 'Erro de conexão com o servidor.';
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'ai', text: `⚠️ Erro: ${detail}`, time: aiTime }
       ]);
     } finally {
       setIsSendingChat(false);
@@ -279,7 +314,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
   return (
     <div className="space-y-6">
       {/* Banner de Topo */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-100 dark:from-slate-900 via-slate-100 dark:via-slate-900 to-cyan-50/40 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
           <Bot className="h-64 w-64 text-cyan-400" />
         </div>
@@ -287,23 +322,36 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                 <Sparkles className="h-3 w-3" /> Copiloto Longevidade AI
               </span>
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <Cpu className="h-3.5 w-3.5 text-cyan-400" /> Modelo: <strong className="text-white">{selectedModel}</strong> ({activeProvider.toUpperCase()})
+              <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Modelo: <strong className="text-slate-900 dark:text-white">{selectedModel}</strong> ({activeProvider.toUpperCase()})
               </span>
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight">Inteligência Médica de Precisão</h2>
-            <p className="text-sm text-slate-400 max-w-xl">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Inteligência Médica de Precisão</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
               Análise integrativa de biomarcadores de sangue, idade biológica PhenoAge, HRV autonômica e curva glicêmica baseada nos princípios do Protocolo Blueprint.
             </p>
+            <div
+              role="status"
+              aria-label="Aviso de envio para IA externa"
+              className="mt-3 max-w-2xl rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-[11px] text-slate-700 dark:text-slate-300 flex items-start gap-2"
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-300" />
+              <div className="space-y-1">
+                <p>
+                  Envio externo: <strong className="text-slate-900 dark:text-white">{activeProvider.toUpperCase()}</strong> · <strong className="text-slate-900 dark:text-white">{selectedModel}</strong> · <strong className="text-slate-900 dark:text-white">{privacyModeLabel}</strong>
+                </p>
+                <p className="text-slate-500 dark:text-slate-400">{privacyModeDescription}</p>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={onOpenSettings}
-              className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+              className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
               title="Configurar Chaves de API e Provedor"
             >
               <Settings className="h-5 w-5" />
@@ -314,7 +362,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               disabled={isGenerating || !hasApiKey}
               className={`px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition ${
                 !hasApiKey
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
                   : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black shadow-lg shadow-cyan-500/25 glow-cyan'
               }`}
             >
@@ -325,18 +373,18 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
         </div>
 
         {!hasApiKey && (
-          <div className="mt-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center justify-between">
+          <div className="mt-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <span>Nenhuma chave de API ativada para o provedor selecionado. Configure sua API Key para desbloquear as análises da IA.</span>
             </div>
-            <button onClick={onOpenSettings} className="font-bold underline hover:text-white">Configurar Agora</button>
+            <button onClick={onOpenSettings} className="font-bold underline hover:text-slate-900 dark:hover:text-white">Configurar Agora</button>
           </div>
         )}
       </div>
 
       {errorMsg && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-800 dark:text-rose-300 text-sm">
           ⚠️ {errorMsg}
         </div>
       )}
@@ -347,62 +395,62 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
         {/* Coluna Esquerda: Análise de Insights (2 Cols) */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-cyan-400" /> Relatório de Insights Médicos
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Relatório de Insights Médicos
             </h3>
             {data?.summary && (
-              <span className="text-xs text-slate-400 italic font-medium max-w-xs truncate">
+              <span className="text-xs text-slate-500 dark:text-slate-400 italic font-medium max-w-xs truncate">
                 "{data.summary}"
               </span>
             )}
           </div>
 
           {!data && !isGenerating && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-3">
-              <Bot className="h-12 w-12 text-slate-600 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-300">Nenhuma Análise Gerada Ainda</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+              <Bot className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto" />
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhuma Análise Gerada Ainda</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                 Clique no botão <strong>"Analisar Saúde 30 Dias"</strong> acima para sintetizar seus exames de sangue, HRV, sono e curva de glicemia CGM usando a IA.
               </p>
             </div>
           )}
 
           {isGenerating && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
-              <RefreshCw className="h-10 w-10 text-cyan-400 animate-spin mx-auto" />
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
+              <RefreshCw className="h-10 w-10 text-cyan-600 dark:text-cyan-400 animate-spin mx-auto" />
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-white">Processando Dados no {selectedModel}...</h4>
-                <p className="text-xs text-slate-400">Cruzando biomarcadores com a fórmula Morgan Levine PhenoAge e Protocolo Blueprint...</p>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Processando Dados no {selectedModel}...</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Cruzando biomarcadores com a fórmula Morgan Levine PhenoAge e Protocolo Blueprint...</p>
               </div>
             </div>
           )}
 
           {data?.insights && data.insights.map((item, idx) => (
-            <div key={idx} className="bg-slate-900 border border-slate-800 hover:border-slate-700 transition rounded-3xl p-5 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+            <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition rounded-3xl p-5 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+                  <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                     {categoryIcons[item.category] || <Sparkles className="h-5 w-5 text-cyan-400" />}
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
                       {categoryTitles[item.category] || item.category}
                     </span>
-                    <h4 className="text-sm font-bold text-white">{item.headline}</h4>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{item.headline}</h4>
                   </div>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed font-normal">
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
                 {item.insight_text}
               </p>
 
               {item.actionable_steps && (
                 <div className="p-3 rounded-2xl bg-cyan-500/5 border border-cyan-500/15 text-xs space-y-1">
-                  <span className="font-bold text-cyan-300 text-[11px] uppercase tracking-wide flex items-center gap-1">
-                    <Zap className="h-3 w-3 text-cyan-400" /> Recomendação Prática Blueprint:
+                  <span className="font-bold text-cyan-700 dark:text-cyan-300 text-[11px] uppercase tracking-wide flex items-center gap-1">
+                    <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Recomendação Prática Blueprint:
                   </span>
-                  <p className="text-slate-300 font-medium">{item.actionable_steps}</p>
+                  <p className="text-slate-700 dark:text-slate-300 font-medium">{item.actionable_steps}</p>
                 </div>
               )}
             </div>
@@ -410,32 +458,32 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
         </div>
 
         {/* Coluna Direita: Chat Interativo com o Copiloto (1 Col) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col h-[650px] shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex flex-col h-[650px] shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <h3 className="text-sm font-bold text-white">Chat com Copiloto</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Chat com Copiloto</h3>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">{activeProvider.toUpperCase()}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{activeProvider.toUpperCase()}</span>
           </div>
 
           {/* Sugestões Rápidas de Perguntas */}
           <div className="flex flex-wrap gap-1.5 mb-3">
             <button
               onClick={() => handleSendChatMessage('Como foi meu sono nos últimos 3 dias?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 transition"
+              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               🌙 Sono últimos 3 dias
             </button>
             <button
               onClick={() => handleSendChatMessage('Como posso melhorar minha HRV noturna nos próximos 7 dias?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 transition"
+              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               💡 Otimizar HRV
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual a relação do meu ApoB de exames com longevidade?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 transition"
+              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               🩸 Analisar ApoB
             </button>
@@ -452,7 +500,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
                   className={`p-3.5 rounded-2xl max-w-[95%] leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-cyan-500 text-slate-950 font-semibold rounded-br-none shadow-md'
-                      : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
+                      : 'bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-inner'
                   }`}
                 >
                   <FormattedChatMessage text={msg.text} />
@@ -473,7 +521,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               e.preventDefault();
               handleSendChatMessage();
             }}
-            className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2"
+            className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2"
           >
             <input
               type="text"
@@ -481,12 +529,13 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               disabled={!hasApiKey || isSendingChat}
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+              className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
             />
             <button
               type="submit"
+              aria-label="Enviar mensagem ao copiloto"
               disabled={!hasApiKey || isSendingChat || !chatInput.trim()}
-              className="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-bold transition shadow-md glow-cyan"
+              className="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-slate-950 font-bold transition shadow-md glow-cyan"
             >
               <Send className="h-4 w-4" />
             </button>

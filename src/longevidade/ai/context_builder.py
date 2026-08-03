@@ -9,12 +9,27 @@ from pathlib import Path
 from typing import Any, Dict
 
 from longevidade.db.repository import LongevityRepository
-from longevidade.calculators.kdm_age import calculate_kdm_biological_age
+from longevidade.calculators.kdm_age import (
+    build_kdm_history_rows,
+    calculate_kdm_biological_age,
+    latest_kdm_biomarker_values,
+)
 from longevidade.calculators.cardio_ratios import calculate_cardiovascular_ratios
 
 
-def build_patient_clinical_context(db_path: str | Path) -> str:
-    """Busca o estado clínico completo do paciente no banco de dados SQLite e formata como texto sintético rico."""
+def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "minimal") -> str:
+    """Busca o estado clínico no SQLite e formata contexto para IA.
+
+    `privacy_mode="minimal"` é o padrão seguro: remove identificadores diretos
+    e reduz janelas detalhadas antes de enviar dados a provedores externos.
+    `privacy_mode="full"` mantém o contexto histórico amplo para uso local/opt-in.
+    """
+    normalized_privacy_mode = "full" if privacy_mode == "full" else "minimal"
+    minimal_mode = normalized_privacy_mode == "minimal"
+    detail_daily_limit = 3 if minimal_mode else 14
+    compliance_detail_limit = 3 if minimal_mode else 7
+    include_audit_history = not minimal_mode
+
     repo = LongevityRepository(db_path)
 
     profile = repo.get_user_profile()
@@ -29,8 +44,13 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
 
     # 1. Perfil Básico
     lines = ["=== PERFIL DO PACIENTE ==="]
-    lines.append(f"Nome: {profile.get('name', 'Paciente')}")
-    lines.append(f"Idade Cronológica: {profile.get('chronological_age', 32.0)} anos (Nascimento: {profile.get('birthdate', 'N/A')})")
+    lines.append(f"Modo de privacidade aplicado: {normalized_privacy_mode}")
+    if minimal_mode:
+        lines.append("Identificadores diretos removidos: nome, e-mail e data de nascimento não foram enviados ao provedor externo.")
+        lines.append(f"Idade Cronológica: {profile.get('chronological_age', 32.0)} anos")
+    else:
+        lines.append(f"Nome: {profile.get('name', 'Paciente')}")
+        lines.append(f"Idade Cronológica: {profile.get('chronological_age', 32.0)} anos (Nascimento: {profile.get('birthdate', 'N/A')})")
     lines.append(f"Altura: {profile.get('height_cm', 170.0)} cm | Peso Atual: {profile.get('current_weight_kg', 'Sem dados')} kg | Meta: {profile.get('target_weight_kg', 75.0)} kg")
     if profile.get('bmi'):
         lines.append(f"IMC: {profile.get('bmi')} kg/m²")
@@ -54,7 +74,13 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
         kdm_input["rhr_bpm"] = float(daily_list[0]["rhr_bpm"])
 
     kdm_res = calculate_kdm_biological_age(profile.get("chronological_age", 32.0), kdm_input)
-    lines.append(f"- Klemera-Doubal (KDM) Age: {kdm_res['kdm_age']} anos (Delta: {'+' if kdm_res['kdm_delta'] > 0 else ''}{kdm_res['kdm_delta']} anos) | Biomarcadores usados: {kdm_res['biomarkers_count']}")
+    if kdm_res.get("status") == "complete":
+        delta = kdm_res.get("kdm_delta") or 0
+        lines.append(f"- Klemera-Doubal (KDM) Age: {kdm_res.get('kdm_age')} anos (Delta: {'+' if delta > 0 else ''}{delta} anos) | Biomarcadores usados: {kdm_res.get('biomarkers_count', 0)}")
+    else:
+        missing = kdm_res.get('missing_biomarkers') or []
+        missing_text = ", ".join(missing[:6]) if missing else "indisponível"
+        lines.append(f"- Klemera-Doubal (KDM) Age: indisponível ({kdm_res.get('reason', 'dados insuficientes')}) | Biomarcadores presentes: {kdm_res.get('biomarkers_count', 0)} | Faltando: {missing_text}")
 
     # 3. Métricas Médias de Wearables (Últimos 30 dias)
     lines.append("\n=== RESUMO DE WEARABLES (MÉDIAS DE 30 DIAS) ===")
@@ -79,9 +105,9 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
             latest_bp = valid_bp[0]
             lines.append(f"Última Pressão Arterial: {latest_bp[0]}/{latest_bp[1]} mmHg")
 
-        # Registros detalhados dos últimos 14 dias
-        lines.append("\n=== REGISTROS DIÁRIOS DETALHADOS DIA A DIA (ÚLTIMOS 14 DIAS) ===")
-        for m in daily_list[:14]:
+        # Registros detalhados recentes
+        lines.append(f"\n=== REGISTROS DIÁRIOS DETALHADOS DIA A DIA (ÚLTIMOS {detail_daily_limit} DIAS) ===")
+        for m in daily_list[:detail_daily_limit]:
             d_ref = m.get("date_ref", "N/A")
             st = m.get("steps") if m.get("steps") is not None else "-"
             slp_min = m.get("sleep_minutes")
@@ -127,28 +153,32 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
         lines.append("Nenhum composto ativo registrado.")
 
     # 5.1 Histórico Auditável de Alterações de Suplementos e Hormônios
-    lines.append("\n=== HISTÓRICO AUDITÁVEL DE ALTERAÇÕES DE SUPLEMENTOS E HORMÔNIOS ===")
-    if audit_logs:
-        for log in audit_logs:
-            c_name = log.get("compound_name", "Composto")
-            c_cat = log.get("category", "Suplemento")
-            action = log.get("action_type")
-            old_val = log.get("old_value")
-            new_val = log.get("new_value")
-            created = str(log.get("created_at", ""))[:16]
+    if include_audit_history:
+        lines.append("\n=== HISTÓRICO AUDITÁVEL DE ALTERAÇÕES DE SUPLEMENTOS E HORMÔNIOS ===")
+        if audit_logs:
+            for log in audit_logs:
+                c_name = log.get("compound_name", "Composto")
+                c_cat = log.get("category", "Suplemento")
+                action = log.get("action_type")
+                old_val = log.get("old_value")
+                new_val = log.get("new_value")
+                created = str(log.get("created_at", ""))[:16]
 
-            if action == "ADICIONADO":
-                lines.append(f"- [{created}] {c_name} ({c_cat}): ADICIONADO à pilha ({new_val})")
-            elif action == "DOSE_ALTERADA":
-                lines.append(f"- [{created}] {c_name} ({c_cat}): DOSE ALTERADA — De '{old_val}' Para '{new_val}'")
-            elif action == "HORARIO_ALTERADO":
-                lines.append(f"- [{created}] {c_name} ({c_cat}): HORÁRIO ALTERADO — De '{old_val}' Para '{new_val}'")
-            elif action == "REMOVIDO":
-                lines.append(f"- [{created}] {c_name} ({c_cat}): REMOVIDO da pilha (Dose anterior: {old_val})")
-            else:
-                lines.append(f"- [{created}] {c_name} ({c_cat}): {action} (De: {old_val} -> Para: {new_val})")
+                if action == "ADICIONADO":
+                    lines.append(f"- [{created}] {c_name} ({c_cat}): ADICIONADO à pilha ({new_val})")
+                elif action == "DOSE_ALTERADA":
+                    lines.append(f"- [{created}] {c_name} ({c_cat}): DOSE ALTERADA — De '{old_val}' Para '{new_val}'")
+                elif action == "HORARIO_ALTERADO":
+                    lines.append(f"- [{created}] {c_name} ({c_cat}): HORÁRIO ALTERADO — De '{old_val}' Para '{new_val}'")
+                elif action == "REMOVIDO":
+                    lines.append(f"- [{created}] {c_name} ({c_cat}): REMOVIDO da pilha (Dose anterior: {old_val})")
+                else:
+                    lines.append(f"- [{created}] {c_name} ({c_cat}): {action} (De: {old_val} -> Para: {new_val})")
+        else:
+            lines.append("Nenhum registro no histórico de auditoria.")
     else:
-        lines.append("Nenhum registro no histórico de auditoria.")
+        lines.append("\n=== HISTÓRICO AUDITÁVEL DE ALTERAÇÕES DE SUPLEMENTOS E HORMÔNIOS ===")
+        lines.append("Omitido por privacy_mode=minimal; histórico completo permanece somente no SQLite local.")
 
     # 6. Conformidade Diária Blueprint (Score)
     lines.append("\n=== CONFORMIDADE DIÁRIA DO PROTOCOLO BLUEPRINT ===")
@@ -156,7 +186,7 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
         valid_scores = [c.get("compliance_score", 0) for c in compliance_list]
         avg_score = round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else 0
         lines.append(f"Média de Conformidade (Últimos {len(compliance_list)} dias): {avg_score}%")
-        for c in compliance_list[:7]:
+        for c in compliance_list[:compliance_detail_limit]:
             lines.append(f"- Data: {c.get('date_ref')} | Score: {c.get('compliance_score')}% | Sono: {'OK' if c.get('sleep_schedule_ok') else 'X'} | Suplementos: {'OK' if c.get('supplements_ok') else 'X'} | Treino: {'OK' if c.get('exercise_ok') else 'X'} | Jejum: {'OK' if c.get('fasting_window_ok') else 'X'}")
     else:
         lines.append("Nenhum registro recente de conformidade diária.")
@@ -174,7 +204,7 @@ def build_patient_clinical_context(db_path: str | Path) -> str:
     # 8. Experimentos N-of-1
     if experiments:
         lines.append("\n=== EXPERIMENTOS N-OF-1 ATIVOS ===")
-        for exp in experiments[:3]:
+        for exp in experiments[:1 if minimal_mode else 3]:
             lines.append(f"- Expresso: {exp.get('title')} | Métrica: {exp.get('metric_key')} | Status: {exp.get('status')}")
 
     return "\n".join(lines)

@@ -5,57 +5,106 @@ import csv
 import io
 from datetime import datetime
 
-from backend.app.config import DB_PATH
+from backend.app.config import get_db_path
 from longevidade.db.schema import initialize_db
 from longevidade.db.repository import LongevityRepository
 from longevidade.algorithms.cgm_metrics import calculate_cgm_summary
 
 router = APIRouter(prefix="/api/cgm", tags=["CGM"])
 
+
 class CGMDailyBatchInput(BaseModel):
     date_ref: str
     glucose_readings: List[float]
 
+
+class CGMReadingInput(BaseModel):
+    timestamp: str
+    glucose_mgdl: float
+    device_id: Optional[str] = "manual"
+
+
 @router.get("/summary", response_model=List[Dict[str, Any]])
 def get_cgm_summaries():
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     return repo.get_cgm_summaries()
+
 
 @router.post("/batch")
 def add_cgm_batch(input_data: CGMDailyBatchInput):
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
-    stats = calculate_cgm_summary(input_data.glucose_readings)
-    stats["date_ref"] = input_data.date_ref
-    repo.add_cgm_summary(stats)
+    """Recebe leituras do dia, salva brutas em cgm_readings e deriva o sumário."""
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    # Gera timestamps ISO 8601 (intervalos de 15 min começando 08:00)
+    readings = []
+    for i, val in enumerate(input_data.glucose_readings):
+        horas = (8 + i // 4) % 24
+        minutos = (i % 4) * 15
+        readings.append({
+            "timestamp": f"{input_data.date_ref}T{horas:02d}:{minutos:02d}:00",
+            "glucose_mgdl": val,
+            "device_id": "manual",
+        })
+
+    inserted = repo.batch_insert_cgm_readings(readings)
+    stats = repo.recalculate_cgm_summary_from_readings(input_data.date_ref)
+
+    return {
+        "status": "ok",
+        "summary": stats,
+        "readings_received": len(readings),
+        "readings_inserted": inserted,
+    }
+
+
+@router.post("/readings")
+def add_cgm_reading(input_data: CGMReadingInput):
+    """Recebe uma leitura CGM individual, salva bruta e atualiza o sumário diário."""
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    repo.batch_insert_cgm_readings([{
+        "timestamp": input_data.timestamp,
+        "glucose_mgdl": input_data.glucose_mgdl,
+        "device_id": input_data.device_id,
+    }])
+
+    date_ref = input_data.timestamp[:10]
+    stats = repo.recalculate_cgm_summary_from_readings(date_ref)
+
     return {"status": "ok", "summary": stats}
+
 
 @router.post("/upload-csv")
 async def upload_cgm_csv(file: UploadFile = File(...)):
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
 
     content = await file.read()
     text = content.decode("utf-8-sig", errors="replace")
-    
+
     # Suporta separador vírgula ou ponto-e-vírgula (FreeStyle Libre costuma usar ;)
     delimiter = ";" if ";" in text[:500] else ","
     reader = csv.reader(io.StringIO(text), delimiter=delimiter)
-    
+
+    # daily_readings: dict[date_str, list[float]]
     daily_readings: Dict[str, List[float]] = {}
     rows_processed = 0
 
     for row in reader:
         if not row or len(row) < 3:
             continue
-        # Procura coluna de data e valor de glicose
         date_str = None
         val_float = None
 
         for item in row:
             item_str = item.strip()
-            # Tenta extrair data YYYY-MM-DD ou DD/MM/YYYY
             if not date_str:
                 if len(item_str) >= 10 and ("-" in item_str or "/" in item_str):
                     try:
@@ -67,8 +116,7 @@ async def upload_cgm_csv(file: UploadFile = File(...)):
                                 date_str = f"{parts[2]}-{parts[1].zfill(2)}-{parts[0].zfill(2)}"
                     except Exception:
                         pass
-            
-            # Tenta extrair valor numérico de glicose (ex: 85-250)
+
             try:
                 val = float(item_str.replace(",", "."))
                 if 40.0 <= val <= 400.0:
@@ -83,24 +131,39 @@ async def upload_cgm_csv(file: UploadFile = File(...)):
             rows_processed += 1
 
     summaries_added = 0
+    raw_readings_inserted = 0
     for dt_str, readings in daily_readings.items():
         if len(readings) >= 3:
-            stats = calculate_cgm_summary(readings)
-            stats["date_ref"] = dt_str
-            repo.add_cgm_summary(stats)
+            # Salva leituras brutas com timestamps ISO 8601
+            raw_readings = []
+            for i, val in enumerate(readings):
+                horas = (8 + i // 4) % 24
+                minutos = (i % 4) * 15
+                raw_readings.append({
+                    "timestamp": f"{dt_str}T{horas:02d}:{minutos:02d}:00",
+                    "glucose_mgdl": val,
+                    "device_id": "csv_import",
+                })
+            inserted = repo.batch_insert_cgm_readings(raw_readings)
+            raw_readings_inserted += inserted
+
+            stats = repo.recalculate_cgm_summary_from_readings(dt_str)
             summaries_added += 1
 
     return {
         "status": "ok",
         "rows_processed": rows_processed,
         "days_imported": summaries_added,
-        "message": f"Sucesso: {summaries_added} dias de leitura CGM importados!"
+        "raw_readings_inserted": raw_readings_inserted,
+        "message": f"Sucesso: {summaries_added} dias de leitura CGM importados!",
     }
+
 
 @router.get("/export-csv")
 def export_cgm_csv():
-    initialize_db(DB_PATH)
-    repo = LongevityRepository(DB_PATH)
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     summaries = repo.get_cgm_summaries()
 
     output = io.StringIO()
@@ -120,7 +183,7 @@ def export_cgm_csv():
             s.get("time_in_range_pct"),
             s.get("time_above_range_pct"),
             s.get("time_below_range_pct"),
-            s.get("total_readings")
+            s.get("total_readings"),
         ])
 
     csv_data = output.getvalue()

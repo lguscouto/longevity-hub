@@ -1,0 +1,34 @@
+{
+  "bucket": [
+    {
+      "startTimeMillis": "1751328000000",
+      "dataset": [
+        {
+          "point": [
+            {
+              "value": [
+                {"fpVal": 118.0},
+                {"fpVal": 76.0}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "startTimeMillis": "1751414400000",
+      "dataset": [
+        {
+          "point": [
+            {
+              "value": [
+                {"fpVal": 120.0},
+                {"fpVal": 78.0}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

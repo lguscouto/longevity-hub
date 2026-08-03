@@ -217,6 +217,10 @@ CREATE TABLE IF NOT EXISTS ai_settings (
     openai_api_key TEXT,
     anthropic_api_key TEXT,
     openrouter_api_key TEXT,
+    has_openai_key INTEGER DEFAULT 0,
+    has_anthropic_key INTEGER DEFAULT 0,
+    has_openrouter_key INTEGER DEFAULT 0,
+    privacy_mode TEXT DEFAULT 'minimal',
     system_prompt_custom TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -233,6 +237,44 @@ CREATE TABLE IF NOT EXISTS ai_insights_history (
     user_prompt TEXT,
     tokens_used INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS physical_assessments (
+    id TEXT PRIMARY KEY,
+    assessment_date TEXT NOT NULL,
+    title TEXT,
+    weight_kg REAL,
+    body_fat_percentage REAL,
+    waist_cm REAL,
+    abdomen_cm REAL,
+    hip_cm REAL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS physical_assessment_photos (
+    id TEXT PRIMARY KEY,
+    assessment_id TEXT NOT NULL,
+    angle TEXT NOT NULL,
+    body_state TEXT DEFAULT 'unspecified',
+    description TEXT,
+    original_filename TEXT,
+    stored_filename TEXT NOT NULL,
+    relative_path TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    file_size INTEGER NOT NULL,
+    sha256 TEXT NOT NULL,
+    width INTEGER,
+    height INTEGER,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assessment_id) REFERENCES physical_assessments(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_pa_date ON physical_assessments(assessment_date);
+CREATE INDEX IF NOT EXISTS idx_pap_assessment_id ON physical_assessment_photos(assessment_id);
+CREATE INDEX IF NOT EXISTS idx_pap_angle ON physical_assessment_photos(angle);
+CREATE INDEX IF NOT EXISTS idx_pap_sha256 ON physical_assessment_photos(sha256);
 """
 
 
@@ -248,6 +290,35 @@ def initialize_db(db_path: str | Path) -> None:
             conn.execute("ALTER TABLE supplement_stack ADD COLUMN category TEXT DEFAULT 'Suplemento';")
         except sqlite3.OperationalError:
             pass
+
+        # Migração defensiva: metadados de presença de chaves sem mover/apagar segredos legados
+        for column_sql in (
+            "has_openai_key INTEGER DEFAULT 0",
+            "has_anthropic_key INTEGER DEFAULT 0",
+            "has_openrouter_key INTEGER DEFAULT 0",
+            "privacy_mode TEXT DEFAULT 'minimal'",
+        ):
+            try:
+                conn.execute(f"ALTER TABLE ai_settings ADD COLUMN {column_sql};")
+            except sqlite3.OperationalError:
+                pass
+
+        conn.execute(
+            """
+            UPDATE ai_settings
+            SET
+                has_openai_key = CASE
+                    WHEN TRIM(COALESCE(openai_api_key, '')) != '' THEN 1 ELSE has_openai_key
+                END,
+                has_anthropic_key = CASE
+                    WHEN TRIM(COALESCE(anthropic_api_key, '')) != '' THEN 1 ELSE has_anthropic_key
+                END,
+                has_openrouter_key = CASE
+                    WHEN TRIM(COALESCE(openrouter_api_key, '')) != '' THEN 1 ELSE has_openrouter_key
+                END
+            WHERE id = 1;
+            """
+        )
 
         # Garante linha inicial no user_profile se vazia
         conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 32.0, 170.0, 75.0);")
@@ -268,5 +339,10 @@ def initialize_db(db_path: str | Path) -> None:
                 "INSERT INTO supplement_stack (name, dosage, category, frequency, timing, start_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 supps
             )
+
+        # Índice único em cgm_readings.timestamp para dedup em reimportações
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_cgm_readings_ts ON cgm_readings(timestamp);"
+        )
 
         conn.commit()

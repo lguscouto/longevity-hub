@@ -2,6 +2,7 @@ import pytest
 import os
 import tempfile
 import gc
+import sqlite3
 from pathlib import Path
 
 from longevidade.db.schema import initialize_db
@@ -61,3 +62,31 @@ def test_db_initialization_and_crud():
                 os.unlink(db_path)
             except OSError:
                 pass
+
+
+def test_deleting_supplement_cascades_daily_logs(tmp_path):
+    db_path = tmp_path / "cascade.sqlite3"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    supplement_id = repo.add_supplement({
+        "name": "Suplemento sintético",
+        "dosage": "1 cápsula",
+        "category": "Teste",
+        "frequency": "Diário",
+        "timing": "Manhã",
+        "start_date": "2026-07-29",
+    })
+    repo.toggle_supplement_log(supplement_id, "2026-07-29")
+
+    assert repo.get_supplement_logs_for_date("2026-07-29") == [supplement_id]
+
+    repo.delete_supplement(supplement_id)
+
+    with sqlite3.connect(db_path) as conn:
+        remaining_logs = conn.execute(
+            "SELECT COUNT(*) FROM supplement_logs WHERE supplement_id = ?;",
+            (supplement_id,),
+        ).fetchone()[0]
+
+    assert remaining_logs == 0

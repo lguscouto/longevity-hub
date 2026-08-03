@@ -1,0 +1,46 @@
+{
+  "bucket": [
+    {
+      "startTimeMillis": "1751328000000",
+      "dataset": [
+        {
+          "point": [
+            {
+              "value": [
+                {"intVal": 8500}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "startTimeMillis": "1751414400000",
+      "dataset": [
+        {
+          "point": [
+            {
+              "value": [
+                {"intVal": 10200}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "startTimeMillis": "1751500800000",
+      "dataset": [
+        {
+          "point": [
+            {
+              "value": [
+                {"intVal": 7200}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

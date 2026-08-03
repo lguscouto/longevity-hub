@@ -12,6 +12,8 @@ run_app.bat
 
 Acesse no seu navegador em: **http://127.0.0.1:8011**
 
+Para a documentação completa de visão geral do projeto, consulte **[docs/overview.md](docs/overview.md)**.
+
 ---
 
 ## 🌟 Funcionalidades Principais

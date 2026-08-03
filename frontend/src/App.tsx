@@ -1,217 +1,397 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Activity, Heart, Flame, Moon, Footprints, Scale, Zap, Shield,
-  Award, TrendingUp, Sparkles, AlertCircle, RefreshCw
-} from 'lucide-react';
-import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
-  CartesianGrid, BarChart, Bar, LineChart, Line, Legend
-} from 'recharts';
+import React, { useEffect, useRef, useState, Suspense, lazy } from 'react'
+import { Activity, Flame, Footprints, Heart, Moon, RefreshCw, Shield } from 'lucide-react'
 
-import { Header } from './components/Header';
-import { MetricCard } from './components/MetricCard';
-import { PhenoAgeWidget } from './components/PhenoAgeWidget';
-import { LabResultsTable } from './components/LabResultsTable';
-import { NOf1Tracker } from './components/NOf1Tracker';
-import { CGMDashboard } from './components/CGMDashboard';
-import { DoctorBriefingModal } from './components/DoctorBriefingModal';
-import { ManualEntryModal } from './components/ManualEntryModal';
-import { SyncProgressModal } from './components/SyncProgressModal';
-import { ProfileView } from './components/ProfileView';
-import { AICopilotView } from './components/AICopilotView';
-import { AISettingsModal } from './components/AISettingsModal';
-import { DateNavigator } from './components/DateNavigator';
-import { SupplementsView } from './components/SupplementsView';
-import { DailyComplianceWidget } from './components/DailyComplianceWidget';
+import { Header } from './components/Header'
+import { MetricCard } from './components/MetricCard'
+import { ErrorBoundary } from './components/ErrorBoundary'
+
+// Lazy-loaded heavy components
+const PhenoAgeWidget = lazy(() => import('./components/PhenoAgeWidget').then(m => ({ default: m.PhenoAgeWidget })))
+const LabResultsTable = lazy(() => import('./components/LabResultsTable').then(m => ({ default: m.LabResultsTable })))
+const NOf1Tracker = lazy(() => import('./components/NOf1Tracker').then(m => ({ default: m.NOf1Tracker })))
+const CGMDashboard = lazy(() => import('./components/CGMDashboard').then(m => ({ default: m.CGMDashboard })))
+const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })))
+const AICopilotView = lazy(() => import('./components/AICopilotView').then(m => ({ default: m.AICopilotView })))
+const SupplementsView = lazy(() => import('./components/SupplementsView').then(m => ({ default: m.SupplementsView })))
+const DoctorBriefingModal = lazy(() => import('./components/DoctorBriefingModal').then(m => ({ default: m.DoctorBriefingModal })))
+const AISettingsModal = lazy(() => import('./components/AISettingsModal').then(m => ({ default: m.AISettingsModal })))
+const SyncProgressModal = lazy(() => import('./components/SyncProgressModal').then(m => ({ default: m.SyncProgressModal })))
+const PipelineStatusPanel = lazy(() => import('./components/PipelineStatusPanel').then(m => ({ default: m.PipelineStatusPanel })))
+const ManualEntryModal = lazy(() => import('./components/ManualEntryModal').then(m => ({ default: m.ManualEntryModal })))
+const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWidget').then(m => ({ default: m.DailyComplianceWidget })))
+const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
+
+import { DateNavigator } from './components/DateNavigator'
+import { ApiError, requestJson } from './lib/api'
+import type { PipelineRun } from './components/PipelineStatusPanel'
+
+type Tab = 'overview' | 'labs' | 'supplements' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
+
+type DailyMetric = {
+  date_ref: string
+  steps?: number | null
+  rhr_bpm?: number | null
+  hrv_ms?: number | null
+  sleep_minutes?: number | null
+  vo2_max?: number | null
+  systolic_bp?: number | null
+  diastolic_bp?: number | null
+}
+
+type SyncResult = {
+  status: 'ok' | 'error'
+  message?: string
+  zepp_records_imported?: number
+  google_fit_records_imported?: number
+  total_sources?: number
+}
+
+const NO_DATA_LABEL = 'Sem dados para a data'
+
+function formatSleepMinutes(totalMinutes: number | null | undefined): string {
+  if (totalMinutes == null || Number.isNaN(totalMinutes)) return '—'
+  const safeMinutes = Math.max(0, Math.round(totalMinutes))
+  const hours = Math.floor(safeMinutes / 60)
+  const minutes = safeMinutes % 60
+  return `${hours}h ${String(minutes).padStart(2, '0')}m`
+}
+
+function formatDecimal(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—'
+  return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)
+}
+
+const VALID_TABS: Tab[] = ['overview', 'labs', 'supplements', 'ai', 'n-of-1', 'physical-assessments', 'profile']
+
+function getInitialTab(): Tab {
+  try {
+    const hash = window.location.hash.replace('#', '').trim() as Tab
+    if (hash && VALID_TABS.includes(hash)) {
+      return hash
+    }
+    const saved = localStorage.getItem('longevidade_active_tab') as Tab | null
+    if (saved && VALID_TABS.includes(saved)) {
+      return saved
+    }
+  } catch {
+    // fallback
+  }
+  return 'overview'
+}
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'labs' | 'supplements' | 'ai' | 'n-of-1' | 'profile'>('overview');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [daysRange, setDaysRange] = useState<number>(30);
+  const [activeTab, setActiveTab] = useState<Tab>(getInitialTab)
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [daysRange, setDaysRange] = useState<number>(30)
 
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [labs, setLabs] = useState<any[]>([]);
-  const [phenoHistory, setPhenoHistory] = useState<any[]>([]);
-  const [experiments, setExperiments] = useState<any[]>([]);
-  const [cgmSummaries, setCgmSummaries] = useState<any[]>([]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('longevidade_active_tab', activeTab)
+      if (window.location.hash !== `#${activeTab}`) {
+        window.location.hash = activeTab
+      }
+    } catch {
+      // ignore
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '').trim() as Tab
+      if (hash && VALID_TABS.includes(hash)) {
+        setActiveTab(hash)
+      }
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  const [metrics, setMetrics] = useState<DailyMetric[]>([])
+  const [labs, setLabs] = useState<any[]>([])
+  const [phenoHistory, setPhenoHistory] = useState<any[]>([])
+  const [latestKdmRecord, setLatestKdmRecord] = useState<any | null>(null)
+  const [experiments, setExperiments] = useState<any[]>([])
+  const [cgmSummaries, setCgmSummaries] = useState<any[]>([])
   const [profile, setProfile] = useState<any>({
     name: 'Paciente Longevidade',
-    chronological_age: 40.0,
-    height_cm: 170.0,
+    chronological_age: 40,
+    height_cm: 170,
     current_weight_kg: 72.5,
-    target_weight_kg: 75.0
-  });
+    target_weight_kg: 75,
+  })
 
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<any>(null);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showManualModal, setShowManualModal] = useState(false)
+  const [showDoctorModal, setShowDoctorModal] = useState(false)
+  const [showAISettings, setShowAISettings] = useState(false)
+  const [doctorBriefingMd, setDoctorBriefingMd] = useState('')
 
-  const [showManualModal, setShowManualModal] = useState(false);
-  const [showDoctorModal, setShowDoctorModal] = useState(false);
-  const [showAISettings, setShowAISettings] = useState(false);
-  const [doctorBriefingMd, setDoctorBriefingMd] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
+
+  const [pipelineRuns, setPipelineRuns] = useState<PipelineRun[]>([])
+  const [pipelineLoading, setPipelineLoading] = useState(false)
+
+  const historySectionRef = useRef<HTMLDivElement>(null)
 
   const [aiChatMessages, setAiChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
     {
       sender: 'ai',
-      text: 'Olá! Sou o seu Copiloto de Inteligência de Longevidade. Analiso continuamente seus biomarcadores de exames, idade epigenética PhenoAge, curvas de glicemia CGM e variabilidade cardíaca (HRV) para guiar seu protocolo. Como posso ajudar hoje?',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+      text: 'Olá! Sou o seu Copiloto de Inteligência de Longevidade. Como posso ajudar hoje?',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ])
 
-  const fetchAllData = async () => {
+  const manualTriggerRef = useRef<HTMLButtonElement>(null)
+  const refreshSequence = useRef(0)
+
+  const activeMetric = metrics.find((metric) => metric.date_ref === selectedDate) ?? null
+  const hasMetric = Boolean(activeMetric)
+
+  const metricCards = [
+    {
+      title: 'PASSOS 24H',
+      value: hasMetric && activeMetric?.steps != null ? activeMetric.steps.toLocaleString('pt-BR') : '—',
+      unit: hasMetric && activeMetric?.steps != null ? 'passos' : undefined,
+      subtitle: hasMetric ? 'Meta: 10.000' : NO_DATA_LABEL,
+      icon: Footprints,
+      color: 'emerald' as const,
+    },
+    {
+      title: 'RHR REPOUSO',
+      value: hasMetric && activeMetric?.rhr_bpm != null ? `${activeMetric.rhr_bpm} bpm` : '—',
+      subtitle: hasMetric ? 'Alvo: < 55 bpm' : NO_DATA_LABEL,
+      icon: Heart,
+      color: 'rose' as const,
+    },
+    {
+      title: 'HRV NOTURNA',
+      value: hasMetric && activeMetric?.hrv_ms != null ? `${formatDecimal(activeMetric.hrv_ms)} ms` : '—',
+      subtitle: hasMetric ? 'Variabilidade FC' : NO_DATA_LABEL,
+      icon: Activity,
+      color: 'cyan' as const,
+    },
+    {
+      title: 'SONO TOTAL',
+      value: hasMetric && activeMetric?.sleep_minutes != null ? formatSleepMinutes(activeMetric.sleep_minutes) : '—',
+      subtitle: hasMetric ? 'Monitorado' : NO_DATA_LABEL,
+      icon: Moon,
+      color: 'violet' as const,
+    },
+    {
+      title: 'VO2 MAX',
+      value: hasMetric && activeMetric?.vo2_max != null ? `${formatDecimal(activeMetric.vo2_max)} mL/kg/min` : '—',
+      subtitle: hasMetric ? 'Capacidade Cardiorespiratória' : NO_DATA_LABEL,
+      icon: Flame,
+      color: 'amber' as const,
+    },
+    {
+      title: 'PRESSÃO ARTERIAL',
+      value:
+        hasMetric && activeMetric?.systolic_bp != null && activeMetric?.diastolic_bp != null
+          ? `${activeMetric.systolic_bp}/${activeMetric.diastolic_bp}`
+          : '—',
+      subtitle: hasMetric ? 'Use +Registrar para aferir' : NO_DATA_LABEL,
+      icon: Shield,
+      color: 'emerald' as const,
+    },
+  ]
+
+  const fetchDashboardData = async () => {
+    const sequence = ++refreshSequence.current
+    setLoading(true)
+    setError(null)
+
     try {
-      const [resMetrics, resLabs, resPheno, resExp, resCgm, resProf] = await Promise.all([
-        fetch(`/api/metrics?days=${daysRange}`).then(r => r.json()),
-        fetch('/api/labs').then(r => r.json()),
-        fetch('/api/phenoage/history').then(r => r.json()),
-        fetch('/api/n-of-1').then(r => r.json()),
-        fetch('/api/cgm/summary').then(r => r.json()),
-        fetch('/api/profile').then(r => r.json())
-      ]);
+      const [requiredData, nextKdmRecord] = await Promise.all([
+        Promise.all([
+          requestJson<DailyMetric[]>(`/api/metrics?days=${daysRange}`),
+          requestJson<any[]>('/api/labs'),
+          requestJson<any[]>('/api/phenoage/history'),
+          requestJson<any[]>('/api/n-of-1'),
+          requestJson<any[]>('/api/cgm/summary'),
+          requestJson<any>('/api/profile'),
+        ]),
+        requestJson<any>('/api/kdm/latest').catch(() => null),
+      ])
 
-      setMetrics(resMetrics || []);
-      setLabs(resLabs || []);
-      setPhenoHistory(resPheno || []);
-      setExperiments(resExp || []);
-      setCgmSummaries(resCgm || []);
-      if (resProf) setProfile(resProf);
-    } catch (err) {
-      console.error("Erro ao carregar dados da API:", err);
+      const [nextMetrics, nextLabs, nextPhenoHistory, nextExperiments, nextCgmSummaries, nextProfile] = requiredData
+
+      if (sequence !== refreshSequence.current) return
+
+      setMetrics(Array.isArray(nextMetrics) ? nextMetrics : [])
+      setLabs(Array.isArray(nextLabs) ? nextLabs : [])
+      const normalizedPhenoHistory = Array.isArray(nextPhenoHistory) ? nextPhenoHistory : []
+      setPhenoHistory(normalizedPhenoHistory)
+      const nestedKdmFromPheno = normalizedPhenoHistory[0]?.kdm ?? normalizedPhenoHistory[0]?.kdm_result ?? null
+      setLatestKdmRecord(Array.isArray(nextKdmRecord) ? nextKdmRecord[0] ?? nestedKdmFromPheno : nextKdmRecord ?? nestedKdmFromPheno)
+      setExperiments(Array.isArray(nextExperiments) ? nextExperiments : [])
+      setCgmSummaries(Array.isArray(nextCgmSummaries) ? nextCgmSummaries : [])
+      if (nextProfile) setProfile(nextProfile)
+    } catch (caught) {
+      if (sequence !== refreshSequence.current) return
+      setMetrics([])
+      setLabs([])
+      setPhenoHistory([])
+      setLatestKdmRecord(null)
+      setExperiments([])
+      setCgmSummaries([])
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar os dados do dashboard.')
+    } finally {
+      if (sequence === refreshSequence.current) setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchAllData();
-  }, [daysRange]);
+    void fetchDashboardData()
+  }, [daysRange])
 
-  const latestMetric = metrics[0] || {};
-  const activeMetric = metrics.find(m => m.date_ref === selectedDate) || latestMetric;
-  const latestPheno = phenoHistory[0] || {};
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      void fetchPipelineRuns()
+    }
+  }, [activeTab])
 
   const handleSyncZepp = async () => {
-    setIsSyncing(true);
-    setSyncResult(null);
-    setIsSyncModalOpen(true);
+    setIsSyncing(true)
+    setSyncResult(null)
+    setIsSyncModalOpen(true)
 
     try {
-      const res = await fetch('/api/metrics/sync/zepp', { method: 'POST' });
-      const data = await res.json();
-      setSyncResult(data);
-      if (data.status === 'ok') {
-        await fetchAllData();
+      const result = await requestJson<SyncResult>('/api/metrics/sync/zepp', { method: 'POST' })
+      setSyncResult(result)
+      if (result.status === 'ok') {
+        await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+        await fetchDashboardData()
       }
-    } catch (err) {
-      setSyncResult({ status: 'error', message: 'Falha ao conectar com o serviço de importação do Zepp.' });
+    } catch (caught) {
+      setSyncResult({
+        status: 'error',
+        message: caught instanceof ApiError ? caught.message : 'Falha ao sincronizar as fontes.',
+      })
     } finally {
-      setIsSyncing(false);
+      setIsSyncing(false)
     }
-  };
+  }
+
+  const fetchPipelineRuns = async () => {
+    setPipelineLoading(true)
+    try {
+      const data = await requestJson<PipelineRun[]>('/api/pipeline-runs?limit=20')
+      setPipelineRuns(Array.isArray(data) ? data : [])
+    } catch {
+      setPipelineRuns([])
+    } finally {
+      setPipelineLoading(false)
+    }
+  }
+
+  const handleViewPipelineHistory = () => {
+    setActiveTab('profile')
+    void fetchPipelineRuns()
+    if (historySectionRef.current) {
+      setTimeout(() => {
+        historySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+  }
+
+  const handleSaveMetric = async (entry: any) => {
+    await requestJson('/api/metrics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    })
+    await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+    await fetchDashboardData()
+  }
 
   const handleRecalculatePheno = async (inputData: any) => {
     try {
-      const res = await fetch('/api/phenoage/calculate', {
+      const response = await requestJson<any>('/api/phenoage/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inputData)
-      });
-      if (res.ok) {
-        await fetchAllData();
+        body: JSON.stringify(inputData),
+      })
+      if (response?.saved === false && response?.result) {
+        setPhenoHistory((prev) => [{ ...response.result, calculated_at: new Date().toISOString().slice(0, 10) }, ...prev])
+        await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+      } else {
+        await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+        await fetchDashboardData()
       }
-    } catch (err) {
-      console.error(err);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível recalcular o PhenoAge.')
     }
-  };
+  }
 
   const handleCreateExperiment = async (expData: any) => {
     try {
-      const res = await fetch('/api/n-of-1', {
+      await requestJson('/api/n-of-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(expData)
-      });
-      if (res.ok) {
-        await fetchAllData();
-      }
-    } catch (err) {
-      console.error(err);
+        body: JSON.stringify(expData),
+      })
+      await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+      await fetchDashboardData()
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível criar o experimento.')
     }
-  };
-
-  const handleSaveMetric = async (entry: any) => {
-    try {
-      const res = await fetch('/api/metrics/manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry)
-      });
-      if (res.ok) {
-        setShowManualModal(false);
-        await fetchAllData();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  }
 
   const handleAddBatchLabs = async (recordsToSave: any[]) => {
     try {
-      const res = await fetch('/api/labs/batch', {
+      await requestJson('/api/labs/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chronological_age: profile.chronological_age || 40.0,
-          records: recordsToSave
-        })
-      });
-      if (res.ok) {
-        await fetchAllData();
-      }
-    } catch (err) {
-      console.error(err);
+          chronological_age: profile.chronological_age || 40,
+          records: recordsToSave,
+        }),
+      })
+      await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+      await fetchDashboardData()
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar os exames.')
     }
-  };
+  }
 
   const handleUpdateProfile = async (updatedData: any) => {
     try {
-      const res = await fetch('/api/profile', {
+      await requestJson('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData)
-      });
-      if (res.ok) {
-        await fetchAllData();
-      }
-    } catch (err) {
-      console.error(err);
+        body: JSON.stringify(updatedData),
+      })
+      await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+      await fetchDashboardData()
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível atualizar o perfil.')
     }
-  };
+  }
 
   const handleOpenDoctorBriefing = async () => {
     try {
-      const res = await fetch('/api/reports/doctor-briefing');
-      const data = await res.json();
-      if (data && data.markdown) {
-        setDoctorBriefingMd(data.markdown);
-        setShowDoctorModal(true);
-      }
-    } catch (err) {
-      console.error(err);
+      const data = await requestJson<{ markdown: string }>('/api/reports/doctor-briefing')
+      setDoctorBriefingMd(data.markdown)
+      setShowDoctorModal(true)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível gerar o briefing.')
     }
-  };
+  }
 
-  const formatSleepStr = (mins?: number) => {
-    if (!mins) return '4h 30m';
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h}h ${m}m`;
-  };
+  const closeManualEntry = () => {
+    setShowManualModal(false)
+    manualTriggerRef.current?.focus()
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
+    <div className="min-h-screen bg-[#f4f7fb] dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
       <Header
         activeTab={activeTab}
-        setActiveTab={(t: any) => setActiveTab(t)}
+        setActiveTab={(tab) => setActiveTab(tab as Tab)}
         onSyncZepp={handleSyncZepp}
         onOpenManualEntry={() => setShowManualModal(true)}
         onOpenDoctorBriefing={handleOpenDoctorBriefing}
@@ -219,204 +399,107 @@ export default function App() {
         isSyncing={isSyncing}
       />
 
-      <main className="max-w-7xl mx-auto px-6 space-y-8">
-        {activeTab === 'overview' && (
-          <>
-            {/* Navegador de Datas & Filtro de Período */}
-            <DateNavigator
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-              daysRange={daysRange}
-              onDaysRangeChange={setDaysRange}
-            />
-
-            {/* Top 6 Stat Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <MetricCard
-                title="PASSOS 24H"
-                value={activeMetric.steps ? activeMetric.steps.toLocaleString() : '4.100'}
-                unit="passos"
-                icon={Footprints}
-                subtitle="Meta: 10.000"
-                color="emerald"
-              />
-
-              <MetricCard
-                title="RHR REPOUSO"
-                value={activeMetric.rhr_bpm ? `${activeMetric.rhr_bpm} bpm` : '68 bpm'}
-                icon={Heart}
-                subtitle="Alvo: < 55 bpm"
-                color="rose"
-              />
-
-              <MetricCard
-                title="HRV NOTURNA"
-                value={activeMetric.hrv_ms ? `${activeMetric.hrv_ms} ms` : '30 ms'}
-                icon={Activity}
-                subtitle="Variabilidade FC"
-                color="cyan"
-              />
-
-              <MetricCard
-                title="SONO TOTAL"
-                value={formatSleepStr(activeMetric.sleep_minutes)}
-                icon={Moon}
-                subtitle="Monitorado"
-                color="violet"
-              />
-
-              <MetricCard
-                title="VO2 MAX"
-                value={activeMetric.vo2_max ? `${activeMetric.vo2_max} mL/kg/min` : '41.08 mL/kg/min'}
-                icon={Flame}
-                subtitle="Capacidade Cardiorespiratória"
-                color="amber"
-              />
-
-              <MetricCard
-                title="PRESSÃO ARTERIAL"
-                value={activeMetric.systolic_bp && activeMetric.diastolic_bp ? `${activeMetric.systolic_bp}/${activeMetric.diastolic_bp}` : '(Sem dados)'}
-                icon={Shield}
-                subtitle="Use +Registrar para aferir"
-                color="emerald"
-              />
-            </div>
-
-            {/* Middle Section 1: PhenoAge Widget + Daily Compliance Score Widget */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <PhenoAgeWidget latestRecord={latestPheno} onRecalculate={handleRecalculatePheno} />
-              </div>
-              <div className="lg:col-span-2">
-                <DailyComplianceWidget selectedDate={selectedDate} />
+      <ErrorBoundary>
+        <Suspense
+          fallback={
+            <div className="max-w-7xl mx-auto px-6 py-12">
+              <div className="space-y-4 p-8 rounded-2xl bg-white/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 animate-pulse">
+                <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-32 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl" />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl" />
+                  <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl" />
+                  <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl" />
+                </div>
               </div>
             </div>
+          }
+        >
+          <main className="max-w-7xl mx-auto px-6 space-y-8">
+            {error && (
+              <div role="alert" className="rounded-2xl border border-rose-500/50 bg-rose-500/10 dark:bg-rose-950/40 p-4 text-rose-900 dark:text-rose-100">
+                {error}
+              </div>
+            )}
 
-            {/* Middle Section 2: 2 Gráficos Lado a Lado (HRV vs RHR + Fases do Sono) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Gráfico 1: HRV vs RHR */}
-              <div className="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4">
+            {showManualModal && <ManualEntryModal isOpen={showManualModal} onClose={closeManualEntry} onSaveMetric={handleSaveMetric} />}
+
+            {activeTab === 'overview' && (
+              <>
+                <DateNavigator
+                  selectedDate={selectedDate}
+                  onDateChange={setSelectedDate}
+                  daysRange={daysRange}
+                  onDaysRangeChange={setDaysRange}
+                />
+
+                <section className="flex items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-cyan-400" /> HRV (Variabilidade FC) vs RHR (Repouso)
-                    </h3>
-                    <p className="text-xs text-slate-400">Recuperação do sistema nervoso autônomo ({daysRange}d)</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Visão Geral</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{loading ? 'Carregando dados do dashboard…' : hasMetric ? `Atualizado em ${activeMetric?.date_ref}` : NO_DATA_LABEL}</p>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                    Zepp / Amazfit
-                  </span>
-                </div>
+                  <button aria-label="Atualizar dados" onClick={() => void fetchDashboardData()} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition">
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+                </section>
 
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={[...metrics].reverse()}>
-                      <defs>
-                        <linearGradient id="colorHrv" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
-                      <XAxis dataKey="date_ref" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} domain={['auto', 'auto']} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
-                      />
-                      <Area type="monotone" dataKey="hrv_ms" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorHrv)" name="HRV (ms)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+                <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {metricCards.map((card) => (
+                    <MetricCard
+                      key={card.title}
+                      title={card.title}
+                      value={card.value}
+                      unit={card.unit}
+                      subtitle={card.subtitle}
+                      icon={card.icon}
+                      color={card.color}
+                    />
+                  ))}
+                </section>
 
-              {/* Gráfico 2: Distribuição de Fases do Sono */}
-              <div className="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Moon className="h-5 w-5 text-indigo-400" /> Distribuição de Fases do Sono
-                    </h3>
-                    <p className="text-xs text-slate-400">Minutos em Sono Profundo, REM e Leve ({daysRange}d)</p>
+                {!loading && !hasMetric && <p className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 text-slate-700 dark:text-slate-300">Sem dados disponíveis para a data selecionada.</p>}
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="lg:col-span-1">
+                    <PhenoAgeWidget latestRecord={phenoHistory[0]} latestKdmRecord={latestKdmRecord} onRecalculate={handleRecalculatePheno} />
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    Monitoramento
-                  </span>
+                  <div className="lg:col-span-1">
+                    <DailyComplianceWidget selectedDate={selectedDate} />
+                  </div>
                 </div>
 
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[...metrics].reverse()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
-                      <XAxis dataKey="date_ref" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                      <Bar dataKey="sleep_deep_min" stackId="a" fill="#8b5cf6" name="Sono Profundo (min)" />
-                      <Bar dataKey="sleep_rem_min" stackId="a" fill="#06b6d4" name="Sono REM (min)" />
-                      <Bar dataKey="sleep_light_min" stackId="a" fill="#475569" name="Sono Leve (min)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
+                <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />
+              </>
+            )}
 
-            {/* CGM Section */}
-            <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchAllData} />
-          </>
-        )}
+            {activeTab === 'labs' && <LabResultsTable labs={labs} onAddBatchLabs={handleAddBatchLabs} onRefreshData={fetchDashboardData} />}
+            {activeTab === 'supplements' && <SupplementsView selectedDate={selectedDate} />}
+            {activeTab === 'ai' && <AICopilotView onOpenSettings={() => setShowAISettings(true)} chatMessages={aiChatMessages} setChatMessages={setAiChatMessages} />}
+            {activeTab === 'n-of-1' && <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />}
+            {activeTab === 'physical-assessments' && <PhysicalAssessmentsView />}
+            {activeTab === 'profile' && (
+              <ProfileView
+                profile={profile}
+                onUpdateProfile={handleUpdateProfile}
+                pipelineRuns={pipelineRuns}
+                pipelineLoading={pipelineLoading}
+                onRefreshPipeline={fetchPipelineRuns}
+                historySectionRef={historySectionRef}
+              />
+            )}
+          </main>
 
-        {activeTab === 'labs' && (
-          <LabResultsTable labs={labs} onAddBatchLabs={handleAddBatchLabs} onRefreshData={fetchAllData} />
-        )}
-
-        {activeTab === 'supplements' && (
-          <SupplementsView selectedDate={selectedDate} />
-        )}
-
-        {activeTab === 'ai' && (
-          <AICopilotView
-            onOpenSettings={() => setShowAISettings(true)}
-            chatMessages={aiChatMessages}
-            setChatMessages={setAiChatMessages}
+          <AISettingsModal isOpen={showAISettings} onClose={() => setShowAISettings(false)} onRefreshSettings={fetchDashboardData} />
+          <SyncProgressModal
+            isOpen={isSyncModalOpen}
+            onClose={() => setIsSyncModalOpen(false)}
+            isSyncing={isSyncing}
+            syncResult={syncResult}
+            onViewHistory={handleViewPipelineHistory}
           />
-        )}
-
-        {activeTab === 'n-of-1' && (
-          <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />
-        )}
-
-        {activeTab === 'profile' && (
-          <ProfileView profile={profile} onUpdateProfile={handleUpdateProfile} />
-        )}
-      </main>
-
-      {/* Modals */}
-      <AISettingsModal
-        isOpen={showAISettings}
-        onClose={() => setShowAISettings(false)}
-        onRefreshSettings={fetchAllData}
-      />
-
-      <SyncProgressModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        isSyncing={isSyncing}
-        syncResult={syncResult}
-      />
-
-      <ManualEntryModal
-        isOpen={showManualModal}
-        onClose={() => setShowManualModal(false)}
-        onSaveMetric={handleSaveMetric}
-      />
-
-      <DoctorBriefingModal
-        isOpen={showDoctorModal}
-        onClose={() => setShowDoctorModal(false)}
-        markdownContent={doctorBriefingMd}
-      />
+          <DoctorBriefingModal isOpen={showDoctorModal} onClose={() => setShowDoctorModal(false)} markdownContent={doctorBriefingMd} />
+        </Suspense>
+      </ErrorBoundary>
     </div>
-  );
+  )
 }

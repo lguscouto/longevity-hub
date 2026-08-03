@@ -13,6 +13,13 @@ from typing import Any, Dict, List
 
 from longevidade.algorithms.phenoage import PhenoAgeInput, calculate_phenoage
 from longevidade.db.repository import LongevityRepository
+from longevidade.ingestion.lab_normalization import (
+    LAB_MARKER_LABELS,
+    build_phenoage_input,
+    normalize_lab_key,
+    normalize_lab_record,
+    validate_phenoage_inputs,
+)
 
 # Tabela Completa de Alvos Ótimos de Longevidade (Protocolo Blueprint / Medicina Funcional)
 OPTIMAL_LONGEVITY_TARGETS = {
@@ -73,66 +80,94 @@ OPTIMAL_LONGEVITY_TARGETS = {
     "platelets": {"name": "Plaquetas", "unit": "10^3/uL", "ref_min": 150, "ref_max": 450, "optimal": 220.0, "category": "Hematologia"}
 }
 
+_CANONICAL_TARGET_SOURCE_KEYS = {
+    "glucose_mgdl": "fasting_glucose",
+    "creatinine_mgdl": "creatinine",
+    "albumin_gdl": "albumin",
+    "hscrp_mgl": "hscrp",
+    "mcv_fl": "mcv",
+    "rdw_pct": "rdw",
+    "alk_phos_ul": "alk_phos",
+    "wbc_1000ul": "wbc",
+    "hdl_cholesterol": "hdl",
+    "ldl_cholesterol": "ldl",
+    "bun": "urea",
+}
 
-def ingest_lab_records(records: List[Dict[str, Any]], repo: LongevityRepository, chronological_age: float = 40.0) -> int:
-    """Ingere uma lista de exames laboratoriais e calcula o PhenoAge se os marcadores estiverem presentes."""
+for canonical_key, source_key in _CANONICAL_TARGET_SOURCE_KEYS.items():
+    if source_key in OPTIMAL_LONGEVITY_TARGETS and canonical_key not in OPTIMAL_LONGEVITY_TARGETS:
+        target = dict(OPTIMAL_LONGEVITY_TARGETS[source_key])
+        target["name"] = LAB_MARKER_LABELS.get(canonical_key, target.get("name", canonical_key.upper()))
+        OPTIMAL_LONGEVITY_TARGETS[canonical_key] = target
+
+OPTIMAL_LONGEVITY_TARGETS.setdefault(
+    "apoa1",
+    {"name": "Apolipoproteína A1 (ApoA1)", "unit": "mg/dL", "ref_min": 110, "ref_max": 180, "optimal": 140.0, "category": "Cardiovascular"},
+)
+OPTIMAL_LONGEVITY_TARGETS.setdefault(
+    "total_cholesterol",
+    {"name": "Colesterol Total", "unit": "mg/dL", "ref_min": 125, "ref_max": 200, "optimal": 160.0, "category": "Cardiovascular"},
+)
+
+
+def ingest_lab_records(records: List[Dict[str, Any]], repo: LongevityRepository, chronological_age: float = 40.0) -> Dict[str, Any]:
+    """Ingere exames, normaliza aliases e só calcula PhenoAge se o painel estiver completo."""
     inserted = 0
     collected_dates = set()
     latest_values: Dict[str, float] = {}
 
     for rec in records:
-        key = str(rec.get("metric_key", "")).lower().strip()
-        val = float(rec.get("value", 0))
-        dt = str(rec.get("collected_at", date.today().isoformat()))
+        normalized_rec = normalize_lab_record(rec)
+        key = normalize_lab_key(normalized_rec.get("metric_key"))
+        val = float(normalized_rec.get("value", 0))
+        dt = str(normalized_rec.get("collected_at", date.today().isoformat()))
 
         target_info = OPTIMAL_LONGEVITY_TARGETS.get(key, {})
         entry = {
             "collected_at": dt,
             "metric_key": key,
-            "metric_name": rec.get("metric_name") or target_info.get("name") or key.upper(),
+            "metric_name": normalized_rec.get("metric_name") or target_info.get("name") or LAB_MARKER_LABELS.get(key) or key.upper(),
             "value": val,
-            "unit": rec.get("unit") or target_info.get("unit") or "",
-            "ref_min": rec.get("ref_min") or target_info.get("ref_min"),
-            "ref_max": rec.get("ref_max") or target_info.get("ref_max"),
-            "optimal_target": rec.get("optimal_target") or target_info.get("optimal"),
-            "category": rec.get("category") or target_info.get("category") or "Geral",
-            "notes": rec.get("notes")
+            "unit": normalized_rec.get("unit") or target_info.get("unit") or "",
+            "ref_min": normalized_rec.get("ref_min") if normalized_rec.get("ref_min") is not None else target_info.get("ref_min"),
+            "ref_max": normalized_rec.get("ref_max") if normalized_rec.get("ref_max") is not None else target_info.get("ref_max"),
+            "optimal_target": normalized_rec.get("optimal_target") if normalized_rec.get("optimal_target") is not None else target_info.get("optimal"),
+            "category": normalized_rec.get("category") or target_info.get("category") or "Geral",
+            "notes": normalized_rec.get("notes"),
         }
         repo.add_lab_result(entry)
         inserted += 1
         collected_dates.add(dt)
         latest_values[key] = val
 
-    # Tenta calcular o PhenoAge se tivermos os marcadores necessários ou usa os mais recentes
-    pheno_input: PhenoAgeInput = {
-        "chronological_age": chronological_age,
-        "glucose_mgdl": latest_values.get("fasting_glucose", latest_values.get("glucose", 90.0)),
-        "creatinine_mgdl": latest_values.get("creatinine", 0.9),
-        "albumin_gdl": latest_values.get("albumin", 4.5),
-        "hscrp_mgl": latest_values.get("hscrp", 0.5),
-        "lymphocyte_pct": latest_values.get("lymphocyte_pct", 30.0),
-        "mcv_fl": latest_values.get("mcv", 89.0),
-        "rdw_pct": latest_values.get("rdw", 12.5),
-        "alk_phos_ul": latest_values.get("alk_phos", 65.0),
-        "wbc_1000ul": latest_values.get("wbc", 6.0)
+    pheno_validation = validate_phenoage_inputs(latest_values)
+    pheno_result: Dict[str, Any] = {
+        "status": pheno_validation["status"],
+        "missing": pheno_validation["missing"],
+        "missing_biomarkers": pheno_validation["missing"],
+        "biomarkers_used": pheno_validation["biomarkers_used"],
     }
 
-    p_res = calculate_phenoage(pheno_input)
-    repo.add_phenoage_record({
-        "calculated_at": max(collected_dates) if collected_dates else date.today().isoformat(),
-        "chronological_age": p_res["chronological_age"],
-        "pheno_age": p_res["pheno_age"],
-        "age_delta": p_res["age_delta"],
-        "glucose_mgdl": pheno_input["glucose_mgdl"],
-        "creatinine_mgdl": pheno_input["creatinine_mgdl"],
-        "albumin_gdl": pheno_input["albumin_gdl"],
-        "hscrp_mgl": pheno_input["hscrp_mgl"],
-        "lymphocyte_pct": pheno_input["lymphocyte_pct"],
-        "mcv_fl": pheno_input["mcv_fl"],
-        "rdw_pct": pheno_input["rdw_pct"],
-        "alk_phos_ul": pheno_input["alk_phos_ul"],
-        "wbc_1000ul": pheno_input["wbc_1000ul"],
-        "notes": f"Cálculo automatizado PhenoAge via exames. Risco 10 anos: {p_res['mortality_risk_10yr_pct']}%"
-    })
+    if pheno_validation["status"] == "complete":
+        pheno_input: PhenoAgeInput = build_phenoage_input(latest_values, chronological_age)  # type: ignore[assignment]
+        p_res = calculate_phenoage(pheno_input)
+        if p_res.get("status") == "complete":
+            repo.add_phenoage_record({
+                "calculated_at": max(collected_dates) if collected_dates else date.today().isoformat(),
+                "chronological_age": p_res["chronological_age"],
+                "pheno_age": p_res["pheno_age"],
+                "age_delta": p_res["age_delta"],
+                "glucose_mgdl": pheno_input["glucose_mgdl"],
+                "creatinine_mgdl": pheno_input["creatinine_mgdl"],
+                "albumin_gdl": pheno_input["albumin_gdl"],
+                "hscrp_mgl": pheno_input["hscrp_mgl"],
+                "lymphocyte_pct": pheno_input["lymphocyte_pct"],
+                "mcv_fl": pheno_input["mcv_fl"],
+                "rdw_pct": pheno_input["rdw_pct"],
+                "alk_phos_ul": pheno_input["alk_phos_ul"],
+                "wbc_1000ul": pheno_input["wbc_1000ul"],
+                "notes": f"Cálculo automatizado PhenoAge via exames. Risco 10 anos: {p_res['mortality_risk_10yr_pct']}%",
+            })
+        pheno_result = p_res
 
-    return inserted
+    return {"status": "ok", "inserted": inserted, "phenoage": pheno_result}
