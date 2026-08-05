@@ -32,10 +32,10 @@ IF NOT EXIST "frontend\dist" (
     cd ..
 )
 
-echo [INFO] Servidor backend iniciando na porta 8887...
+echo [INFO] Servidor Longevidade Hub iniciando na porta 8887...
 set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887"
-echo [INFO] Abrindo o navegador em http://127.0.0.1:8886...
-start "" "http://127.0.0.1:8886"
+echo [INFO] Abrindo o navegador em http://127.0.0.1:8887...
+start "" "http://127.0.0.1:8887"
 
 "%PYTHON_EXE%" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8887 --reload
 

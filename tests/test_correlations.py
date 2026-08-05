@@ -12,8 +12,8 @@ def test_calculate_spearman_correlation_monotonic():
 def test_analyze_metric_correlations_lag():
     recs = [
         {"date_ref": f"2026-08-{i:02d}", "steps": i * 1000, "hrv_ms": i * 5}
-        for i in range(1, 15)
+        for i in range(1, 21)
     ]
-    corrs = analyze_metric_correlations(recs, target_metric="hrv_ms", max_lag_days=1)
+    corrs = analyze_metric_correlations(recs, target_metric="hrv_ms", max_lag_days=1, min_sample_count=10)
     assert len(corrs) > 0
     assert corrs[0]["cause_metric"] == "steps"

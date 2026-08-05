@@ -10,7 +10,6 @@ router = APIRouter(prefix="/api/correlations", tags=["Correlations Engine"])
 @router.get("")
 def get_correlations(target_metric: str = "hrv_ms", max_lag_days: int = 2, days: int = 90):
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path)
 
     metrics = repo.get_daily_metrics(days=days)

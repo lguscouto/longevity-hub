@@ -235,6 +235,31 @@ def import_zepp_data(
                         "source": "Zepp",
                     }
                     repo.upsert_daily_metric(mapped)
+
+                    # Persiste a cobertura e qualidade dos dados para o dia
+                    quality_items = []
+                    expected_keys = [
+                        ("hrv_ms", rec.get("hrv_rmssd_media_ms") or rec.get("hrv_sono_ms")),
+                        ("rhr_bpm", rhr_val),
+                        ("steps", rec.get("passos_zepp")),
+                        ("sleep_minutes", rec.get("sono_zepp_min")),
+                        ("spo2_avg_pct", rec.get("spo2_media_pct")),
+                        ("respiratory_rate_rpm", rec.get("frequencia_respiratoria_rpm")),
+                        ("pai_score", rec.get("pai")),
+                    ]
+                    for mkey, mval in expected_keys:
+                        has_val = mval is not None
+                        quality_items.append({
+                            "date_ref": rec["data_referencia"],
+                            "metric_key": mkey,
+                            "source": "Zepp",
+                            "observed_at": datetime.now(timezone.utc).isoformat(),
+                            "sample_count": 1440 if has_val and mkey == "steps" else (1 if has_val else 0),
+                            "coverage_pct": 100.0 if has_val else 0.0,
+                            "quality_status": "high" if has_val else "unavailable",
+                            "warnings": [] if has_val else [f"Métrica {mkey} indisponível no snapshot Zepp"],
+                        })
+                    repo.save_daily_metric_quality(quality_items)
                     records_inserted += 1
                 else:
                     records_rejected += 1

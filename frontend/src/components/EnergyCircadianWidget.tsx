@@ -65,28 +65,36 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
         <div className="space-y-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Energy Bank (Bateria Corporal)</span>
-            <span className="text-lg font-black text-slate-900 dark:text-white">{energy_bank.current_level}%</span>
+            <span className="text-lg font-black text-slate-900 dark:text-white">
+              {energy_bank?.current_level != null ? `${energy_bank.current_level}%` : 'Indisponível'}
+            </span>
           </div>
 
-          <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
-            <div
-              className={`h-full rounded-full transition-all ${
-                energy_bank.current_level >= 70
-                  ? 'bg-emerald-500'
-                  : energy_bank.current_level >= 40
-                  ? 'bg-amber-500'
-                  : 'bg-rose-500'
-              }`}
-              style={{ width: `${energy_bank.current_level}%` }}
-            />
-          </div>
+          {energy_bank?.current_level != null ? (
+            <>
+              <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    energy_bank.current_level >= 70
+                      ? 'bg-emerald-500'
+                      : energy_bank.current_level >= 40
+                      ? 'bg-amber-500'
+                      : 'bg-rose-500'
+                  }`}
+                  style={{ width: `${energy_bank.current_level}%` }}
+                />
+              </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-            <span>⚡ Recarga Sono: +{energy_bank.recharge}%</span>
-            <span>🔥 Consumo Dia: -{energy_bank.drain}%</span>
-          </div>
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <span>⚡ Recarga Sono: +{energy_bank.recharge}%</span>
+                <span>🔥 Consumo Dia: -{energy_bank.drain}%</span>
+              </div>
+            </>
+          ) : null}
 
-          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium pt-1">{energy_bank.recommendation}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium pt-1">
+            {energy_bank?.recommendation || 'Sincronize dados para calcular a bateria corporal.'}
+          </p>
         </div>
 
         {/* Timeline Circadiana & Cafeína */}
@@ -96,22 +104,22 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
           <div className="flex items-center gap-2 text-xs">
             <Sun className="h-4 w-4 text-amber-500 shrink-0" />
             <span className="text-slate-500 dark:text-slate-400">Luz Matinal:</span>
-            <span className="font-bold text-slate-900 dark:text-white">{circadian.morning_sun_window}</span>
+            <span className="font-bold text-slate-900 dark:text-white">{circadian?.morning_sun_window || '—'}</span>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
             <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-slate-500 dark:text-slate-400">Limite de Cafeína (Cutoff):</span>
-            <span className="font-bold text-rose-600 dark:text-rose-400">{circadian.caffeine_cutoff_time}</span>
+            <span className="font-bold text-rose-600 dark:text-rose-400">{circadian?.caffeine_cutoff_time || '—'}</span>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
             <Moon className="h-4 w-4 text-indigo-500 shrink-0" />
             <span className="text-slate-500 dark:text-slate-400">Desaceleramento Noturno:</span>
-            <span className="font-bold text-slate-900 dark:text-white">{circadian.wind_down_start_time}</span>
+            <span className="font-bold text-slate-900 dark:text-white">{circadian?.wind_down_start_time || '—'}</span>
           </div>
 
-          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium pt-1">{circadian.recommendation}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium pt-1">{circadian?.recommendation || ''}</p>
         </div>
       </div>
     </div>

@@ -14,20 +14,20 @@ def calculate_energy_bank(
     checkin: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Calcula nivel de recarga, consumo e estado atual da bateria corporal (0-100%)."""
-    if not today_metric:
+    if not today_metric or today_metric.get("sleep_minutes") is None or today_metric.get("hrv_ms") is None:
         return {
             "status": "unavailable",
-            "current_level": 50,
+            "current_level": None,
             "recharge": 0,
             "drain": 0,
-            "recommendation": "Sincronize dados de sono para calcular a bateria corporal.",
+            "recommendation": "Sincronize dados de sono e VFC noturna para calcular a bateria corporal.",
         }
 
-    sleep_min = today_metric.get("sleep_minutes") or 0
-    hrv = today_metric.get("hrv_ms") or 35.0
-    rhr = today_metric.get("rhr_bpm") or 60.0
-    steps = today_metric.get("steps") or 0
-    training_load = today_metric.get("training_load_daily") or 0
+    sleep_min = float(today_metric["sleep_minutes"])
+    hrv = float(today_metric["hrv_ms"])
+    rhr = float(today_metric.get("rhr_bpm") or 60.0)
+    steps = float(today_metric.get("steps") or 0)
+    training_load = float(today_metric.get("training_load_daily") or 0)
 
     # Recarga no sono (baseada em horas dormidas e VFC)
     sleep_hours = sleep_min / 60.0

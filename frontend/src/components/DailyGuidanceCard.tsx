@@ -46,14 +46,21 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
     }
   }, [selectedDate])
 
-  if (!guidance || guidance.state === 'insufficient_data') return null
+  if (!guidance) return null
+
+  const stateKey = guidance?.state in { optimal: 1, moderate: 1, recover: 1, insufficient_data: 1 }
+    ? guidance.state
+    : 'insufficient_data'
 
   const stateColors = {
     optimal: 'from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
     moderate: 'from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/30 text-amber-600 dark:text-amber-400',
     recover: 'from-violet-500/15 via-violet-500/5 to-transparent border-violet-500/30 text-violet-600 dark:text-violet-400',
     insufficient_data: 'from-slate-500/15 via-slate-500/5 to-transparent border-slate-500/30 text-slate-600 dark:text-slate-400',
-  }[guidance.state]
+  }[stateKey]
+
+  const factorsList = guidance?.factors || []
+  const limitationsList = guidance?.limitations || []
 
   return (
     <div className={`p-6 rounded-3xl glass-card border bg-gradient-to-br ${stateColors} shadow-sm space-y-4`}>
@@ -66,14 +73,14 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider opacity-75">Como estou hoje?</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900/10 dark:bg-white/10 uppercase">
-                {guidance.confidence}
+                {guidance?.confidence || 'unavailable'}
               </span>
             </div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{guidance.label}</h2>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{guidance?.label || 'Orientação Diária'}</h2>
           </div>
         </div>
 
-        {guidance.score != null && (
+        {guidance?.score != null && (
           <div className="text-right">
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{guidance.score}</span>
             <span className="text-[10px] font-bold uppercase block text-slate-500 dark:text-slate-400">Score Prontidão</span>
@@ -85,13 +92,26 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
           Ação Recomendada Hoje
         </span>
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{guidance.primary_action}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {guidance?.primary_action || 'Sem dados suficientes para recomendar intensidade.'}
+        </p>
       </div>
 
-      {guidance.factors.length > 0 && (
+      {limitationsList.length > 0 && (
+        <div className="p-3 rounded-xl bg-slate-500/10 border border-slate-500/20 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+          <span className="font-bold">Limitações de Dados:</span>
+          <ul className="list-disc list-inside">
+            {limitationsList.map((lim, idx) => (
+              <li key={idx}>{lim}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {factorsList.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Fatores Chave:</span>
-          {guidance.factors.map((factor, idx) => (
+          {factorsList.map((factor, idx) => (
             <span
               key={idx}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${

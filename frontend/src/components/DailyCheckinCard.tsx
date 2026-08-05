@@ -76,8 +76,11 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
     await saveCheckin(updated)
   }
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
   const saveCheckin = async (dataToSave: CheckinState) => {
     setSaving(true)
+    setErrorMsg(null)
     try {
       await requestJson(`/api/checkins/${selectedDate}`, {
         method: 'PUT',
@@ -89,6 +92,8 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
       if (onCheckinUpdated) onCheckinUpdated()
     } catch (err) {
       console.error(err)
+      setErrorMsg('Não foi possível salvar o check-in.')
+      setTimeout(() => setErrorMsg(null), 3000)
     } finally {
       setSaving(false)
     }
@@ -110,6 +115,11 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
         {savedSuccess && (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
             <Check className="h-3 w-3" /> Salvo
+          </span>
+        )}
+        {errorMsg && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20">
+            {errorMsg}
           </span>
         )}
       </div>
@@ -190,7 +200,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
         <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Fatores do Dia (Tags Rápidas)</span>
         <div className="flex flex-wrap gap-1.5">
           {AVAILABLE_TAGS.map((tag) => {
-            const isSelected = checkin.tags.includes(tag.id)
+            const isSelected = (checkin?.tags || []).includes(tag.id)
             return (
               <button
                 key={tag.id}

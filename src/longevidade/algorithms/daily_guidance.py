@@ -30,9 +30,22 @@ def generate_daily_guidance(
     rhr_series = [m.get("rhr_bpm") for m in historical_metrics if m.get("rhr_bpm") is not None]
     sleep_series = [m.get("sleep_minutes") for m in historical_metrics if m.get("sleep_minutes") is not None]
 
-    hrv_base = calculate_personal_baseline(hrv_series, minimum_observations=5)
-    rhr_base = calculate_personal_baseline(rhr_series, minimum_observations=5)
-    sleep_base = calculate_personal_baseline(sleep_series, minimum_observations=5)
+    hrv_base = calculate_personal_baseline(hrv_series, minimum_observations=7)
+    rhr_base = calculate_personal_baseline(rhr_series, minimum_observations=7)
+    sleep_base = calculate_personal_baseline(sleep_series, minimum_observations=7)
+
+    valid_bases = [b for b in (hrv_base, rhr_base, sleep_base) if b["status"] == "ok"]
+
+    if not valid_bases:
+        return {
+            "state": "insufficient_data",
+            "label": "Linha de Base Insuficiente",
+            "confidence": "unavailable",
+            "score": None,
+            "factors": [],
+            "primary_action": "Mantenha o uso diário para acumular histórico de linha de base (mínimo de 7 dias).",
+            "limitations": ["Sem medições históricas suficientes (mínimo 7 dias) para calcular baseline pessoal."],
+        }
 
     factors = []
     today_hrv = today_metric.get("hrv_ms")
@@ -43,7 +56,7 @@ def generate_daily_guidance(
 
     if today_hrv is not None and hrv_base["status"] == "ok":
         med = hrv_base["median"]
-        diff_pct = round(((today_hrv - med) / med) * 100.0, 1)
+        diff_pct = round(((today_hrv - med) / med) * 100.0, 1) if med else 0.0
         if diff_pct < -10.0:
             readiness_score -= 15
             factors.append({"metric": "hrv_ms", "label": "VFC Noturna", "change_pct": diff_pct, "impact": "negative"})
@@ -53,7 +66,7 @@ def generate_daily_guidance(
 
     if today_rhr is not None and rhr_base["status"] == "ok":
         med = rhr_base["median"]
-        diff_pct = round(((today_rhr - med) / med) * 100.0, 1)
+        diff_pct = round(((today_rhr - med) / med) * 100.0, 1) if med else 0.0
         if diff_pct > 5.0:
             readiness_score -= 15
             factors.append({"metric": "rhr_bpm", "label": "FC de Repouso", "change_pct": diff_pct, "impact": "negative"})
@@ -63,7 +76,7 @@ def generate_daily_guidance(
 
     if today_sleep is not None and sleep_base["status"] == "ok":
         med = sleep_base["median"]
-        diff_pct = round(((today_sleep - med) / med) * 100.0, 1)
+        diff_pct = round(((today_sleep - med) / med) * 100.0, 1) if med else 0.0
         if diff_pct < -15.0:
             readiness_score -= 15
             factors.append({"metric": "sleep_minutes", "label": "Duração do Sono", "change_pct": diff_pct, "impact": "negative"})
@@ -95,7 +108,7 @@ def generate_daily_guidance(
         label = "Priorize Recuperação"
         primary_action = "Reduza a carga física hoje, hidrate-se bem e antecipe o horário de ir para a cama."
 
-    confidence = "high" if len(factors) >= 2 else "medium"
+    confidence = "high" if len(factors) >= 2 else ("medium" if len(factors) == 1 else "low")
 
     return {
         "state": state,

@@ -70,7 +70,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
         <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">Sessões / Duração</span>
           <span className="text-sm font-black text-slate-900 dark:text-white">
-            {workoutCount || 0} treinos ({workoutDurationMin != null ? `${Math.round(workoutDurationMin)}m` : '0m'})
+            {workoutCount != null ? `${workoutCount} treinos (${workoutDurationMin != null ? Math.round(workoutDurationMin) + 'm' : '0m'})` : '—'}
           </span>
         </div>
       </div>

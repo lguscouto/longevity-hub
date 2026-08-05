@@ -245,10 +245,16 @@ def _readiness_values(payload: dict[str, Any], reference: date) -> tuple[int | f
 
 def _workout_values(
     payload: dict[str, Any], reference: date | None = None
-) -> tuple[int, int | float | None]:
+) -> tuple[int | None, int | float | None]:
+    if not isinstance(payload, dict) or payload.get("error") or not payload:
+        return None, None
+
     data = payload.get("data")
     summaries = data.get("summary") if isinstance(data, dict) else None
-    if not isinstance(summaries, list) or not summaries:
+    if not isinstance(summaries, list):
+        return None, None
+
+    if not summaries:
         return 0, None
 
     workouts = [

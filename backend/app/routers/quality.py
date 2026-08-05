@@ -33,8 +33,9 @@ class DailyQualitySummaryResponse(BaseModel):
 @router.get("/daily", response_model=DailyQualitySummaryResponse)
 def get_daily_quality_summary(date_ref: str):
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path)
+
+    expected_metrics = ["hrv_ms", "rhr_bpm", "steps", "sleep_minutes", "spo2_avg_pct", "respiratory_rate_rpm", "pai_score"]
 
     items_raw = repo.get_daily_metric_quality(date_ref)
     metric_items = [
@@ -48,19 +49,19 @@ def get_daily_quality_summary(date_ref: str):
             warnings=i.get("warnings") or [],
         )
         for i in items_raw
+        if i.get("metric_key") in expected_metrics
     ]
 
-    expected_metrics = ["hrv_ms", "rhr_bpm", "steps", "sleep_minutes", "spo2_avg_pct", "respiratory_rate_rpm", "pai_score"]
     metrics_available = len([item for item in metric_items if item.quality_status != "unavailable"])
-    
+
     total_coverage = sum(item.coverage_pct for item in metric_items if item.coverage_pct is not None)
-    coverage_pct = round(total_coverage / len(metric_items), 1) if metric_items else 0.0
+    coverage_pct = round(total_coverage / len(expected_metrics), 1)
 
     all_warnings = []
     for item in metric_items:
         all_warnings.extend(item.warnings)
-    
-    sources = list(set(item.source for item in metric_items)) or ["Zepp"]
+
+    sources = list(set(item.source for item in metric_items if item.source))
 
     if metrics_available >= 5 and coverage_pct >= 75.0:
         confidence = "high"

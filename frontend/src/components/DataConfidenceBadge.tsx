@@ -34,6 +34,8 @@ export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ select
 
   if (!summary) return null
 
+  const confidenceKey = summary?.confidence in { high: 1, medium: 1, low: 1, unavailable: 1 } ? summary.confidence : 'unavailable'
+
   const config = {
     high: {
       label: 'Confiança Alta',
@@ -55,7 +57,7 @@ export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ select
       bg: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
       icon: ShieldAlert,
     },
-  }[summary.confidence]
+  }[confidenceKey]
 
   const Icon = config.icon
 

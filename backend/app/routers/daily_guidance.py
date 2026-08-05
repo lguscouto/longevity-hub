@@ -10,11 +10,12 @@ router = APIRouter(prefix="/api/daily-guidance", tags=["Daily Guidance"])
 @router.get("")
 def get_daily_guidance(date_ref: str):
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path)
 
     today_metric = repo.get_daily_metric_by_date(date_ref)
-    history_metrics = repo.get_daily_metrics(days=30)
+    all_metrics = repo.get_daily_metrics(days=60)
+    # Temporal leakage protection: only use metrics from dates strictly before date_ref
+    history_metrics = [m for m in all_metrics if m.get("date_ref") and m["date_ref"] < date_ref]
     
     checkin = None
     try:

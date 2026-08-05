@@ -30,7 +30,6 @@ class DailyCheckinInput(BaseModel):
 @router.get("/{date_ref}")
 def get_daily_checkin(date_ref: str):
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path)
 
     sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
@@ -113,7 +112,6 @@ def upsert_daily_checkin(date_ref: str, input_data: DailyCheckinInput):
 @router.get("")
 def list_daily_checkins(days: int = 90):
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path)
 
     sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
