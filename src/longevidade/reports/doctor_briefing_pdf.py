@@ -88,19 +88,21 @@ def generate_doctor_briefing_pdf(
     def avg_str(vals, fmt="{:.1f}"):
         return fmt.format(sum(vals) / len(vals)) if vals else "—"
 
+    from longevidade.calculators.physiological_targets import PHYSIOLOGICAL_TARGETS
+
     elements.append(Paragraph("1. Resumo Fisiológico Média 30 Dias", h2_style))
 
     metrics_table_data = [
         [
             Paragraph("<b>Métrica</b>", body_style),
             Paragraph("<b>Média 30d</b>", body_style),
-            Paragraph("<b>Alvo Clínico Longevidade</b>", body_style),
+            Paragraph("<b>Alvo Clínico Longevidade (Referência Geral)</b>", body_style),
         ],
-        [Paragraph("FC de Repouso (RHR)", body_style), Paragraph(f"{avg_str(rhrs, '{:.0f}')} bpm", body_style), Paragraph("< 60 bpm", body_style)],
-        [Paragraph("Variabilidade Cardíaca (HRV)", body_style), Paragraph(f"{avg_str(hrvs, '{:.0f}')} ms", body_style), Paragraph("> 40 ms", body_style)],
-        [Paragraph("Saturação de Oxigênio (SpO2)", body_style), Paragraph(f"{avg_str(spo2s, '{:.1f}')}%", body_style), Paragraph("96 - 99%", body_style)],
-        [Paragraph("Freq. Respiratória Noturna", body_style), Paragraph(f"{avg_str(resps, '{:.1f}')} rpm", body_style), Paragraph("12 - 16 rpm", body_style)],
-        [Paragraph("Capacidade Aeróbica (VO2 Max)", body_style), Paragraph(f"{avg_str(vo2s, '{:.1f}')} mL/kg/min", body_style), Paragraph("> 45.0 mL/kg/min", body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["rhr_bpm"]["label"], body_style), Paragraph(f"{avg_str(rhrs, '{:.0f}')} bpm", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["rhr_bpm"]["target"], body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["hrv_ms"]["label"], body_style), Paragraph(f"{avg_str(hrvs, '{:.0f}')} ms", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["hrv_ms"]["target"], body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["spo2_avg_pct"]["label"], body_style), Paragraph(f"{avg_str(spo2s, '{:.1f}')}%", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["spo2_avg_pct"]["target"], body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["respiratory_rate_rpm"]["label"], body_style), Paragraph(f"{avg_str(resps, '{:.1f}')} rpm", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["respiratory_rate_rpm"]["target"], body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["vo2_max"]["label"], body_style), Paragraph(f"{avg_str(vo2s, '{:.1f}')} mL/kg/min", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["vo2_max"]["target"], body_style)],
     ]
 
     t_metrics = Table(metrics_table_data, colWidths=[200, 140, 200])

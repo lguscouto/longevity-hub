@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
@@ -11,6 +12,8 @@ from longevidade.ai.provider_factory import generate_llm_response, validate_prov
 from longevidade.ai.secrets_store import AISecretsStore, KeyringSecretsStore, mask_secret
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
+from longevidade.algorithms.daily_guidance import generate_daily_guidance
+from longevidade.calculators.energy_and_stress import calculate_energy_bank
 
 router = APIRouter(prefix="/api/ai", tags=["AI Copilot"])
 
@@ -157,6 +160,27 @@ def generate_insights():
             ],
         }
 
+    # P1: Validação determinística de guardrails no pós-processamento do LLM
+    today_str = date.today().isoformat()
+    today_metric = repo.get_daily_metric_by_date(today_str)
+    all_60_metrics = repo.get_daily_metrics(days=60)
+    history_metrics = [m for m in all_60_metrics if m.get("date_ref") and m["date_ref"] < today_str]
+    guidance_res = generate_daily_guidance(today_metric, history_metrics)
+    energy_res = calculate_energy_bank(today_metric)
+
+    is_restricted = guidance_res.get("state") == "insufficient_data" or guidance_res.get("confidence") in ("low", "unavailable") or energy_res.get("status") == "not_verifiable"
+
+    if is_restricted:
+        parsed_json["guardrail_applied"] = True
+        for insight in parsed_json.get("insights", []):
+            txt = (insight.get("insight_text", "") + " " + insight.get("actionable_steps", "")).lower()
+            if any(term in txt for term in ["intenso", "intensa", "vo2 max", "exigente", "ignorar", "força", "alta intensidade"]):
+                insight["actionable_steps"] = (
+                    "⚠️ [GUARDRAIL ATIVO]: Dados fisiológicos/atividade ausentes ou incompletos hoje. "
+                    "Treino intenso e atividades exigentes foram bloqueados. "
+                    + (guidance_res.get("primary_action") or "Sincronize seu dispositivo.")
+                )
+
     audit_prompt = f"Análise geral automatizada de 30 dias (privacy_mode={privacy_mode})"
     for item in parsed_json.get("insights", []):
         repo.save_ai_insight(
@@ -210,6 +234,25 @@ def chat_copilot(input_data: AIChatInput):
 
     if err or not reply:
         raise HTTPException(status_code=500, detail=f"Erro ao consultar o Copiloto ({provider}): {err}")
+
+    # P1: Validação determinística de guardrails no pós-processamento do Chat LLM
+    today_str = date.today().isoformat()
+    today_metric = repo.get_daily_metric_by_date(today_str)
+    all_60_metrics = repo.get_daily_metrics(days=60)
+    history_metrics = [m for m in all_60_metrics if m.get("date_ref") and m["date_ref"] < today_str]
+    guidance_res = generate_daily_guidance(today_metric, history_metrics)
+    energy_res = calculate_energy_bank(today_metric)
+
+    is_restricted = guidance_res.get("state") == "insufficient_data" or guidance_res.get("confidence") in ("low", "unavailable") or energy_res.get("status") == "not_verifiable"
+
+    if is_restricted:
+        reply_lower = reply.lower()
+        if any(term in reply_lower for term in ["intenso", "intensa", "vo2 max", "exigente", "ignorar", "alta intensidade"]):
+            reply += (
+                "\n\n---\n⚠️ **[TRAVA DE SEGURANÇA ALGORÍTMICA ATIVA]**: "
+                "Apesar da sugestão do modelo, a cobertura de dados fisiológicos/atividade do dia é insuficiente ou parcial. "
+                "Treinos intensos estão BLOQUEADOS deterministicamente pelo sistema até a sincronização completa."
+            )
 
     audit_prompt = input_data.prompt if privacy_mode == "full" else "[prompt omitido por privacy_mode=minimal]"
     repo.save_ai_insight(

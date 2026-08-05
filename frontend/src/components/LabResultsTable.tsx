@@ -177,7 +177,7 @@ const isMarkerOptimal = (lab: LabResult) => {
   return lab.value >= lab.optimal_target;
 };
 
-export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBatchLabs, onRefreshData }) => {
+export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onAddBatchLabs, onRefreshData }) => {
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [selectedPanelDate, setSelectedPanelDate] = useState<string | null>(null);
   const [deleteConfirmDate, setDeleteConfirmDate] = useState<string | null>(null);
@@ -187,10 +187,12 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const safeLabs = Array.isArray(labs) ? labs : [];
+
   // Agrupamento dos exames por data da coleta (collected_at)
   const groupedLabs: Record<string, LabResult[]> = {};
-  labs.forEach(lab => {
-    const dt = lab.collected_at || 'Desconhecido';
+  safeLabs.forEach(lab => {
+    const dt = lab?.collected_at || 'Desconhecido';
     if (!groupedLabs[dt]) groupedLabs[dt] = [];
     groupedLabs[dt].push(lab);
   });
@@ -299,7 +301,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
 
       {/* Cartões de Razões Cardiovasculares Avançadas (Fase 3) */}
       {(() => {
-        const getV = (k: string) => labs.find(l => normalizeLabMetricKey(l.metric_key) === k)?.value;
+        const getV = (k: string) => safeLabs.find(l => normalizeLabMetricKey(l.metric_key) === k)?.value;
         const apob = getV('apob');
         const apoa1 = getV('apoa1');
         const tg = getV('triglycerides');

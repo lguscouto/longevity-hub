@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Sparkles, Coffee, Smile, Activity, Zap, Check } from 'lucide-react'
 import { requestJson } from '../lib/api'
 
@@ -65,20 +65,31 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
     }
   }, [selectedDate])
 
-  const handleScoreChange = async (key: keyof CheckinState, value: number) => {
-    const updated = { ...checkin, date_ref: selectedDate, [key]: value }
-    setCheckin(updated)
-    await saveCheckin(updated)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const debouncedSave = (dataToSave: CheckinState) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+    }
+    saveTimerRef.current = setTimeout(() => {
+      void saveCheckin(dataToSave)
+    }, 600)
   }
 
-  const handleToggleTag = async (tagId: string) => {
+  const handleScoreChange = (key: keyof CheckinState, value: number) => {
+    const updated = { ...checkin, date_ref: selectedDate, [key]: value }
+    setCheckin(updated)
+    debouncedSave(updated)
+  }
+
+  const handleToggleTag = (tagId: string) => {
     const currentTags = Array.isArray(checkin.tags) ? checkin.tags : []
     const newTags = currentTags.includes(tagId)
       ? currentTags.filter((t) => t !== tagId)
       : [...currentTags, tagId]
     const updated = { ...checkin, date_ref: selectedDate, tags: newTags }
     setCheckin(updated)
-    await saveCheckin(updated)
+    debouncedSave(updated)
   }
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -131,7 +142,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Disposição / Energia */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" role="group" aria-label="Energia Percebida">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
             <Zap className="h-3.5 w-3.5 text-amber-500" /> Energia Percebida
           </span>
@@ -140,6 +151,8 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
               <button
                 key={level}
                 type="button"
+                aria-label={`Energia nível ${level}`}
+                aria-pressed={checkin.energy_score === level}
                 onClick={() => void handleScoreChange('energy_score', level)}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
                   checkin.energy_score === level
@@ -205,7 +218,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
       </div>
 
       {/* Tags de Hábitos e Sintomas */}
-      <div className="space-y-1.5 pt-1">
+      <div className="space-y-1.5 pt-1" role="group" aria-label="Fatores do Dia (Tags Rápidas)">
         <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Fatores do Dia (Tags Rápidas)</span>
         <div className="flex flex-wrap gap-1.5">
           {AVAILABLE_TAGS.map((tag) => {
@@ -214,6 +227,8 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
               <button
                 key={tag.id}
                 type="button"
+                aria-label={`Tag ${tag.label}`}
+                aria-pressed={isSelected}
                 onClick={() => void handleToggleTag(tag.id)}
                 className={`px-3 py-1 rounded-xl text-xs font-medium border transition ${
                   isSelected

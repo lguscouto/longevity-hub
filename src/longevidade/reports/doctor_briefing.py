@@ -81,6 +81,11 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
         lines.append("| (Sem dados laboratoriais registrados) | - | - | - | - |")
     else:
         for key, lab in latest_labs.items():
+            name_lower = str(lab.get("metric_name", "")).lower()
+            key_lower = str(key).lower()
+            if any(term in name_lower or term in key_lower for term in ["sintético", "sintetico", "fixture", "mock", "teste"]):
+                continue
+
             val = lab["value"]
             unit = lab.get("unit", "")
             val_str = f"{val} {unit}".strip()

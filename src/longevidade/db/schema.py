@@ -288,7 +288,8 @@ def initialize_db(db_path: str | Path) -> None:
 
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(path) as conn:
+    conn = sqlite3.connect(path)
+    try:
         conn.execute("PRAGMA foreign_keys = ON;")
         apply_migrations(conn)
 
@@ -342,3 +343,5 @@ def initialize_db(db_path: str | Path) -> None:
             )
 
         conn.commit()
+    finally:
+        conn.close()

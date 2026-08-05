@@ -257,7 +257,7 @@ def import_zepp_data(
                         coverage = 0.0
 
                         if has_val:
-                            coverage = 100.0
+                            coverage = None  # Cobertura intraday não é verificável a partir de snapshot agregado diário
                             val_float = float(mval)
                             if mdef and mdef.plausible_min is not None and val_float < mdef.plausible_min:
                                 status = "low"
@@ -265,11 +265,10 @@ def import_zepp_data(
                             elif mdef and mdef.plausible_max is not None and val_float > mdef.plausible_max:
                                 status = "low"
                                 warnings.append(f"Métrica {mkey} acima do máximo plausível ({val_float} > {mdef.plausible_max})")
-                            elif mkey == "steps":
-                                status = "high"
                             else:
                                 status = "not_verifiable"
                         else:
+                            coverage = 0.0
                             warnings.append(f"Métrica {mkey} indisponível no snapshot Zepp")
 
                         quality_items.append({

@@ -282,12 +282,13 @@ def _workout_values(
                 break
         if duration is not None:
             unit_str = str(workout.get("unit") or "").lower()
-            if is_minutes_key or "min" in unit_str:
+            if is_minutes_key or "min" in unit_str or "m" == unit_str:
                 durations.append(duration)
-            elif is_seconds_key or "sec" in unit_str or duration >= 300:
+            elif is_seconds_key or "sec" in unit_str or "s" in unit_str:
                 durations.append(duration / 60.0)
-            else:
-                durations.append(duration)
+            elif is_minutes_key or is_seconds_key:
+                durations.append(duration if is_minutes_key else duration / 60.0)
+            # Generic key "duration" without explicit unit or flag is ambiguous — ignore to prevent wrong unit inference
     return len(workouts), (sum(durations) if durations else None)
 
 
