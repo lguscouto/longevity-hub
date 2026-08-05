@@ -43,7 +43,11 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
     let isMounted = true
     requestJson<CheckinState>(`/api/checkins/${selectedDate}`)
       .then((data) => {
-        if (isMounted) setCheckin(data)
+        if (isMounted)
+          setCheckin({
+            ...data,
+            tags: Array.isArray(data?.tags) ? data.tags : [],
+          })
       })
       .catch(() => {
         if (isMounted)
@@ -68,9 +72,10 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
   }
 
   const handleToggleTag = async (tagId: string) => {
-    const newTags = checkin.tags.includes(tagId)
-      ? checkin.tags.filter((t) => t !== tagId)
-      : [...checkin.tags, tagId]
+    const currentTags = Array.isArray(checkin.tags) ? checkin.tags : []
+    const newTags = currentTags.includes(tagId)
+      ? currentTags.filter((t) => t !== tagId)
+      : [...currentTags, tagId]
     const updated = { ...checkin, date_ref: selectedDate, tags: newTags }
     setCheckin(updated)
     await saveCheckin(updated)

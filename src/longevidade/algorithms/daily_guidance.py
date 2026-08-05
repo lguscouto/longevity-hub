@@ -52,22 +52,36 @@ def generate_daily_guidance(
     today_rhr = today_metric.get("rhr_bpm")
     today_sleep = today_metric.get("sleep_minutes")
 
-    # P1 Guardrail: Exigir pelo menos um sinal fisiológico atual de recuperação com baseline válida
-    has_valid_current_signal = (
-        (today_hrv is not None and hrv_base["status"] == "ok")
-        or (today_rhr is not None and rhr_base["status"] == "ok")
-        or (today_sleep is not None and sleep_base["status"] == "ok")
-    )
+    # P1 Guardrail: Cobertura de sinais fisiológicos de recuperação no dia
+    observed_signals = []
+    missing_signals = []
 
-    if not has_valid_current_signal:
+    if today_hrv is not None and hrv_base["status"] == "ok":
+        observed_signals.append("hrv_ms")
+    else:
+        missing_signals.append("hrv_ms")
+
+    if today_rhr is not None and rhr_base["status"] == "ok":
+        observed_signals.append("rhr_bpm")
+    else:
+        missing_signals.append("rhr_bpm")
+
+    if today_sleep is not None and sleep_base["status"] == "ok":
+        observed_signals.append("sleep_minutes")
+    else:
+        missing_signals.append("sleep_minutes")
+
+    if len(observed_signals) == 0:
         return {
             "state": "insufficient_data",
             "label": "Dados do Dia Insuficientes",
-            "confidence": "low",
+            "confidence": "unavailable",
             "score": None,
             "factors": [],
             "primary_action": "Sincronize seu dispositivo para coletar dados fisiológicos de recuperação (VFC, FC de repouso ou Sono) do dia.",
             "limitations": ["Nenhuma medição atual de recuperação (VFC, FC de repouso ou Sono) disponível para a data consultada."],
+            "observed_signals": [],
+            "missing_signals": missing_signals,
         }
 
     readiness_score = 75.0
@@ -111,6 +125,19 @@ def generate_daily_guidance(
         elif e_score >= 4:
             readiness_score += 5
 
+    limitations = []
+
+    # Se apenas 1 sinal fisiológico estiver disponível hoje, limitar score máximo a 70 (impedir optimal e treino intenso)
+    if len(observed_signals) == 1:
+        readiness_score = min(readiness_score, 70.0)
+        confidence = "low"
+        limitations.append(f"Apenas 1 de 3 sinais de recuperação disponível hoje ({observed_signals[0]}). Recomendação conservadora sem treino intenso.")
+    elif len(observed_signals) == 2:
+        confidence = "medium"
+        limitations.append(f"Falta o sinal de recuperação {missing_signals[0]} para cobertura fisiológica completa.")
+    else:
+        confidence = "high"
+
     final_score = int(max(0, min(100, readiness_score)))
 
     if final_score >= 75:
@@ -126,8 +153,6 @@ def generate_daily_guidance(
         label = "Priorize Recuperação"
         primary_action = "Reduza a carga física hoje, hidrate-se bem e antecipe o horário de ir para a cama."
 
-    confidence = "high" if len(factors) >= 2 else ("medium" if len(factors) == 1 else "low")
-
     return {
         "state": state,
         "label": label,
@@ -135,5 +160,7 @@ def generate_daily_guidance(
         "score": final_score,
         "factors": factors,
         "primary_action": primary_action,
-        "limitations": [],
+        "limitations": limitations,
+        "observed_signals": observed_signals,
+        "missing_signals": missing_signals,
     }

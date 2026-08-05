@@ -66,6 +66,9 @@ def test_client_uses_temporary_database(client, tmp_path):
     response = client.get("/api/health")
 
     assert response.status_code == 200
-    database = response.json()["database"]
-    assert str(tmp_path) in database
-    assert "data/longevity.sqlite3" not in database.replace("\\", "/")
+    assert response.json()["database_connected"] is True
+
+    config = importlib.import_module("backend.app.config")
+    active_db = str(config.get_db_path())
+    assert str(tmp_path) in active_db
+    assert "data/longevity.sqlite3" not in active_db.replace("\\", "/")

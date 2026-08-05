@@ -11,19 +11,23 @@ router = APIRouter(prefix="/api/energy-circadian", tags=["Energy & Circadian Ass
 @router.get("")
 def get_energy_circadian(date_ref: str, wake_time: str = "07:00", target_bedtime: str = "23:00"):
     db_path = get_db_path()
-    repo = LongevityRepository(db_path)
-
-    today_metric = repo.get_daily_metric_by_date(date_ref)
+    try:
+        repo = LongevityRepository(db_path)
+        today_metric = repo.get_daily_metric_by_date(date_ref)
+    except FileNotFoundError:
+        today_metric = None
+        repo = None
 
     checkin = None
-    try:
-        sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
-        with repo._get_connection() as conn:
-            row = conn.execute(sql, (date_ref,)).fetchone()
-            if row:
-                checkin = dict(row)
-    except Exception:
-        pass
+    if repo:
+        try:
+            sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
+            with repo._get_connection() as conn:
+                row = conn.execute(sql, (date_ref,)).fetchone()
+                if row:
+                    checkin = dict(row)
+        except Exception:
+            pass
 
     energy_res = calculate_energy_bank(today_metric, checkin)
     circadian_res = calculate_circadian_windows(wake_time, target_bedtime)

@@ -33,11 +33,13 @@ class DailyQualitySummaryResponse(BaseModel):
 @router.get("/daily", response_model=DailyQualitySummaryResponse)
 def get_daily_quality_summary(date_ref: str):
     db_path = get_db_path()
-    repo = LongevityRepository(db_path)
+    try:
+        repo = LongevityRepository(db_path)
+        items_raw = repo.get_daily_metric_quality(date_ref)
+    except FileNotFoundError:
+        items_raw = []
 
     expected_metrics = ["hrv_ms", "rhr_bpm", "steps", "sleep_minutes", "spo2_avg_pct", "respiratory_rate_rpm", "pai_score"]
-
-    items_raw = repo.get_daily_metric_quality(date_ref)
     metric_items = [
         MetricQualityItem(
             date_ref=i["date_ref"],

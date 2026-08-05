@@ -30,30 +30,33 @@ class DailyCheckinInput(BaseModel):
 @router.get("/{date_ref}")
 def get_daily_checkin(date_ref: str):
     db_path = get_db_path()
-    repo = LongevityRepository(db_path)
-
-    sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
-    with repo._get_connection() as conn:
-        row = conn.execute(sql, (date_ref,)).fetchone()
-        if not row:
-            return {
-                "date_ref": date_ref,
-                "energy_score": None,
-                "mood_score": None,
-                "perceived_stress": None,
-                "soreness_score": None,
-                "pain_score": None,
-                "symptom_severity": None,
-                "illness": 0,
-                "alcohol_units": 0.0,
-                "caffeine_last_at": None,
-                "bedtime_target_met": None,
-                "notes": None,
-                "tags": [],
-            }
-        item = dict(row)
-        item["tags"] = json.loads(item.get("tags_json") or "[]")
-        return item
+    empty_payload = {
+        "date_ref": date_ref,
+        "energy_score": None,
+        "mood_score": None,
+        "perceived_stress": None,
+        "soreness_score": None,
+        "pain_score": None,
+        "symptom_severity": None,
+        "illness": 0,
+        "alcohol_units": 0.0,
+        "caffeine_last_at": None,
+        "bedtime_target_met": None,
+        "notes": None,
+        "tags": [],
+    }
+    try:
+        repo = LongevityRepository(db_path)
+        sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
+        with repo._get_connection() as conn:
+            row = conn.execute(sql, (date_ref,)).fetchone()
+            if not row:
+                return empty_payload
+            item = dict(row)
+            item["tags"] = json.loads(item.get("tags_json") or "[]")
+            return item
+    except FileNotFoundError:
+        return empty_payload
 
 
 @router.put("/{date_ref}")
@@ -112,14 +115,16 @@ def upsert_daily_checkin(date_ref: str, input_data: DailyCheckinInput):
 @router.get("")
 def list_daily_checkins(days: int = 90):
     db_path = get_db_path()
-    repo = LongevityRepository(db_path)
-
-    sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
-    with repo._get_connection() as conn:
-        rows = conn.execute(sql, (days,)).fetchall()
-        result = []
-        for r in rows:
-            item = dict(r)
-            item["tags"] = json.loads(item.get("tags_json") or "[]")
-            result.append(item)
-        return result
+    try:
+        repo = LongevityRepository(db_path)
+        sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
+        with repo._get_connection() as conn:
+            rows = conn.execute(sql, (days,)).fetchall()
+            result = []
+            for r in rows:
+                item = dict(r)
+                item["tags"] = json.loads(item.get("tags_json") or "[]")
+                result.append(item)
+            return result
+    except FileNotFoundError:
+        return []

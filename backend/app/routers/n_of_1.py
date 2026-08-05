@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
@@ -31,6 +31,11 @@ def get_experiments():
 
 @router.post("")
 def create_experiment(input_data: NOf1ExperimentInput):
+    if input_data.control_start > input_data.control_end:
+        raise HTTPException(status_code=400, detail="Data de início do controle deve ser anterior ou igual à data de fim.")
+    if input_data.treatment_start > input_data.treatment_end:
+        raise HTTPException(status_code=400, detail="Data de início do tratamento deve ser anterior ou igual à data de fim.")
+
     db_path = get_db_path()
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
@@ -50,6 +55,15 @@ def create_experiment(input_data: NOf1ExperimentInput):
 
     stats_res = analyze_n_of_1(control_vals, treatment_vals)
 
+    if len(control_vals) < 3 or len(treatment_vals) < 3:
+        return {
+            "status": "insufficient_data",
+            "id": None,
+            "saved": False,
+            "message": "Amostras insuficientes (< 3 observações por período). O experimento não foi salvo.",
+            "stats": stats_res,
+        }
+
     data = input_data.model_dump()
     data.update({
         "control_mean": stats_res["control_mean"],
@@ -60,4 +74,4 @@ def create_experiment(input_data: NOf1ExperimentInput):
     })
 
     exp_id = repo.add_n_of_1_experiment(data)
-    return {"status": "ok", "id": exp_id, "stats": stats_res}
+    return {"status": "ok", "id": exp_id, "saved": True, "stats": stats_res}

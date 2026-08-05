@@ -88,13 +88,23 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
             opt_str = f"{opt} {unit}".strip() if opt is not None else "-"
 
             status = "🟢 Ótimo"
+            ref_min = lab.get("ref_min")
+            ref_max = lab.get("ref_max")
+
             if opt is not None:
                 if key in ("apob", "lpa", "hscrp", "hba1c", "fasting_glucose", "fasting_insulin", "creatinine", "homocysteine") and val > opt:
                     status = "🟡 Acima do Alvo Ótimo"
                 elif key in ("albumin", "vitamin_d") and val < opt:
                     status = "🟡 Abaixo do Alvo Ótimo"
-            elif lab.get("ref_min") is None and lab.get("ref_max") is None:
-                status = "⚪ Sem alvo configurado"
+            elif ref_min is not None or ref_max is not None:
+                if ref_max is not None and val > ref_max:
+                    status = "🔴 Fora da Ref. (Acima)"
+                elif ref_min is not None and val < ref_min:
+                    status = "🔴 Fora da Ref. (Abaixo)"
+                else:
+                    status = "🟢 Dentro da Ref."
+            else:
+                status = "⚪ Sem alvo/referência"
 
             lines.append(f"| {lab['metric_name']} | **{val_str}** | {ref_str} | {opt_str} | {status} |")
 

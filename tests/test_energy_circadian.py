@@ -17,6 +17,15 @@ def test_calculate_energy_bank_missing_rhr_returns_unavailable():
     assert res["current_level"] is None
 
 
+def test_calculate_energy_bank_missing_activity_returns_not_verifiable():
+    metric = {"sleep_minutes": 480, "hrv_ms": 50, "rhr_bpm": 55}  # Sleep, HRV, RHR present, steps/load missing
+    res = calculate_energy_bank(metric)
+    assert res["status"] == "not_verifiable"
+    assert res["current_level"] <= 70
+    assert "activity" in res["missing_components"]
+    assert "Sincronize a atividade" in res["recommendation"]
+
+
 def test_calculate_circadian_windows():
     res = calculate_circadian_windows("07:00", "23:00")
     assert res["caffeine_cutoff_time"] == "13:00"

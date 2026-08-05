@@ -31,6 +31,9 @@ def calculate_energy_bank(
     sleep_min = float(today_metric["sleep_minutes"])
     hrv = float(today_metric["hrv_ms"])
     rhr = float(today_metric["rhr_bpm"])
+    has_steps = today_metric.get("steps") is not None
+    has_load = today_metric.get("training_load_daily") is not None
+
     steps = float(today_metric.get("steps") or 0)
     training_load = float(today_metric.get("training_load_daily") or 0)
 
@@ -51,8 +54,16 @@ def calculate_energy_bank(
     drain = int(min(90, steps_drain + load_drain + stress_drain))
 
     current_level = int(max(5, min(100, recharge - drain + 40)))
+    status = "ok"
 
-    if current_level >= 70:
+    missing_components = []
+    if not has_steps and not has_load:
+        missing_components.append("activity")
+        status = "not_verifiable"
+        # Sem dados de atividade do dia, não promover a "excelente para atividades exigentes"
+        current_level = min(current_level, 70)
+        recommendation = "Bateria calculada apenas com dados de sono e VFC. Sincronize a atividade do dia para avaliação completa."
+    elif current_level >= 70:
         recommendation = "Nível de energia excelente. Bom momento para atividades exigentes."
     elif current_level >= 40:
         recommendation = "Bateria moderada. Alterne trabalho focado com pausas ativas."
@@ -60,9 +71,10 @@ def calculate_energy_bank(
         recommendation = "Energia em nível crítico. Evite cafeína tardia e priorize descanso."
 
     return {
-        "status": "ok",
+        "status": status,
         "current_level": current_level,
         "recharge": recharge,
         "drain": drain,
         "recommendation": recommendation,
+        "missing_components": missing_components,
     }

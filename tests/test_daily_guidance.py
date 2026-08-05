@@ -42,3 +42,18 @@ def test_generate_daily_guidance_today_steps_only_with_valid_history():
     assert res["state"] == "insufficient_data"
     assert res["score"] is None
     assert "Nenhuma medição atual de recuperação" in res["limitations"][0]
+
+
+def test_generate_daily_guidance_single_signal_caps_score():
+    # Valid history for all 3 metrics, but today has ONLY sleep
+    today = {"date_ref": "2026-08-10", "sleep_minutes": 500}
+    history = [
+        {"date_ref": f"2026-08-0{i}", "hrv_ms": 40.0, "rhr_bpm": 58.0, "sleep_minutes": 420}
+        for i in range(1, 9)
+    ]
+    res = generate_daily_guidance(today, history)
+    assert res["confidence"] == "low"
+    assert res["score"] <= 70
+    assert res["state"] != "optimal"
+    assert "Apenas 1 de 3 sinais de recuperação" in res["limitations"][0]
+    assert res["observed_signals"] == ["sleep_minutes"]

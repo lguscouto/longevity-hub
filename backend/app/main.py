@@ -89,7 +89,7 @@ def health_check():
     return {
         "status": "ok",
         "system": "Longevidade Hub",
-        "database": str(get_db_path()),
+        "database_connected": get_db_path().exists(),
         "version": app.version,
     }
 
