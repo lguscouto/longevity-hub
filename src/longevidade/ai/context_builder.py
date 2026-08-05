@@ -18,6 +18,7 @@ from longevidade.calculators.kdm_age import (
 from longevidade.calculators.cardio_ratios import calculate_cardiovascular_ratios
 from longevidade.algorithms.daily_guidance import generate_daily_guidance
 from longevidade.calculators.energy_and_stress import calculate_energy_bank
+from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
 
 
 def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "minimal") -> str:
@@ -37,8 +38,13 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
 
     profile = repo.get_user_profile()
     daily_list = repo.get_daily_metrics(days=30)
-    labs_map = repo.get_latest_labs_by_key()
-    pheno_history = repo.get_phenoage_history(limit=5)
+    labs_map = repo.get_latest_labs_by_key(
+        record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+    )
+    pheno_history = repo.get_phenoage_history(
+        limit=5,
+        record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+    )
     cgm_list = repo.get_cgm_summaries(limit=14)
     experiments = repo.get_n_of_1_experiments()
     supplements = repo.get_supplements(only_active=True)

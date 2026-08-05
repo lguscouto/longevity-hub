@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 import numpy as np
 
 from longevidade.db.repository import LongevityRepository
+from longevidade.reports.lab_selection import get_clinical_lab_snapshot
 
 
 def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None = None, patient_age: float | None = None) -> str:
@@ -20,8 +21,9 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
     age_str = f"{float(age):.0f} anos" if age is not None else "Idade não informada"
 
     daily_30 = repo.get_daily_metrics(days=30)
-    latest_labs = repo.get_latest_labs_by_key()
-    pheno_history = repo.get_phenoage_history(limit=1)
+    clinical_snapshot = get_clinical_lab_snapshot(repo)
+    latest_labs = clinical_snapshot.latest_labs
+    latest_phenoage = clinical_snapshot.latest_phenoage
 
     today_str = date.today().strftime("%d/%m/%Y")
 
@@ -46,8 +48,8 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
     avg_rem = f"`{np.mean(rems):.0f} min/noite`" if rems else "`(Sem dados)`"
 
     pheno_txt = "(Sem dados)"
-    if pheno_history:
-        p = pheno_history[0]
+    if latest_phenoage:
+        p = latest_phenoage
         pheno_txt = f"**{p['pheno_age']} anos** (Idade Cronológica: {p['chronological_age']} | Delta: **{p['age_delta']:+.1f} anos**)"
 
     lines = [
@@ -81,11 +83,6 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
         lines.append("| (Sem dados laboratoriais registrados) | - | - | - | - |")
     else:
         for key, lab in latest_labs.items():
-            name_lower = str(lab.get("metric_name", "")).lower()
-            key_lower = str(key).lower()
-            if any(term in name_lower or term in key_lower for term in ["sintético", "sintetico", "fixture", "mock", "teste"]):
-                continue
-
             val = lab["value"]
             unit = lab.get("unit", "")
             val_str = f"{val} {unit}".strip()
@@ -113,6 +110,12 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
                 status = "⚪ Sem alvo/referência"
 
             lines.append(f"| {lab['metric_name']} | **{val_str}** | {ref_str} | {opt_str} | {status} |")
+
+    excluded_count = clinical_snapshot.excluded_lab_results + clinical_snapshot.excluded_phenoage_records
+    if excluded_count:
+        lines.append(
+            f"> Nota de segurança: {excluded_count} registro(s) sem provenance clínica verificável foram excluídos deste briefing."
+        )
 
     lines.extend([
         "",

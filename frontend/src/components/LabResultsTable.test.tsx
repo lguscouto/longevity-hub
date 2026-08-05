@@ -9,10 +9,10 @@ describe('LabResultsTable', () => {
     render(
       <LabResultsTable
         labs={[
-          { collected_at: '2026-07-30', metric_key: 'triglycerides', metric_name: 'Triglicérides', value: 90, unit: 'mg/dL' },
-          { collected_at: '2026-07-30', metric_key: 'hdl', metric_name: 'Colesterol HDL', value: 60, unit: 'mg/dL' },
-          { collected_at: '2026-07-30', metric_key: 'total_cholesterol', metric_name: 'Colesterol Total', value: 180, unit: 'mg/dL' },
-          { collected_at: '2026-07-30', metric_key: 'ldl', metric_name: 'Colesterol LDL', value: 100, unit: 'mg/dL' },
+          { collected_at: '2026-07-30', metric_key: 'triglycerides', metric_name: 'Triglicérides', value: 90, unit: 'mg/dL', record_origin: 'patient_lab' },
+          { collected_at: '2026-07-30', metric_key: 'hdl', metric_name: 'Colesterol HDL', value: 60, unit: 'mg/dL', record_origin: 'patient_lab' },
+          { collected_at: '2026-07-30', metric_key: 'total_cholesterol', metric_name: 'Colesterol Total', value: 180, unit: 'mg/dL', record_origin: 'patient_lab' },
+          { collected_at: '2026-07-30', metric_key: 'ldl', metric_name: 'Colesterol LDL', value: 100, unit: 'mg/dL', record_origin: 'patient_lab' },
         ]}
         onAddBatchLabs={vi.fn()}
       />,
@@ -46,5 +46,31 @@ describe('LabResultsTable', () => {
     )
     expect(records.map((record) => record.metric_key)).not.toContain('hdl')
     expect(records.map((record) => record.metric_key)).not.toContain('ldl')
+  })
+
+  it('does not offer a preset that could persist synthetic PhenoAge values as a lab panel', async () => {
+    const user = userEvent.setup()
+
+    render(<LabResultsTable labs={[]} onAddBatchLabs={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: /novo painel de exames/i }))
+
+    expect(screen.queryByRole('button', { name: /9 marcadores phenoage/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/preencha apenas os marcadores realizados no seu laudo médico/i)).toBeInTheDocument()
+  })
+
+  it('does not calculate cardiovascular ratios from labs without clinical provenance', () => {
+    render(
+      <LabResultsTable
+        labs={[
+          { collected_at: '2026-07-30', metric_key: 'triglycerides', metric_name: 'Triglicérides', value: 90, unit: 'mg/dL' },
+          { collected_at: '2026-07-30', metric_key: 'hdl', metric_name: 'Colesterol HDL', value: 60, unit: 'mg/dL' },
+        ]}
+        onAddBatchLabs={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('(Sem TG/HDL)')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/excluídos de cálculos/i)
   })
 })

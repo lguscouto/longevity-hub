@@ -10,6 +10,14 @@ from longevidade.ai.context_builder import build_patient_clinical_context
 from longevidade.ai.prompts import DEFAULT_LONGEVITY_SYSTEM_PROMPT, STRUCTURED_INSIGHTS_PROMPT
 from longevidade.ai.provider_factory import generate_llm_response, validate_provider_connection
 from longevidade.ai.secrets_store import AISecretsStore, KeyringSecretsStore, mask_secret
+from longevidade.ai.safety_policy import (
+    DETERMINISTIC_SAFETY_MODEL,
+    DETERMINISTIC_SAFETY_PROVIDER,
+    TrainingSafetyDecision,
+    build_restricted_chat_reply,
+    build_restricted_insights,
+    evaluate_training_safety,
+)
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
 from longevidade.algorithms.daily_guidance import generate_daily_guidance
@@ -63,6 +71,46 @@ def _require_provider_secret(repo: LongevityRepository, provider: str, detail_hi
     return api_key
 
 
+def _current_training_safety(repo: LongevityRepository) -> TrainingSafetyDecision:
+    """Avalia a trava antes de montar prompts ou consultar o provedor externo."""
+
+    today_str = date.today().isoformat()
+    today_metric = repo.get_daily_metric_by_date(today_str)
+    all_60_metrics = repo.get_daily_metrics(days=60)
+    history_metrics = [
+        metric
+        for metric in all_60_metrics
+        if metric.get("date_ref") and metric["date_ref"] < today_str
+    ]
+    guidance = generate_daily_guidance(today_metric, history_metrics)
+    energy = calculate_energy_bank(today_metric)
+    return evaluate_training_safety(guidance, energy)
+
+
+def _save_deterministic_guardrail_insight(
+    repo: LongevityRepository,
+    *,
+    category: str,
+    headline: str,
+    insight_text: str,
+    actionable_steps: str | None,
+    audit_prompt: str,
+) -> None:
+    """Registra somente o texto local seguro, nunca uma resposta bruta bloqueada."""
+
+    repo.save_ai_insight(
+        {
+            "provider_used": DETERMINISTIC_SAFETY_PROVIDER,
+            "model_used": DETERMINISTIC_SAFETY_MODEL,
+            "category": category,
+            "headline": headline,
+            "insight_text": insight_text,
+            "actionable_steps": actionable_steps,
+            "user_prompt": audit_prompt,
+        }
+    )
+
+
 @router.get("/settings")
 def get_ai_settings():
     repo = _repo_for_current_db()
@@ -92,7 +140,14 @@ def update_ai_settings(input_data: AISettingsInput):
     if "privacy_mode" in data:
         data["privacy_mode"] = _normalize_privacy_mode(data.get("privacy_mode"))
 
-    repo.upsert_ai_settings(data)
+    try:
+        repo.upsert_ai_settings(data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Erro ao salvar configurações de IA: {exc}",
+        ) from exc
+
     return {"status": "ok", "message": "Configurações de IA salvas com sucesso"}
 
 
@@ -117,6 +172,28 @@ def generate_insights():
     provider = settings.get("active_provider", "openrouter")
     model = settings.get("selected_model", "deepseek/deepseek-v4-pro")
     privacy_mode = _normalize_privacy_mode(settings.get("privacy_mode"))
+
+    safety = _current_training_safety(repo)
+    if safety.restricted:
+        parsed_json = build_restricted_insights(safety)
+        insight = parsed_json["insights"][0]
+        _save_deterministic_guardrail_insight(
+            repo,
+            category=str(insight["category"]),
+            headline=str(insight["headline"]),
+            insight_text=str(insight["insight_text"]),
+            actionable_steps=str(insight["actionable_steps"]),
+            audit_prompt=f"Análise local limitada pela política de segurança (privacy_mode={privacy_mode})",
+        )
+        return {
+            "status": "ok",
+            "provider": DETERMINISTIC_SAFETY_PROVIDER,
+            "model": DETERMINISTIC_SAFETY_MODEL,
+            "privacy_mode": privacy_mode,
+            "guardrail_applied": True,
+            "safety_reason": safety.reason_code,
+            "result": parsed_json,
+        }
 
     api_key = _require_provider_secret(
         repo,
@@ -160,27 +237,6 @@ def generate_insights():
             ],
         }
 
-    # P1: Validação determinística de guardrails no pós-processamento do LLM
-    today_str = date.today().isoformat()
-    today_metric = repo.get_daily_metric_by_date(today_str)
-    all_60_metrics = repo.get_daily_metrics(days=60)
-    history_metrics = [m for m in all_60_metrics if m.get("date_ref") and m["date_ref"] < today_str]
-    guidance_res = generate_daily_guidance(today_metric, history_metrics)
-    energy_res = calculate_energy_bank(today_metric)
-
-    is_restricted = guidance_res.get("state") == "insufficient_data" or guidance_res.get("confidence") in ("low", "unavailable") or energy_res.get("status") == "not_verifiable"
-
-    if is_restricted:
-        parsed_json["guardrail_applied"] = True
-        for insight in parsed_json.get("insights", []):
-            txt = (insight.get("insight_text", "") + " " + insight.get("actionable_steps", "")).lower()
-            if any(term in txt for term in ["intenso", "intensa", "vo2 max", "exigente", "ignorar", "força", "alta intensidade"]):
-                insight["actionable_steps"] = (
-                    "⚠️ [GUARDRAIL ATIVO]: Dados fisiológicos/atividade ausentes ou incompletos hoje. "
-                    "Treino intenso e atividades exigentes foram bloqueados. "
-                    + (guidance_res.get("primary_action") or "Sincronize seu dispositivo.")
-                )
-
     audit_prompt = f"Análise geral automatizada de 30 dias (privacy_mode={privacy_mode})"
     for item in parsed_json.get("insights", []):
         repo.save_ai_insight(
@@ -214,6 +270,28 @@ def chat_copilot(input_data: AIChatInput):
     model = settings.get("selected_model", "deepseek/deepseek-v4-pro")
     privacy_mode = _normalize_privacy_mode(settings.get("privacy_mode"))
 
+    safety = _current_training_safety(repo)
+    if safety.restricted:
+        reply = build_restricted_chat_reply(safety)
+        audit_prompt = input_data.prompt if privacy_mode == "full" else "[prompt omitido por privacy_mode=minimal]"
+        _save_deterministic_guardrail_insight(
+            repo,
+            category="chat",
+            headline="Resposta limitada pela política de segurança",
+            insight_text=reply,
+            actionable_steps=None,
+            audit_prompt=audit_prompt,
+        )
+        return {
+            "status": "ok",
+            "provider": DETERMINISTIC_SAFETY_PROVIDER,
+            "model": DETERMINISTIC_SAFETY_MODEL,
+            "privacy_mode": privacy_mode,
+            "guardrail_applied": True,
+            "safety_reason": safety.reason_code,
+            "reply": reply,
+        }
+
     api_key = _require_provider_secret(
         repo,
         provider,
@@ -234,25 +312,6 @@ def chat_copilot(input_data: AIChatInput):
 
     if err or not reply:
         raise HTTPException(status_code=500, detail=f"Erro ao consultar o Copiloto ({provider}): {err}")
-
-    # P1: Validação determinística de guardrails no pós-processamento do Chat LLM
-    today_str = date.today().isoformat()
-    today_metric = repo.get_daily_metric_by_date(today_str)
-    all_60_metrics = repo.get_daily_metrics(days=60)
-    history_metrics = [m for m in all_60_metrics if m.get("date_ref") and m["date_ref"] < today_str]
-    guidance_res = generate_daily_guidance(today_metric, history_metrics)
-    energy_res = calculate_energy_bank(today_metric)
-
-    is_restricted = guidance_res.get("state") == "insufficient_data" or guidance_res.get("confidence") in ("low", "unavailable") or energy_res.get("status") == "not_verifiable"
-
-    if is_restricted:
-        reply_lower = reply.lower()
-        if any(term in reply_lower for term in ["intenso", "intensa", "vo2 max", "exigente", "ignorar", "alta intensidade"]):
-            reply += (
-                "\n\n---\n⚠️ **[TRAVA DE SEGURANÇA ALGORÍTMICA ATIVA]**: "
-                "Apesar da sugestão do modelo, a cobertura de dados fisiológicos/atividade do dia é insuficiente ou parcial. "
-                "Treinos intensos estão BLOQUEADOS deterministicamente pelo sistema até a sincronização completa."
-            )
 
     audit_prompt = input_data.prompt if privacy_mode == "full" else "[prompt omitido por privacy_mode=minimal]"
     repo.save_ai_insight(

@@ -490,9 +490,15 @@ export default function App() {
                 </section>
 
                 <DailyGuidanceCard selectedDate={selectedDate} refreshKey={guidanceRevision} />
+              </>
+            )}
 
-                <DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={handleCheckinUpdated} />
+            <div className={activeTab === 'overview' ? undefined : 'hidden'} aria-hidden={activeTab !== 'overview'}>
+              <DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={handleCheckinUpdated} />
+            </div>
 
+            {activeTab === 'overview' && (
+              <>
                 <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {metricCards.map((card) => (
                     <MetricCard

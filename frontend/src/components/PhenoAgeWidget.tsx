@@ -239,24 +239,6 @@ const ModelScore: React.FC<ModelScoreProps> = ({
 
 export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, latestKdmRecord, onRecalculate }) => {
   const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState({
-    chronological_age: 32,
-    glucose_mgdl: 88,
-    creatinine_mgdl: 0.85,
-    albumin_gdl: 4.6,
-    hscrp_mgl: 0.4,
-    lymphocyte_pct: 32,
-    mcv_fl: 89,
-    rdw_pct: 12.2,
-    alk_phos_ul: 62,
-    wbc_1000ul: 5.5,
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onRecalculate(formData)
-    setShowModal(false)
-  }
 
   const phenoRecord = nestedOrSelf(latestRecord, ['phenoage', 'phenoage_result', 'result'])
   const phenoAge = firstNumber(phenoRecord, ['pheno_age', 'biological_age'])
@@ -339,60 +321,33 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
 
       {/* Modal Calculator */}
       {showModal && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="phenoage-calculator-title" className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl">
             <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Calculadora de PhenoAge
+              <h3 id="phenoage-calculator-title" className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Calcular PhenoAge
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm">✕</button>
+              <button type="button" aria-label="Fechar calculadora" onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm">✕</button>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">Idade Cronológica</label>
-                <input type="number" step="0.1" value={formData.chronological_age} onChange={e => setFormData({...formData, chronological_age: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">Glicose (mg/dL)</label>
-                <input type="number" step="0.1" value={formData.glucose_mgdl} onChange={e => setFormData({...formData, glucose_mgdl: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">Creatinina (mg/dL)</label>
-                <input type="number" step="0.01" value={formData.creatinine_mgdl} onChange={e => setFormData({...formData, creatinine_mgdl: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">Albumina (g/dL)</label>
-                <input type="number" step="0.1" value={formData.albumin_gdl} onChange={e => setFormData({...formData, albumin_gdl: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">hs-CRP (mg/L)</label>
-                <input type="number" step="0.01" value={formData.hscrp_mgl} onChange={e => setFormData({...formData, hscrp_mgl: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">Linfócitos (%)</label>
-                <input type="number" step="0.1" value={formData.lymphocyte_pct} onChange={e => setFormData({...formData, lymphocyte_pct: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">MCV (fL)</label>
-                <input type="number" step="0.1" value={formData.mcv_fl} onChange={e => setFormData({...formData, mcv_fl: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">RDW (%)</label>
-                <input type="number" step="0.1" value={formData.rdw_pct} onChange={e => setFormData({...formData, rdw_pct: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">Fosfatase Alcalina (U/L)</label>
-                <input type="number" step="1" value={formData.alk_phos_ul} onChange={e => setFormData({...formData, alk_phos_ul: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1">WBC (10^3/uL)</label>
-                <input type="number" step="0.1" value={formData.wbc_1000ul} onChange={e => setFormData({...formData, wbc_1000ul: +e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none" />
-              </div>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                onRecalculate({})
+                setShowModal(false)
+              }}
+              className="space-y-4 text-xs"
+            >
+              <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-slate-700 dark:text-slate-200 leading-relaxed">
+                O cálculo usa exclusivamente os exames clínicos registrados com origem verificável. Para incluir um novo marcador, cadastre-o primeiro em <strong>Exames Laboratoriais</strong> a partir do seu laudo.
+              </p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Esta ação não preenche valores de exemplo, não cria exames e não usa dados sintéticos, manuais ou não verificados.
+              </p>
 
-              <div className="col-span-2 mt-4 flex justify-end gap-2">
+              <div className="pt-2 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition">Cancelar</button>
-                <button type="submit" className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold glow-cyan">Calcular & Salvar</button>
+                <button type="submit" className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold glow-cyan">Calcular com exames registrados</button>
               </div>
             </form>
           </div>

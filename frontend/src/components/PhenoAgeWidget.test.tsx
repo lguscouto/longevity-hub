@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import { PhenoAgeWidget } from './PhenoAgeWidget'
 
@@ -45,5 +45,26 @@ describe('PhenoAgeWidget', () => {
     expect(screen.getByText(/Frequência cardíaca de repouso/i)).toBeInTheDocument()
     expect(screen.getByText(/Pressão sistólica/i)).toBeInTheDocument()
     expect(screen.queryByText(/40\.5\s*yrs/i)).not.toBeInTheDocument()
+  })
+
+  it('calculates from registered clinical labs without injecting example biomarker values', () => {
+    const onRecalculate = vi.fn()
+
+    render(
+      <PhenoAgeWidget
+        latestRecord={null}
+        latestKdmRecord={null}
+        onRecalculate={onRecalculate}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /^calcular$/i }))
+
+    expect(screen.getByRole('dialog', { name: /calcular phenoage/i })).toHaveTextContent(/exames clínicos registrados/i)
+    expect(screen.queryByLabelText(/glicose/i)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /calcular com exames registrados/i }))
+
+    expect(onRecalculate).toHaveBeenCalledWith({})
   })
 })

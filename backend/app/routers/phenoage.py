@@ -6,7 +6,14 @@ from pydantic import BaseModel
 
 from backend.app.config import get_db_path
 from longevidade.algorithms.phenoage import PhenoAgeInput, calculate_phenoage
+from longevidade.algorithms.phenoage_panel import PhenoAgeLabPanel, select_latest_complete_phenoage_panel
 from longevidade.ingestion.lab_normalization import PHENOAGE_REQUIRED_MARKERS
+from longevidade.lab_provenance import (
+    CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+    IMPORTED_LAB_ORIGIN,
+    MANUAL_LAB_ORIGIN,
+    PATIENT_LAB_ORIGIN,
+)
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
 
@@ -26,48 +33,21 @@ class PhenoAgeCalculateRequest(BaseModel):
     wbc_1000ul: Optional[float] = None
 
 
-_PHENOAGE_LAB_ALIASES = {
-    "glucose_mgdl": "glucose_mgdl",
-    "fasting_glucose": "glucose_mgdl",
-    "glucose": "glucose_mgdl",
-    "creatinine_mgdl": "creatinine_mgdl",
-    "creatinine": "creatinine_mgdl",
-    "albumin_gdl": "albumin_gdl",
-    "albumin": "albumin_gdl",
-    "hscrp_mgl": "hscrp_mgl",
-    "hscrp": "hscrp_mgl",
-    "hs_crp": "hscrp_mgl",
-    "crp": "hscrp_mgl",
-    "lymphocyte_pct": "lymphocyte_pct",
-    "lymphocyte": "lymphocyte_pct",
-    "mcv_fl": "mcv_fl",
-    "mcv": "mcv_fl",
-    "rdw_pct": "rdw_pct",
-    "rdw": "rdw_pct",
-    "alk_phos_ul": "alk_phos_ul",
-    "alk_phos": "alk_phos_ul",
-    "alp": "alk_phos_ul",
-    "wbc_1000ul": "wbc_1000ul",
-    "wbc": "wbc_1000ul",
-}
+def _latest_complete_phenoage_panel(repo: LongevityRepository) -> PhenoAgeLabPanel | None:
+    return select_latest_complete_phenoage_panel(
+        repo.get_lab_results(
+            limit=10_000,
+            record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+        )
+    )
 
 
-def _normalize_key(value: Any) -> str:
-    return str(value or "").strip().lower().replace(" ", "_").replace("-", "_")
+def _clinical_panel_origin(panel: PhenoAgeLabPanel) -> str:
+    """Propaga provenance importada somente quando todo o painel veio dela."""
 
-
-def _latest_phenoage_values(repo: LongevityRepository) -> dict[str, float]:
-    values: dict[str, float] = {}
-    for metric_key, row in repo.get_latest_labs_by_key().items():
-        canonical = _PHENOAGE_LAB_ALIASES.get(_normalize_key(metric_key))
-        if canonical is None:
-            continue
-        try:
-            value = float(row.get("value"))
-        except (TypeError, ValueError):
-            continue
-        values[canonical] = value
-    return values
+    if panel.record_origins == frozenset({IMPORTED_LAB_ORIGIN}):
+        return IMPORTED_LAB_ORIGIN
+    return PATIENT_LAB_ORIGIN
 
 
 def _profile_chronological_age(repo: LongevityRepository) -> float:
@@ -84,7 +64,7 @@ def get_phenoage_history():
     db_path = get_db_path()
     try:
         repo = LongevityRepository(db_path)
-        return repo.get_phenoage_history()
+        return repo.get_phenoage_history(record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS)
     except FileNotFoundError:
         return []
 
@@ -97,19 +77,23 @@ def calculate_and_save_phenoage(req: PhenoAgeCalculateRequest):
 
     payload = req.model_dump(exclude_none=True)
     chronological_age = payload.pop("chronological_age", None)
-    data_input: PhenoAgeInput = _latest_phenoage_values(repo)
-    data_input.update(payload)
+    has_manual_marker_overrides = bool(payload)
+    panel = None if has_manual_marker_overrides else _latest_complete_phenoage_panel(repo)
+    data_input: PhenoAgeInput = dict(payload) if has_manual_marker_overrides else dict(panel.values if panel else {})
     data_input["chronological_age"] = chronological_age if chronological_age is not None else _profile_chronological_age(repo)
 
     res = calculate_phenoage(data_input)
     if res.get("status") != "complete":
+        if not has_manual_marker_overrides and panel is None:
+            res["reason"] = "no_complete_single_collection_panel"
         return {"status": "incomplete", "id": None, "saved": False, "result": res}
 
     rec = {
-        "calculated_at": date.today().isoformat(),
+        "calculated_at": date.today().isoformat() if has_manual_marker_overrides else panel.collected_at,
         "chronological_age": res["chronological_age"],
         "pheno_age": res["pheno_age"],
         "age_delta": res["age_delta"],
+        "record_origin": MANUAL_LAB_ORIGIN if has_manual_marker_overrides else _clinical_panel_origin(panel),
         **{field: data_input.get(field) for field in PHENOAGE_REQUIRED_MARKERS},
     }
     row_id = repo.add_phenoage_record(rec)

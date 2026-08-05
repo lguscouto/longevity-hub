@@ -127,7 +127,8 @@ def test_clinical_context_builder():
             "metric_name": "Apolipoproteína B",
             "value": 58.0,
             "unit": "mg/dL",
-            "optimal_target": 60.0
+            "optimal_target": 60.0,
+            "record_origin": "patient_lab",
         })
 
         context = build_patient_clinical_context(db_path)

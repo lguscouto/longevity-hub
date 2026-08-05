@@ -14,6 +14,7 @@ from longevidade.calculators.kdm_age import (
 )
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
+from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
 
 router = APIRouter(prefix="/api/kdm", tags=["KDM"])
 
@@ -75,7 +76,10 @@ def calculate_and_save_kdm() -> Dict[str, Any]:
     repo = _repo()
     profile = repo.get_user_profile()
     chronological_age = float(profile.get("chronological_age") or 40.0)
-    lab_results = repo.get_lab_results(limit=1000)
+    lab_results = repo.get_lab_results(
+        limit=1000,
+        record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+    )
     daily_metrics = repo.get_daily_metrics(days=365)
 
     latest_values = latest_kdm_biomarker_values(lab_results, daily_metrics)

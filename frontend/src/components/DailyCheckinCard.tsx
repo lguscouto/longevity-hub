@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Sparkles, Coffee, Smile, Activity, Zap, Check } from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Sparkles, Smile, Activity, Zap, Check } from 'lucide-react'
 import { requestJson } from '../lib/api'
 
 interface DailyCheckinCardProps {
@@ -27,93 +27,225 @@ const AVAILABLE_TAGS = [
   { id: 'dor_cabeca', label: '🤕 Dor de Cabeça' },
 ]
 
+const emptyCheckin = (dateRef: string): CheckinState => ({
+  date_ref: dateRef,
+  energy_score: null,
+  mood_score: null,
+  perceived_stress: null,
+  tags: [],
+  notes: '',
+})
+
+const normalizeCheckin = (data: CheckinState, fallbackDate: string): CheckinState => ({
+  ...emptyCheckin(fallbackDate),
+  ...data,
+  date_ref: data?.date_ref || fallbackDate,
+  tags: Array.isArray(data?.tags) ? data.tags : [],
+})
+
 export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate, onCheckinUpdated }) => {
-  const [checkin, setCheckin] = useState<CheckinState>({
-    date_ref: selectedDate,
-    energy_score: null,
-    mood_score: null,
-    perceived_stress: null,
-    tags: [],
-    notes: '',
-  })
+  const [checkin, setCheckin] = useState<CheckinState>(() => emptyCheckin(selectedDate))
   const [saving, setSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
-
-  useEffect(() => {
-    let isMounted = true
-    requestJson<CheckinState>(`/api/checkins/${selectedDate}`)
-      .then((data) => {
-        if (isMounted)
-          setCheckin({
-            ...data,
-            tags: Array.isArray(data?.tags) ? data.tags : [],
-          })
-      })
-      .catch(() => {
-        if (isMounted)
-          setCheckin({
-            date_ref: selectedDate,
-            energy_score: null,
-            mood_score: null,
-            perceived_stress: null,
-            tags: [],
-            notes: '',
-          })
-      })
-    return () => {
-      isMounted = false
-    }
-  }, [selectedDate])
-
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const debouncedSave = (dataToSave: CheckinState) => {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current)
-    }
-    saveTimerRef.current = setTimeout(() => {
-      void saveCheckin(dataToSave)
-    }, 600)
-  }
-
-  const handleScoreChange = (key: keyof CheckinState, value: number) => {
-    const updated = { ...checkin, date_ref: selectedDate, [key]: value }
-    setCheckin(updated)
-    debouncedSave(updated)
-  }
-
-  const handleToggleTag = (tagId: string) => {
-    const currentTags = Array.isArray(checkin.tags) ? checkin.tags : []
-    const newTags = currentTags.includes(tagId)
-      ? currentTags.filter((t) => t !== tagId)
-      : [...currentTags, tagId]
-    const updated = { ...checkin, date_ref: selectedDate, tags: newTags }
-    setCheckin(updated)
-    debouncedSave(updated)
-  }
-
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const saveCheckin = async (dataToSave: CheckinState) => {
-    setSaving(true)
-    setErrorMsg(null)
+  const checkinRef = useRef<CheckinState>(emptyCheckin(selectedDate))
+  const selectedDateRef = useRef(selectedDate)
+  const isMountedRef = useRef(true)
+  const localRevisionRef = useRef(0)
+  const loadRevisionRef = useRef(0)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const delayedSaveRef = useRef<CheckinState | null>(null)
+  const pendingSavesRef = useRef<CheckinState[]>([])
+  const failedSavesRef = useRef(new Map<string, CheckinState>())
+  const saveInFlightRef = useRef(false)
+  const flushSaveQueueRef = useRef<() => void>(() => {})
+  const onCheckinUpdatedRef = useRef(onCheckinUpdated)
+  onCheckinUpdatedRef.current = onCheckinUpdated
+
+  const flushSaveQueue = useCallback(async () => {
+    if (saveInFlightRef.current) return
+
+    const dataToSave = pendingSavesRef.current.shift()
+    if (!dataToSave) {
+      if (isMountedRef.current) setSaving(false)
+      return
+    }
+
+    saveInFlightRef.current = true
+    if (isMountedRef.current) {
+      setSaving(true)
+      setErrorMsg(null)
+    }
+
     try {
-      await requestJson(`/api/checkins/${selectedDate}`, {
+      await requestJson(`/api/checkins/${encodeURIComponent(dataToSave.date_ref)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSave),
       })
-      setSavedSuccess(true)
-      setTimeout(() => setSavedSuccess(false), 2000)
-      if (onCheckinUpdated) onCheckinUpdated()
-    } catch (err) {
-      console.error(err)
-      setErrorMsg('Não foi possível salvar o check-in.')
-      setTimeout(() => setErrorMsg(null), 3000)
+
+      const hasNewerSaveForDate = (
+        pendingSavesRef.current.some((pendingSave) => pendingSave.date_ref === dataToSave.date_ref)
+        || delayedSaveRef.current?.date_ref === dataToSave.date_ref
+      )
+      if (
+        isMountedRef.current
+        && dataToSave.date_ref === selectedDateRef.current
+        && !hasNewerSaveForDate
+      ) {
+        setSavedSuccess(true)
+        if (successTimerRef.current) clearTimeout(successTimerRef.current)
+        successTimerRef.current = setTimeout(() => {
+          if (isMountedRef.current) setSavedSuccess(false)
+        }, 2000)
+      }
+      failedSavesRef.current.delete(dataToSave.date_ref)
+      if (isMountedRef.current) onCheckinUpdatedRef.current?.()
+    } catch {
+      const hasNewerSaveForDate = (
+        pendingSavesRef.current.some((pendingSave) => pendingSave.date_ref === dataToSave.date_ref)
+        || delayedSaveRef.current?.date_ref === dataToSave.date_ref
+      )
+      if (!hasNewerSaveForDate) {
+        failedSavesRef.current.set(dataToSave.date_ref, dataToSave)
+        if (isMountedRef.current && dataToSave.date_ref === selectedDateRef.current) {
+          setErrorMsg('Não foi possível salvar o check-in.')
+        }
+      }
     } finally {
-      setSaving(false)
+      saveInFlightRef.current = false
+      if (pendingSavesRef.current.length > 0) {
+        flushSaveQueueRef.current()
+      } else if (isMountedRef.current) {
+        setSaving(false)
+      }
     }
+  }, [])
+
+  flushSaveQueueRef.current = () => {
+    void flushSaveQueue()
   }
+
+  const enqueueSave = useCallback((dataToSave: CheckinState) => {
+    const queuedIndex = pendingSavesRef.current.findIndex(
+      (pendingSave) => pendingSave.date_ref === dataToSave.date_ref,
+    )
+    if (queuedIndex >= 0) {
+      pendingSavesRef.current[queuedIndex] = dataToSave
+    } else {
+      pendingSavesRef.current.push(dataToSave)
+    }
+    flushSaveQueueRef.current()
+  }, [])
+
+  const scheduleSave = useCallback((dataToSave: CheckinState) => {
+    const previousDelayedSave = delayedSaveRef.current
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+    if (previousDelayedSave && previousDelayedSave.date_ref !== dataToSave.date_ref) {
+      delayedSaveRef.current = null
+      enqueueSave(previousDelayedSave)
+    }
+    failedSavesRef.current.delete(dataToSave.date_ref)
+    delayedSaveRef.current = dataToSave
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null
+      const delayedSave = delayedSaveRef.current
+      delayedSaveRef.current = null
+      if (delayedSave) enqueueSave(delayedSave)
+    }, 600)
+  }, [enqueueSave])
+
+  const applyLocalChange = (change: (current: CheckinState) => CheckinState) => {
+    const updated = change(checkinRef.current)
+    localRevisionRef.current += 1
+    checkinRef.current = updated
+    setCheckin(updated)
+    scheduleSave(updated)
+  }
+
+  const handleScoreChange = (key: keyof CheckinState, value: number) => {
+    applyLocalChange((current) => ({ ...current, date_ref: selectedDateRef.current, [key]: value }))
+  }
+
+  const handleToggleTag = (tagId: string) => {
+    applyLocalChange((current) => {
+      const currentTags = Array.isArray(current.tags) ? current.tags : []
+      const tags = currentTags.includes(tagId)
+        ? currentTags.filter((tag) => tag !== tagId)
+        : [...currentTags, tagId]
+      return { ...current, date_ref: selectedDateRef.current, tags }
+    })
+  }
+
+  const retryFailedSave = () => {
+    const failedSave = failedSavesRef.current.get(selectedDateRef.current)
+    if (!failedSave) return
+    failedSavesRef.current.delete(failedSave.date_ref)
+    setErrorMsg(null)
+    enqueueSave(failedSave)
+  }
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+      const delayedSave = delayedSaveRef.current
+      delayedSaveRef.current = null
+      if (delayedSave) enqueueSave(delayedSave)
+    }
+  }, [enqueueSave])
+
+  useEffect(() => {
+    const delayedSave = delayedSaveRef.current
+    if (delayedSave && delayedSave.date_ref !== selectedDate) {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+      delayedSaveRef.current = null
+      enqueueSave(delayedSave)
+    }
+    selectedDateRef.current = selectedDate
+    const requestRevision = ++loadRevisionRef.current
+    const localRevision = localRevisionRef.current
+    const fallback = emptyCheckin(selectedDate)
+    checkinRef.current = fallback
+    setCheckin(fallback)
+    setSavedSuccess(false)
+    setErrorMsg(
+      failedSavesRef.current.has(selectedDate)
+        ? 'Não foi possível salvar o check-in.'
+        : null,
+    )
+
+    requestJson<CheckinState>(`/api/checkins/${encodeURIComponent(selectedDate)}`)
+      .then((data) => {
+        if (
+          isMountedRef.current
+          && requestRevision === loadRevisionRef.current
+          && localRevision === localRevisionRef.current
+        ) {
+          const normalized = normalizeCheckin(data, selectedDate)
+          checkinRef.current = normalized
+          setCheckin(normalized)
+        }
+      })
+      .catch(() => {
+        if (
+          isMountedRef.current
+          && requestRevision === loadRevisionRef.current
+          && localRevision === localRevisionRef.current
+        ) {
+          checkinRef.current = fallback
+          setCheckin(fallback)
+        }
+      })
+  }, [selectedDate, enqueueSave])
 
   return (
     <div className="glass-card p-5 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
@@ -133,10 +265,22 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
             <Check className="h-3 w-3" /> Salvo
           </span>
         )}
-        {errorMsg && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20">
-            {errorMsg}
+        {saving && !savedSuccess && !errorMsg && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-500/20">
+            Salvando…
           </span>
+        )}
+        {errorMsg && (
+          <div role="alert" className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20">
+            <span>{errorMsg}</span>
+            <button
+              type="button"
+              onClick={retryFailedSave}
+              className="underline underline-offset-2 hover:text-rose-700 dark:hover:text-rose-200"
+            >
+              Tentar novamente
+            </button>
+          </div>
         )}
       </div>
 

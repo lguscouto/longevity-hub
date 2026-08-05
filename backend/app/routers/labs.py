@@ -6,6 +6,7 @@ from backend.app.config import get_db_path
 from longevidade.db.schema import initialize_db
 from longevidade.db.repository import LongevityRepository
 from longevidade.ingestion.lab_parser import ingest_lab_records, OPTIMAL_LONGEVITY_TARGETS
+from longevidade.lab_provenance import PATIENT_LAB_ORIGIN
 
 router = APIRouter(prefix="/api/labs", tags=["Labs"])
 
@@ -56,7 +57,12 @@ def add_batch_labs(batch: BatchLabInput):
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
     recs = [r.model_dump() for r in batch.records]
-    result = ingest_lab_records(recs, repo, chronological_age=batch.chronological_age or 40.0)
+    result = ingest_lab_records(
+        recs,
+        repo,
+        chronological_age=batch.chronological_age or 40.0,
+        record_origin=PATIENT_LAB_ORIGIN,
+    )
     return result
 
 @router.delete("/date/{collected_at}")

@@ -26,6 +26,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 86.0 + offset,
                 "unit": "mg/dL",
                 "category": "Metabolismo",
+                "record_origin": "patient_lab",
             }
         )
         repo.add_lab_result(
@@ -36,6 +37,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 0.82 + offset * 0.01,
                 "unit": "mg/dL",
                 "category": "Renal",
+                "record_origin": "patient_lab",
             }
         )
         repo.add_lab_result(
@@ -46,6 +48,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 4.8 - offset * 0.03,
                 "unit": "g/dL",
                 "category": "Hepático",
+                "record_origin": "patient_lab",
             }
         )
         repo.add_lab_result(
@@ -56,6 +59,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 0.30 + offset * 0.03,
                 "unit": "mg/L",
                 "category": "Inflamação",
+                "record_origin": "patient_lab",
             }
         )
         repo.add_lab_result(
@@ -66,6 +70,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 11.9 + offset * 0.08,
                 "unit": "%",
                 "category": "Hematologia",
+                "record_origin": "patient_lab",
             }
         )
         repo.add_lab_result(
@@ -76,6 +81,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 58.0 + offset * 1.5,
                 "unit": "U/L",
                 "category": "Hepático",
+                "record_origin": "patient_lab",
             }
         )
         repo.add_lab_result(
@@ -86,6 +92,7 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
                 "value": 5.1 + offset * 0.08,
                 "unit": "10^3/uL",
                 "category": "Imunidade",
+                "record_origin": "patient_lab",
             }
         )
 

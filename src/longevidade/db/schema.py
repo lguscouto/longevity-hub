@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS lab_results (
     optimal_target REAL,
     category TEXT,
     notes TEXT,
+    record_origin TEXT NOT NULL DEFAULT 'unverified',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -85,6 +86,7 @@ CREATE TABLE IF NOT EXISTS phenoage_records (
     alk_phos_ul REAL,
     wbc_1000ul REAL,
     notes TEXT,
+    record_origin TEXT NOT NULL DEFAULT 'unverified',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -12,7 +12,13 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from longevidade.algorithms.phenoage import PhenoAgeInput, calculate_phenoage
+from longevidade.algorithms.phenoage_panel import select_latest_complete_phenoage_panel
 from longevidade.db.repository import LongevityRepository
+from longevidade.lab_provenance import (
+    CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+    UNVERIFIED_LAB_ORIGIN,
+    normalize_lab_record_origin,
+)
 from longevidade.ingestion.lab_normalization import (
     LAB_MARKER_LABELS,
     build_phenoage_input,
@@ -110,11 +116,17 @@ OPTIMAL_LONGEVITY_TARGETS.setdefault(
 )
 
 
-def ingest_lab_records(records: List[Dict[str, Any]], repo: LongevityRepository, chronological_age: float = 40.0) -> Dict[str, Any]:
+def ingest_lab_records(
+    records: List[Dict[str, Any]],
+    repo: LongevityRepository,
+    chronological_age: float = 40.0,
+    record_origin: str = UNVERIFIED_LAB_ORIGIN,
+) -> Dict[str, Any]:
     """Ingere exames, normaliza aliases e só calcula PhenoAge se o painel estiver completo."""
+    normalized_origin = normalize_lab_record_origin(record_origin)
     inserted = 0
-    collected_dates = set()
     latest_values: Dict[str, float] = {}
+    phenoage_candidates: list[Dict[str, Any]] = []
 
     for rec in records:
         normalized_rec = normalize_lab_record(rec)
@@ -134,11 +146,13 @@ def ingest_lab_records(records: List[Dict[str, Any]], repo: LongevityRepository,
             "optimal_target": normalized_rec.get("optimal_target") if normalized_rec.get("optimal_target") is not None else target_info.get("optimal"),
             "category": normalized_rec.get("category") or target_info.get("category") or "Geral",
             "notes": normalized_rec.get("notes"),
+            "record_origin": normalized_origin,
         }
         repo.add_lab_result(entry)
         inserted += 1
-        collected_dates.add(dt)
-        latest_values[key] = val
+        if normalized_origin in CLINICALLY_ELIGIBLE_LAB_ORIGINS:
+            latest_values[key] = val
+            phenoage_candidates.append(entry)
 
     pheno_validation = validate_phenoage_inputs(latest_values)
     pheno_result: Dict[str, Any] = {
@@ -148,12 +162,27 @@ def ingest_lab_records(records: List[Dict[str, Any]], repo: LongevityRepository,
         "biomarkers_used": pheno_validation["biomarkers_used"],
     }
 
+    if normalized_origin not in CLINICALLY_ELIGIBLE_LAB_ORIGINS:
+        pheno_result["status"] = "excluded_nonclinical"
+        pheno_result["reason"] = "Dados sem provenance clínica não são elegíveis para cálculo ou persistência de PhenoAge."
+        return {"status": "ok", "inserted": inserted, "phenoage": pheno_result}
+
+    panel = select_latest_complete_phenoage_panel(phenoage_candidates)
+    if panel is None:
+        if pheno_validation["status"] == "complete":
+            pheno_result["status"] = "incomplete"
+            pheno_result["reason"] = (
+                "Os nove marcadores existem, mas não pertencem à mesma data de coleta; "
+                "PhenoAge não foi calculado."
+            )
+        return {"status": "ok", "inserted": inserted, "phenoage": pheno_result}
+
     if pheno_validation["status"] == "complete":
-        pheno_input: PhenoAgeInput = build_phenoage_input(latest_values, chronological_age)  # type: ignore[assignment]
+        pheno_input: PhenoAgeInput = build_phenoage_input(panel.values, chronological_age)  # type: ignore[assignment]
         p_res = calculate_phenoage(pheno_input)
         if p_res.get("status") == "complete":
             repo.add_phenoage_record({
-                "calculated_at": max(collected_dates) if collected_dates else date.today().isoformat(),
+                "calculated_at": panel.collected_at,
                 "chronological_age": p_res["chronological_age"],
                 "pheno_age": p_res["pheno_age"],
                 "age_delta": p_res["age_delta"],
@@ -167,6 +196,7 @@ def ingest_lab_records(records: List[Dict[str, Any]], repo: LongevityRepository,
                 "alk_phos_ul": pheno_input["alk_phos_ul"],
                 "wbc_1000ul": pheno_input["wbc_1000ul"],
                 "notes": f"Cálculo automatizado PhenoAge via exames. Risco 10 anos: {p_res['mortality_risk_10yr_pct']}%",
+                "record_origin": normalized_origin,
             })
         pheno_result = p_res
 

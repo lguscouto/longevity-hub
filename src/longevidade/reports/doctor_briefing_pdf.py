@@ -14,6 +14,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from longevidade.db.repository import LongevityRepository
+from longevidade.reports.lab_selection import get_clinical_lab_snapshot
 
 
 def generate_doctor_briefing_pdf(
@@ -119,7 +120,8 @@ def generate_doctor_briefing_pdf(
 
     # Exames Laboratoriais
     elements.append(Paragraph("2. Marcadores Laboratoriais Recentes", h2_style))
-    latest_labs = repo.get_latest_labs_by_key()
+    clinical_snapshot = get_clinical_lab_snapshot(repo)
+    latest_labs = clinical_snapshot.latest_labs
 
     if not latest_labs:
         elements.append(Paragraph("Nenhum exame cadastrado no período.", body_style))
@@ -151,6 +153,16 @@ def generate_doctor_briefing_pdf(
             ])
         )
         elements.append(t_labs)
+
+    excluded_count = clinical_snapshot.excluded_lab_results + clinical_snapshot.excluded_phenoage_records
+    if excluded_count:
+        elements.append(Spacer(1, 6))
+        elements.append(
+            Paragraph(
+                f"Nota de segurança: {excluded_count} registro(s) sem provenance clínica verificável foram excluídos deste briefing.",
+                body_style,
+            )
+        )
 
     doc.build(elements)
     pdf_bytes = buffer.getvalue()

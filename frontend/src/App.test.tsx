@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React, { Suspense } from 'react'
 
@@ -169,6 +169,24 @@ describe('App', () => {
     // Click 'Perfil' tab
     await user.click(screen.getByRole('button', { name: /perfil/i }))
     expect(await screen.findByText(/perfil do protocolo blueprint/i)).toBeInTheDocument()
+  })
+
+  it('keeps a pending check-in autosave alive when navigating away from overview', async () => {
+    renderApp()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Energia nível 3' })).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Energia nível 3' }))
+    fireEvent.click(screen.getByRole('button', { name: /exames & phenoage/i }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/api\/checkins\//),
+        expect.objectContaining({ method: 'PUT' }),
+      )
+    }, { timeout: 1500 })
   })
 
   it('persists selected tab across refresh via localStorage', async () => {

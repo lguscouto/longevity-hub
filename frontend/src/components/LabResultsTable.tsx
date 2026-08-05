@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Dna, Plus, AlertCircle, CheckCircle2, Zap, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
+import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
 
@@ -15,6 +15,7 @@ interface LabResult {
   ref_max?: number;
   optimal_target?: number;
   category?: string;
+  record_origin?: string;
 }
 
 interface LabResultsTableProps {
@@ -177,6 +178,24 @@ const isMarkerOptimal = (lab: LabResult) => {
   return lab.value >= lab.optimal_target;
 };
 
+const CLINICALLY_ELIGIBLE_RECORD_ORIGINS = new Set(['patient_lab', 'imported']);
+
+const isClinicallyEligibleLab = (lab: LabResult) =>
+  CLINICALLY_ELIGIBLE_RECORD_ORIGINS.has(lab.record_origin ?? 'unverified');
+
+const recordOriginLabel = (origin?: string) => {
+  switch (origin) {
+    case 'patient_lab': return 'Resultado informado do laudo';
+    case 'imported': return 'Resultado importado';
+    case 'manual': return 'Entrada manual não verificada';
+    case 'synthetic': return 'Dado sintético';
+    case 'fixture': return 'Fixture de teste';
+    case 'calculated': return 'Valor calculado';
+    case 'demo': return 'Demonstração';
+    default: return 'Proveniência não verificada';
+  }
+};
+
 export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onAddBatchLabs, onRefreshData }) => {
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [selectedPanelDate, setSelectedPanelDate] = useState<string | null>(null);
@@ -188,6 +207,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const safeLabs = Array.isArray(labs) ? labs : [];
+  const clinicalLabs = safeLabs.filter(isClinicallyEligibleLab);
+  const excludedLabsCount = safeLabs.length - clinicalLabs.length;
 
   // Agrupamento dos exames por data da coleta (collected_at)
   const groupedLabs: Record<string, LabResult[]> = {};
@@ -208,20 +229,6 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
     setFormValues({});
   };
 
-  const handleFillPhenoAgePreset = () => {
-    const preset: Record<string, string> = {
-      fasting_glucose: '88',
-      creatinine: '0.85',
-      albumin: '4.6',
-      hscrp: '0.4',
-      lymphocyte_pct: '32',
-      mcv: '89',
-      rdw: '12.2',
-      alk_phos: '62',
-      wbc: '5.5'
-    };
-    setFormValues(prev => ({ ...prev, ...preset }));
-  };
 
   const handleBatchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,9 +306,15 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         </div>
       )}
 
+      {excludedLabsCount > 0 && (
+        <div role="status" className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+          {excludedLabsCount} registro(s) sem provenance clínica verificável estão visíveis para auditoria, mas foram excluídos de cálculos, razões e relatórios clínicos.
+        </div>
+      )}
+
       {/* Cartões de Razões Cardiovasculares Avançadas (Fase 3) */}
       {(() => {
-        const getV = (k: string) => safeLabs.find(l => normalizeLabMetricKey(l.metric_key) === k)?.value;
+        const getV = (k: string) => clinicalLabs.find(l => normalizeLabMetricKey(l.metric_key) === k)?.value;
         const apob = getV('apob');
         const apoa1 = getV('apoa1');
         const tg = getV('triglycerides');
@@ -370,9 +383,11 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               sortedDates.map((dt) => {
                 const groupItems = groupedLabs[dt] || [];
                 const totalCount = groupItems.length;
+                const clinicalCount = groupItems.filter(isClinicallyEligibleLab).length;
+                const nonClinicalCount = totalCount - clinicalCount;
 
-                const optimalCount = groupItems.filter(isMarkerOptimal).length;
-                const attentionCount = totalCount - optimalCount;
+                const optimalCount = groupItems.filter(isClinicallyEligibleLab).filter(isMarkerOptimal).length;
+                const attentionCount = clinicalCount - optimalCount;
 
                 // Seleciona no máximo 3 mini-badges para manter a linha enxuta
                 const keyPriorities = ['glucose_mgdl', 'fasting_glucose', 'apob', 'testosterone_total', 'hscrp', 'hba1c'];
@@ -397,6 +412,11 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
                           {totalCount} exames
                         </span>
+                        {nonClinicalCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
+                            {nonClinicalCount} sem provenance clínica
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -414,9 +434,15 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                     {/* Status Consolidado */}
                     <td className="py-4">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="h-3 w-3" /> {optimalCount} Ótimos
-                        </span>
+                        {clinicalCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            <CheckCircle2 className="h-3 w-3" /> {optimalCount} Ótimos
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            Sem dados clínicos elegíveis
+                          </span>
+                        )}
                         {attentionCount > 0 && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                             <AlertCircle className="h-3 w-3" /> {attentionCount} Atenção
@@ -481,7 +507,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {matchingResults.map((item, i) => {
-                        const isOpt = isMarkerOptimal(item);
+                        const isEligible = isClinicallyEligibleLab(item);
+                        const isOpt = isEligible && isMarkerOptimal(item);
                         return (
                           <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
                             <div>
@@ -493,6 +520,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
                                     <CheckCircle2 className="h-3 w-3" /> Ótimo
                                   </span>
+                                ) : !isEligible ? (
+                                  <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">Não clínico</span>
                                 ) : (
                                   <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
                                     <AlertCircle className="h-3 w-3" /> Atenção
@@ -506,7 +535,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                             </div>
 
                             <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-[10px] text-slate-500 flex justify-between">
-                              <span>Ref: {item.ref_min !== undefined ? `${item.ref_min} - ${item.ref_max}` : '-'}</span>
+                              <span>{recordOriginLabel(item.record_origin)}</span>
                               <span className="font-semibold text-emerald-600 dark:text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
                             </div>
                           </div>
@@ -597,14 +626,6 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleFillPhenoAgePreset}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 font-semibold transition"
-                >
-                  <Zap className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> 9 Marcadores PhenoAge
-                </button>
-
                 <button
                   type="button"
                   onClick={handleClearForm}

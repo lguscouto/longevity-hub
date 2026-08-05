@@ -6,6 +6,7 @@ Fornece interface para consulta, inserção e atualização auditável de dados.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from collections.abc import Collection
 import json
 import sqlite3
 import uuid
@@ -21,6 +22,9 @@ from longevidade.ai.secrets_store import (
     PROVIDER_SECRET_FIELDS,
     is_masked_or_blank_secret,
     is_plain_secret_value,
+)
+from longevidade.lab_provenance import (
+    normalize_lab_record_origin,
 )
 
 
@@ -172,9 +176,10 @@ class LongevityRepository:
 
     # --- LAB RESULTS ---
     def add_lab_result(self, data: Dict[str, Any]) -> int:
+        record_origin = normalize_lab_record_origin(data.get("record_origin"))
         sql = """
-        INSERT INTO lab_results (collected_at, metric_key, metric_name, value, unit, ref_min, ref_max, optimal_target, category, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO lab_results (collected_at, metric_key, metric_name, value, unit, ref_min, ref_max, optimal_target, category, notes, record_origin)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         values = (
             data["collected_at"],
@@ -187,16 +192,28 @@ class LongevityRepository:
             data.get("optimal_target"),
             data.get("category", "Geral"),
             data.get("notes"),
+            record_origin,
         )
         with self._get_connection() as conn:
             cursor = conn.execute(sql, values)
             conn.commit()
             return cursor.lastrowid
 
-    def get_lab_results(self, limit: int = 200) -> List[Dict[str, Any]]:
-        sql = "SELECT * FROM lab_results ORDER BY collected_at DESC, id DESC LIMIT ?;"
+    def get_lab_results(
+        self,
+        limit: int = 200,
+        record_origins: Collection[str] | None = None,
+    ) -> List[Dict[str, Any]]:
+        origins = tuple(normalize_lab_record_origin(origin) for origin in record_origins) if record_origins is not None else ()
+        if record_origins is not None and not origins:
+            return []
+        origin_filter = ""
+        if origins:
+            placeholders = ", ".join("?" for _ in origins)
+            origin_filter = f" WHERE record_origin IN ({placeholders})"
+        sql = f"SELECT * FROM lab_results{origin_filter} ORDER BY collected_at DESC, id DESC LIMIT ?;"
         with self._get_connection() as conn:
-            rows = conn.execute(sql, (limit,)).fetchall()
+            rows = conn.execute(sql, (*origins, limit)).fetchall()
             return [dict(row) for row in rows]
 
     def delete_lab_results_by_date(self, collected_at: str) -> int:
@@ -210,25 +227,44 @@ class LongevityRepository:
             conn.commit()
             return cursor.rowcount
 
-    def get_latest_labs_by_key(self) -> Dict[str, Dict[str, Any]]:
-        sql = """
+    def get_latest_labs_by_key(
+        self,
+        record_origins: Collection[str] | None = None,
+    ) -> Dict[str, Dict[str, Any]]:
+        origins = tuple(normalize_lab_record_origin(origin) for origin in record_origins) if record_origins is not None else ()
+        if record_origins is not None and not origins:
+            return {}
+        origin_filter = ""
+        if origins:
+            placeholders = ", ".join("?" for _ in origins)
+            origin_filter = f"WHERE record_origin IN ({placeholders})"
+        sql = f"""
         SELECT * FROM lab_results
         WHERE id IN (
-            SELECT MAX(id) FROM lab_results GROUP BY metric_key
+            SELECT MAX(id) FROM lab_results {origin_filter} GROUP BY metric_key
         );
         """
         with self._get_connection() as conn:
-            rows = conn.execute(sql).fetchall()
+            rows = conn.execute(sql, origins).fetchall()
             return {row["metric_key"]: dict(row) for row in rows}
+
+    def count_lab_results_excluded_from_clinical_use(self) -> int:
+        from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
+
+        placeholders = ", ".join("?" for _ in CLINICALLY_ELIGIBLE_LAB_ORIGINS)
+        sql = f"SELECT COUNT(*) FROM lab_results WHERE record_origin NOT IN ({placeholders});"
+        with self._get_connection() as conn:
+            return int(conn.execute(sql, tuple(CLINICALLY_ELIGIBLE_LAB_ORIGINS)).fetchone()[0])
 
     # --- PHENOAGE ---
     def add_phenoage_record(self, data: Dict[str, Any]) -> int:
+        record_origin = normalize_lab_record_origin(data.get("record_origin"))
         sql = """
         INSERT INTO phenoage_records (
             calculated_at, chronological_age, pheno_age, age_delta,
             glucose_mgdl, creatinine_mgdl, albumin_gdl, hscrp_mgl,
-            lymphocyte_pct, mcv_fl, rdw_pct, alk_phos_ul, wbc_1000ul, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            lymphocyte_pct, mcv_fl, rdw_pct, alk_phos_ul, wbc_1000ul, notes, record_origin
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         values = (
             data["calculated_at"],
@@ -245,17 +281,37 @@ class LongevityRepository:
             data.get("alk_phos_ul"),
             data.get("wbc_1000ul"),
             data.get("notes"),
+            record_origin,
         )
         with self._get_connection() as conn:
             cursor = conn.execute(sql, values)
             conn.commit()
             return cursor.lastrowid
 
-    def get_phenoage_history(self, limit: int = 30) -> List[Dict[str, Any]]:
-        sql = "SELECT * FROM phenoage_records ORDER BY calculated_at DESC, id DESC LIMIT ?;"
+    def get_phenoage_history(
+        self,
+        limit: int = 30,
+        record_origins: Collection[str] | None = None,
+    ) -> List[Dict[str, Any]]:
+        origins = tuple(normalize_lab_record_origin(origin) for origin in record_origins) if record_origins is not None else ()
+        if record_origins is not None and not origins:
+            return []
+        origin_filter = ""
+        if origins:
+            placeholders = ", ".join("?" for _ in origins)
+            origin_filter = f" WHERE record_origin IN ({placeholders})"
+        sql = f"SELECT * FROM phenoage_records{origin_filter} ORDER BY calculated_at DESC, id DESC LIMIT ?;"
         with self._get_connection() as conn:
-            rows = conn.execute(sql, (limit,)).fetchall()
+            rows = conn.execute(sql, (*origins, limit)).fetchall()
             return [dict(row) for row in rows]
+
+    def count_phenoage_records_excluded_from_clinical_use(self) -> int:
+        from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
+
+        placeholders = ", ".join("?" for _ in CLINICALLY_ELIGIBLE_LAB_ORIGINS)
+        sql = f"SELECT COUNT(*) FROM phenoage_records WHERE record_origin NOT IN ({placeholders});"
+        with self._get_connection() as conn:
+            return int(conn.execute(sql, tuple(CLINICALLY_ELIGIBLE_LAB_ORIGINS)).fetchone()[0])
 
     # --- N-OF-1 EXPERIMENTS ---
     def add_n_of_1_experiment(self, data: Dict[str, Any]) -> int:

@@ -81,6 +81,7 @@ MIGRATIONS: Sequence[Migration] = (
                 optimal_target REAL,
                 category TEXT,
                 notes TEXT,
+                record_origin TEXT NOT NULL DEFAULT 'unverified',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """,
@@ -101,6 +102,7 @@ MIGRATIONS: Sequence[Migration] = (
                 alk_phos_ul REAL,
                 wbc_1000ul REAL,
                 notes TEXT,
+                record_origin TEXT NOT NULL DEFAULT 'unverified',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """,
@@ -361,6 +363,16 @@ MIGRATIONS: Sequence[Migration] = (
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """,
+        ),
+    ),
+    Migration(
+        version=4,
+        name="lab_result_provenance",
+        statements=(
+            "ALTER TABLE lab_results ADD COLUMN record_origin TEXT NOT NULL DEFAULT 'unverified';",
+            "ALTER TABLE phenoage_records ADD COLUMN record_origin TEXT NOT NULL DEFAULT 'unverified';",
+            "CREATE INDEX IF NOT EXISTS idx_lab_results_origin_key_date ON lab_results(record_origin, metric_key, collected_at DESC, id DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_phenoage_records_origin_date ON phenoage_records(record_origin, calculated_at DESC, id DESC);",
         ),
     ),
 )
