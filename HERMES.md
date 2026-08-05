@@ -42,9 +42,9 @@ Para o detalhamento completo, comece por [docs/overview.md](docs/overview.md), [
 
 ### Aplicação local integrada
 
-No Windows, execute `run_app.bat` a partir da raiz. O script ativa/cria `.venv`, instala dependências Node automaticamente via `npm ci` se `node_modules` não existir, compila o frontend somente se `frontend/dist` ainda não existir e sobe o Uvicorn em `127.0.0.1:8011`.
+No Windows, execute `run_app.bat` a partir da raiz. O script ativa/cria `.venv`, instala dependências Node automaticamente via `npm ci` se `node_modules` não existir, compila o frontend somente se `frontend/dist` ainda não existir e sobe o Uvicorn em `127.0.0.1:8887`.
 
-**URL:** http://127.0.0.1:8011
+**URL:** http://127.0.0.1:8887
 
 ### Desenvolvimento do frontend
 

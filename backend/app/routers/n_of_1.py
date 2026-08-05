@@ -23,9 +23,11 @@ class NOf1ExperimentInput(BaseModel):
 @router.get("", response_model=List[Dict[str, Any]])
 def get_experiments():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_n_of_1_experiments()
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_n_of_1_experiments()
+    except FileNotFoundError:
+        return []
 
 @router.post("")
 def create_experiment(input_data: NOf1ExperimentInput):

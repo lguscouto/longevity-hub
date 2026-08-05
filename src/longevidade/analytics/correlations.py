@@ -75,7 +75,7 @@ def analyze_metric_correlations(
     records: List[Dict[str, Any]],
     target_metric: str = "hrv_ms",
     max_lag_days: int = 2,
-    min_sample_count: int = 15,
+    min_sample_count: int = 20,
 ) -> List[Dict[str, Any]]:
     """Calcula correlações cronológicas entre causas e desfechos usando diferença de datas."""
     rec_by_date: Dict[date, Dict[str, Any]] = {}

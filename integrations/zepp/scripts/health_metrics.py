@@ -269,19 +269,25 @@ def _workout_values(
     durations: list[int | float] = []
     for workout in workouts:
         duration = None
-        duration_is_seconds = False
-        for key in ("run_time", "duration", "durationTime", "totalTime"):
+        is_seconds_key = False
+        is_minutes_key = False
+        for key in ("duration_min", "duration_minutes", "run_time", "duration", "durationTime", "totalTime", "total_time"):
             candidate = _number(workout.get(key))
             if candidate is not None:
                 duration = candidate
-                duration_is_seconds = key == "run_time"
+                if key in ("duration_min", "duration_minutes"):
+                    is_minutes_key = True
+                elif key in ("run_time", "durationTime", "totalTime", "total_time"):
+                    is_seconds_key = True
                 break
         if duration is not None:
-            durations.append(
-                duration / 60
-                if duration_is_seconds or duration >= 60
-                else duration
-            )
+            unit_str = str(workout.get("unit") or "").lower()
+            if is_minutes_key or "min" in unit_str:
+                durations.append(duration)
+            elif is_seconds_key or "sec" in unit_str or duration >= 300:
+                durations.append(duration / 60.0)
+            else:
+                durations.append(duration)
     return len(workouts), (sum(durations) if durations else None)
 
 

@@ -47,7 +47,6 @@ class AIChatInput(BaseModel):
 
 def _repo_for_current_db() -> LongevityRepository:
     db_path = get_db_path()
-    initialize_db(db_path)
     return LongevityRepository(db_path, secrets_store=get_ai_secrets_store())
 
 
@@ -64,7 +63,10 @@ def _require_provider_secret(repo: LongevityRepository, provider: str, detail_hi
 @router.get("/settings")
 def get_ai_settings():
     repo = _repo_for_current_db()
-    settings = repo.get_ai_settings()
+    try:
+        settings = repo.get_ai_settings()
+    except FileNotFoundError:
+        settings = {}
 
     return {
         "active_provider": settings.get("active_provider", "openrouter"),
@@ -106,7 +108,6 @@ def test_connection(input_data: TestConnectionInput):
 @router.post("/generate-insights")
 def generate_insights():
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path, secrets_store=get_ai_secrets_store())
 
     settings = repo.get_ai_settings()
@@ -182,7 +183,6 @@ def generate_insights():
 @router.post("/chat")
 def chat_copilot(input_data: AIChatInput):
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path, secrets_store=get_ai_secrets_store())
 
     settings = repo.get_ai_settings()
@@ -235,14 +235,16 @@ def chat_copilot(input_data: AIChatInput):
 
 @router.get("/history")
 def get_ai_history():
-    repo = _repo_for_current_db()
-    return repo.get_ai_insights_history(limit=30)
+    try:
+        repo = _repo_for_current_db()
+        return repo.get_ai_insights_history(limit=30)
+    except FileNotFoundError:
+        return []
 
 
 @router.post("/analyze-supplements")
 def analyze_supplements():
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path, secrets_store=get_ai_secrets_store())
 
     settings = repo.get_ai_settings()

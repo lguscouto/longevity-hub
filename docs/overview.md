@@ -24,7 +24,7 @@ O projeto adota uma arquitetura em camadas clara, desacoplada e autônoma:
 
 ```mermaid
 graph TD
-    A["Interface do Usuário (React 18 + Vite + TS + Tailwind)"] -->|HTTP / REST API| B["Servidor Backend (FastAPI - Porta 8011)"]
+    A["Interface do Usuário (React 18 + Vite + TS + Tailwind)"] -->|HTTP / REST API| B["Servidor Backend (FastAPI - Porta 8887)"]
     B --> C["Core de Domínio (src/longevidade)"]
     C --> D["Banco de Dados (SQLite - data/longevity.sqlite3)"]
     C --> E["Módulos de Integração Interna (integrations/zepp & integrations/google)"]
@@ -96,7 +96,7 @@ Na raiz do repositório no Windows, execute:
 run_app.bat
 ```
 O script cuidará da inicialização do ambiente Python (`.venv`), instalação de dependências, compilação do frontend caso necessário e inicialização do servidor FastAPI no endereço:
-👉 **URL:** `http://127.0.0.1:8011`
+👉 **URL:** `http://127.0.0.1:8887`
 
 ### 🧪 Execução de Testes Automatizados
 

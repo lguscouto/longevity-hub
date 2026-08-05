@@ -29,6 +29,8 @@ class LongevityRepository:
         self.secrets_store = secrets_store or KeyringSecretsStore()
 
     def _get_connection(self) -> sqlite3.Connection:
+        if not self.db_path.exists():
+            raise FileNotFoundError(f"Banco de dados SQLite não encontrado em {self.db_path}. A aplicação deve ser inicializada primeiro.")
         conn = sqlite3.connect(self.db_path)
         conn.execute("PRAGMA foreign_keys = ON")
         conn.row_factory = sqlite3.Row

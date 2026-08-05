@@ -149,7 +149,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
         </div>
 
         {/* Humor */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" role="group" aria-label="Humor e Ânimo">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
             <Smile className="h-3.5 w-3.5 text-emerald-500" /> Humor / Ânimo
           </span>
@@ -158,6 +158,8 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
               <button
                 key={level}
                 type="button"
+                aria-label={`Humor nível ${level}`}
+                aria-pressed={checkin.mood_score === level}
                 onClick={() => void handleScoreChange('mood_score', level)}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
                   checkin.mood_score === level
@@ -172,7 +174,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
         </div>
 
         {/* Estresse Subjetivo */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" role="group" aria-label="Estresse Mental">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
             <Activity className="h-3.5 w-3.5 text-rose-500" /> Estresse Mental
           </span>
@@ -181,6 +183,8 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
               <button
                 key={level}
                 type="button"
+                aria-label={`Estresse nível ${level}`}
+                aria-pressed={checkin.perceived_stress === level}
                 onClick={() => void handleScoreChange('perceived_stress', level)}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
                   checkin.perceived_stress === level
@@ -200,7 +204,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
         <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Fatores do Dia (Tags Rápidas)</span>
         <div className="flex flex-wrap gap-1.5">
           {AVAILABLE_TAGS.map((tag) => {
-            const isSelected = (checkin?.tags || []).includes(tag.id)
+            const isSelected = Array.isArray(checkin?.tags) && checkin.tags.includes(tag.id)
             return (
               <button
                 key={tag.id}

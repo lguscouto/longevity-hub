@@ -12,12 +12,10 @@ router = APIRouter(prefix="/api/pipeline-runs", tags=["Pipeline"])
 
 @router.get("", response_model=List[Dict[str, Any]])
 def list_pipeline_runs(limit: int = Query(20, ge=1, le=100)):
-    """Retorna o histórico sanitizado de execuções do pipeline de importação.
-
-    Cada entrada contém source, run_at, records_inserted, status e
-    um resumo sanitizado do log (log_summary).
-    """
+    """Retorna o histórico sanitizado de execuções do pipeline de importação."""
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_pipeline_runs(limit=limit)
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_pipeline_runs(limit=limit)
+    except FileNotFoundError:
+        return []

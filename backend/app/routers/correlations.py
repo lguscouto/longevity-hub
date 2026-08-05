@@ -12,8 +12,12 @@ def get_correlations(target_metric: str = "hrv_ms", max_lag_days: int = 2, days:
     db_path = get_db_path()
     repo = LongevityRepository(db_path)
 
-    metrics = repo.get_daily_metrics(days=days)
-    
+    metrics = []
+    try:
+        metrics = repo.get_daily_metrics(days=days)
+    except FileNotFoundError:
+        metrics = []
+
     # Merge checkins into daily metrics for unified correlation analysis
     sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
     checkin_map = {}
@@ -23,8 +27,10 @@ def get_correlations(target_metric: str = "hrv_ms", max_lag_days: int = 2, days:
             for r in rows:
                 item = dict(r)
                 checkin_map[item["date_ref"]] = item
-    except Exception:
+    except FileNotFoundError:
         pass
+    except Exception as exc:
+        print(f"[Correlations] Aviso ao carregar check-ins: {exc}")
 
     merged_records = []
     for m in metrics:

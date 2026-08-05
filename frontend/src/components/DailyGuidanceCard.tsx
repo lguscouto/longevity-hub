@@ -21,9 +21,10 @@ interface GuidanceResponse {
 
 interface DailyGuidanceCardProps {
   selectedDate: string
+  refreshKey?: number
 }
 
-export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDate }) => {
+export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDate, refreshKey }) => {
   const [guidance, setGuidance] = useState<GuidanceResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -44,7 +45,7 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
     return () => {
       isMounted = false
     }
-  }, [selectedDate])
+  }, [selectedDate, refreshKey])
 
   if (!guidance) return null
 
@@ -59,8 +60,8 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
     insufficient_data: 'from-slate-500/15 via-slate-500/5 to-transparent border-slate-500/30 text-slate-600 dark:text-slate-400',
   }[stateKey]
 
-  const factorsList = guidance?.factors || []
-  const limitationsList = guidance?.limitations || []
+  const factorsList = Array.isArray(guidance?.factors) ? guidance.factors : []
+  const limitationsList = Array.isArray(guidance?.limitations) ? guidance.limitations : []
 
   return (
     <div className={`p-6 rounded-3xl glass-card border bg-gradient-to-br ${stateColors} shadow-sm space-y-4`}>

@@ -36,9 +36,11 @@ class InterventionUpdateInput(BaseModel):
 def list_interventions(only_active: bool = False):
     """Retorna todas as intervenções cadastradas."""
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_interventions(only_active=only_active)
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_interventions(only_active=only_active)
+    except FileNotFoundError:
+        return []
 
 
 @router.post("")

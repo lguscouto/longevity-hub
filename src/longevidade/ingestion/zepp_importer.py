@@ -23,6 +23,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict
 
+from longevidade.metrics.catalog import METRICS_CATALOG
+
 from longevidade.db.repository import LongevityRepository
 
 
@@ -236,7 +238,7 @@ def import_zepp_data(
                     }
                     repo.upsert_daily_metric(mapped)
 
-                    # Persiste a cobertura e qualidade dos dados para o dia
+                    # Persiste a cobertura e qualidade dos dados para o dia via METRICS_CATALOG
                     quality_items = []
                     expected_keys = [
                         ("hrv_ms", rec.get("hrv_rmssd_media_ms") or rec.get("hrv_sono_ms")),
@@ -249,15 +251,36 @@ def import_zepp_data(
                     ]
                     for mkey, mval in expected_keys:
                         has_val = mval is not None
+                        mdef = METRICS_CATALOG.get(mkey)
+                        warnings = []
+                        status = "unavailable"
+                        coverage = 0.0
+
+                        if has_val:
+                            coverage = 100.0
+                            val_float = float(mval)
+                            if mdef and mdef.plausible_min is not None and val_float < mdef.plausible_min:
+                                status = "low"
+                                warnings.append(f"Métrica {mkey} abaixo do mínimo plausível ({val_float} < {mdef.plausible_min})")
+                            elif mdef and mdef.plausible_max is not None and val_float > mdef.plausible_max:
+                                status = "low"
+                                warnings.append(f"Métrica {mkey} acima do máximo plausível ({val_float} > {mdef.plausible_max})")
+                            elif mkey == "steps":
+                                status = "high"
+                            else:
+                                status = "not_verifiable"
+                        else:
+                            warnings.append(f"Métrica {mkey} indisponível no snapshot Zepp")
+
                         quality_items.append({
                             "date_ref": rec["data_referencia"],
                             "metric_key": mkey,
                             "source": "Zepp",
                             "observed_at": datetime.now(timezone.utc).isoformat(),
                             "sample_count": 1440 if has_val and mkey == "steps" else (1 if has_val else 0),
-                            "coverage_pct": 100.0 if has_val else 0.0,
-                            "quality_status": "high" if has_val else "unavailable",
-                            "warnings": [] if has_val else [f"Métrica {mkey} indisponível no snapshot Zepp"],
+                            "coverage_pct": coverage,
+                            "quality_status": status,
+                            "warnings": warnings,
                         })
                     repo.save_daily_metric_quality(quality_items)
                     records_inserted += 1

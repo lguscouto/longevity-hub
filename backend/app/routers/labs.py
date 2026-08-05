@@ -31,16 +31,20 @@ class DeleteLabByDateInput(BaseModel):
 @router.get("", response_model=List[Dict[str, Any]])
 def get_labs():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_lab_results()
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_lab_results()
+    except FileNotFoundError:
+        return []
 
 @router.get("/latest", response_model=Dict[str, Dict[str, Any]])
 def get_latest_labs():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_latest_labs_by_key()
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_latest_labs_by_key()
+    except FileNotFoundError:
+        return {}
 
 @router.get("/targets")
 def get_optimal_targets():

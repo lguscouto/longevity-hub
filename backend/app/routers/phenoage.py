@@ -82,9 +82,11 @@ def _profile_chronological_age(repo: LongevityRepository) -> float:
 @router.get("/history", response_model=List[Dict[str, Any]])
 def get_phenoage_history():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_phenoage_history()
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_phenoage_history()
+    except FileNotFoundError:
+        return []
 
 
 @router.post("/calculate")

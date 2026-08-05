@@ -4,13 +4,13 @@ Aplicação Web e plataforma local auditável de inteligência para longevidade,
 
 ## 🚀 Como Executar (1 Clique)
 
-Para iniciar o servidor Backend (FastAPI na porta **8011**) e a interface Frontend Dashboard:
+Para iniciar o servidor Backend (FastAPI na porta **8887**) e a interface Frontend Dashboard:
 
 ```cmd
 run_app.bat
 ```
 
-Acesse no seu navegador em: **http://127.0.0.1:8011**
+Acesse no seu navegador em: **http://127.0.0.1:8887**
 
 Para a documentação completa de visão geral do projeto, consulte **[docs/overview.md](docs/overview.md)**.
 

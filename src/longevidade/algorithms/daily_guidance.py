@@ -52,6 +52,24 @@ def generate_daily_guidance(
     today_rhr = today_metric.get("rhr_bpm")
     today_sleep = today_metric.get("sleep_minutes")
 
+    # P1 Guardrail: Exigir pelo menos um sinal fisiológico atual de recuperação com baseline válida
+    has_valid_current_signal = (
+        (today_hrv is not None and hrv_base["status"] == "ok")
+        or (today_rhr is not None and rhr_base["status"] == "ok")
+        or (today_sleep is not None and sleep_base["status"] == "ok")
+    )
+
+    if not has_valid_current_signal:
+        return {
+            "state": "insufficient_data",
+            "label": "Dados do Dia Insuficientes",
+            "confidence": "low",
+            "score": None,
+            "factors": [],
+            "primary_action": "Sincronize seu dispositivo para coletar dados fisiológicos de recuperação (VFC, FC de repouso ou Sono) do dia.",
+            "limitations": ["Nenhuma medição atual de recuperação (VFC, FC de repouso ou Sono) disponível para a data consultada."],
+        }
+
     readiness_score = 75.0
 
     if today_hrv is not None and hrv_base["status"] == "ok":

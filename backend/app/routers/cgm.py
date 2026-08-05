@@ -27,9 +27,11 @@ class CGMReadingInput(BaseModel):
 @router.get("/summary", response_model=List[Dict[str, Any]])
 def get_cgm_summaries():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_cgm_summaries()
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_cgm_summaries()
+    except FileNotFoundError:
+        return []
 
 
 @router.post("/batch")
@@ -162,9 +164,11 @@ async def upload_cgm_csv(file: UploadFile = File(...)):
 @router.get("/export-csv")
 def export_cgm_csv():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    summaries = repo.get_cgm_summaries()
+    try:
+        repo = LongevityRepository(db_path)
+        summaries = repo.get_cgm_summaries()
+    except FileNotFoundError:
+        summaries = []
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")

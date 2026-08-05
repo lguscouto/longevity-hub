@@ -93,6 +93,8 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
                     status = "🟡 Acima do Alvo Ótimo"
                 elif key in ("albumin", "vitamin_d") and val < opt:
                     status = "🟡 Abaixo do Alvo Ótimo"
+            elif lab.get("ref_min") is None and lab.get("ref_max") is None:
+                status = "⚪ Sem alvo configurado"
 
             lines.append(f"| {lab['metric_name']} | **{val_str}** | {ref_str} | {opt_str} | {status} |")
 

@@ -426,6 +426,13 @@ export default function App() {
     manualTriggerRef.current?.focus()
   }
 
+  const [guidanceRevision, setGuidanceRevision] = useState<number>(0)
+
+  const handleCheckinUpdated = () => {
+    setGuidanceRevision((prev) => prev + 1)
+    void fetchDashboardData()
+  }
+
   return (
     <div className="min-h-screen bg-[#f4f7fb] dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
       <Header
@@ -482,9 +489,9 @@ export default function App() {
                   </button>
                 </section>
 
-                <DailyGuidanceCard selectedDate={selectedDate} />
+                <DailyGuidanceCard selectedDate={selectedDate} refreshKey={guidanceRevision} />
 
-                <DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={fetchDashboardData} />
+                <DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={handleCheckinUpdated} />
 
                 <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {metricCards.map((card) => (

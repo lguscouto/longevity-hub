@@ -20,14 +20,17 @@ router = APIRouter(prefix="/api/kdm", tags=["KDM"])
 
 def _repo() -> LongevityRepository:
     db_path = get_db_path()
-    initialize_db(db_path)
     return LongevityRepository(db_path)
 
 
 @router.get("/latest", response_model=Dict[str, Any])
 def get_latest_kdm() -> Dict[str, Any]:
-    repo = _repo()
-    record = repo.get_latest_kdm_record()
+    try:
+        repo = _repo()
+        record = repo.get_latest_kdm_record()
+    except FileNotFoundError:
+        record = None
+
     if not record:
         return {
             "status": "incomplete",
@@ -51,8 +54,12 @@ def get_latest_kdm() -> Dict[str, Any]:
 
 @router.get("/history", response_model=list[Dict[str, Any]])
 def get_kdm_history(limit: int = 30) -> list[Dict[str, Any]]:
-    repo = _repo()
-    history = repo.get_kdm_history(limit=limit)
+    try:
+        repo = _repo()
+        history = repo.get_kdm_history(limit=limit)
+    except FileNotFoundError:
+        return []
+
     for record in history:
         biomarkers_used = record.get("biomarkers_used")
         if isinstance(biomarkers_used, str):

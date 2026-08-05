@@ -33,11 +33,11 @@ flowchart LR
 1. `run_app.bat` entra na raiz e ativa ou cria `.venv`.
 2. Se `frontend/node_modules` não existir, executa `npm ci` em `frontend/`.
 3. Se `frontend/dist` não existir, executa `npm run build` em `frontend/`.
-4. O script inicia `uvicorn backend.app.main:app --host 127.0.0.1 --port 8011 --reload`.
+4. O script inicia `uvicorn backend.app.main:app --host 127.0.0.1 --port 8887 --reload`.
 5. Ao importar `backend.app.main`, `initialize_db(DB_PATH)` cria tabelas, aplica a migração defensiva de `category` e cria registros padrão quando necessários.
 6. Se `frontend/dist` existir, `main.py` monta-o em `/`; caso contrário, o frontend deve rodar pelo Vite (`http://127.0.0.1:3000`).
 
-A aplicação integrada fica em **http://127.0.0.1:8011**. Em desenvolvimento, o Vite fica em **http://127.0.0.1:3000** e encaminha `/api` ao backend.
+A aplicação integrada fica em **http://127.0.0.1:8887**. Em desenvolvimento, o Vite fica em **http://127.0.0.1:8886** e encaminha `/api` ao backend.
 
 ## 3. Fluxos principais
 

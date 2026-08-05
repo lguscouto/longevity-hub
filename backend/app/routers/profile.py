@@ -27,12 +27,13 @@ class UserProfileInput(BaseModel):
 @router.get("", response_model=Dict[str, Any])
 def get_profile():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    profile = repo.get_user_profile()
-
-    # Tenta obter peso mais recente das métricas diárias se ausente
-    daily = repo.get_daily_metrics(days=30)
+    try:
+        repo = LongevityRepository(db_path)
+        profile = repo.get_user_profile()
+        daily = repo.get_daily_metrics(days=30)
+    except FileNotFoundError:
+        profile = {}
+        daily = []
     latest_weight = next((m["weight_kg"] for m in daily if m.get("weight_kg") is not None), None)
 
     # Tenta extrair peso do google_weight.json se ainda ausente

@@ -10,6 +10,13 @@ def test_calculate_energy_bank():
     assert "recommendation" in res
 
 
+def test_calculate_energy_bank_missing_rhr_returns_unavailable():
+    metric = {"sleep_minutes": 480, "hrv_ms": 40}  # No RHR
+    res = calculate_energy_bank(metric)
+    assert res["status"] == "unavailable"
+    assert res["current_level"] is None
+
+
 def test_calculate_circadian_windows():
     res = calculate_circadian_windows("07:00", "23:00")
     assert res["caffeine_cutoff_time"] == "13:00"

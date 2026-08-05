@@ -37,9 +37,11 @@ class DeleteSupplementInput(BaseModel):
 @router.get("", response_model=List[Dict[str, Any]])
 def get_supplements():
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_supplements(only_active=True)
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_supplements(only_active=True)
+    except FileNotFoundError:
+        return []
 
 @router.post("")
 def add_supplement(input_data: SupplementInput):
@@ -65,16 +67,20 @@ def update_supplement(input_data: SupplementUpdateInput):
 @router.get("/audit-logs", response_model=List[Dict[str, Any]])
 def get_audit_logs(limit: int = 50):
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_supplement_audit_logs(limit=limit)
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_supplement_audit_logs(limit=limit)
+    except FileNotFoundError:
+        return []
 
 @router.get("/logs/{date_str}", response_model=List[int])
 def get_logs_for_date(date_str: str):
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_supplement_logs_for_date(date_str)
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_supplement_logs_for_date(date_str)
+    except FileNotFoundError:
+        return []
 
 @router.post("/toggle")
 def toggle_supplement_log(input_data: ToggleLogInput):

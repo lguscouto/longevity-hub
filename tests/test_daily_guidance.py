@@ -29,3 +29,16 @@ def test_generate_daily_guidance_optimal():
     assert res["state"] in ["optimal", "moderate"]
     assert res["score"] >= 50
     assert isinstance(res["factors"], list)
+
+
+def test_generate_daily_guidance_today_steps_only_with_valid_history():
+    # Valid 7-day HRV history, but today has ONLY steps (no HRV, RHR, or sleep)
+    today = {"date_ref": "2026-08-10", "steps": 1000}
+    history = [
+        {"date_ref": f"2026-08-0{i}", "hrv_ms": 40.0, "rhr_bpm": 58.0, "sleep_minutes": 420}
+        for i in range(1, 9)
+    ]
+    res = generate_daily_guidance(today, history)
+    assert res["state"] == "insufficient_data"
+    assert res["score"] is None
+    assert "Nenhuma medição atual de recuperação" in res["limitations"][0]

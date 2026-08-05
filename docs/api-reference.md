@@ -1,6 +1,6 @@
 # Referência da API
 
-Base local: `http://127.0.0.1:8011`
+Base local: `http://127.0.0.1:8887`
 Prefixo: `/api`
 Formato padrão: JSON, exceto upload/download de CGM.
 

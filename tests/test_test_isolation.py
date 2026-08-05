@@ -59,7 +59,7 @@ def test_supplements_router_resolves_database_path_at_request_time(monkeypatch, 
     monkeypatch.setattr(supplements, "LongevityRepository", fake_repository)
 
     assert supplements.get_supplements() == []
-    assert calls == [("initialize", runtime_db), ("repository", runtime_db)]
+    assert calls == [("repository", runtime_db)]
 
 
 def test_client_uses_temporary_database(client, tmp_path):

@@ -19,7 +19,6 @@ router = APIRouter(prefix="/api/physical-assessments", tags=["Physical Assessmen
 
 def _service() -> PhysicalAssessmentService:
     db_path = get_db_path()
-    initialize_db(db_path)
     repo = LongevityRepository(db_path)
     return PhysicalAssessmentService(repo, DATA_DIR)
 
@@ -31,10 +30,13 @@ def list_physical_assessments(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
 ) -> List[Dict[str, Any]]:
-    service = _service()
-    assessments = service.list_assessments(
-        limit=limit, offset=offset, start_date=start_date, end_date=end_date
-    )
+    try:
+        service = _service()
+        assessments = service.list_assessments(
+            limit=limit, offset=offset, start_date=start_date, end_date=end_date
+        )
+    except FileNotFoundError:
+        return []
     # Adiciona content_url para cada foto
     for ass in assessments:
         for p in ass.get("photos", []):

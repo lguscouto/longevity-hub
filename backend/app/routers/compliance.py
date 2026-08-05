@@ -31,6 +31,8 @@ def save_compliance(input_data: DailyComplianceInput):
 @router.get("/history", response_model=List[Dict[str, Any]])
 def get_compliance_history(days: int = 14):
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
-    return repo.get_daily_compliance_history(days=days)
+    try:
+        repo = LongevityRepository(db_path)
+        return repo.get_daily_compliance_history(days=days)
+    except FileNotFoundError:
+        return []
