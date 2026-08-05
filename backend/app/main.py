@@ -94,6 +94,14 @@ def health_check():
     }
 
 
+@app.get("/api/version")
+def get_version():
+    return {
+        "version": app.version,
+        "system": "Longevidade Hub",
+    }
+
+
 # Serve arquivos estáticos do frontend se compilado em dist
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 if frontend_dist.exists():

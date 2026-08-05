@@ -22,8 +22,9 @@ def test_calculate_energy_bank_missing_activity_returns_not_verifiable():
     res = calculate_energy_bank(metric)
     assert res["status"] == "not_verifiable"
     assert res["current_level"] <= 70
-    assert "activity" in res["missing_components"]
-    assert "Sincronize a atividade" in res["recommendation"]
+    assert "steps" in res["missing_components"]
+    assert "training_load" in res["missing_components"]
+    assert "Sincronize passos" in res["recommendation"]
 
 
 def test_calculate_circadian_windows():

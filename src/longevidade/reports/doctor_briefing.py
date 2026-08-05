@@ -15,8 +15,9 @@ from longevidade.db.repository import LongevityRepository
 def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None = None, patient_age: float | None = None) -> str:
     """Gera o relatório Doctor Briefing em Markdown a partir do perfil do repositório."""
     user_prof = repo.get_user_profile() or {}
-    name = patient_name if (patient_name and patient_name != "Paciente") else user_prof.get("name", "Paciente")
-    age = patient_age if (patient_age and patient_age != 40.0) else user_prof.get("chronological_age", 32.0)
+    name = patient_name or user_prof.get("name", "Paciente")
+    age = patient_age if patient_age is not None else user_prof.get("chronological_age")
+    age_str = f"{float(age):.0f} anos" if age is not None else "Idade não informada"
 
     daily_30 = repo.get_daily_metrics(days=30)
     latest_labs = repo.get_latest_labs_by_key()
@@ -52,7 +53,7 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
     lines = [
         f"# 🏥 Relatório Sintético de Longevidade & Saúde (Doctor Briefing)",
         f"**Data de Emissão**: {today_str}",
-        f"**Paciente**: {name} ({float(age):.0f} anos)",
+        f"**Paciente**: {name} ({age_str})",
         f"**Idade Biológica PhenoAge**: {pheno_txt}",
         "",
         "---",

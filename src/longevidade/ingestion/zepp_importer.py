@@ -277,7 +277,7 @@ def import_zepp_data(
                             "metric_key": mkey,
                             "source": "Zepp",
                             "observed_at": datetime.now(timezone.utc).isoformat(),
-                            "sample_count": 1440 if has_val and mkey == "steps" else (1 if has_val else 0),
+                            "sample_count": 1 if has_val else 0,
                             "coverage_pct": coverage,
                             "quality_status": status,
                             "warnings": warnings,

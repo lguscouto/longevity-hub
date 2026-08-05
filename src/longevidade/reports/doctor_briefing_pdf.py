@@ -23,8 +23,9 @@ def generate_doctor_briefing_pdf(
 ) -> bytes:
     """Gera o PDF binário do relatório médico Doctor Briefing."""
     user_prof = repo.get_user_profile() or {}
-    name = patient_name if (patient_name and patient_name != "Paciente") else user_prof.get("name", "Paciente")
-    age = patient_age if (patient_age and patient_age != 32.0 and patient_age != 40.0) else user_prof.get("chronological_age", 32.0)
+    name = patient_name or user_prof.get("name", "Paciente")
+    age = patient_age if patient_age is not None else user_prof.get("chronological_age")
+    age_str = f"{float(age):.0f} anos" if age is not None else "Idade não informada"
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -73,7 +74,7 @@ def generate_doctor_briefing_pdf(
     elements.append(Paragraph("🏥 Relatório Clínico Sintético de Longevidade (Doctor Briefing)", title_style))
     elements.append(Spacer(1, 4))
     today_str = date.today().strftime("%d/%m/%Y")
-    elements.append(Paragraph(f"<b>Data de Emissão:</b> {today_str} | <b>Paciente:</b> {name} ({float(age):.0f} anos)", body_style))
+    elements.append(Paragraph(f"<b>Data de Emissão:</b> {today_str} | <b>Paciente:</b> {name} ({age_str})", body_style))
     elements.append(Spacer(1, 10))
 
     # Métricas Fisiológicas

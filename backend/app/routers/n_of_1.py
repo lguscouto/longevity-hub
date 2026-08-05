@@ -35,6 +35,8 @@ def create_experiment(input_data: NOf1ExperimentInput):
         raise HTTPException(status_code=400, detail="Data de início do controle deve ser anterior ou igual à data de fim.")
     if input_data.treatment_start > input_data.treatment_end:
         raise HTTPException(status_code=400, detail="Data de início do tratamento deve ser anterior ou igual à data de fim.")
+    if max(input_data.control_start, input_data.treatment_start) <= min(input_data.control_end, input_data.treatment_end):
+        raise HTTPException(status_code=400, detail="Períodos de controle e tratamento não podem se sobrepor.")
 
     db_path = get_db_path()
     initialize_db(db_path)

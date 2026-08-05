@@ -57,12 +57,16 @@ def calculate_energy_bank(
     status = "ok"
 
     missing_components = []
-    if not has_steps and not has_load:
-        missing_components.append("activity")
+    if not has_steps:
+        missing_components.append("steps")
+    if not has_load:
+        missing_components.append("training_load")
+
+    if missing_components:
         status = "not_verifiable"
-        # Sem dados de atividade do dia, não promover a "excelente para atividades exigentes"
+        # Com dados de atividade incompletos, não promover a "excelente para atividades exigentes"
         current_level = min(current_level, 70)
-        recommendation = "Bateria calculada apenas com dados de sono e VFC. Sincronize a atividade do dia para avaliação completa."
+        recommendation = "Bateria calculada com atividade parcial. Sincronize passos e carga de treino do dia para avaliação completa."
     elif current_level >= 70:
         recommendation = "Nível de energia excelente. Bom momento para atividades exigentes."
     elif current_level >= 40:

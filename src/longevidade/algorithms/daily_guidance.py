@@ -127,14 +127,15 @@ def generate_daily_guidance(
 
     limitations = []
 
-    # Se apenas 1 sinal fisiológico estiver disponível hoje, limitar score máximo a 70 (impedir optimal e treino intenso)
+    # Exigir todos os 3 sinais de recuperação no dia para permitir estado optimal e treino intenso
     if len(observed_signals) == 1:
         readiness_score = min(readiness_score, 70.0)
         confidence = "low"
         limitations.append(f"Apenas 1 de 3 sinais de recuperação disponível hoje ({observed_signals[0]}). Recomendação conservadora sem treino intenso.")
     elif len(observed_signals) == 2:
+        readiness_score = min(readiness_score, 70.0)
         confidence = "medium"
-        limitations.append(f"Falta o sinal de recuperação {missing_signals[0]} para cobertura fisiológica completa.")
+        limitations.append(f"Falta o sinal de recuperação {missing_signals[0]} para recomendação de treino elevado/intenso.")
     else:
         confidence = "high"
 
