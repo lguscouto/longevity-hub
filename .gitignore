@@ -36,3 +36,4 @@ data/longevity.sqlite3
 Thumbs.db
 .vscode/
 .idea/
+.hermes/

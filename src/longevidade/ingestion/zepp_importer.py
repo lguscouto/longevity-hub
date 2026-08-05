@@ -16,6 +16,7 @@ Retorna um dicionário estruturado (ImportResult) com diagnóstico completo:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -81,9 +82,12 @@ def run_zepp_cloud_fetch(zepp_scripts_dir: Path, timeout_seconds: int = 600) -> 
         return
 
     try:
+        env = dict(os.environ)
+        env["PYTHONIOENCODING"] = "utf-8"
         completed = subprocess.run(
             [sys.executable, str(cron_script)],
             cwd=str(zepp_scripts_dir.parent),
+            env=env,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             text=True,
@@ -209,13 +213,25 @@ def import_zepp_data(
                         "sleep_awake_min": rec.get("tempo_acordado_min"),
                         "rhr_bpm": rhr_val,
                         "avg_hr_bpm": rec.get("fc_media_bpm"),
-                        "hrv_ms": rec.get("hrv_sono_ms"),
+                        "hrv_ms": rec.get("hrv_rmssd_media_ms") if rec.get("hrv_rmssd_media_ms") is not None else rec.get("hrv_sono_ms"),
                         "readiness_score": rec.get("readiness"),
                         "weight_kg": rec.get("peso_kg"),
                         "bmi": rec.get("imc"),
                         "vo2_max": rec.get("vo2_max"),
                         "skin_temp_c": rec.get("temperatura_c"),
                         "stress_samples": rec.get("amostras_estresse"),
+                        "spo2_avg_pct": rec.get("spo2_media_pct"),
+                        "spo2_min_pct": rec.get("spo2_min_pct"),
+                        "respiratory_rate_rpm": rec.get("frequencia_respiratoria_rpm"),
+                        "systolic_bp": rec.get("pressao_sistolica_mmhg"),
+                        "diastolic_bp": rec.get("pressao_diastolica_mmhg"),
+                        "pai_score": rec.get("pai"),
+                        "training_load_daily": rec.get("carga_diaria"),
+                        "training_load_rolling": rec.get("carga_acumulada"),
+                        "training_load_optimal_min": rec.get("faixa_carga_min"),
+                        "training_load_optimal_max": rec.get("faixa_carga_max"),
+                        "workout_count": rec.get("treinos_zepp_qtd", 0),
+                        "workout_duration_min": rec.get("duracao_treinos_min"),
                         "source": "Zepp",
                     }
                     repo.upsert_daily_metric(mapped)

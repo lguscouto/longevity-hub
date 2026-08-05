@@ -78,7 +78,10 @@ class LongevityRepository:
             "sleep_rem_min", "sleep_awake_min", "rhr_bpm", "avg_hr_bpm", "hrv_ms",
             "readiness_score", "weight_kg", "bmi", "waist_cm", "body_fat_pct",
             "vo2_max", "skin_temp_c", "stress_samples", "systolic_bp", "diastolic_bp",
-            "grip_strength_kg", "source"
+            "grip_strength_kg", "spo2_avg_pct", "spo2_min_pct", "respiratory_rate_rpm",
+            "pai_score", "training_load_daily", "training_load_rolling",
+            "training_load_optimal_min", "training_load_optimal_max",
+            "workout_count", "workout_duration_min", "source"
         ]
 
         columns = [f for f in fields if f in data]
@@ -113,6 +116,52 @@ class LongevityRepository:
         with self._get_connection() as conn:
             row = conn.execute(sql, (date_ref,)).fetchone()
             return dict(row) if row else None
+
+    # --- DAILY METRIC QUALITY ---
+    def save_daily_metric_quality(self, items: List[Dict[str, Any]]) -> None:
+        import json
+
+        sql = """
+        INSERT INTO daily_metric_quality (
+            date_ref, metric_key, source, observed_at, sample_count, coverage_pct, quality_status, warnings_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(date_ref, metric_key) DO UPDATE SET
+            source = excluded.source,
+            observed_at = excluded.observed_at,
+            sample_count = excluded.sample_count,
+            coverage_pct = excluded.coverage_pct,
+            quality_status = excluded.quality_status,
+            warnings_json = excluded.warnings_json;
+        """
+        rows = [
+            (
+                item["date_ref"],
+                item["metric_key"],
+                item.get("source", "Zepp"),
+                item.get("observed_at"),
+                item.get("sample_count"),
+                item.get("coverage_pct"),
+                item.get("quality_status", "high"),
+                json.dumps(item.get("warnings") or []),
+            )
+            for item in items
+        ]
+        with self._get_connection() as conn:
+            conn.executemany(sql, rows)
+            conn.commit()
+
+    def get_daily_metric_quality(self, date_ref: str) -> List[Dict[str, Any]]:
+        import json
+
+        sql = "SELECT * FROM daily_metric_quality WHERE date_ref = ?;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (date_ref,)).fetchall()
+            result = []
+            for row in rows:
+                item = dict(row)
+                item["warnings"] = json.loads(item.get("warnings_json") or "[]")
+                result.append(item)
+            return result
 
     # --- LAB RESULTS ---
     def add_lab_result(self, data: Dict[str, Any]) -> int:

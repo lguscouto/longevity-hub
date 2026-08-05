@@ -37,6 +37,14 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <a
+              href="/api/reports/doctor-briefing/pdf"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 transition"
+            >
+              <Download className="h-4 w-4" /> Baixar PDF
+            </a>
             <button
               onClick={handleCopy}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"

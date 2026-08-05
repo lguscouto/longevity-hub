@@ -27,12 +27,18 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str = "Pac
     rhrs = [m["rhr_bpm"] for m in daily_30 if m.get("rhr_bpm") is not None]
     hrvs = [m["hrv_ms"] for m in daily_30 if m.get("hrv_ms") is not None]
     vo2s = [m["vo2_max"] for m in daily_30 if m.get("vo2_max") is not None]
+    spo2s = [m["spo2_avg_pct"] for m in daily_30 if m.get("spo2_avg_pct") is not None]
+    resps = [m["respiratory_rate_rpm"] for m in daily_30 if m.get("respiratory_rate_rpm") is not None]
+    rems = [m["sleep_rem_min"] for m in daily_30 if m.get("sleep_rem_min") is not None]
 
     bp_str = f"`{np.mean(bps_sys):.0f}/{np.mean(bps_dia):.0f} mmHg`" if (bps_sys and bps_dia) else "`(Sem dados)`"
     avg_weight = f"`{np.mean(weights):.1f} kg`" if weights else "`(Sem dados)`"
     avg_rhr = f"`{np.mean(rhrs):.0f} bpm`" if rhrs else "`(Sem dados)`"
     avg_hrv = f"`{np.mean(hrvs):.0f} ms`" if hrvs else "`(Sem dados)`"
     max_vo2 = f"`{np.max(vo2s):.1f} mL/kg/min`" if vo2s else "`(Sem dados)`"
+    avg_spo2 = f"`{np.mean(spo2s):.1f}%`" if spo2s else "`(Sem dados)`"
+    avg_resp = f"`{np.mean(resps):.1f} rpm`" if resps else "`(Sem dados)`"
+    avg_rem = f"`{np.mean(rems):.0f} min/noite`" if rems else "`(Sem dados)`"
 
     pheno_txt = "(Sem dados)"
     if pheno_history:
@@ -52,6 +58,9 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str = "Pac
         f"- **Pressão Arterial Média**: {bp_str}",
         f"- **Frequência Cardíaca de Repouso (RHR)**: {avg_rhr}",
         f"- **Variabilidade da Frequência Cardíaca (HRV)**: {avg_hrv}",
+        f"- **Saturação de Oxigênio (SpO2)**: {avg_spo2}",
+        f"- **Frequência Respiratória Média**: {avg_resp}",
+        f"- **Média de Sono REM (Sonhos)**: {avg_rem}",
         f"- **Capacidade Cardiorrespiratória (VO2 Max)**: {max_vo2}",
         f"- **Peso Corporal Médio**: {avg_weight}",
         "",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Camera, Calendar, Scale, Activity, Plus, Trash2, ArrowLeftRight, Eye, ShieldCheck, Upload, AlertCircle, X, ChevronRight, CheckCircle2, ChevronLeft, RefreshCw } from 'lucide-react';
 
 export interface Photo {
@@ -1115,7 +1116,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
       )}
 
       {/* LIGHTBOX MODAL */}
-      {lightboxPhoto && (
+      {lightboxPhoto && createPortal(
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
             <button
@@ -1134,10 +1135,10 @@ export const PhysicalAssessmentsView: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ADD PHOTOS MODAL (In Details Mode) */}
-      {showAddPhotosModal && selectedAssessmentId && (
+      {showAddPhotosModal && selectedAssessmentId && createPortal(
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 max-w-2xl w-full space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -1214,7 +1215,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

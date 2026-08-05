@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS daily_metrics (
     systolic_bp INTEGER,
     diastolic_bp INTEGER,
     grip_strength_kg REAL,
+    spo2_avg_pct REAL,
+    spo2_min_pct REAL,
+    respiratory_rate_rpm REAL,
+    pai_score REAL,
     source TEXT DEFAULT 'Zepp/GoogleFit',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -279,19 +283,16 @@ CREATE INDEX IF NOT EXISTS idx_pap_sha256 ON physical_assessment_photos(sha256);
 
 
 def initialize_db(db_path: str | Path) -> None:
-    """Inicializa o esquema do banco de dados SQLite."""
+    """Inicializa o esquema do banco de dados SQLite usando migrações versionadas."""
+    from longevidade.db.migrations import apply_migrations
+
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as conn:
-        conn.executescript(SCHEMA_SQL)
-        
-        # Migração defensiva: adiciona a coluna 'category' em supplement_stack se não existir
-        try:
-            conn.execute("ALTER TABLE supplement_stack ADD COLUMN category TEXT DEFAULT 'Suplemento';")
-        except sqlite3.OperationalError:
-            pass
+        conn.execute("PRAGMA foreign_keys = ON;")
+        apply_migrations(conn)
 
-        # Migração defensiva: metadados de presença de chaves sem mover/apagar segredos legados
+        # Garante metadados de chaves de IA
         for column_sql in (
             "has_openai_key INTEGER DEFAULT 0",
             "has_anthropic_key INTEGER DEFAULT 0",
@@ -324,7 +325,7 @@ def initialize_db(db_path: str | Path) -> None:
         conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 32.0, 170.0, 75.0);")
         # Garante linha inicial nas configurações de IA se vazia
         conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-pro');")
-        
+
         # Garante inserção de suplementos básicos Blueprint se a tabela estiver vazia
         count_supps = conn.execute("SELECT COUNT(*) FROM supplement_stack;").fetchone()[0]
         if count_supps == 0:
@@ -339,10 +340,5 @@ def initialize_db(db_path: str | Path) -> None:
                 "INSERT INTO supplement_stack (name, dosage, category, frequency, timing, start_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 supps
             )
-
-        # Índice único em cgm_readings.timestamp para dedup em reimportações
-        conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_cgm_readings_ts ON cgm_readings(timestamp);"
-        )
 
         conn.commit()

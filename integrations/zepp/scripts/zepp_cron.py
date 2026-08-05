@@ -17,6 +17,12 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# Force UTF-8 encoding for stdout/stderr on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # ── Paths ──────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -24,6 +30,7 @@ ZEPP_CLI = BASE_DIR / "zepp-health-cli" / "zepp_health.py"
 CONFIG_PATH = BASE_DIR / "zepp-health-cli" / "config.json"
 
 os.environ["ZEPP_CONFIG"] = str(CONFIG_PATH)
+os.environ.setdefault("ZEPP_TIMEZONE", "America/Sao_Paulo")
 
 # ── Import fetch logic ─────────────────────────────────────────────
 sys.path.insert(0, str(BASE_DIR / "scripts"))
@@ -60,6 +67,15 @@ def main():
     record = build_zepp_daily_record(DATA_DIR, reference_date)
     row = upsert_daily_record(WORKBOOK_PATH, record)
     print(f"📗 Planilha atualizada: {WORKBOOK_PATH} | linha {row} | data {reference_date.isoformat()}")
+    print(
+        "📈 Novas métricas: "
+        f"RMSSD={record.get('hrv_rmssd_media_ms')!s} ms/"
+        f"{record.get('amostras_hrv_rmssd', 0)} amostras, "
+        f"SpO₂={record.get('spo2_media_pct')!s}%, "
+        f"respiração={record.get('frequencia_respiratoria_rpm')!s} rpm, "
+        f"PA={record.get('pressao_sistolica_mmhg')!s}/"
+        f"{record.get('pressao_diastolica_mmhg')!s} mmHg"
+    )
 
     # Print summary
     summary = generate_summary(DATA_DIR)

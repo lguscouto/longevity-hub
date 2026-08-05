@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Calendar, Ruler, Scale, Target, ShieldCheck, Edit3, Save, CheckCircle2, Activity } from 'lucide-react';
 import { PipelineStatusPanel, PipelineRun } from './PipelineStatusPanel';
+import { DataQualityPanel } from './DataQualityPanel';
 
 interface ProfileData {
   name: string;
@@ -225,6 +226,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </form>
         </div>
       )}
+
+      {/* Auditoria de Qualidade e Cobertura dos Dados */}
+      <div className="pt-4">
+        <DataQualityPanel />
+      </div>
 
       {/* Histórico de Sincronizações na parte de baixo do perfil */}
       <div ref={historySectionRef} className="pt-4">

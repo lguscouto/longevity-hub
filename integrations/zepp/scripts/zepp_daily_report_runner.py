@@ -57,6 +57,58 @@ def build_longevidade_command(longevidade_dir: Path, *args: str) -> list[str]:
     )
 
 
+def _python_has_zepp_dependencies(candidate: Path) -> bool:
+    try:
+        result = subprocess.run(
+            [
+                str(candidate),
+                "-c",
+                "import openpyxl, requests; from zoneinfo import ZoneInfo; ZoneInfo('America/Sao_Paulo')",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0
+
+
+def resolve_zepp_python() -> Path:
+    candidates: list[Path] = []
+    configured = os.environ.get("ZEPP_PYTHON")
+    if configured:
+        candidates.append(Path(configured).expanduser())
+
+    candidates.append(BASE_DIR / ".venv" / "Scripts" / "python.exe")
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        candidates.append(
+            Path(local_app_data) / "Programs" / "Python" / "Python312" / "python.exe"
+        )
+    candidates.extend(
+        [
+            Path(r"C:/Python314/python.exe"),
+            Path(sys.executable),
+        ]
+    )
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        candidate = candidate.resolve()
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate.is_file() and _python_has_zepp_dependencies(candidate):
+            return candidate
+
+    raise FileNotFoundError(
+        "Não encontrei um Python com as dependências do Zepp "
+        "(openpyxl e requests). Configure ZEPP_PYTHON ou instale-as "
+        "em um Python do projeto."
+    )
+
+
 def run_longevidade_pipeline(
     longevidade_dir: Path, blueprint_script: Path, db_path: Path
 ) -> subprocess.CompletedProcess[str]:
@@ -114,12 +166,17 @@ def main() -> int:
     db_path = longevidade_dir / "data" / "longevity.sqlite3"
     errors: list[str] = []
     collection_ok = False
+    try:
+        zepp_python = resolve_zepp_python()
+    except FileNotFoundError as exc:
+        print(f"⚠️  Zepp runtime error: {exc}", file=sys.stderr)
+        return 1
 
     print("=" * 60)
     print("📡 ZEPP COLLECTION")
     print("=" * 60)
     result = subprocess.run(
-        [sys.executable, str(ZEPP_SCRIPT)],
+        [str(zepp_python), str(ZEPP_SCRIPT)],
         capture_output=True,
         text=True,
         timeout=120,
@@ -147,7 +204,7 @@ def main() -> int:
         print(f"⚠️  Workbook script not found: {WORKOUT_XLSX_SCRIPT}", file=sys.stderr)
     else:
         result = subprocess.run(
-            [sys.executable, str(WORKOUT_XLSX_SCRIPT)],
+            [str(zepp_python), str(WORKOUT_XLSX_SCRIPT)],
             capture_output=True,
             text=True,
             timeout=120,

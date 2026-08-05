@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from 'react'
-import { Activity, Flame, Footprints, Heart, Moon, RefreshCw, Shield } from 'lucide-react'
+import { Activity, Flame, Footprints, Heart, Moon, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
 
 import { Header } from './components/Header'
 import { MetricCard } from './components/MetricCard'
@@ -22,6 +22,11 @@ const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWid
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
 
 import { DateNavigator } from './components/DateNavigator'
+import { DataConfidenceBadge } from './components/DataConfidenceBadge'
+import { DailyGuidanceCard } from './components/DailyGuidanceCard'
+import { DailyCheckinCard } from './components/DailyCheckinCard'
+import { TrainingLoadWidget } from './components/TrainingLoadWidget'
+import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 
@@ -33,9 +38,22 @@ type DailyMetric = {
   rhr_bpm?: number | null
   hrv_ms?: number | null
   sleep_minutes?: number | null
+  sleep_deep_min?: number | null
+  sleep_light_min?: number | null
+  sleep_rem_min?: number | null
   vo2_max?: number | null
   systolic_bp?: number | null
   diastolic_bp?: number | null
+  spo2_avg_pct?: number | null
+  spo2_min_pct?: number | null
+  respiratory_rate_rpm?: number | null
+  pai_score?: number | null
+  training_load_daily?: number | null
+  training_load_rolling?: number | null
+  training_load_optimal_min?: number | null
+  training_load_optimal_max?: number | null
+  workout_count?: number | null
+  workout_duration_min?: number | null
 }
 
 type SyncResult = {
@@ -185,6 +203,27 @@ export default function App() {
       value: hasMetric && activeMetric?.vo2_max != null ? `${formatDecimal(activeMetric.vo2_max)} mL/kg/min` : '—',
       subtitle: hasMetric ? 'Capacidade Cardiorespiratória' : NO_DATA_LABEL,
       icon: Flame,
+      color: 'amber' as const,
+    },
+    {
+      title: 'SPO2 OXIGENAÇÃO',
+      value: hasMetric && activeMetric?.spo2_avg_pct != null ? `${formatDecimal(activeMetric.spo2_avg_pct)}%` : '—',
+      subtitle: hasMetric && activeMetric?.spo2_min_pct != null ? `Mínimo: ${formatDecimal(activeMetric.spo2_min_pct)}%` : (hasMetric ? 'Alvo: ≥ 95%' : NO_DATA_LABEL),
+      icon: Activity,
+      color: 'cyan' as const,
+    },
+    {
+      title: 'FREQ. RESPIRATÓRIA',
+      value: hasMetric && activeMetric?.respiratory_rate_rpm != null ? `${formatDecimal(activeMetric.respiratory_rate_rpm)} rpm` : '—',
+      subtitle: hasMetric ? 'Alvo: 12 - 20 rpm' : NO_DATA_LABEL,
+      icon: Wind,
+      color: 'violet' as const,
+    },
+    {
+      title: 'SCORE PAI',
+      value: hasMetric && activeMetric?.pai_score != null ? `${formatDecimal(activeMetric.pai_score)}` : '—',
+      subtitle: hasMetric ? 'Meta: ≥ 100 PAI' : NO_DATA_LABEL,
+      icon: Zap,
       color: 'amber' as const,
     },
     {
@@ -434,14 +473,18 @@ export default function App() {
                 />
 
                 <section className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Visão Geral</h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{loading ? 'Carregando dados do dashboard…' : hasMetric ? `Atualizado em ${activeMetric?.date_ref}` : NO_DATA_LABEL}</p>
+                    <DataConfidenceBadge selectedDate={selectedDate} />
                   </div>
                   <button aria-label="Atualizar dados" onClick={() => void fetchDashboardData()} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition">
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   </button>
                 </section>
+
+                <DailyGuidanceCard selectedDate={selectedDate} />
+
+                <DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={fetchDashboardData} />
 
                 <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {metricCards.map((card) => (
@@ -467,6 +510,17 @@ export default function App() {
                     <DailyComplianceWidget selectedDate={selectedDate} />
                   </div>
                 </div>
+
+                <TrainingLoadWidget
+                  dailyLoad={activeMetric?.training_load_daily}
+                  rollingLoad={activeMetric?.training_load_rolling}
+                  optimalMin={activeMetric?.training_load_optimal_min}
+                  optimalMax={activeMetric?.training_load_optimal_max}
+                  workoutCount={activeMetric?.workout_count}
+                  workoutDurationMin={activeMetric?.workout_duration_min}
+                />
+
+                <EnergyCircadianWidget selectedDate={selectedDate} />
 
                 <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />
               </>

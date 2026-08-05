@@ -40,7 +40,19 @@ DAILY_HEADERS = [
     "FC repouso (bpm)",
     "FC média (bpm)",
     "HRV do sono (ms)",
+    "HRV RMSSD médio (ms)",
+    "Amostras HRV RMSSD",
     "RHR do sono (bpm)",
+    "SpO₂ média (%)",
+    "SpO₂ mínima (%)",
+    "SpO₂ máxima (%)",
+    "Amostras SpO₂",
+    "ODI SpO₂",
+    "Queda SpO₂ em OSA (%)",
+    "Frequência respiratória (rpm)",
+    "Pressão sistólica (mmHg)",
+    "Pressão diastólica (mmHg)",
+    "PAI",
     "Readiness",
     "Carga diária",
     "Carga acumulada",
@@ -86,10 +98,41 @@ def ensure_workbook(
     if SHEET_NAME not in workbook.sheetnames:
         sheet = workbook.create_sheet(SHEET_NAME)
         _initialize_sheet(sheet, profile)
-        workbook.save(path)
+    else:
+        _ensure_daily_columns(workbook[SHEET_NAME])
+    workbook.save(path)
     workbook.close()
 
     return path
+
+
+def _ensure_daily_columns(sheet) -> None:
+    """Append new columns to existing production workbooks without deleting data."""
+    existing = {
+        sheet.cell(HEADER_ROW, column).value: column
+        for column in range(1, sheet.max_column + 1)
+        if sheet.cell(HEADER_ROW, column).value
+    }
+    last_column = max(existing.values(), default=0)
+    for header in DAILY_HEADERS:
+        column = existing.get(header)
+        if column is None:
+            last_column += 1
+            column = last_column
+            existing[header] = column
+            cell = sheet.cell(HEADER_ROW, column)
+            cell.value = header
+            cell.font = _HEADER_FONT
+            cell.fill = _DARK_HEADER_FILL
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            sheet.column_dimensions[get_column_letter(column)].width = _column_width(header)
+    last_letter = get_column_letter(last_column)
+    for merged in list(sheet.merged_cells.ranges):
+        if merged.min_row == 1 and merged.max_row == 1:
+            sheet.unmerge_cells(str(merged))
+    sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=last_column)
+    sheet.auto_filter.ref = f"A{HEADER_ROW}:{last_letter}{HEADER_ROW}"
+    sheet.row_dimensions[HEADER_ROW].height = 32
 
 
 def _initialize_sheet(sheet, profile: Mapping[str, object]) -> None:
@@ -184,7 +227,19 @@ _RECORD_KEYS_BY_HEADER = {
     "FC repouso (bpm)": "fc_repouso_bpm",
     "FC média (bpm)": "fc_media_bpm",
     "HRV do sono (ms)": "hrv_sono_ms",
+    "HRV RMSSD médio (ms)": "hrv_rmssd_media_ms",
+    "Amostras HRV RMSSD": "amostras_hrv_rmssd",
     "RHR do sono (bpm)": "rhr_sono_bpm",
+    "SpO₂ média (%)": "spo2_media_pct",
+    "SpO₂ mínima (%)": "spo2_min_pct",
+    "SpO₂ máxima (%)": "spo2_max_pct",
+    "Amostras SpO₂": "amostras_spo2",
+    "ODI SpO₂": "spo2_odi_index",
+    "Queda SpO₂ em OSA (%)": "spo2_osa_decrease_pct",
+    "Frequência respiratória (rpm)": "frequencia_respiratoria_rpm",
+    "Pressão sistólica (mmHg)": "pressao_sistolica_mmhg",
+    "Pressão diastólica (mmHg)": "pressao_diastolica_mmhg",
+    "PAI": "pai",
     "Readiness": "readiness",
     "Carga diária": "carga_diaria",
     "Carga acumulada": "carga_acumulada",
@@ -236,7 +291,13 @@ def upsert_daily_record(workbook_path: str | Path, record: Mapping[str, object])
     values = dict(record)
     values.setdefault("coletado_em", datetime.now().astimezone().replace(tzinfo=None))
     values.setdefault("sono_zepp_hhmm", _format_minutes_hhmm(values.get("sono_zepp_min")))
-    for column, header in enumerate(DAILY_HEADERS, start=1):
+    header_columns = {
+        sheet.cell(HEADER_ROW, column).value: column
+        for column in range(1, sheet.max_column + 1)
+        if sheet.cell(HEADER_ROW, column).value
+    }
+    for header in DAILY_HEADERS:
+        column = header_columns[header]
         key = _RECORD_KEYS_BY_HEADER[header]
         sheet.cell(row, column).value = values.get(key)
         sheet.cell(row, column).font = _BODY_FONT

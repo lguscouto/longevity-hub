@@ -29,6 +29,10 @@ class DailyMetricInput(BaseModel):
     diastolic_bp: Optional[int] = None
     grip_strength_kg: Optional[float] = None
     vo2_max: Optional[float] = None
+    spo2_avg_pct: Optional[float] = None
+    spo2_min_pct: Optional[float] = None
+    respiratory_rate_rpm: Optional[float] = None
+    pai_score: Optional[float] = None
 
 
 @router.get("", response_model=List[Dict[str, Any]])

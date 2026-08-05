@@ -90,16 +90,25 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
         valid_rhr = [m['rhr_bpm'] for m in daily_list if m.get('rhr_bpm')]
         valid_sleep = [m['sleep_minutes'] for m in daily_list if m.get('sleep_minutes')]
         valid_bp = [(m['systolic_bp'], m['diastolic_bp']) for m in daily_list if m.get('systolic_bp') and m.get('diastolic_bp')]
+        valid_spo2 = [m['spo2_avg_pct'] for m in daily_list if m.get('spo2_avg_pct')]
+        valid_resp = [m['respiratory_rate_rpm'] for m in daily_list if m.get('respiratory_rate_rpm')]
+        valid_pai = [m['pai_score'] for m in daily_list if m.get('pai_score')]
 
         avg_steps = round(sum(valid_steps) / len(valid_steps)) if valid_steps else "Sem dados"
         avg_hrv = round(sum(valid_hrv) / len(valid_hrv), 1) if valid_hrv else "Sem dados"
         avg_rhr = round(sum(valid_rhr) / len(valid_rhr), 1) if valid_rhr else "Sem dados"
         avg_sleep_h = round(sum(valid_sleep) / len(valid_sleep) / 60, 1) if valid_sleep else "Sem dados"
+        avg_spo2 = f"{round(sum(valid_spo2) / len(valid_spo2), 1)}%" if valid_spo2 else "Sem dados"
+        avg_resp = f"{round(sum(valid_resp) / len(valid_resp), 1)} rpm" if valid_resp else "Sem dados"
+        latest_pai = round(valid_pai[0], 1) if valid_pai else "Sem dados"
 
         lines.append(f"Passos Médios: {avg_steps} passos/dia")
         lines.append(f"HRV Noturna Média: {avg_hrv} ms")
         lines.append(f"Frequência Cardíaca de Repouso (RHR): {avg_rhr} bpm")
         lines.append(f"Sono Médio: {avg_sleep_h} horas/noite")
+        lines.append(f"SpO2 Oxigenação Média: {avg_spo2}")
+        lines.append(f"Frequência Respiratória Média: {avg_resp}")
+        lines.append(f"PAI Score Recente: {latest_pai}")
 
         if valid_bp:
             latest_bp = valid_bp[0]
@@ -117,6 +126,7 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
             bp_sys = m.get("systolic_bp")
             bp_dia = m.get("diastolic_bp")
             bp_str = f"{bp_sys}/{bp_dia}" if (bp_sys and bp_dia) else "-"
+            spo2 = f"{m.get('spo2_avg_pct')}%" if m.get("spo2_avg_pct") is not None else "-"
 
             deep = m.get("sleep_deep_min") or "-"
             rem = m.get("sleep_rem_min") or "-"
@@ -124,7 +134,7 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
 
             lines.append(
                 f"- Data: {d_ref} | Sono Total: {slp_str} (Profundo: {deep}m, REM: {rem}m, Leve: {light}m) | "
-                f"HRV: {hrv} ms | RHR: {rhr} bpm | Passos: {st} | PA: {bp_str}"
+                f"HRV: {hrv} ms | RHR: {rhr} bpm | SpO2: {spo2} | Passos: {st} | PA: {bp_str}"
             )
     else:
         lines.append("Nenhuma métrica diária sincronizada recente.")

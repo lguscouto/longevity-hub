@@ -38,6 +38,28 @@ def load_data(name: str) -> dict:
     return {}
 
 
+def extract_hrv_rmssd_values(payload: dict) -> list[float]:
+    """Extract valid nested RMSSD samples without confusing them with SDNN."""
+    values: list[float] = []
+    for item in payload.get("items", []) if isinstance(payload, dict) else []:
+        if not isinstance(item, dict):
+            continue
+        value = item.get("value")
+        samples = value.get("samples") if isinstance(value, dict) else None
+        if not isinstance(samples, list):
+            continue
+        for sample in samples:
+            if not isinstance(sample, dict) or isinstance(sample.get("hrv"), bool):
+                continue
+            try:
+                number = float(sample.get("hrv"))
+            except (TypeError, ValueError):
+                continue
+            if number > 0 and number == number and number not in (float("inf"), float("-inf")):
+                values.append(number)
+    return values
+
+
 def analyze_weight():
     """Weight trend analysis."""
     w = load_data("weight")
@@ -178,20 +200,17 @@ def analyze_fitness():
         else:
             print("     ⚠️  FC de repouso elevada — considere mais cardio")
 
-    # HRV
-    hrv_items = hrv.get("items", [])
-    if hrv_items:
-        hrv_values = [it.get("value", {}).get("sdnn") for it in hrv_items if it.get("value")]
-        hrv_values = [v for v in hrv_values if v]
-        if hrv_values:
-            avg_hrv = sum(hrv_values) / len(hrv_values)
-            print(f"  📊 HRV (SDNN): {avg_hrv:.0f} ms")
-            if avg_hrv > 50:
-                print("     ✅ Boa variabilidade cardíaca")
-            elif avg_hrv > 30:
-                print("     ⚠️  HRV moderada — pode indicar estresse/recuperação")
-            else:
-                print("     🔴 HRV baixa — considere mais descanso")
+    # HRV RMSSD: the current Zepp endpoint stores samples under value.samples.
+    hrv_values = extract_hrv_rmssd_values(hrv)
+    if hrv_values:
+        avg_hrv = sum(hrv_values) / len(hrv_values)
+        print(f"  📊 HRV (RMSSD): {avg_hrv:.0f} ms ({len(hrv_values)} amostras)")
+        if avg_hrv > 50:
+            print("     ✅ Valor médio pessoal disponível; interpretar pela tendência")
+        elif avg_hrv > 30:
+            print("     ℹ️  Valor intermediário; comparar com seu baseline")
+        else:
+            print("     ℹ️  Valor baixo no recorte; não interpretar isoladamente")
 
     # Training load
     load_items = load.get("items", [])

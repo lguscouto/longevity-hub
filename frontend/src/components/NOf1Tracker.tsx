@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2 } from 'lucide-react';
 
 interface NOf1Experiment {
@@ -25,14 +26,15 @@ interface NOf1TrackerProps {
 
 export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateExperiment }) => {
   const [showModal, setShowModal] = useState(false);
+  const todayStr = new Date().toISOString().slice(0, 10);
   const [formData, setFormData] = useState({
-    title: 'Suplementação Magnésio L-Treonato',
-    hypothesis: 'Aumentar a variabilidade da frequência cardíaca (HRV) noturna em 10%',
+    title: '',
+    hypothesis: '',
     metric_key: 'hrv_ms',
-    control_start: '2026-07-01',
-    control_end: '2026-07-14',
-    treatment_start: '2026-07-15',
-    treatment_end: '2026-07-28',
+    control_start: todayStr,
+    control_end: todayStr,
+    treatment_start: todayStr,
+    treatment_end: todayStr,
     status: 'em_andamento'
   });
 
@@ -112,7 +114,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
         )}
       </div>
 
-      {showModal && (
+      {showModal && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
@@ -168,7 +170,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

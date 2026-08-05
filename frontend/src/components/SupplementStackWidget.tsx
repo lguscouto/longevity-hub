@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Pill, CheckCircle2, Circle, Plus, Sparkles, Clock, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
@@ -365,7 +366,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       </div>
 
       {/* Modal Adicionar */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
@@ -456,10 +457,10 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Modal Confirmar Exclusão */}
-      {deleteConfirmSupp && (
+      {deleteConfirmSupp && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
@@ -485,7 +486,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

@@ -28,3 +28,20 @@ def post_doctor_briefing(req: DoctorBriefingRequest):
     repo = LongevityRepository(db_path)
     markdown_content = generate_doctor_briefing(repo, patient_name=req.patient_name or "Paciente", patient_age=req.patient_age or 40.0)
     return {"markdown": markdown_content}
+
+
+@router.get("/doctor-briefing/pdf")
+def get_doctor_briefing_pdf(name: str = "Paciente", age: float = 32.0):
+    from fastapi.responses import Response
+    from longevidade.reports.doctor_briefing_pdf import generate_doctor_briefing_pdf
+
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    pdf_bytes = generate_doctor_briefing_pdf(repo, patient_name=name, patient_age=age)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="doctor_briefing_longevidade.pdf"'},
+    )

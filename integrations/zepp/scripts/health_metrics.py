@@ -9,9 +9,15 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import math
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
+
+
+_DEFAULT_TIMEZONE = "America/Sao_Paulo"
 
 
 _RECORD_KEYS = (
@@ -24,7 +30,19 @@ _RECORD_KEYS = (
     "fc_repouso_bpm",
     "fc_media_bpm",
     "hrv_sono_ms",
+    "hrv_rmssd_media_ms",
+    "amostras_hrv_rmssd",
     "rhr_sono_bpm",
+    "spo2_media_pct",
+    "spo2_min_pct",
+    "spo2_max_pct",
+    "amostras_spo2",
+    "spo2_odi_index",
+    "spo2_osa_decrease_pct",
+    "frequencia_respiratoria_rpm",
+    "pressao_sistolica_mmhg",
+    "pressao_diastolica_mmhg",
+    "pai",
     "readiness",
     "carga_diaria",
     "carga_acumulada",
@@ -65,15 +83,21 @@ def _items(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
 
 
-def _day_from_timestamp(value: Any) -> date | None:
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
+def _day_from_timestamp(value: Any, timezone_name: str | None = None) -> date | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
         return None
-    timestamp = float(value)
+    try:
+        timestamp = float(value.strip()) if isinstance(value, str) else float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(timestamp):
+        return None
     if timestamp > 10_000_000_000:
         timestamp /= 1000
     try:
-        return datetime.fromtimestamp(timestamp, timezone.utc).date()
-    except (OverflowError, OSError, ValueError):
+        name = timezone_name or os.environ.get("ZEPP_TIMEZONE", _DEFAULT_TIMEZONE)
+        return datetime.fromtimestamp(timestamp, timezone.utc).astimezone(ZoneInfo(name)).date()
+    except (OverflowError, OSError, ValueError, KeyError):
         return None
 
 
@@ -91,13 +115,28 @@ def _day_for_item(item: dict[str, Any]) -> date | None:
         event_day = _day_from_timestamp(value.get("timestamp"))
         if event_day is not None:
             return event_day
-    return _day_from_timestamp(item.get("timestamp"))
+
+    for key in ("timestamp", "trackid", "generatedTime", "createTime"):
+        item_day = _day_from_timestamp(item.get(key))
+        if item_day is not None:
+            return item_day
+    return None
 
 
 def _number(value: Any) -> int | float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if isinstance(value, bool) or value is None:
         return None
-    return value
+    if isinstance(value, (int, float)):
+        return value if math.isfinite(float(value)) else None
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = float(value.strip())
+    except ValueError:
+        return None
+    if not math.isfinite(parsed):
+        return None
+    return int(parsed) if parsed.is_integer() else parsed
 
 
 def _valid_readiness_number(value: Any) -> int | float | None:
@@ -132,9 +171,10 @@ def _select_band_values(payload: dict[str, Any], reference: date) -> tuple[int |
             sleep = {}
         deep_sleep = _number(sleep.get("dp"))
         light_sleep = _number(sleep.get("lt"))
+        rem_sleep = _number(sleep.get("dt"))
         sleep_minutes = None
-        if deep_sleep is not None or light_sleep is not None:
-            sleep_minutes = (deep_sleep or 0) + (light_sleep or 0)
+        if any(value is not None for value in (deep_sleep, light_sleep, rem_sleep)):
+            sleep_minutes = (deep_sleep or 0) + (light_sleep or 0) + (rem_sleep or 0)
         return steps, sleep_minutes
     return None, None
 
@@ -203,25 +243,142 @@ def _readiness_values(payload: dict[str, Any], reference: date) -> tuple[int | f
     )
 
 
-def _workout_values(payload: dict[str, Any]) -> tuple[int, int | float | None]:
+def _workout_values(
+    payload: dict[str, Any], reference: date | None = None
+) -> tuple[int, int | float | None]:
     data = payload.get("data")
     summaries = data.get("summary") if isinstance(data, dict) else None
     if not isinstance(summaries, list) or not summaries:
         return 0, None
 
+    workouts = [
+        workout
+        for workout in summaries
+        if isinstance(workout, dict)
+        and (reference is None or _day_for_item(workout) == reference)
+    ]
+    if not workouts:
+        return 0, None
+
     durations: list[int | float] = []
-    for workout in summaries:
-        if not isinstance(workout, dict):
-            continue
-        duration = next((_number(workout.get(key)) for key in ("duration", "durationTime", "totalTime") if _number(workout.get(key)) is not None), None)
+    for workout in workouts:
+        duration = None
+        duration_is_seconds = False
+        for key in ("run_time", "duration", "durationTime", "totalTime"):
+            candidate = _number(workout.get(key))
+            if candidate is not None:
+                duration = candidate
+                duration_is_seconds = key == "run_time"
+                break
         if duration is not None:
-            durations.append(duration / 60 if duration >= 60 else duration)
-    return len([workout for workout in summaries if isinstance(workout, dict)]), (sum(durations) if durations else None)
+            durations.append(
+                duration / 60
+                if duration_is_seconds or duration >= 60
+                else duration
+            )
+    return len(workouts), (sum(durations) if durations else None)
 
 
 def _count_items_for_day(payload: dict[str, Any], reference: date) -> int:
     """Count top-level event items only; opaque nested payloads stay opaque."""
     return sum(1 for item in _items(payload) if _day_for_item(item) == reference)
+
+
+def _walk_metric_numbers(node: Any, aliases: set[str]) -> list[int | float]:
+    if isinstance(node, str) and node[:1] in {"{", "["}:
+        try:
+            return _walk_metric_numbers(json.loads(node), aliases)
+        except json.JSONDecodeError:
+            return []
+    values: list[int | float] = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            normalized = str(key).replace("_", "").lower()
+            if normalized in aliases:
+                number = _number(value)
+                if number is not None:
+                    values.append(number)
+            values.extend(_walk_metric_numbers(value, aliases))
+    elif isinstance(node, list):
+        for value in node:
+            values.extend(_walk_metric_numbers(value, aliases))
+    return values
+
+
+def _event_metric_values(payload: dict[str, Any], reference: date, aliases: set[str]) -> list[int | float]:
+    values: list[int | float] = []
+    for item in _items(payload):
+        if _day_for_item(item) != reference:
+            continue
+        values.extend(_walk_metric_numbers(item, aliases))
+    return [value for value in values if value > 0]
+
+
+def _aggregate(values: list[int | float]) -> tuple[int | float | None, int | float | None, int | float | None, int]:
+    if not values:
+        return None, None, None, 0
+    average = sum(values) / len(values)
+    return average, min(values), max(values), len(values)
+
+
+def _hrv_rmssd_values(payload: dict[str, Any], reference: date) -> list[int | float]:
+    values: list[int | float] = []
+    for item in _items(payload):
+        value = item.get("value")
+        samples = value.get("samples") if isinstance(value, dict) else None
+        if not isinstance(samples, list):
+            continue
+        start = value.get("startTime", item.get("timestamp")) if isinstance(value, dict) else item.get("timestamp")
+        try:
+            start_number = float(start)
+        except (TypeError, ValueError):
+            continue
+        if start_number < 10_000_000_000:
+            start_number *= 1000
+        for sample in samples:
+            if not isinstance(sample, dict):
+                continue
+            sample_value = _number(sample.get("hrv"))
+            offset = _number(sample.get("s"))
+            if sample_value is None or sample_value <= 0:
+                continue
+            timestamp = start_number + (offset or 0) * 1000
+            if _day_from_timestamp(timestamp) == reference:
+                values.append(sample_value)
+    return values
+
+
+def _respiratory_rate_values(payload: dict[str, Any], reference: date) -> list[int]:
+    values: list[int] = []
+    for item in _items(payload):
+        if _day_for_item(item) != reference:
+            continue
+        val = item.get("value")
+        if isinstance(val, dict):
+            measurements_b64 = val.get("measurements")
+            if isinstance(measurements_b64, str):
+                try:
+                    raw_bytes = base64.b64decode(measurements_b64)
+                    for b in raw_bytes:
+                        if 0 < b < 60:
+                            values.append(b)
+                except Exception:
+                    pass
+        values.extend([int(v) for v in _walk_metric_numbers(item, {"respiratoryrate", "breathsperminute", "respirationrate", "rate"}) if 0 < v < 60])
+    return values
+
+
+def _pai_score_value(payload: dict[str, Any], reference: date) -> float | None:
+    for item in _items(payload):
+        if _day_for_item(item) == reference:
+            total_pai = _number(item.get("totalPai") or item.get("total_pai") or item.get("totalPaiScore"))
+            if total_pai is not None:
+                return total_pai
+            daily_pai = _number(item.get("dailyPai") or item.get("daily_pai") or item.get("pai"))
+            if daily_pai is not None:
+                return daily_pai
+    vals = _event_metric_values(payload, reference, {"totalpai", "totalpaiscore", "pai", "paiindex"})
+    return vals[-1] if vals else None
 
 
 def _vo2_value(payload: dict[str, Any], reference: date) -> int | float | None:
@@ -310,6 +467,13 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
         "stress",
         "temperature",
         "vo2_max",
+        "hrv",
+        "spo2",
+        "spo2_odi",
+        "spo2_osa",
+        "respiratory",
+        "blood_pressure",
+        "pai",
     ):
         payloads[name], available[name] = _read_json(directory, f"{name}.json")
 
@@ -318,7 +482,19 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
     weight, weighing_date, bmi = _select_weight(payloads["weight"], reference)
     resting_hr, average_hr = _heart_rate_values(payloads["heart_rate"], reference)
     readiness, sleep_hrv, sleep_rhr = _readiness_values(payloads["readiness"], reference)
-    workout_count, workout_duration = _workout_values(payloads["workout_history"])
+    workout_count, workout_duration = _workout_values(payloads["workout_history"], reference)
+    hrv_rmssd = _hrv_rmssd_values(payloads["hrv"], reference)
+    hrv_rmssd_avg = (sum(hrv_rmssd) / len(hrv_rmssd)) if hrv_rmssd else None
+    spo2_avg, spo2_min, spo2_max, spo2_count = _aggregate(
+        _event_metric_values(payloads["spo2"], reference, {"spo2", "bloodoxygen", "oxygensaturation", "oxygensaturationpercent"})
+    )
+    respiratory_values = _respiratory_rate_values(payloads["respiratory"], reference)
+    respiratory_avg = (sum(respiratory_values) / len(respiratory_values)) if respiratory_values else None
+    systolic_values = _event_metric_values(payloads["blood_pressure"], reference, {"systolic", "systolicbp", "sbp"})
+    diastolic_values = _event_metric_values(payloads["blood_pressure"], reference, {"diastolic", "diastolicbp", "dbp"})
+    odi_values = _event_metric_values(payloads["spo2_odi"], reference, {"odi", "odindex"})
+    osa_decrease_values = _event_metric_values(payloads["spo2_osa"], reference, {"spodecrease", "spo2decrease"})
+    pai = _pai_score_value(payloads["pai"], reference)
 
     missing = []
     if resting_hr is None and average_hr is None:
@@ -341,10 +517,22 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
         "peso_kg": weight,
         "data_pesagem": weighing_date,
         "imc": bmi,
-        "fc_repouso_bpm": resting_hr if resting_hr is not None else sleep_rhr,
+        "fc_repouso_bpm": resting_hr,
         "fc_media_bpm": average_hr,
         "hrv_sono_ms": sleep_hrv,
+        "hrv_rmssd_media_ms": hrv_rmssd_avg,
+        "amostras_hrv_rmssd": len(hrv_rmssd),
         "rhr_sono_bpm": sleep_rhr,
+        "spo2_media_pct": spo2_avg,
+        "spo2_min_pct": spo2_min,
+        "spo2_max_pct": spo2_max,
+        "amostras_spo2": spo2_count,
+        "spo2_odi_index": odi_values[-1] if odi_values else None,
+        "spo2_osa_decrease_pct": osa_decrease_values[-1] if osa_decrease_values else None,
+        "frequencia_respiratoria_rpm": respiratory_avg,
+        "pressao_sistolica_mmhg": systolic_values[-1] if systolic_values else None,
+        "pressao_diastolica_mmhg": diastolic_values[-1] if diastolic_values else None,
+        "pai": pai,
         "readiness": readiness,
         "carga_diaria": load["carga_diaria"],
         "carga_acumulada": load["carga_acumulada"],

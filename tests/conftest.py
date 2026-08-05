@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 _APP_MODULE_PREFIXES = (
     "backend.app.main",
     "backend.app.routers",
+    "backend.app.config",
 )
 
 

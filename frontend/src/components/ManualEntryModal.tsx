@@ -22,6 +22,8 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
     grip_strength_kg: 48,
     weight_kg: 74.5,
     vo2_max: 46.5,
+    spo2_avg_pct: 98.0 as number | undefined,
+    respiratory_rate_rpm: 14.0 as number | undefined,
   })
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -144,6 +146,31 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
                 step="0.1"
                 value={formData.vo2_max}
                 onChange={(event) => setFormData({ ...formData, vo2_max: +event.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor="manual-entry-spo2" className={labelClass}>SpO2 Oxigenação (%)</label>
+              <input
+                id="manual-entry-spo2"
+                type="number"
+                step="0.1"
+                placeholder="Ex: 98.5"
+                onChange={(event) => setFormData({ ...formData, spo2_avg_pct: +event.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="manual-entry-resp" className={labelClass}>Freq. Respiratória (rpm)</label>
+              <input
+                id="manual-entry-resp"
+                type="number"
+                step="0.5"
+                placeholder="Ex: 14"
+                onChange={(event) => setFormData({ ...formData, respiratory_rate_rpm: +event.target.value })}
                 className={inputClass}
               />
             </div>

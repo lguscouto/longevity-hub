@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Dna, Plus, AlertCircle, CheckCircle2, Zap, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
@@ -450,7 +451,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
       </div>
 
       {/* Modal de Detalhes do Laudo */}
-      {selectedPanelDate && groupedLabs[selectedPanelDate] && (
+      {selectedPanelDate && groupedLabs[selectedPanelDate] && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
@@ -525,10 +526,10 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Modal de Confirmação de Exclusão */}
-      {deleteConfirmDate && (
+      {deleteConfirmDate && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
@@ -565,10 +566,10 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Modal de Inclusão em Lote */}
-      {showBatchModal && (
+      {showBatchModal && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
@@ -672,7 +673,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs, onAddBat
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

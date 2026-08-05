@@ -87,7 +87,7 @@ class OpenRouterProvider:
         headers = {
             "Authorization": f"Bearer {api_key.strip()}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://127.0.0.1:8011",
+            "HTTP-Referer": "http://127.0.0.1:8887",
             "X-Title": "Longevidade Hub"
         }
         payload = {

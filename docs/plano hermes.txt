@@ -1,0 +1,821 @@
+# Longevidade Hub — Evolução para Inteligência de Decisão Implementation Plan
+
+> **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task.
+
+**Goal:** transformar o Longevidade Hub de um painel que reúne métricas em um sistema local que explica o estado atual, informa a confiabilidade dos dados, relaciona hábitos/intervenções com resultados e sugere ações simples sem apresentar correlação ou pontuação como diagnóstico.
+
+**Architecture:** preservar React/Vite, FastAPI e SQLite. A evolução será incremental e local-first: primeiro criar proveniência/qualidade e migrações seguras; depois adicionar check-in subjetivo e um motor determinístico de orientação diária; por fim evoluir correlações, N-of-1, carga de treino, relatórios e recursos circadianos. IA externa será apenas uma camada opcional de explicação sobre resultados calculados localmente.
+
+**Tech Stack:** Python 3.10+, FastAPI, Pydantic, SQLite, NumPy/SciPy, React 18, TypeScript, Vite, Tailwind, Recharts, pytest, Vitest/Testing Library e Playwright com banco/fixtures sintéticos.
+
+---
+
+## 1. Contexto verificado
+
+### Documento-base
+
+O arquivo `docs/monitoramento_saude_aplicativos.md` identifica como diferenciais relevantes:
+
+- interpretação em linguagem comum, e não apenas mais métricas;
+- pontuações de recuperação, carga e energia;
+- diário de hábitos, sintomas, humor, suplementos e medicamentos;
+- correlações e experimentos pessoais estruturados;
+- confiança, cobertura, origem e qualidade do dado;
+- recomendações explicáveis;
+- ritmo circadiano e janela para cafeína;
+- relatórios para médico/nutricionista.
+
+### Estado real do projeto observado
+
+O projeto já possui uma base forte:
+
+- `daily_metrics` com passos, sono, HRV, RHR, readiness, SpO₂, respiração, PAI, peso, pressão e outras métricas;
+- ingestão Zepp/Google e diagnóstico de pipeline;
+- exames, PhenoAge, KDM, CGM, suplementos/hormônios, conformidade e avaliações físicas;
+- N-of-1 com Welch, Cohen's d e valor-p;
+- Copiloto de IA com modo de privacidade;
+- Doctor Briefing em Markdown;
+- testes isolados e frontend com Vitest/Playwright;
+- deep links por hash e lazy loading já presentes no código atual.
+
+Lacunas observadas no código:
+
+1. `integrations/zepp/scripts/health_metrics.py` já normaliza readiness, carga diária/acumulada, faixa de carga e duração/quantidade de treinos, mas `src/longevidade/ingestion/zepp_importer.py` descarta a carga e os dados de treino ao persistir.
+2. O dashboard não exibe `readiness_score`, carga, tendências ou explicação de mudanças.
+3. `zepp_quality.py` valida snapshots, mas a qualidade não chega ao banco nem à interface.
+4. Não há check-in estruturado para energia subjetiva, humor, sintomas, dor, álcool, cafeína, doença ou contexto.
+5. O motor N-of-1 calcula uma vez na criação, aceita só períodos manuais e não controla adesão, variáveis de confusão, cobertura ou reanálise.
+6. O CRUD de `interventions` existe no backend, mas não está integrado à interface, aos suplementos ou aos experimentos.
+7. O registro de suplemento é binário por dia; não representa múltiplas doses, horário real, esquecimento, efeitos percebidos ou adesão por dose.
+8. O Doctor Briefing ainda usa objetivos fixos e não inclui cobertura, qualidade, intervenções, sintomas, tendências ou KDM.
+9. `body_battery` e temperatura permanecem deliberadamente nulos porque o contrato das fontes ainda não foi documentado; não devem ser usados para produzir uma falsa precisão.
+10. A documentação está parcialmente defasada em relação ao worktree atual; por exemplo, alguns documentos ainda dizem que deep links, lazy loading e testes frontend não existem.
+
+### Restrição operacional
+
+O worktree já estava com muitas alterações não commitadas antes deste plano. A implementação deve preservar essas mudanças, nunca resetar/descartar arquivos e criar commits focados somente após validar o diff de cada tarefa.
+
+---
+
+## 2. Ideias priorizadas
+
+| Prioridade | Ideia | Valor para o produto | Esforço | Dependências |
+|---|---|---:|---:|---|
+| P0 | Camada de qualidade, cobertura e confiança | Muito alto | M | Migrações versionadas |
+| P0 | Migrações SQLite versionadas e reversíveis | Alto | M | Nenhuma |
+| P1 | Cartão “Como estou hoje?” com explicação determinística | Muito alto | M | Qualidade + baseline pessoal |
+| P1 | Check-in diário de contexto subjetivo | Muito alto | M | Migrações |
+| P1 | Carga de treino e recuperação sustentável | Alto | M | Persistir carga Zepp |
+| P1 | N-of-1 2.0 com adesão, confundidores e reanálise | Muito alto | L | Check-ins + intervenções |
+| P1 | Linha do tempo unificada de intervenções | Alto | M | CRUD existente |
+| P2 | Correlações locais com defasagem e confiança | Muito alto | L | Check-ins + qualidade |
+| P2 | Suplementos/medicamentos por dose e horário | Alto | L | Intervenções + check-ins |
+| P2 | Tendências e alertas contra baseline pessoal | Alto | M | Qualidade + baseline |
+| P2 | Doctor Briefing 2.0 verificável | Alto | M | Tendências + qualidade |
+| P3 | Ritmo circadiano e janela para cafeína | Médio/alto | M | Horários reais de sono/check-in |
+| P3 | Energy Bank local e explicável | Médio | M | Readiness + carga + check-ins |
+| P3 | Resumo nutricional importável | Médio | L | Contrato de importação local |
+
+### Recomendação de produto
+
+O primeiro grande diferencial deve ser a combinação:
+
+> **qualidade do dado + check-in diário + orientação explicável**
+
+Ela responde diretamente às três perguntas do documento-base:
+
+1. Como meu organismo está hoje?
+2. O que provavelmente influenciou esse estado?
+3. O que vale a pena fazer agora?
+
+Sem essa base, readiness, correlações e Energy Bank seriam apenas novas pontuações com certeza excessiva.
+
+---
+
+## 3. Abordagem proposta
+
+### Princípios
+
+1. **Local-first:** todos os cálculos centrais rodam localmente; IA externa é opcional.
+2. **Explicável:** cada score informa valores, baseline, período, fatores e confiança.
+3. **Sem diagnóstico:** usar “sinal”, “desvio”, “associação” e “orientação de bem-estar”; nunca inferir doença.
+4. **Sem dados fictícios:** indisponibilidade continua sendo `—`, não zero nem média estimada.
+5. **Confiança antes da conclusão:** nenhuma orientação forte com cobertura baixa.
+6. **Baseline pessoal:** comparar o usuário consigo mesmo, evitando faixas universais quando não forem apropriadas.
+7. **Dados subjetivos não são ruído:** energia, humor, dor e sintomas devem aparecer ao lado do wearable.
+8. **Correlação não é causalidade:** toda associação deve declarar cobertura, tamanho de efeito e limitações.
+9. **Navegação enxuta:** qualidade/diagnóstico ficam em área secundária no Perfil; o dashboard principal mostra apenas um badge resumido.
+10. **E2E isolado:** fixtures sintéticas e `LONGEVIDADE_DB_PATH` temporário; nunca usar banco, fotos ou relatórios reais.
+
+---
+
+## 4. Plano de implementação
+
+## Fase 0 — Fundação de esquema e contratos
+
+### Task 0.1: Introduzir migrações SQLite versionadas
+
+**Objective:** permitir evolução segura do banco sem acumular blocos `ALTER TABLE` ad hoc.
+
+**Files:**
+- Create: `src/longevidade/db/migrations.py`
+- Modify: `src/longevidade/db/schema.py`
+- Test: `tests/test_db_migrations.py`
+
+**Step 1: Write failing test**
+
+Criar teste que inicializa um banco vazio, confirma `PRAGMA user_version`, reinicializa e prova idempotência; criar também um banco na versão anterior e provar upgrade sem perda de registros sintéticos.
+
+**Step 2: Run test to verify failure**
+
+Run: `PYTHONPATH='' .venv/Scripts/python.exe -m pytest -q tests/test_db_migrations.py`
+
+Expected: FAIL — módulo/runner de migrações ainda inexistente.
+
+**Step 3: Write minimal implementation**
+
+Implementar `Migration(version, name, statements)` e `apply_migrations(conn)`, executando cada versão em transação e atualizando `PRAGMA user_version` somente após sucesso.
+
+**Step 4: Run test to verify pass**
+
+Run: `PYTHONPATH='' .venv/Scripts/python.exe -m pytest -q tests/test_db_migrations.py`
+
+Expected: PASS.
+
+**Step 5: Commit**
+
+```bash
+git add src/longevidade/db/migrations.py src/longevidade/db/schema.py tests/test_db_migrations.py
+git commit -m "feat(db): add versioned sqlite migrations"
+```
+
+### Task 0.2: Definir catálogo canônico de métricas
+
+**Objective:** centralizar direção de melhora, unidade, faixa plausível, janela de baseline e rótulo PT-BR.
+
+**Files:**
+- Create: `src/longevidade/metrics/catalog.py`
+- Test: `tests/test_metric_catalog.py`
+
+**Contract:**
+
+```python
+METRICS = {
+    "hrv_ms": {
+        "label": "HRV noturna",
+        "unit": "ms",
+        "higher_is_better": True,
+        "baseline_days": 28,
+        "min_observations": 14,
+    },
+    "rhr_bpm": {
+        "label": "FC de repouso",
+        "unit": "bpm",
+        "higher_is_better": False,
+        "baseline_days": 28,
+        "min_observations": 14,
+    },
+}
+```
+
+**Steps:** escrever testes de chaves obrigatórias e direção; executar para falhar; implementar catálogo mínimo; executar para passar; commit.
+
+---
+
+## Fase 1 — Qualidade, cobertura e proveniência
+
+### Task 1.1: Persistir qualidade diária por métrica
+
+**Objective:** registrar cobertura, origem, frescor, quantidade de amostras e avisos sem misturar diagnóstico operacional à tabela clínica.
+
+**Files:**
+- Modify: `src/longevidade/db/migrations.py`
+- Modify: `src/longevidade/db/repository.py`
+- Test: `tests/test_metric_quality.py`
+
+**Schema proposed:**
+
+```sql
+CREATE TABLE daily_metric_quality (
+    date_ref TEXT NOT NULL,
+    metric_key TEXT NOT NULL,
+    source TEXT NOT NULL,
+    observed_at TEXT,
+    sample_count INTEGER,
+    coverage_pct REAL,
+    quality_status TEXT NOT NULL,
+    warnings_json TEXT NOT NULL DEFAULT '[]',
+    PRIMARY KEY (date_ref, metric_key)
+);
+```
+
+Estados permitidos: `high`, `medium`, `low`, `unavailable`.
+
+**Steps:** teste RED do upsert/listagem; migração; métodos do repositório; teste GREEN; commit.
+
+### Task 1.2: Propagar `zepp_quality` até o importador
+
+**Objective:** converter validação de snapshots em metadados de confiança por métrica.
+
+**Files:**
+- Modify: `integrations/zepp/scripts/zepp_quality.py`
+- Modify: `integrations/zepp/scripts/health_metrics.py`
+- Modify: `src/longevidade/ingestion/zepp_importer.py`
+- Modify: `tests/test_zepp_importer.py`
+
+**Steps:**
+1. Adicionar fixture sintética válida/parcial/inválida.
+2. Testar que o importador persiste valor e qualidade separadamente.
+3. Testar que payload inválido não vira dado confiável.
+4. Implementar mapeamento mínimo.
+5. Rodar testes Zepp.
+6. Commit.
+
+### Task 1.3: Criar endpoint de cobertura
+
+**Objective:** expor qualidade agregada sem devolver payload bruto nem caminhos sensíveis.
+
+**Files:**
+- Create: `backend/app/routers/quality.py`
+- Modify: `backend/app/main.py`
+- Test: `tests/test_quality_router.py`
+
+**Contract:** `GET /api/quality/daily?date_ref=YYYY-MM-DD`.
+
+Resposta mínima:
+
+```json
+{
+  "date_ref": "2026-08-05",
+  "coverage_pct": 78.0,
+  "confidence": "medium",
+  "metrics_available": 7,
+  "metrics_expected": 9,
+  "warnings": ["HRV com poucas amostras"],
+  "sources": ["Zepp"]
+}
+```
+
+### Task 1.4: Mostrar confiança sem poluir a navegação
+
+**Objective:** exibir um badge compacto no dashboard e detalhes no Perfil.
+
+**Files:**
+- Create: `frontend/src/components/DataConfidenceBadge.tsx`
+- Create: `frontend/src/components/DataQualityPanel.tsx`
+- Modify: `frontend/src/App.tsx`
+- Modify: `frontend/src/components/ProfileView.tsx`
+- Test: `frontend/src/components/DataConfidenceBadge.test.tsx`
+- Test: `frontend/src/components/DataQualityPanel.test.tsx`
+
+**Acceptance:** dashboard mostra “Confiança alta/média/baixa”; detalhes operacionais ficam em seção secundária do Perfil, não em nova aba principal.
+
+---
+
+## Fase 2 — Baseline pessoal e orientação diária explicável
+
+### Task 2.1: Calcular baseline robusto
+
+**Objective:** calcular mediana, MAD/faixa habitual e cobertura de 28 dias sem usar dados ausentes como zero.
+
+**Files:**
+- Create: `src/longevidade/algorithms/personal_baseline.py`
+- Test: `tests/test_personal_baseline.py`
+
+**Pure API:**
+
+```python
+def calculate_personal_baseline(
+    values: list[float | None],
+    minimum_observations: int = 14,
+) -> dict:
+    ...
+```
+
+Testar: série suficiente, série curta, outlier, zeros válidos e ausências.
+
+### Task 2.2: Criar motor de orientação determinístico
+
+**Objective:** produzir estado, fatores e uma única ação prioritária com confiança explícita.
+
+**Files:**
+- Create: `src/longevidade/algorithms/daily_guidance.py`
+- Test: `tests/test_daily_guidance.py`
+
+**Output contract:**
+
+```json
+{
+  "state": "recover",
+  "label": "Priorize recuperação",
+  "confidence": "medium",
+  "score": 58,
+  "factors": [
+    {"metric": "hrv_ms", "change_pct": -18.0, "baseline_days": 28},
+    {"metric": "sleep_minutes", "change_pct": -14.0, "baseline_days": 28}
+  ],
+  "primary_action": "Reduza a intensidade e tente antecipar o sono hoje.",
+  "limitations": ["Carga de treino incompleta em 2/7 dias"]
+}
+```
+
+Regras iniciais devem ser transparentes e conservadoras. Se a confiança for baixa, `state` deve ser `insufficient_data` e não deve haver recomendação assertiva.
+
+### Task 2.3: Expor orientação diária
+
+**Files:**
+- Create: `backend/app/routers/daily_guidance.py`
+- Modify: `backend/app/main.py`
+- Test: `tests/test_daily_guidance_router.py`
+
+**Contract:** `GET /api/daily-guidance?date_ref=YYYY-MM-DD`.
+
+### Task 2.4: Criar cartão “Como estou hoje?”
+
+**Files:**
+- Create: `frontend/src/components/DailyGuidanceCard.tsx`
+- Modify: `frontend/src/App.tsx`
+- Test: `frontend/src/components/DailyGuidanceCard.test.tsx`
+
+**Acceptance:** o cartão sempre mostra o que mudou, período de comparação, fatores, confiança e limitação. Não usar termos diagnósticos.
+
+---
+
+## Fase 3 — Check-in subjetivo e contexto diário
+
+### Task 3.1: Criar modelo de check-in diário
+
+**Objective:** registrar em menos de 30 segundos fatores que wearables não capturam.
+
+**Files:**
+- Modify: `src/longevidade/db/migrations.py`
+- Modify: `src/longevidade/db/repository.py`
+- Test: `tests/test_daily_checkins.py`
+
+**Schema proposed:**
+
+```sql
+CREATE TABLE daily_checkins (
+    date_ref TEXT PRIMARY KEY,
+    energy_score INTEGER,
+    mood_score INTEGER,
+    perceived_stress INTEGER,
+    soreness_score INTEGER,
+    pain_score INTEGER,
+    symptom_severity INTEGER,
+    illness INTEGER NOT NULL DEFAULT 0,
+    alcohol_units REAL,
+    caffeine_last_at TEXT,
+    bedtime_target_met INTEGER,
+    notes TEXT,
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+```
+
+Scores usam 1–5 com rótulos, evitando falsa precisão de 0–100.
+
+### Task 3.2: Criar API de check-in
+
+**Files:**
+- Create: `backend/app/routers/checkins.py`
+- Modify: `backend/app/main.py`
+- Test: `tests/test_checkins_router.py`
+
+**Contracts:**
+- `GET /api/checkins/{date_ref}`
+- `PUT /api/checkins/{date_ref}`
+- `GET /api/checkins?days=90`
+
+### Task 3.3: Criar check-in rápido no dashboard
+
+**Files:**
+- Create: `frontend/src/components/DailyCheckinCard.tsx`
+- Modify: `frontend/src/App.tsx`
+- Test: `frontend/src/components/DailyCheckinCard.test.tsx`
+
+**Acceptance:** teclado e mobile funcionam; estados escuro/claro validados; erro HTTP restaura o valor anterior; notas permanecem opcionais.
+
+### Task 3.4: Integrar percepção à orientação diária
+
+**Files:**
+- Modify: `src/longevidade/algorithms/daily_guidance.py`
+- Modify: `backend/app/routers/daily_guidance.py`
+- Modify: `tests/test_daily_guidance.py`
+
+**Rule:** divergência entre wearable e percepção deve ser exibida, não “corrigida”. Exemplo: “Wearable favorável, mas energia percebida baixa; prefira decisão conservadora.”
+
+---
+
+## Fase 4 — Carga de treino e recuperação sustentável
+
+### Task 4.1: Persistir dados de carga já normalizados
+
+**Objective:** parar de descartar carga diária/acumulada, faixa ótima e duração/quantidade de treinos.
+
+**Files:**
+- Modify: `src/longevidade/db/migrations.py`
+- Modify: `src/longevidade/db/repository.py`
+- Modify: `src/longevidade/ingestion/zepp_importer.py`
+- Modify: `tests/test_zepp_importer.py`
+
+**New `daily_metrics` columns:**
+- `training_load_daily`
+- `training_load_rolling`
+- `training_load_optimal_min`
+- `training_load_optimal_max`
+- `workout_count`
+- `workout_duration_min`
+
+### Task 4.2: Calcular estado de carga sem prescrever treino
+
+**Files:**
+- Create: `src/longevidade/algorithms/training_load.py`
+- Test: `tests/test_training_load.py`
+
+Estados: `below_range`, `in_range`, `above_range`, `insufficient_data`. A saída informa tendência e cobertura; não prescreve exercício médico.
+
+### Task 4.3: Criar widget de carga e recuperação
+
+**Files:**
+- Create: `backend/app/routers/training.py`
+- Create: `frontend/src/components/TrainingLoadWidget.tsx`
+- Modify: `backend/app/main.py`
+- Modify: `frontend/src/App.tsx`
+- Test: `tests/test_training_router.py`
+- Test: `frontend/src/components/TrainingLoadWidget.test.tsx`
+
+---
+
+## Fase 5 — Intervenções e N-of-1 2.0
+
+### Task 5.1: Integrar o CRUD de intervenções à interface
+
+**Files:**
+- Create: `frontend/src/components/InterventionTimeline.tsx`
+- Modify: `frontend/src/components/NOf1Tracker.tsx`
+- Modify: `frontend/src/components/SupplementsView.tsx`
+- Test: `frontend/src/components/InterventionTimeline.test.tsx`
+
+**Acceptance:** criar, editar, encerrar e visualizar intervenção; não duplicar automaticamente cada suplemento como intervenção.
+
+### Task 5.2: Evoluir o esquema N-of-1
+
+**Files:**
+- Modify: `src/longevidade/db/migrations.py`
+- Modify: `src/longevidade/db/repository.py`
+- Test: `tests/test_n_of_1_repository.py`
+
+**Fields/tables:**
+- vínculo opcional `intervention_id`;
+- direção esperada (`increase`/`decrease`);
+- amostra mínima;
+- adesão mínima;
+- confundidores/tags;
+- versão da análise;
+- data da última reanálise;
+- status real (`draft`, `baseline`, `intervention`, `complete`, `inconclusive`).
+
+### Task 5.3: Tornar análise reexecutável e consciente de cobertura
+
+**Files:**
+- Modify: `src/longevidade/algorithms/n_of_1.py`
+- Modify: `backend/app/routers/n_of_1.py`
+- Test: `tests/test_n_of_1.py`
+- Test: `tests/test_n_of_1_router.py`
+
+**Required output additions:** `n_control`, `n_treatment`, cobertura, adesão, intervalo de confiança, direção do efeito, confundidores registrados e `conclusion_status`.
+
+Não classificar como “funcionou” apenas por `p < 0,05`; combinar magnitude, direção, cobertura e intervalo de confiança.
+
+### Task 5.4: Remover dados pré-preenchidos fictícios do modal
+
+**Files:**
+- Modify: `frontend/src/components/NOf1Tracker.tsx`
+- Test: `frontend/src/components/NOf1Tracker.test.tsx`
+
+**Acceptance:** formulário abre vazio, sugere datas a partir da data atual e valida sobreposição/inversão de períodos.
+
+### Task 5.5: Exibir resultado em linguagem clara
+
+**Files:**
+- Modify: `frontend/src/components/NOf1Tracker.tsx`
+- Test: `frontend/src/components/NOf1Tracker.test.tsx`
+
+Exemplo: “Associação favorável, confiança baixa: 9/14 dias com dados e adesão de 71%. Repetir antes de concluir.”
+
+---
+
+## Fase 6 — Correlações e tendências locais
+
+### Task 6.1: Criar motor de correlação com defasagem
+
+**Objective:** detectar associações plausíveis entre check-ins/intervenções e métricas dos dias seguintes.
+
+**Files:**
+- Create: `src/longevidade/algorithms/correlations.py`
+- Test: `tests/test_correlations.py`
+
+**Rules:**
+- Spearman para variáveis ordinais/contínuas;
+- lag configurável de 0–3 dias;
+- mínimo de 20 pares válidos;
+- cobertura explícita;
+- correção de múltiplas comparações ou limitação estrita do número de hipóteses;
+- nunca usar texto causal.
+
+### Task 6.2: Criar API de insights correlacionais
+
+**Files:**
+- Create: `backend/app/routers/insights.py`
+- Modify: `backend/app/main.py`
+- Test: `tests/test_insights_router.py`
+
+### Task 6.3: Criar painel de associações
+
+**Files:**
+- Create: `frontend/src/components/CorrelationInsightsPanel.tsx`
+- Modify: `frontend/src/App.tsx`
+- Test: `frontend/src/components/CorrelationInsightsPanel.test.tsx`
+
+**Acceptance:** cada insight mostra pares válidos, direção, intensidade, lag, confiança e “correlação não prova causalidade”.
+
+### Task 6.4: Criar detector de desvios pessoais
+
+**Files:**
+- Create: `src/longevidade/algorithms/anomalies.py`
+- Test: `tests/test_anomalies.py`
+
+Usar baseline robusto; exigir persistência por mais de um dia antes de gerar destaque; não rotular doença.
+
+---
+
+## Fase 7 — Suplementos e medicamentos por dose
+
+### Task 7.1: Separar protocolo de eventos de tomada
+
+**Objective:** representar várias doses por dia e horários reais, preservando compatibilidade com `supplement_logs`.
+
+**Files:**
+- Modify: `src/longevidade/db/migrations.py`
+- Modify: `src/longevidade/db/repository.py`
+- Modify: `backend/app/routers/supplements.py`
+- Test: `tests/test_supplement_schedule.py`
+
+**Proposed tables:** `supplement_schedules` e `supplement_intake_events`.
+
+### Task 7.2: Adicionar adesão por dose e efeito percebido
+
+**Files:**
+- Modify: `frontend/src/components/SupplementsView.tsx`
+- Test: `frontend/src/components/SupplementsView.test.tsx`
+
+Estados: `taken`, `missed`, `skipped`, `late`; efeito percebido opcional e sem interpretação clínica automática.
+
+### Task 7.3: Relacionar mudança de dose a exames e tendências
+
+**Files:**
+- Modify: `frontend/src/components/InterventionTimeline.tsx`
+- Modify: `backend/app/routers/insights.py`
+- Test: `tests/test_intervention_timeline.py`
+
+**Rule:** mostrar sobreposição temporal, não afirmar que a mudança causou o resultado.
+
+---
+
+## Fase 8 — Doctor Briefing 2.0
+
+### Task 8.1: Remover objetivos fixos e usar perfil real
+
+**Files:**
+- Modify: `src/longevidade/reports/doctor_briefing.py`
+- Modify: `backend/app/routers/reports.py`
+- Test: `tests/test_doctor_briefing.py`
+
+**Acceptance:** nome/idade vêm do perfil por padrão; nenhum objetivo clínico genérico é inventado.
+
+### Task 8.2: Incluir cobertura, tendências e linha do tempo
+
+**Files:**
+- Modify: `src/longevidade/reports/doctor_briefing.py`
+- Test: `tests/test_doctor_briefing.py`
+
+Seções novas:
+- cobertura e origem dos dados;
+- tendências de 7/30/90 dias;
+- KDM + PhenoAge com data e insumos;
+- sintomas/check-ins resumidos;
+- mudanças de suplemento/hormônio/intervenção;
+- experimentos N-of-1 com grau de confiança;
+- perguntas escritas pelo usuário para a consulta.
+
+### Task 8.3: Exportar PDF local sem depender de LLM
+
+**Files:**
+- Create: `src/longevidade/reports/doctor_briefing_pdf.py`
+- Modify: `backend/app/routers/reports.py`
+- Modify: `frontend/src/components/DoctorBriefingModal.tsx`
+- Test: `tests/test_doctor_briefing_pdf.py`
+
+Gerar em diretório temporário/stream HTTP; não versionar relatório pessoal.
+
+---
+
+## Fase 9 — Recursos posteriores
+
+### 9.1 Ritmo circadiano e cafeína
+
+Implementar somente depois de capturar horários reais de sono e `caffeine_last_at`. Calcular regularidade do sono, desvio do horário e uma janela informativa baseada na meta do usuário. Não prometer “otimização hormonal”.
+
+**Likely files:**
+- `src/longevidade/algorithms/circadian.py`
+- `backend/app/routers/circadian.py`
+- `frontend/src/components/CircadianCard.tsx`
+- `tests/test_circadian.py`
+
+### 9.2 Energy Bank explicável
+
+Saldo contínuo opcional baseado em sono, readiness, carga e energia subjetiva. Cada componente deve ser exibido e o usuário deve poder desligar o score. Marcar claramente como índice próprio não validado clinicamente.
+
+**Likely files:**
+- `src/longevidade/algorithms/energy_bank.py`
+- `backend/app/routers/energy.py`
+- `frontend/src/components/EnergyBankCard.tsx`
+- `tests/test_energy_bank.py`
+
+### 9.3 Resumo nutricional
+
+Evitar construir inicialmente câmera, código de barras e banco de alimentos. Começar por importação local CSV/JSON com calorias, proteína, carboidrato, gordura e horário da última refeição, sem depender de caminhos externos fixos.
+
+---
+
+## 5. O que não implementar agora
+
+1. **Estresse fisiológico em tempo real:** o registro atual traz contagem de amostras, não um valor interpretável e documentado.
+2. **Body Battery da Zepp:** `health_metrics.py` deixa os campos nulos de propósito por contrato não documentado.
+3. **Diagnóstico de apneia, arritmia ou doença:** os dados atuais não sustentam esse uso.
+4. **Recomendações automáticas de dose/medicação:** risco médico e escopo inadequado.
+5. **Nutrição por foto/código de barras:** esforço alto antes de existir a camada de decisão e contexto.
+6. **Mais uma aba operacional de qualidade:** o usuário precisa de orientação no dashboard; diagnóstico deve ficar secundário no Perfil.
+7. **Treinar um modelo de IA próprio:** não há necessidade demonstrada; regras locais transparentes são mais auditáveis nesta etapa.
+
+---
+
+## 6. Arquivos que provavelmente mudarão
+
+### Banco/domínio
+
+- `src/longevidade/db/schema.py`
+- `src/longevidade/db/migrations.py` (novo)
+- `src/longevidade/db/repository.py`
+- `src/longevidade/metrics/catalog.py` (novo)
+- `src/longevidade/algorithms/personal_baseline.py` (novo)
+- `src/longevidade/algorithms/daily_guidance.py` (novo)
+- `src/longevidade/algorithms/training_load.py` (novo)
+- `src/longevidade/algorithms/correlations.py` (novo)
+- `src/longevidade/algorithms/anomalies.py` (novo)
+- `src/longevidade/algorithms/n_of_1.py`
+- `src/longevidade/reports/doctor_briefing.py`
+
+### Ingestão
+
+- `integrations/zepp/scripts/zepp_quality.py`
+- `integrations/zepp/scripts/health_metrics.py`
+- `src/longevidade/ingestion/zepp_importer.py`
+
+### Backend
+
+- `backend/app/main.py`
+- `backend/app/routers/quality.py` (novo)
+- `backend/app/routers/daily_guidance.py` (novo)
+- `backend/app/routers/checkins.py` (novo)
+- `backend/app/routers/training.py` (novo)
+- `backend/app/routers/insights.py` (novo)
+- `backend/app/routers/n_of_1.py`
+- `backend/app/routers/supplements.py`
+- `backend/app/routers/reports.py`
+
+### Frontend
+
+- `frontend/src/App.tsx`
+- `frontend/src/components/DataConfidenceBadge.tsx` (novo)
+- `frontend/src/components/DataQualityPanel.tsx` (novo)
+- `frontend/src/components/DailyGuidanceCard.tsx` (novo)
+- `frontend/src/components/DailyCheckinCard.tsx` (novo)
+- `frontend/src/components/TrainingLoadWidget.tsx` (novo)
+- `frontend/src/components/InterventionTimeline.tsx` (novo)
+- `frontend/src/components/CorrelationInsightsPanel.tsx` (novo)
+- `frontend/src/components/NOf1Tracker.tsx`
+- `frontend/src/components/SupplementsView.tsx`
+- `frontend/src/components/DoctorBriefingModal.tsx`
+- `frontend/src/components/ProfileView.tsx`
+
+### Documentação
+
+- `README.md`
+- `HERMES.md`
+- `docs/overview.md`
+- `docs/architecture.md`
+- `docs/api-reference.md`
+- `docs/data-model-and-security.md`
+- `docs/development-and-validation.md`
+- `docs/known-limitations.md`
+- `docs/improvement-roadmap.md`
+
+---
+
+## 7. Testes e validação
+
+### Gate por tarefa
+
+1. Teste RED específico.
+2. Implementação mínima.
+3. Teste GREEN específico.
+4. Testes do módulo relacionado.
+5. `git diff --check`.
+6. Revisão de conformidade.
+7. Revisão de qualidade.
+8. Commit focado.
+
+### Gate por fase
+
+Backend, sempre em banco temporário/isolado:
+
+```bash
+PYTHONPATH='' .venv/Scripts/python.exe -m pytest -q
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run test:run
+npm run build
+```
+
+E2E sintético:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+Antes do E2E, iniciar o backend com `LONGEVIDADE_DB_PATH` apontando para um SQLite temporário e carregar apenas fixtures sintéticas. Não usar banco, fotos ou relatórios reais.
+
+Validação manual local:
+
+- produção integrada: `http://127.0.0.1:8011/#overview`
+- perfil/qualidade: `http://127.0.0.1:8011/#profile`
+- N-of-1: `http://127.0.0.1:8011/#n-of-1`
+- suplementos/intervenções: `http://127.0.0.1:8011/#supplements`
+
+Para todo novo componente:
+
+- validar tema claro e escuro;
+- validar sem dados, carregando, erro, cobertura baixa e cobertura alta;
+- validar teclado e viewport mobile;
+- confirmar que `—` continua representando ausência;
+- confirmar que nenhuma fixture contém dados pessoais reais.
+
+### Critérios de aceitação do roadmap
+
+- cada conclusão informa fonte, período, cobertura e confiança;
+- o dashboard responde “estado, fatores e ação” sem linguagem diagnóstica;
+- check-ins subjetivos ficam integrados, mas não sobrepõem silenciosamente wearable;
+- carga Zepp já coletada deixa de ser descartada;
+- N-of-1 diferencia inconclusivo de efeito confiável;
+- correlações nunca são descritas como causalidade;
+- Doctor Briefing usa dados reais disponíveis e marca lacunas;
+- IA externa não é requisito para qualquer cálculo central;
+- testes/E2E não acessam dados reais;
+- documentação reflete o código entregue.
+
+---
+
+## 8. Riscos e trade-offs
+
+| Risco | Mitigação |
+|---|---|
+| Score parecer clinicamente validado | Rótulo de índice próprio, fórmula visível, confiança e limitações. |
+| Muitos alertas gerarem ansiedade | Um destaque principal por dia; desvios secundários ficam recolhidos. |
+| Correlações espúrias | Amostra mínima, cobertura, lag declarado, múltiplas comparações limitadas e aviso de não causalidade. |
+| Migração afetar banco pessoal | Backup antes de cutover real, migrações testadas em cópia sintética e autorização explícita para dados reais. |
+| Navegação ficar sobrecarregada | Reusar Visão Geral, N-of-1, Suplementos e Perfil; não criar aba para cada motor. |
+| Dados Zepp incompletos | Camada de qualidade e estados `insufficient_data`. |
+| Worktree atual misturar mudanças | Revisar diff por arquivo, preservar alterações existentes e commits focados. |
+| IA inventar justificativas | IA recebe fatores calculados e apenas os reescreve; resposta central continua determinística/local. |
+
+---
+
+## 9. Ordem recomendada de entrega
+
+1. **Release A — Confiança:** migrações + catálogo + qualidade + badge/painel.
+2. **Release B — Decisão diária:** baseline + orientação + check-in.
+3. **Release C — Treino sustentável:** persistência de carga + widget.
+4. **Release D — Experimentação:** timeline de intervenções + N-of-1 2.0.
+5. **Release E — Aprendizado pessoal:** correlações + tendências/anomalias.
+6. **Release F — Uso clínico organizado:** suplementos por dose + Doctor Briefing 2.0.
+7. **Release G — Opcionais:** circadiano, Energy Bank e nutrição importável.
+
+O melhor primeiro recorte vertical é **Release A + núcleo da Release B**, porque entrega valor visível sem depender de IA nem de novos dispositivos.

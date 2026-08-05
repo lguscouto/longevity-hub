@@ -5,9 +5,10 @@ from longevidade.db.repository import LongevityRepository
 def _seed_kdm_history(repo: LongevityRepository) -> None:
     repo.upsert_user_profile({"chronological_age": 39.0})
     for date_ref, offset in (
-        ("2024-07-01", 0.0),
-        ("2025-07-01", 1.0),
-        ("2026-07-01", 2.0),
+        ("2023-07-01", 0.0),
+        ("2024-07-01", 0.8),
+        ("2025-07-01", 2.1),
+        ("2026-07-01", 2.9),
     ):
         repo.upsert_daily_metric(
             {
@@ -89,8 +90,13 @@ def _seed_kdm_history(repo: LongevityRepository) -> None:
         )
 
 
+from longevidade.db.schema import initialize_db
+
+
 def test_kdm_router_calculates_and_persists_complete_result(client):
-    repo = LongevityRepository(get_db_path())
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
     _seed_kdm_history(repo)
 
     response = client.post("/api/kdm/calculate")

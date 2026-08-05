@@ -11,12 +11,14 @@ from backend.app.config import get_db_path
 from longevidade import __version__
 from longevidade.db.schema import initialize_db
 
-from backend.app.routers import ai, cgm, compliance, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, reports, supplements
+from backend.app.routers import ai, cgm, checkins, compliance, correlations, daily_guidance, energy_circadian, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, quality, reports, supplements
 
 
 DEFAULT_LOCAL_ALLOWED_ORIGINS: Tuple[str, ...] = (
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8011",
+    "http://127.0.0.1:8886",
+    "http://localhost:8886",
+    "http://127.0.0.1:8887",
+    "http://localhost:8887",
 )
 
 
@@ -75,6 +77,11 @@ app.include_router(compliance.router)
 app.include_router(interventions.router)
 app.include_router(pipeline.router)
 app.include_router(physical_assessments.router)
+app.include_router(quality.router)
+app.include_router(checkins.router)
+app.include_router(daily_guidance.router)
+app.include_router(energy_circadian.router)
+app.include_router(correlations.router)
 
 
 @app.get("/api/health")
