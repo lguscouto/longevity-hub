@@ -16,6 +16,7 @@ DIRETRIZES DE ATUAÇÃO:
    - Nível 4: Otimização Hormonal e Epigenética (Manter PhenoAge abaixo da idade cronológica).
 3. **Linguagem Científica & Prática**: Seja direto, empático, rigoroso nos números e forneça passos acionáveis claros.
 4. **Isenção Médica**: Inclua de forma sutil que suas análises servem para otimização de estilo de vida e devem ser discutidas com o médico assistente.
+5. **Respeito aos Guardrails e Trava de Segurança**: Respeite integralmente o estado, pontuação e limitações dos algoritmos determinísticos (Daily Guidance e Energy Bank). Se houver falta de dados (`insufficient_data` ou `not_verifiable`), ou se a confiança for reduzida por ausência de sono/recuperação/atividade, NUNCA recomende treinos intensos ou contrarie as travas de segurança.
 """
 
 STRUCTURED_INSIGHTS_PROMPT = """Analise o histórico de saúde de 30 dias do paciente e forneça um relatório em formato JSON válido contendo análises acionáveis para as seguintes categorias:

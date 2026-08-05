@@ -18,12 +18,14 @@ Para a documentação completa de visão geral do projeto, consulte **[docs/over
 
 ## 🌟 Funcionalidades Principais
 
-- **Dashboard de Métricas Diárias**: Sincronização automatizada de Passos, Sono (Fases Profundo, Leve, REM), HRV, Frequência Cardíaca de Repouso (RHR), Readiness, VO2 Max, Peso vs Alvo e Pressão Arterial.
-- **Idade Biológica PhenoAge (Morgan Levine)**: Calculadora automatizada baseada em 9 marcadores de exames de sangue (Glicose, Creatinina, Albumina, hs-CRP, RDW, MCV, Linfócitos, Fosfatase Alcalina e WBC).
-- **Experimentos N-of-1**: Ferramenta estatística (d de Cohen + p-value) para testar intervenções de estilo de vida (suplementos, hábitos de sono, jejum) comparando 14 dias pré vs 14 dias pós.
-- **Exames Laboratoriais & Alvos de Longevidade**: Tabela de resultados de sangue comparados com a faixa de referência clássica e com os **Alvos Ótimos de Longevidade** (ApoB < 60, hs-CRP < 0.5, HbA1c < 5.3, etc.).
-- **Glicemia Contínua (CGM)**: Importador de CSVs de sensores contínuos (FreeStyle Libre) com cálculo de Glicemia Média, Variabilidade (CV%) e Tempo no Alvo (Time-in-Range 70-140 mg/dL).
-- **Doctor Briefing Generator**: Geração de relatório sintético formatado em Markdown para consultas médicas.
+- **Dashboard de Métricas Diárias & Readiness**: Sincronização automatizada de Passos, Sono (Fases Profundo, Leve, REM), HRV, FC de Repouso (RHR), SpO2, Frequência Respiratória, VO2 Max, Peso e Pressão Arterial.
+- **Orientação Diária & Bateria Corporal (Energy Bank)**: Motores determinísticos com travas de segurança *fail-closed* contra falta de dados ou cobertura parcial de recuperação/atividade.
+- **Idade Biológica Epigenética (PhenoAge & KDM)**: Calculadoras baseadas em marcadores de sangue (Morgan Levine PhenoAge e Klemera-Doubal KDM Age).
+- **Experimentos N-of-1**: Ferramenta estatística (d de Cohen + p-value via SciPy) para testar intervenções com validação rigorosa contra sobreposição de períodos.
+- **Copiloto de IA & Vault Local de Segredos**: Integração multi-provedor (OpenRouter, OpenAI, Anthropic) com vault seguro Windows Credential Vault (Keyring), modos de privacidade (`minimal` e `full`) e suporte aos guardrails determinísticos.
+- **Exames Laboratoriais & Alvos de Longevidade**: Tabela comparativa com faixas de referência e **Alvos Ótimos de Longevidade** (ApoB < 60, hs-CRP < 0.5, etc.).
+- **Glicemia Contínua (CGM)**: Importador de CSVs de sensores contínuos (FreeStyle Libre) com cálculo de Glicemia Média, Variabilidade (CV%) e Time-in-Range (70-140 mg/dL).
+- **Doctor Briefing (Markdown & PDF)**: Geração de relatórios médicos sintéticos em Markdown e PDF via ReportLab.
 
 ---
 

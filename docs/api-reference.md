@@ -6,12 +6,16 @@ Formato padrão: JSON, exceto upload/download de CGM.
 
 > Os exemplos abaixo descrevem os contratos presentes no código. Eles não devem conter chaves de IA nem dados clínicos reais em documentação, testes ou logs.
 
-## Saúde
+## Saúde e Algoritmos Determinísticos
 
 | Método | Caminho | Finalidade |
 |---|---|---|
-| `GET` | `/api/health` | Status local, caminho do banco e versão (`0.6.0`). |
-| `GET` | `/api/version` | `{ \"version\": \"0.6.0\", \"name\": \"Longevidade Hub\" }`. |
+| `GET` | `/api/health` | Status local, conexão do banco e versão (`0.6.0`). |
+| `GET` | `/api/version` | Informações de versão da API: `{ "version": "0.6.0", "system": "Longevidade Hub" }`. |
+| `GET` | `/api/daily-guidance` | Orientação diária conservadora baseada em HRV, RHR, sono e check-in. |
+| `GET` | `/api/energy-circadian` | Bateria corporal (Energy Bank) e janelas de ritmo circadiano. |
+| `GET` | `/api/quality/daily` | Diagnóstico de qualidade e integridade dos dados observacionais do dia. |
+| `GET` | `/api/checkins/{date_ref}` | Consulta check-in subjetivo do dia (disposição, estresse, dor, notas, tags). |
 | `GET` | `/api/pipeline-runs?limit=20` | Histórico sanitizado das execuções de pipeline. |
 
 ## Métricas e importação

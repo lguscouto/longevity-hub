@@ -31,9 +31,9 @@ longevity.sqlite3 PhenoAge, CGM,   Zepp, Google Health,
                 N-of-1, KDM        OpenAI/Anthropic/OpenRouter
 ```
 
-- **Frontend:** `frontend/`; em desenvolvimento usa Vite na porta `3000` com proxy para o backend. Em produção, o FastAPI serve `frontend/dist` pela raiz `/` quando esse diretório existe.
+- **Frontend:** `frontend/`; em desenvolvimento usa Vite na porta `8886` com proxy para o backend. Em produção, o FastAPI serve `frontend/dist` pela raiz `/` quando esse diretório existe.
 - **Backend:** `backend/app/`; `main.py` registra routers FastAPI e inicializa o banco.
-- **Domínio:** `src/longevidade/`; contém esquema/repositório SQLite, algoritmos, importadores, relatórios e cliente de IA.
+- **Domínio:** `src/longevidade/`; contém esquema/repositório SQLite, algoritmos determinísticos (Daily Guidance, Energy Bank, PhenoAge, KDM, N-of-1, CGM), importadores, relatórios e cliente de IA.
 - **Banco:** `data/longevity.sqlite3` (ignorado pelo Git).
 
 Para o detalhamento completo, comece por [docs/overview.md](docs/overview.md), [docs/architecture.md](docs/architecture.md) e [docs/api-reference.md](docs/api-reference.md).
@@ -53,9 +53,9 @@ cd frontend
 npm run dev
 ```
 
-**URL:** http://127.0.0.1:3000
+**URL:** http://127.0.0.1:8886
 
-O proxy do Vite encaminha `/api` a `http://127.0.0.1:8011`.
+O proxy do Vite encaminha `/api` a `http://127.0.0.1:8887`.
 
 ### Ambiente Python
 
@@ -71,18 +71,19 @@ Veja comandos e regras de teste em [docs/development-and-validation.md](docs/dev
 
 | Área | Implementação atual |
 |---|---|
-| Visão geral | Cartões de passos, RHR, HRV, sono, VO2 máximo e pressão; gráficos de HRV e fases do sono; filtro de 7/30/90 dias. |
+| Visão geral | Cartões de passos, RHR, HRV, sono, VO2 máximo e pressão; gráficos de HRV e fases do sono; filtro de 7/30/90 dias; indicação de confiança dos dados. |
+| Orientação & Bateria | Motores determinísticos Daily Guidance e Energy Bank com travas de segurança fail-closed e controle de cobertura. |
 | Perfil | Perfil, data de nascimento, altura, meta de peso, IMC, conexão Google e histórico completo de pipelines na parte inferior. |
 | Métricas | Consulta e upsert de métricas diárias; sincronização Zepp + arquivos Google Health. |
-| Exames | Inclusão em lote de biomarcadores, catálogo de alvos, histórico por data e exclusão por painel. |
-| PhenoAge | Cálculo e persistência de PhenoAge usando 9 marcadores. |
-| KDM | Cálculo e persistência de Idade Biológica Klemera-Doubal (KDM). |
-| CGM | Inclusão por lote, importação CSV (`,` ou `;`), resumo diário e exportação CSV. |
-| N-of-1 | Comparação de períodos controle/intervenção, teste t de Welch, Cohen's d e valor-p. |
+| Exames | Inclusão em lote de biomarcadores, catálogo de alvos ótimos de longevidade, histórico por data e exclusão por painel. |
+| PhenoAge | Cálculo e persistência de Morgan Levine PhenoAge usando 9 marcadores laboratoriais. |
+| KDM | Cálculo e persistência de Idade Biológica Klemera-Doubal (KDM Age). |
+| CGM | Inclusão por lote, importação CSV (`,` ou `;`), resumo diário (Time-in-Range 70-140 mg/dL, CV%) e exportação CSV. |
+| N-of-1 | Comparação de períodos controle/intervenção, teste t de Welch, Cohen's d e valor-p com validação de sobreposição. |
 | Suplementos/hormônios | Cadastro, edição, remoção, registro diário de tomada e logs de auditoria. |
 | Conformidade | Quatro pilares diários e score de 0 a 100%. |
-| IA | Configuração de provedor, teste de chave, análise estruturada, chat, histórico e análise da pilha. |
-| Relatórios | Doctor Briefing Markdown calculado com métricas, exames e PhenoAge recentes. |
+| IA | Copiloto multi-provedor (OpenRouter, OpenAI, Anthropic) alimentado com contexto clínico enriquecido com algoritmos determinísticos e guardrails; vault Windows Keyring; modos `minimal` e `full`. |
+| Relatórios | Doctor Briefing Markdown e PDF calculados com métricas, exames e idades biológicas recentes. |
 
 ## Dados, privacidade e isolamento
 

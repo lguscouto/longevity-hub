@@ -31,33 +31,32 @@ No Explorador ou CMD do Windows, execute:
 run_app.bat
 ```
 
-Acesse: **http://127.0.0.1:8011**.
+Acesse: **http://127.0.0.1:8887**.
 
-O script abre a URL automaticamente, mas só recompila o frontend quando `frontend/dist` não existe. Após editar código em `frontend/src`, rode manualmente `npm run build` antes de subir a versão integrada. Em um clone novo, rode `cd frontend && npm ci` antes do batch: `run_app.bat` não instala dependências Node.
-
-O `package.json` do frontend oferece `dev`, `build` e `preview`, mas não possui script nem arquivos de testes frontend.
+O script abre a URL automaticamente, mas só recompila o frontend quando `frontend/dist` não existe. Após editar código em `frontend/src`, rode manualmente `npm run build` antes de subir a versão integrada.
 
 ### Diretriz de Temas & Validação Visual
 
 > [!IMPORTANT]
 > **Regra Obrigatória para Novos Componentes**: Todo novo componente visual deve ser validado nos temas escuro e claro. A preferência é persistida em `localStorage` na chave `longevity-hub-theme` com suporte a `dark` e `light`.
 
-### Desenvolvimento do frontend
+### Executar Testes Automatizados
 
 ```bash
-# Executar suíte completa de testes do Backend (91 testes)
-python -m pytest
+# Executar suíte completa de testes do Backend (114 testes pytest)
+PYTHONPATH='.;src' .venv/Scripts/python.exe -m pytest
 
-# Executar testes específicos de Avaliações Físicas
-python -m pytest tests/test_physical_assessments.py -vv
-
-# Executar testes do Frontend com Vitest (30 testes)
+# Executar suíte de testes unitários do Frontend (36 testes Vitest)
 cd frontend
-npm run test -- --run
+npm run test:run
+
+# Executar testes End-to-End (4 testes Playwright)
+cd frontend
+npm run test:e2e
 ```
 
 ```bash
-PYTHONPATH='' .venv/Scripts/python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8011 --reload
+PYTHONPATH='.;src' .venv/Scripts/python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8887 --reload
 ```
 
 Terminal 2, frontend:

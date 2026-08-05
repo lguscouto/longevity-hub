@@ -67,9 +67,8 @@ O `.gitignore` exclui `*.sqlite3`, `*.db`, `data/longevity.sqlite3` e `data/phys
 - Servidor padrão ligado a `127.0.0.1` pelo `run_app.bat`.
 - Chaves ficam fora do SQLite operacional quando o backend usa o cofre do SO; a API apenas retorna indicadores de presença e máscaras.
 - O frontend usa campos `type="password"` ao editar chaves.
-- O contexto clínico enviado a LLMs respeita `privacy_mode=minimal` por padrão e remove identificadores diretos.
-- O `.bat` e o backend mantêm o serviço em loopback; o CORS local é explícito para `http://127.0.0.1:3000` e `http://127.0.0.1:8011`.
-- Dados de runtime e bancos são ignorados pelo Git.
+- O `.bat` e o backend mantêm o serviço em loopback; o CORS local é explícito para `http://127.0.0.1:8886` e `http://127.0.0.1:8887`.
+- O contexto enviado ao LLM pelo `context_builder.py` inclui os resultados dos algoritmos determinísticos e guardrails (Daily Guidance e Energy Bank) para orientar o modelo quanto às limitações fisiológicas e integridade dos dados do dia.
 
 ### Limitações verificadas
 

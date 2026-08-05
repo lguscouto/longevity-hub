@@ -5,6 +5,7 @@ Agrega dados do SQLite (Perfil, PhenoAge, KDM Age, Wearables, Exames, Razões Ca
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict
 
@@ -15,6 +16,8 @@ from longevidade.calculators.kdm_age import (
     latest_kdm_biomarker_values,
 )
 from longevidade.calculators.cardio_ratios import calculate_cardiovascular_ratios
+from longevidade.algorithms.daily_guidance import generate_daily_guidance
+from longevidade.calculators.energy_and_stress import calculate_energy_bank
 
 
 def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "minimal") -> str:
@@ -42,6 +45,13 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
     compliance_list = repo.get_daily_compliance_history(days=14)
     audit_logs = repo.get_supplement_audit_logs(limit=25)
 
+    today_str = date.today().isoformat()
+    today_metric = repo.get_daily_metric_by_date(today_str)
+    all_60_metrics = repo.get_daily_metrics(days=60)
+    history_metrics = [m for m in all_60_metrics if m.get("date_ref") and m["date_ref"] < today_str]
+    guidance_res = generate_daily_guidance(today_metric, history_metrics)
+    energy_res = calculate_energy_bank(today_metric)
+
     # 1. Perfil Básico
     lines = ["=== PERFIL DO PACIENTE ==="]
     lines.append(f"Modo de privacidade aplicado: {normalized_privacy_mode}")
@@ -54,6 +64,18 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
     lines.append(f"Altura: {profile.get('height_cm', 170.0)} cm | Peso Atual: {profile.get('current_weight_kg', 'Sem dados')} kg | Meta: {profile.get('target_weight_kg', 75.0)} kg")
     if profile.get('bmi'):
         lines.append(f"IMC: {profile.get('bmi')} kg/m²")
+
+    # 1.1 Algoritmos Determinísticos & Trava de Segurança (Hoje)
+    lines.append("\n=== ALGORITMOS DETERMINÍSTICOS E TRAVAS DE SEGURANÇA (HOJE) ===")
+    lines.append(f"- Orientação Diária (Daily Guidance): estado='{guidance_res.get('state')}', score={guidance_res.get('score')}, confiança='{guidance_res.get('confidence')}'")
+    lines.append(f"  Ação Recomendada: {guidance_res.get('primary_action')}")
+    if guidance_res.get("limitations"):
+        lines.append(f"  Limitações/Guardrails: {'; '.join(guidance_res['limitations'])}")
+
+    lines.append(f"- Bateria Corporal (Energy Bank): nível={energy_res.get('current_level')}%, status='{energy_res.get('status')}', recarga={energy_res.get('recharge')}, consumo={energy_res.get('drain')}")
+    lines.append(f"  Recomendação: {energy_res.get('recommendation')}")
+    if energy_res.get("missing_components"):
+        lines.append(f"  Componentes Ausentes: {', '.join(energy_res['missing_components'])}")
 
     # 2. Epigenética & Idade Biológica (PhenoAge + KDM Age)
     lines.append("\n=== IDADE EPIGENÉTICA E BIOLÓGICA (PHENOAGE + KDM) ===")

@@ -28,8 +28,8 @@ graph TD
     B --> C["Core de Domínio (src/longevidade)"]
     C --> D["Banco de Dados (SQLite - data/longevity.sqlite3)"]
     C --> E["Módulos de Integração Interna (integrations/zepp & integrations/google)"]
-    C --> F["Algoritmos Calculadores (PhenoAge, KDM, N-of-1)"]
-    C --> G["Provedores de IA (OpenAI, Anthropic, OpenRouter)"]
+    C --> F["Algoritmos Determinísticos (Daily Guidance, Energy Bank, PhenoAge, KDM, N-of-1)"]
+    C --> G["Provedores de IA & Context Builder (OpenAI, Anthropic, OpenRouter)"]
 ```
 
 ### Componentes Principais da Estrutura:
