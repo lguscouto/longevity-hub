@@ -89,6 +89,7 @@ def get_physical_assessment(assessment_id: str) -> Dict[str, Any]:
     return assessment
 
 
+@router.put("/{assessment_id}", response_model=Dict[str, Any])
 @router.patch("/{assessment_id}", response_model=Dict[str, Any])
 def update_physical_assessment(
     assessment_id: str, payload: Dict[str, Any]

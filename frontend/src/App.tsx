@@ -20,6 +20,7 @@ const PipelineStatusPanel = lazy(() => import('./components/PipelineStatusPanel'
 const ManualEntryModal = lazy(() => import('./components/ManualEntryModal').then(m => ({ default: m.ManualEntryModal })))
 const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWidget').then(m => ({ default: m.DailyComplianceWidget })))
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
+const SleepView = lazy(() => import('./components/SleepView').then(m => ({ default: m.SleepView })))
 
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
@@ -30,7 +31,7 @@ import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 
-type Tab = 'overview' | 'labs' | 'supplements' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
+type Tab = 'overview' | 'labs' | 'supplements' | 'sleep' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
 
 type DailyMetric = {
   date_ref: string
@@ -79,7 +80,7 @@ function formatDecimal(value: number | null | undefined): string {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)
 }
 
-const VALID_TABS: Tab[] = ['overview', 'labs', 'supplements', 'ai', 'n-of-1', 'physical-assessments', 'profile']
+const VALID_TABS: Tab[] = ['overview', 'labs', 'supplements', 'sleep', 'ai', 'n-of-1', 'physical-assessments', 'profile']
 
 function getInitialTab(): Tab {
   try {
@@ -541,6 +542,7 @@ export default function App() {
 
             {activeTab === 'labs' && <LabResultsTable labs={labs} onAddBatchLabs={handleAddBatchLabs} onRefreshData={fetchDashboardData} />}
             {activeTab === 'supplements' && <SupplementsView selectedDate={selectedDate} />}
+            {activeTab === 'sleep' && <SleepView />}
             {activeTab === 'ai' && <AICopilotView onOpenSettings={() => setShowAISettings(true)} chatMessages={aiChatMessages} setChatMessages={setAiChatMessages} />}
             {activeTab === 'n-of-1' && <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />}
             {activeTab === 'physical-assessments' && <PhysicalAssessmentsView />}

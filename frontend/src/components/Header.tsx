@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, ShieldCheck, RefreshCw, FileText, PlusCircle, Dna, FlaskConical, Stethoscope, User, Sparkles, Settings, Pill, Camera } from 'lucide-react';
+import { Activity, ShieldCheck, RefreshCw, FileText, PlusCircle, Dna, FlaskConical, Stethoscope, User, Sparkles, Settings, Pill, Camera, Moon } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -69,6 +69,16 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Pill className="h-4 w-4" /> Suplementos & Hormônios
+          </button>
+          <button
+            onClick={() => setActiveTab('sleep')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'sleep'
+                ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 text-white shadow-md font-bold'
+                : inactiveBtnClass
+            }`}
+          >
+            <Moon className="h-4 w-4 text-indigo-400" /> Sono
           </button>
           <button
             onClick={() => setActiveTab('ai')}

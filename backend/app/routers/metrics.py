@@ -36,11 +36,12 @@ class DailyMetricInput(BaseModel):
 
 
 @router.get("", response_model=List[Dict[str, Any]])
-def get_metrics(days: int = Query(30, ge=1, le=365)):
+def get_metrics(days: Optional[int] = Query(None, ge=1)):
     db_path = get_db_path()
     try:
         repo = LongevityRepository(db_path)
-        return repo.get_daily_metrics(days=days)
+        days_to_fetch = days if days is not None else 3650
+        return repo.get_daily_metrics(days=days_to_fetch)
     except FileNotFoundError:
         return []
 

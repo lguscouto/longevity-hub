@@ -209,6 +209,23 @@ class TestPhysicalAssessmentEndpoints:
         assert list_res.status_code == 200
         assert len(list_res.json()) >= 1
 
+        # 4b. Update Assessment via PATCH & PUT
+        patch_res = client.patch(
+            f"/api/physical-assessments/{assessment_id}",
+            json={"weight_kg": 77.0, "body_fat_percentage": 15.5, "waist_cm": 81.0},
+        )
+        assert patch_res.status_code == 200
+        assert patch_res.json()["weight_kg"] == 77.0
+        assert patch_res.json()["body_fat_percentage"] == 15.5
+        assert patch_res.json()["waist_cm"] == 81.0
+
+        put_res = client.put(
+            f"/api/physical-assessments/{assessment_id}",
+            json={"weight_kg": 77.5},
+        )
+        assert put_res.status_code == 200
+        assert put_res.json()["weight_kg"] == 77.5
+
         # 5. Delete Assessment (Cascade)
         del_res = client.delete(f"/api/physical-assessments/{assessment_id}")
         assert del_res.status_code == 204

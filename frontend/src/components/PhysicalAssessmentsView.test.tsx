@@ -99,4 +99,53 @@ describe('PhysicalAssessmentsView', () => {
     expect(screen.getByText(/Avaliação Anterior \(Baseline\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Avaliação Atual \(Evolução\)/i)).toBeInTheDocument();
   });
+
+  it('opens edit modal and submits updated assessment metrics', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockAssessments,
+    });
+
+    render(<PhysicalAssessmentsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação Inicial')).toBeInTheDocument();
+    });
+
+    const editBtn = screen.getByTitle('Editar avaliação');
+    fireEvent.click(editBtn);
+
+    expect(screen.getByText('Editar Avaliação Física')).toBeInTheDocument();
+
+    const weightInput = screen.getByPlaceholderText('Ex: 78.5');
+    expect(weightInput).toHaveValue(78.5);
+
+    fireEvent.change(weightInput, { target: { value: '79.0' } });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        ...mockAssessments[0],
+        weight_kg: 79.0,
+      }),
+    });
+
+    const saveBtn = screen.getByRole('button', { name: /Salvar Alterações/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/physical-assessments/ass-1',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.stringContaining('"weight_kg":79'),
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Editar Avaliação Física')).not.toBeInTheDocument();
+      expect(screen.getByText('79 kg')).toBeInTheDocument();
+    });
+  });
 });
