@@ -155,10 +155,19 @@ def _decode_band_summary(summary_base64: Any) -> dict[str, Any] | None:
     return summary if isinstance(summary, dict) else None
 
 
-def _select_band_values(payload: dict[str, Any], reference: date) -> tuple[int | float | None, int | float | None]:
+def _select_band_values(
+    payload: dict[str, Any], reference: date
+) -> tuple[
+    int | float | None,
+    int | float | None,
+    int | float | None,
+    int | float | None,
+    int | float | None,
+    int | float | None,
+]:
     entries = payload.get("data", [])
     if not isinstance(entries, list):
-        return None, None
+        return None, None, None, None, None, None
     for entry in entries:
         if not isinstance(entry, dict) or _day_for_item(entry) != reference:
             continue
@@ -172,11 +181,12 @@ def _select_band_values(payload: dict[str, Any], reference: date) -> tuple[int |
         deep_sleep = _number(sleep.get("dp"))
         light_sleep = _number(sleep.get("lt"))
         rem_sleep = _number(sleep.get("dt"))
+        awake_sleep = _number(sleep.get("wk"))
         sleep_minutes = None
         if any(value is not None for value in (deep_sleep, light_sleep, rem_sleep)):
             sleep_minutes = (deep_sleep or 0) + (light_sleep or 0) + (rem_sleep or 0)
-        return steps, sleep_minutes
-    return None, None
+        return steps, sleep_minutes, deep_sleep, light_sleep, rem_sleep, awake_sleep
+    return None, None, None, None, None, None
 
 
 def _select_training_load(payload: dict[str, Any], reference: date) -> dict[str, int | float | None]:
@@ -490,7 +500,7 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
     ):
         payloads[name], available[name] = _read_json(directory, f"{name}.json")
 
-    steps, sleep_minutes = _select_band_values(payloads["band_data"], reference)
+    steps, sleep_minutes, deep_sleep, light_sleep, rem_sleep, awake_sleep = _select_band_values(payloads["band_data"], reference)
     load = _select_training_load(payloads["training_load"], reference)
     weight, weighing_date, bmi = _select_weight(payloads["weight"], reference)
     resting_hr, average_hr = _heart_rate_values(payloads["heart_rate"], reference)
@@ -527,6 +537,10 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
         "data_referencia": reference.isoformat(),
         "passos_zepp": steps,
         "sono_zepp_min": sleep_minutes,
+        "sono_profundo_min": deep_sleep,
+        "sono_leve_min": light_sleep,
+        "sono_rem_min": rem_sleep,
+        "tempo_acordado_min": awake_sleep,
         "peso_kg": weight,
         "data_pesagem": weighing_date,
         "imc": bmi,
