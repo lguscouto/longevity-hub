@@ -22,6 +22,8 @@ interface GoogleHealthStatus {
   authorized_scopes: string[]
   last_error: string | null
   has_client_id: boolean
+  client_id?: string | null
+  has_client_secret?: boolean
   masked_client_id: string | null
   token_path: string
   has_token_file: boolean
@@ -58,6 +60,9 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
     try {
       const data = await requestJson<GoogleHealthStatus>('/api/google-health/status')
       setStatus(data)
+      if (data.client_id) {
+        setClientId(data.client_id)
+      }
       if (!data.has_client_id && !data.connected) {
         setShowConfig(true)
       }
@@ -95,12 +100,15 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
     setError(null)
     setSuccessMsg(null)
 
-    if (clientId.trim() && clientSecret.trim()) {
+    if (clientId.trim()) {
       try {
         await requestJson('/api/google-health/credentials', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client_id: clientId.trim(), client_secret: clientSecret.trim() }),
+          body: JSON.stringify({
+            client_id: clientId.trim(),
+            client_secret: clientSecret.trim() ? clientSecret.trim() : undefined,
+          }),
         })
       } catch (caught) {
         setError(caught instanceof ApiError ? caught.message : 'Falha ao salvar credenciais.')
@@ -290,7 +298,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                   type="password"
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
-                  placeholder="Ex: GOCSPX-..."
+                  placeholder={status?.has_client_secret ? '•••••••••••••••• (Já salvo no servidor — deixe em branco para manter)' : 'Ex: GOCSPX-...'}
                   className="w-full text-xs p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>

@@ -37,7 +37,7 @@ class GoogleHealthSyncRequest(BaseModel):
 
 class GoogleHealthCredentialsInput(BaseModel):
     client_id: str
-    client_secret: str
+    client_secret: Optional[str] = None
 
 
 @router.get("/status")
@@ -65,8 +65,10 @@ def get_google_health_status() -> Dict[str, Any]:
     expiry_iso = None
     scopes: list[str] = []
     last_error = None
-    has_client_id = bool(creds and creds.client_id)
-    masked_client_id = (creds.client_id[:8] + "..." + creds.client_id[-12:]) if (creds and creds.client_id and len(creds.client_id) > 20) else None
+    has_client_id = bool(creds and creds.client_id and "test_id" not in creds.client_id)
+    raw_client_id = creds.client_id if (creds and "test_id" not in (creds.client_id or "")) else None
+    has_client_secret = bool(creds and creds.client_secret and "test_secret" not in creds.client_secret)
+    masked_client_id = (raw_client_id[:8] + "..." + raw_client_id[-12:]) if (raw_client_id and len(raw_client_id) > 20) else raw_client_id
 
     if creds:
         if creds.expiry:
@@ -82,6 +84,8 @@ def get_google_health_status() -> Dict[str, Any]:
         "authorized_scopes": scopes,
         "last_error": last_error,
         "has_client_id": has_client_id,
+        "client_id": raw_client_id,
+        "has_client_secret": has_client_secret,
         "masked_client_id": masked_client_id,
         "token_path": str(token_path),
         "has_token_file": token_path.is_file(),
@@ -316,8 +320,10 @@ def save_google_health_credentials(input_data: GoogleHealthCredentialsInput) -> 
     client = GoogleHealthClient(token_path=token_path)
     creds = client.credentials or GoogleHealthCredentials()
 
-    creds.client_id = input_data.client_id.strip()
-    creds.client_secret = input_data.client_secret.strip()
+    if input_data.client_id:
+        creds.client_id = input_data.client_id.strip()
+    if input_data.client_secret and input_data.client_secret.strip():
+        creds.client_secret = input_data.client_secret.strip()
     creds.save_to_file(token_path)
 
     return {
