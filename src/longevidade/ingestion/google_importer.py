@@ -73,22 +73,27 @@ def sync_google_health_api(
     repo: LongevityRepository,
     days: int = 30,
     client: Optional[GoogleHealthClient] = None,
+    selected_types: Optional[list[str]] = None,
 ) -> Dict[str, Any]:
     """Sincroniza dados diretamente da Google Health API v4 para o repositório SQLite."""
     gh_client = client or GoogleHealthClient()
     if not gh_client.is_authenticated():
+        reason = "Google Health API não autenticada."
+        if gh_client.is_reauthentication_required():
+            reason = f"Reautenticação necessária: {gh_client.credentials.last_error if gh_client.credentials else 'sessão expirada'}"
+
         result = _make_result(
             records_read=0,
             records_inserted=0,
             records_rejected=0,
             source_path=gh_client.token_path,
             status="AVISO",
-            summary="Google Health API não autenticada. Execute o script de autenticação OAuth 2.0.",
+            summary=reason,
         )
         repo.log_pipeline_run("GoogleHealthAPI", 0, result["status"], result["summary"])
         return result
 
-    records, errors = gh_client.fetch_daily_metrics_summary(days=days)
+    records, errors = gh_client.fetch_daily_metrics_summary(days=days, selected_types=selected_types)
     inserted = 0
     rejected = 0
 

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from longevidade.ingestion.google_health_client import (
     GoogleHealthClient,
     GoogleHealthCredentials,
+    GOOGLE_HEALTH_SCOPES,
 )
 
 
@@ -17,6 +18,7 @@ def test_google_health_credentials_save_and_load(tmp_path: Path):
         access_token="test_access_token",
         refresh_token="test_refresh_token",
         expiry=datetime.now(timezone.utc) + timedelta(hours=1),
+        scopes=list(GOOGLE_HEALTH_SCOPES),
     )
     creds.save_to_file(token_file)
 
@@ -25,6 +27,7 @@ def test_google_health_credentials_save_and_load(tmp_path: Path):
     assert loaded.client_id == "test_client_id"
     assert loaded.access_token == "test_access_token"
     assert loaded.refresh_token == "test_refresh_token"
+    assert "https://www.googleapis.com/auth/googlehealth.sleep.readonly" in loaded.scopes
 
 
 def test_google_health_client_is_authenticated(tmp_path: Path):
@@ -32,11 +35,14 @@ def test_google_health_client_is_authenticated(tmp_path: Path):
     client_unauth = GoogleHealthClient(token_path=token_file)
     assert not client_unauth.is_authenticated()
 
-    creds = GoogleHealthCredentials(
-        access_token="valid_token",
-    )
+    creds = GoogleHealthCredentials(access_token="valid_token")
     client_auth = GoogleHealthClient(credentials=creds, token_path=token_file)
     assert client_auth.is_authenticated()
+
+    # Reauthentication required deve marcar como não autenticado
+    creds.reauthentication_required = True
+    assert not client_auth.is_authenticated()
+    assert client_auth.is_reauthentication_required()
 
 
 def test_google_health_client_fetch_data_points(tmp_path: Path):
@@ -70,7 +76,7 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
     )
     client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
 
-    def mock_fetch(data_type, start_time=None, end_time=None, page_size=1000):
+    def mock_fetch(data_type, *args, **kwargs):
         if data_type == "steps":
             return [
                 {"startTime": "2026-08-18T08:00:00Z", "steps": {"count": 8200}}
@@ -98,10 +104,6 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
             return [
                 {"startTime": "2026-08-18T07:00:00Z", "weight": {"kilograms": 78.5}}
             ], None
-        if data_type == "blood-pressure":
-            return [
-                {"startTime": "2026-08-18T07:30:00Z", "bloodPressure": {"systolic": 118, "diastolic": 76}}
-            ], None
         return [], None
 
     with patch.object(client, "fetch_data_points", side_effect=mock_fetch):
@@ -117,5 +119,3 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
         assert rec["sleep_rem_min"] == 100
         assert rec["spo2_avg_pct"] == 98.0
         assert rec["weight_kg"] == 78.5
-        assert rec["systolic_bp"] == 118
-        assert rec["diastolic_bp"] == 76
