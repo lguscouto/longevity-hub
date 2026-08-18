@@ -21,6 +21,7 @@ const ManualEntryModal = lazy(() => import('./components/ManualEntryModal').then
 const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWidget').then(m => ({ default: m.DailyComplianceWidget })))
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
 const SleepView = lazy(() => import('./components/SleepView').then(m => ({ default: m.SleepView })))
+const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthModal').then(m => ({ default: m.GoogleHealthAuthModal })))
 
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
@@ -144,6 +145,7 @@ export default function App() {
   const [showManualModal, setShowManualModal] = useState(false)
   const [showDoctorModal, setShowDoctorModal] = useState(false)
   const [showAISettings, setShowAISettings] = useState(false)
+  const [showGoogleHealthModal, setShowGoogleHealthModal] = useState(false)
   const [doctorBriefingMd, setDoctorBriefingMd] = useState('')
 
   const [isSyncing, setIsSyncing] = useState(false)
@@ -318,6 +320,16 @@ export default function App() {
   }
 
   const handleSyncGoogleHealth = async () => {
+    try {
+      const status = await requestJson<{ connected: boolean; reauthentication_required: boolean }>('/api/google-health/status')
+      if (!status.connected || status.reauthentication_required) {
+        setShowGoogleHealthModal(true)
+        return
+      }
+    } catch {
+      // prossegue para sync se falhar verificação
+    }
+
     setIsSyncingGoogle(true)
     setSyncResult(null)
     setIsSyncModalOpen(true)
@@ -579,11 +591,20 @@ export default function App() {
                 pipelineLoading={pipelineLoading}
                 onRefreshPipeline={fetchPipelineRuns}
                 historySectionRef={historySectionRef}
+                onOpenGoogleHealthModal={() => setShowGoogleHealthModal(true)}
               />
             )}
           </main>
 
           <AISettingsModal isOpen={showAISettings} onClose={() => setShowAISettings(false)} onRefreshSettings={fetchDashboardData} />
+          <GoogleHealthAuthModal
+            isOpen={showGoogleHealthModal}
+            onClose={() => setShowGoogleHealthModal(false)}
+            onSyncSuccess={() => {
+              void fetchDashboardData()
+              void fetchPipelineRuns()
+            }}
+          />
           <SyncProgressModal
             isOpen={isSyncModalOpen}
             onClose={() => setIsSyncModalOpen(false)}
