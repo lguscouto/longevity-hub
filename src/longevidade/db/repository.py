@@ -65,6 +65,16 @@ class LongevityRepository:
             return {"id": 1, "name": "Paciente", "chronological_age": 32.0, "height_cm": 170.0, "target_weight_kg": 75.0}
 
     def upsert_user_profile(self, data: Dict[str, Any]) -> None:
+        data = dict(data)
+        if "birthdate" in data and data["birthdate"] and "chronological_age" not in data:
+            try:
+                from datetime import date
+                bdate = date.fromisoformat(str(data["birthdate"])[:10])
+                today = date.today()
+                data["chronological_age"] = float(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)))
+            except Exception:
+                pass
+
         fields = [
             "name", "email", "birthdate", "chronological_age",
             "height_cm", "current_weight_kg", "target_weight_kg", "gender", "avatar_url"

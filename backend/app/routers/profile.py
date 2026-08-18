@@ -82,22 +82,22 @@ def get_profile():
         bmi = round(current_weight / (height_m * height_m), 1)
 
     # Cálculo da Idade Cronológica via Data de Nascimento
-    chrono_age = profile.get("chronological_age") or 40.0
-    birthdate_str = profile.get("birthdate")
+    birthdate_str = profile.get("birthdate") or "1994-03-22"
+    chrono_age = 32.0
     if birthdate_str:
         try:
             bdate = date.fromisoformat(birthdate_str[:10])
             today = date.today()
-            chrono_age = round(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)), 1)
+            chrono_age = float(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)))
         except Exception:
-            pass
+            chrono_age = float(profile.get("chronological_age") or 32.0)
 
     google_token_present = GOOGLE_TOKEN_FILE.is_file()
 
     return {
         "name": profile.get("name") or "Paciente Longevidade",
         "email": profile.get("email") or "googlefit@longevidade.local",
-        "birthdate": birthdate_str or "1986-07-28",
+        "birthdate": birthdate_str,
         "chronological_age": chrono_age,
         "height_cm": height_cm,
         "current_weight_kg": current_weight,
@@ -115,5 +115,12 @@ def update_profile(input_data: UserProfileInput):
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
     data = input_data.model_dump(exclude_unset=True)
+    if "birthdate" in data and data["birthdate"] and "chronological_age" not in data:
+        try:
+            bdate = date.fromisoformat(data["birthdate"][:10])
+            today = date.today()
+            data["chronological_age"] = float(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)))
+        except Exception:
+            pass
     repo.upsert_user_profile(data)
     return {"status": "ok", "message": "Perfil atualizado com sucesso"}
