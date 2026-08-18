@@ -46,10 +46,13 @@ def sync_google_health(req: GoogleHealthSyncRequest = GoogleHealthSyncRequest())
 
     days = req.days or 30
     result = sync_google_health_api(repo=repo, days=days)
+    status = "ok" if result["status"] in ("SUCESSO", "AVISO") else "error"
     return {
-        "status": result["status"],
+        "status": status,
         "records_read": result["records_read"],
         "records_inserted": result["records_inserted"],
+        "google_fit_records_imported": result["records_inserted"],
         "summary": result["summary"],
+        "message": result["summary"],
         "exception_message": result.get("exception_message"),
     }

@@ -325,7 +325,7 @@ export default function App() {
     try {
       const result = await requestJson<SyncResult>('/api/google-health/sync', { method: 'POST' })
       setSyncResult(result)
-      if (result.status === 'SUCESSO' || result.status === 'ok') {
+      if (result.status === 'ok') {
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
         await fetchDashboardData()
       }
@@ -587,7 +587,7 @@ export default function App() {
           <SyncProgressModal
             isOpen={isSyncModalOpen}
             onClose={() => setIsSyncModalOpen(false)}
-            isSyncing={isSyncing}
+            isSyncing={isSyncing || isSyncingGoogle}
             syncResult={syncResult}
             onViewHistory={handleViewPipelineHistory}
           />
