@@ -229,6 +229,8 @@ class GoogleHealthClient:
                     except Exception as retry_err:
                         return None, f"Erro após retry: {retry_err}"
             err_body = err.read().decode("utf-8", errors="ignore")
+            if "ACCOUNT_NOT_LINKED" in err_body:
+                return None, "Conta Google não vinculada ao ecossistema Google Health/Fitbit. Ative seu perfil em: https://fitbit.google.com/auth/signup"
             return None, f"HTTP {err.code}: {err_body}"
         except Exception as exc:
             return None, str(exc)

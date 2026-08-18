@@ -183,9 +183,24 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
 
         {/* Feedback Alerts */}
         {error && (
-          <div className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{error}</span>
+          <div className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-700 dark:text-rose-300 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+            {(error.includes('fitbit.google.com') || error.includes('ACCOUNT_NOT_LINKED') || error.includes('não vinculada')) && (
+              <div className="pt-1 pl-6">
+                <a
+                  href="https://fitbit.google.com/auth/signup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-sm transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Ativar Perfil Google Health / Fitbit (1 clique)
+                </a>
+              </div>
+            )}
           </div>
         )}
 
