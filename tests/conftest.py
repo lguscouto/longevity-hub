@@ -25,6 +25,7 @@ def _drop_backend_app_modules() -> None:
 def client(tmp_path, monkeypatch):
     db_path = tmp_path / "longevity-test.sqlite3"
     monkeypatch.setenv("LONGEVIDADE_DB_PATH", str(db_path))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     _drop_backend_app_modules()
 
     main = importlib.import_module("backend.app.main")
