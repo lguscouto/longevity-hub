@@ -11,7 +11,7 @@ from backend.app.config import get_db_path
 from longevidade import __version__
 from longevidade.db.schema import initialize_db
 
-from backend.app.routers import ai, cgm, checkins, compliance, correlations, daily_guidance, energy_circadian, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, quality, reports, supplements
+from backend.app.routers import ai, cgm, checkins, compliance, correlations, daily_guidance, energy_circadian, google_health, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, quality, reports, supplements
 
 
 DEFAULT_LOCAL_ALLOWED_ORIGINS: Tuple[str, ...] = (
@@ -71,6 +71,7 @@ app.include_router(n_of_1.router)
 app.include_router(cgm.router)
 app.include_router(reports.router)
 app.include_router(profile.router)
+app.include_router(google_health.router)
 app.include_router(ai.router)
 app.include_router(supplements.router)
 app.include_router(compliance.router)

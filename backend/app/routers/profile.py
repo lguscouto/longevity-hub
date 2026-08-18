@@ -8,11 +8,13 @@ from datetime import date, datetime
 from backend.app.config import get_db_path, BASE_DIR
 from longevidade.db.schema import initialize_db
 from longevidade.db.repository import LongevityRepository
+from longevidade.ingestion.google_health_client import get_default_token_path
 
 router = APIRouter(prefix="/api/profile", tags=["Profile"])
 
 GOOGLE_CONFIG_DIR = BASE_DIR.parent / "google health" / "config"
 GOOGLE_TOKEN_FILE = GOOGLE_CONFIG_DIR / "google_token.json"
+GOOGLE_HEALTH_TOKEN_FILE = get_default_token_path()
 GOOGLE_DATA_DIR = BASE_DIR.parent / "google health" / "data"
 
 class UserProfileInput(BaseModel):
@@ -92,7 +94,7 @@ def get_profile():
         except Exception:
             chrono_age = float(profile.get("chronological_age") or 32.0)
 
-    google_token_present = GOOGLE_TOKEN_FILE.is_file()
+    google_token_present = GOOGLE_HEALTH_TOKEN_FILE.is_file() or GOOGLE_TOKEN_FILE.is_file()
 
     return {
         "name": profile.get("name") or "Paciente Longevidade",
@@ -106,7 +108,7 @@ def get_profile():
         "gender": profile.get("gender") or "Masculino",
         "avatar_url": profile.get("avatar_url"),
         "google_connected": google_token_present,
-        "source": "Google Fit & Hub Longevidade"
+        "source": "Google Health API & Hub Longevidade"
     }
 
 @router.post("")

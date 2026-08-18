@@ -5,20 +5,24 @@ interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onSyncZepp: () => void;
+  onSyncGoogleHealth?: () => void;
   onOpenManualEntry: () => void;
   onOpenDoctorBriefing: () => void;
   onOpenAISettings: () => void;
   isSyncing: boolean;
+  isSyncingGoogle?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   onSyncZepp,
+  onSyncGoogleHealth,
   onOpenManualEntry,
   onOpenDoctorBriefing,
   onOpenAISettings,
-  isSyncing
+  isSyncing,
+  isSyncingGoogle = false,
 }) => {
   const inactiveBtnClass = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-slate-800/50 transition";
 
@@ -145,6 +149,18 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Stethoscope className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Doctor Briefing
           </button>
+
+          {onSyncGoogleHealth && (
+            <button
+              onClick={onSyncGoogleHealth}
+              disabled={isSyncingGoogle}
+              title="Sincronizar Google Health API v4 / Pixel Watch / Health Connect"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncingGoogle ? 'animate-spin' : ''}`} />
+              {isSyncingGoogle ? 'Sync Google...' : 'Sync Google'}
+            </button>
+          )}
 
           <button
             onClick={onSyncZepp}

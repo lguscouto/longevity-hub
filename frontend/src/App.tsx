@@ -147,6 +147,7 @@ export default function App() {
   const [doctorBriefingMd, setDoctorBriefingMd] = useState('')
 
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isSyncingGoogle, setIsSyncingGoogle] = useState(false)
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
 
@@ -316,6 +317,28 @@ export default function App() {
     }
   }
 
+  const handleSyncGoogleHealth = async () => {
+    setIsSyncingGoogle(true)
+    setSyncResult(null)
+    setIsSyncModalOpen(true)
+
+    try {
+      const result = await requestJson<SyncResult>('/api/google-health/sync', { method: 'POST' })
+      setSyncResult(result)
+      if (result.status === 'SUCESSO' || result.status === 'ok') {
+        await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
+        await fetchDashboardData()
+      }
+    } catch (caught) {
+      setSyncResult({
+        status: 'error',
+        message: caught instanceof ApiError ? caught.message : 'Falha ao sincronizar com Google Health API.',
+      })
+    } finally {
+      setIsSyncingGoogle(false)
+    }
+  }
+
   const fetchPipelineRuns = async () => {
     setPipelineLoading(true)
     try {
@@ -440,10 +463,12 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(tab as Tab)}
         onSyncZepp={handleSyncZepp}
+        onSyncGoogleHealth={handleSyncGoogleHealth}
         onOpenManualEntry={() => setShowManualModal(true)}
         onOpenDoctorBriefing={handleOpenDoctorBriefing}
         onOpenAISettings={() => setShowAISettings(true)}
         isSyncing={isSyncing}
+        isSyncingGoogle={isSyncingGoogle}
       />
 
       <ErrorBoundary>

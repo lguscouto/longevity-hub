@@ -1,9 +1,9 @@
 """
-Importador de dados do projeto Google Health Hub (Google Fit / Health Connect)
+Importador de dados do projeto Google Health Hub (Google Fit / Google Health API v4 / Health Connect)
 para o repositório Longevidade.
 
 Retorna um dicionário estruturado (ImportResult) com diagnóstico completo:
-  - records_read: registros encontrados nos arquivos JSON
+  - records_read: registros encontrados nos arquivos JSON ou retornados pela API
   - records_inserted: registros efetivamente upsertados no banco
   - records_rejected: registros ignorados (sem dados úteis)
   - source_path: caminho do diretório de dados utilizado
@@ -19,9 +19,10 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from longevidade.db.repository import LongevityRepository
+from longevidade.ingestion.google_health_client import GoogleHealthClient
 
 
 def _parse_timestamp_to_date_str(ts_ms: str | int | float) -> str | None:
@@ -33,7 +34,7 @@ def _parse_timestamp_to_date_str(ts_ms: str | int | float) -> str | None:
 
 
 def trigger_google_cloud_fetch(google_backend_dir: Path, days: int = 30) -> None:
-    """Aciona o cliente do Google Fit para baixar retroativamente os dados da nuvem."""
+    """Aciona o cliente do Google Health/Fit para baixar retroativamente os dados da nuvem."""
     try:
         if str(google_backend_dir) not in sys.path:
             sys.path.insert(0, str(google_backend_dir))
@@ -41,9 +42,9 @@ def trigger_google_cloud_fetch(google_backend_dir: Path, days: int = 30) -> None
 
         fetch_all_google_health(days=days)
     except ImportError:
-        pass  # Cliente opcional
+        pass
     except Exception:
-        pass  # Falha na busca remota não deve travar o importador
+        pass
 
 
 def _make_result(
@@ -68,44 +69,60 @@ def _make_result(
     }
 
 
-def _parse_google_bucket(
-    data_dir: Path,
-    filename: str,
-    daily_records: Dict[str, Dict[str, Any]],
-) -> tuple[int, int, list[str]]:
-    """Processa um arquivo JSON do Google Fit e retorna (lidos, inseridos, erros)."""
-    filepath = data_dir / filename
-    if not filepath.is_file():
-        return 0, 0, []
+def sync_google_health_api(
+    repo: LongevityRepository,
+    days: int = 30,
+    client: Optional[GoogleHealthClient] = None,
+) -> Dict[str, Any]:
+    """Sincroniza dados diretamente da Google Health API v4 para o repositório SQLite."""
+    gh_client = client or GoogleHealthClient()
+    if not gh_client.is_authenticated():
+        result = _make_result(
+            records_read=0,
+            records_inserted=0,
+            records_rejected=0,
+            source_path=gh_client.token_path,
+            status="AVISO",
+            summary="Google Health API não autenticada. Execute o script de autenticação OAuth 2.0.",
+        )
+        repo.log_pipeline_run("GoogleHealthAPI", 0, result["status"], result["summary"])
+        return result
 
-    read_count = 0
-    error_messages: list[str] = []
-    try:
-        payload = json.loads(filepath.read_text(encoding="utf-8"))
-        for b in payload.get("bucket", []):
-            dt_str = _parse_timestamp_to_date_str(b.get("startTimeMillis", 0))
-            if not dt_str:
-                error_messages.append(f"timestamp inválido em {filename}")
-                continue
-            read_count += 1
-            if dt_str not in daily_records:
-                daily_records[dt_str] = {"date_ref": dt_str, "source": "GoogleFit"}
-    except json.JSONDecodeError as exc:
-        error_messages.append(f"JSON inválido em {filename}: {exc}")
-    except Exception as exc:
-        error_messages.append(f"erro ao ler {filename}: {exc}")
+    records, errors = gh_client.fetch_daily_metrics_summary(days=days)
+    inserted = 0
+    rejected = 0
 
-    return read_count, len(error_messages), error_messages
+    for rec in records:
+        if len(rec) > 2:
+            repo.upsert_daily_metric(rec)
+            inserted += 1
+        else:
+            rejected += 1
+
+    status = "SUCESSO" if not errors else ("AVISO" if inserted > 0 else "ERRO")
+    summary = f"Sincronizados {inserted} registros da Google Health API v4 ({len(records)} lidos)"
+    if errors:
+        summary += f" | Erros: {'; '.join(errors[:3])}"
+
+    result = _make_result(
+        records_read=len(records),
+        records_inserted=inserted,
+        records_rejected=rejected,
+        source_path=gh_client.token_path,
+        status=status,
+        summary=summary,
+        exception_type="API_WARNING" if errors else None,
+        exception_message="; ".join(errors) if errors else None,
+    )
+    repo.log_pipeline_run("GoogleHealthAPI", inserted, result["status"], result["summary"])
+    return result
 
 
 def import_google_health_data(
     google_data_dir: str | Path,
     repo: LongevityRepository,
 ) -> Dict[str, Any]:
-    """Aciona a busca na API do Google Fit e importa os JSONs acumulados.
-
-    Retorna um dicionário ImportResult com diagnóstico completo.
-    """
+    """Processa arquivos JSON de exportação ou sincronizados do Google Health/Fit."""
     data_dir = Path(google_data_dir)
     if not data_dir.exists():
         result = _make_result(
@@ -125,13 +142,28 @@ def import_google_health_data(
 
     daily_records: Dict[str, Dict[str, Any]] = {}
     all_errors: list[str] = []
-    total_bucket_records = 0
     total_bucket_errors = 0
 
     def get_or_create(date_str: str) -> Dict[str, Any]:
         if date_str not in daily_records:
             daily_records[date_str] = {"date_ref": date_str, "source": "GoogleFit"}
         return daily_records[date_str]
+
+    # 0. Google Health v4 JSON Direto (google_health_daily.json)
+    gh_v4_path = data_dir / "google_health_daily.json"
+    gh_v4_read = 0
+    if gh_v4_path.is_file():
+        try:
+            payload = json.loads(gh_v4_path.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                for item in payload:
+                    dt_str = item.get("date_ref")
+                    if dt_str:
+                        rec = get_or_create(dt_str)
+                        rec.update(item)
+                        gh_v4_read += 1
+        except Exception as exc:
+            all_errors.append(f"erro google_health_daily.json: {exc}")
 
     # 1. Passos (google_steps.json)
     steps_path = data_dir / "google_steps.json"
@@ -146,7 +178,6 @@ def import_google_health_data(
                     all_errors.append("timestamp inválido em google_steps.json")
                     steps_errors += 1
                     continue
-                total_bucket_records += 1
                 steps_read += 1
                 step_val = 0
                 for ds in b.get("dataset", []):
@@ -181,7 +212,6 @@ def import_google_health_data(
                     all_errors.append("timestamp inválido em google_blood_pressure.json")
                     bp_errors += 1
                     continue
-                total_bucket_records += 1
                 bp_read += 1
                 for ds in b.get("dataset", []):
                     for pt in ds.get("point", []):
@@ -219,7 +249,6 @@ def import_google_health_data(
                     all_errors.append("timestamp inválido em google_heart.json")
                     heart_errors += 1
                     continue
-                total_bucket_records += 1
                 heart_read += 1
                 for ds in b.get("dataset", []):
                     for pt in ds.get("point", []):
@@ -238,7 +267,7 @@ def import_google_health_data(
             total_bucket_errors += 1
 
     # Contagem final
-    records_read = steps_read + bp_read + heart_read
+    records_read = steps_read + bp_read + heart_read + gh_v4_read
     total_errors = steps_errors + bp_errors + heart_errors + total_bucket_errors
 
     records_inserted = 0
@@ -250,7 +279,7 @@ def import_google_health_data(
         else:
             records_rejected += 1
 
-    log_summary = f"Importados/Reconciliados {records_inserted} registros do Google Fit ({records_rejected} rejeitados de {len(daily_records)} datas)"
+    log_summary = f"Importados/Reconciliados {records_inserted} registros do Google Health ({records_rejected} rejeitados de {len(daily_records)} datas)"
     if all_errors:
         log_summary += f" | {total_errors} advertência(s): {'; '.join(all_errors[:5])}"
         if len(all_errors) > 5:
@@ -268,5 +297,5 @@ def import_google_health_data(
         result["exception_type"] = "ADVERTENCIA"
         result["exception_message"] = "; ".join(all_errors[:10]) if all_errors else None
 
-    repo.log_pipeline_run("GoogleFit", records_inserted, result["status"], result["summary"])
+    repo.log_pipeline_run("GoogleHealth", records_inserted, result["status"], result["summary"])
     return result
