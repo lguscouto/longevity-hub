@@ -147,7 +147,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
           <div className={`flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border text-xs ${hasError ? 'border-rose-500/30' : 'border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
               <Shield className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Google Fit Hub (Passos & Pressão Arterial)</span>
+              <span>Google Health API (Passos, Sono, RHR, Peso)</span>
             </div>
             <span className={isSyncing ? 'text-cyan-600 dark:text-cyan-400 font-semibold animate-pulse' : hasError ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
               {isSyncing ? 'Processando...' : `${googleCount} recs`}
