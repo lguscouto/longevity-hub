@@ -9,7 +9,7 @@ client = TestClient(app)
 
 
 def test_google_health_status_unauthenticated(tmp_path: Path):
-    with patch("longevidade.ingestion.google_health_client.get_default_token_path", return_value=tmp_path / "absent.json"):
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "absent.json"):
         resp = client.get("/api/google-health/status")
         assert resp.status_code == 200
         data = resp.json()
@@ -22,7 +22,7 @@ def test_google_health_status_unauthenticated(tmp_path: Path):
 
 
 def test_google_health_sync_unauthenticated(tmp_path: Path):
-    with patch("longevidade.ingestion.google_health_client.get_default_token_path", return_value=tmp_path / "absent.json"):
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "absent.json"):
         resp = client.post("/api/google-health/sync", json={"days": 7})
         assert resp.status_code == 200
         data = resp.json()
@@ -32,7 +32,7 @@ def test_google_health_sync_unauthenticated(tmp_path: Path):
 
 
 def test_google_health_sync_dry_run(tmp_path: Path):
-    with patch("longevidade.ingestion.google_health_client.get_default_token_path", return_value=tmp_path / "absent.json"):
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "absent.json"):
         resp = client.post("/api/google-health/sync", json={"days": 7, "dry_run": True})
         assert resp.status_code == 200
         data = resp.json()
@@ -41,7 +41,7 @@ def test_google_health_sync_dry_run(tmp_path: Path):
 
 
 def test_google_health_save_credentials(tmp_path: Path):
-    with patch("longevidade.ingestion.google_health_client.get_default_token_path", return_value=tmp_path / "token.json"):
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "token.json"):
         resp = client.post(
             "/api/google-health/credentials",
             json={"client_id": "test_id_123.apps.googleusercontent.com", "client_secret": "test_secret_456"},
@@ -73,7 +73,7 @@ def test_google_health_disconnect(tmp_path: Path):
     creds = GoogleHealthCredentials(access_token="tok_123", client_id="cid")
     creds.save_to_file(token_file)
 
-    with patch("longevidade.ingestion.google_health_client.get_default_token_path", return_value=token_file):
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
         resp = client.post("/api/google-health/disconnect")
         assert resp.status_code == 200
         data = resp.json()

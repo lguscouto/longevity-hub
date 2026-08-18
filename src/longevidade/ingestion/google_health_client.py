@@ -1,13 +1,12 @@
 """
 Cliente para a Google Health API v4 (https://health.googleapis.com/v4).
 
-Conforme Relatório Técnico de Migração:
+Conforme especificação técnica:
 - Autenticação OAuth 2.0 com renovação automática e detecção de reauthentication_required.
-- Scopes completos: activity_and_fitness, health_metrics_and_measurements, sleep.
-- Paginação automática (pageToken) e Chunking temporal para dados densos.
-- Remoção de blood-pressure da Fase 1 (não suportado na v4 atual).
-- Priorização de POC (steps, heart-rate, sleep, weight) + Expansão (HRV, SpO2, RHR, etc.).
-- Preservação de metadados de origem (source_platform, source_device).
+- Scopes: activity_and_fitness, health_metrics_and_measurements, sleep.
+- Paginação automática (pageToken) e extração de civilTime/physicalTime/interval.
+- Normalização de tipos de dados (steps, heart-rate, sleep, weight em gramas/kg, SpO2, HRV).
+- Preservação de metadados de origem (dataSource: platform, device, recordingMethod).
 """
 
 from __future__ import annotations
@@ -100,8 +99,50 @@ def get_default_token_path() -> Path:
     return Path.home() / "AppData" / "Local" / "hermes" / "google_health_token.json"
 
 
+def _extract_date_ref_from_point(pt: Dict[str, Any], field_key: str) -> Optional[str]:
+    """Extrai string YYYY-MM-DD a partir de civilTime, physicalTime ou startTime do dataPoint."""
+    data_obj = pt.get(field_key) or {}
+
+    # 1. Procura civilTime
+    sample_time = data_obj.get("sampleTime") or pt.get("sampleTime") or {}
+    civil = sample_time.get("civilTime") or data_obj.get("civilTime") or {}
+    dt_info = civil.get("date") if isinstance(civil, dict) else None
+    if isinstance(dt_info, dict):
+        y = dt_info.get("year")
+        m = dt_info.get("month")
+        d = dt_info.get("day")
+        if y and m and d:
+            return f"{y:04d}-{m:02d}-{d:02d}"
+
+    interval = data_obj.get("interval") or pt.get("interval") or {}
+    civil_start = interval.get("civilStartTime") or {}
+    dt_info = civil_start.get("date") if isinstance(civil_start, dict) else None
+    if isinstance(dt_info, dict):
+        y = dt_info.get("year")
+        m = dt_info.get("month")
+        d = dt_info.get("day")
+        if y and m and d:
+            return f"{y:04d}-{m:02d}-{d:02d}"
+
+    # 2. Procura physicalTime / startTime / timestamp em string ISO
+    st_val = interval.get("startTime")
+    st_phys = st_val.get("physicalTime") if isinstance(st_val, dict) else (st_val if isinstance(st_val, str) else None)
+
+    phys = (
+        sample_time.get("physicalTime")
+        or st_phys
+        or pt.get("startTime")
+        or pt.get("endTime")
+        or data_obj.get("startTime")
+    )
+    if phys and isinstance(phys, str) and len(phys) >= 10:
+        return phys[:10]
+
+    return None
+
+
 class GoogleHealthClient:
-    """Cliente para a Google Health API v4 com chunking, paginação e tolerância a falhas."""
+    """Cliente para a Google Health API v4 com suporte completo a payloads REST v4."""
 
     def __init__(
         self,
@@ -167,7 +208,6 @@ class GoogleHealthClient:
                 return True, "Token renovado com sucesso."
         except HTTPError as err:
             err_msg = err.read().decode("utf-8", errors="ignore")
-            # Se for 400 invalid_grant, o refresh token foi revogado ou expirou
             if err.code in (400, 401) and "invalid_grant" in err_msg.lower():
                 self.credentials.reauthentication_required = True
                 self.credentials.last_error = f"Refresh token inválido ou revogado: {err_msg}"
@@ -243,44 +283,9 @@ class GoogleHealthClient:
         page_size: int = 1000,
         chunk_days: Optional[int] = None,
     ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-        """Busca dataPoints com paginação e chunking temporal transparente."""
-        if start_time and end_time and chunk_days and chunk_days > 0:
-            # Chunking temporal: divide janelas grandes em blocos
-            all_chunk_points: List[Dict[str, Any]] = []
-            cur_start = start_time
-            last_err = None
-
-            while cur_start < end_time:
-                cur_end = min(cur_start + timedelta(days=chunk_days), end_time)
-                points, err = self._fetch_single_window_data_points(
-                    data_type, cur_start, cur_end, page_size=page_size
-                )
-                if err:
-                    last_err = err
-                if points:
-                    all_chunk_points.extend(points)
-                cur_start = cur_end
-
-            return all_chunk_points, last_err
-
-        return self._fetch_single_window_data_points(data_type, start_time, end_time, page_size)
-
-    def _fetch_single_window_data_points(
-        self,
-        data_type: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        page_size: int = 1000,
-    ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+        """Busca dataPoints com paginação transparente e filtro temporal."""
         url = f"{GOOGLE_HEALTH_BASE_URL}/users/me/dataTypes/{data_type}/dataPoints"
         params: Dict[str, Any] = {"pageSize": page_size}
-
-        if start_time:
-            params["filter"] = f'startTime >= "{start_time.isoformat()}"'
-            if end_time:
-                params["filter"] += f' AND endTime <= "{end_time.isoformat()}"'
-        elif end_time:
-            params["filter"] = f'endTime <= "{end_time.isoformat()}"'
 
         all_points: List[Dict[str, Any]] = []
         next_page_token = None
@@ -301,6 +306,22 @@ class GoogleHealthClient:
             next_page_token = data.get("nextPageToken")
             if not next_page_token:
                 break
+
+        # Filtro temporal client-side (robusto e agnóstico ao schema do dataType)
+        if start_time or end_time:
+            min_date_str = start_time.strftime("%Y-%m-%d") if start_time else "1970-01-01"
+            max_date_str = end_time.strftime("%Y-%m-%d") if end_time else "2099-12-31"
+
+            field_name = data_type.replace("-", "_")
+            filtered_points = []
+            for pt in all_points:
+                d_ref = _extract_date_ref_from_point(pt, field_name) or _extract_date_ref_from_point(pt, data_type)
+                if d_ref:
+                    if min_date_str <= d_ref <= max_date_str:
+                        filtered_points.append(pt)
+                else:
+                    filtered_points.append(pt)
+            return filtered_points, None
 
         return all_points, None
 
@@ -330,29 +351,29 @@ class GoogleHealthClient:
 
         # 1. Passos (steps)
         if "steps" in types_to_fetch:
-            steps_points, err = self.fetch_data_points("steps", start_time=start_time, end_time=now, chunk_days=14)
+            steps_points, err = self.fetch_data_points("steps", start_time=start_time, end_time=now)
             if err:
                 errors.append(f"steps: {err}")
             else:
                 for pt in steps_points:
-                    st = pt.get("startTime", "")[:10]
-                    val = pt.get("steps", {}).get("count") or pt.get("value")
-                    if st in daily_map and val is not None:
+                    st = _extract_date_ref_from_point(pt, "steps")
+                    val = pt.get("steps", {}).get("count") or pt.get("steps", {}).get("stepsCount") or pt.get("value")
+                    if st and st in daily_map and val is not None:
                         daily_map[st]["steps"] = daily_map[st].get("steps", 0) + int(val)
                         if "dataSource" in pt and "source_device" not in daily_map[st]:
-                            daily_map[st]["source_device"] = pt.get("dataSource")
+                            daily_map[st]["source_device"] = pt.get("dataSource", {}).get("platform")
 
         # 2. Frequência Cardíaca (heart-rate) & RHR
         if "heart-rate" in types_to_fetch:
-            hr_points, err = self.fetch_data_points("heart-rate", start_time=start_time, end_time=now, chunk_days=7)
+            hr_points, err = self.fetch_data_points("heart-rate", start_time=start_time, end_time=now)
             if err:
                 errors.append(f"heart-rate: {err}")
             else:
                 hr_by_date: Dict[str, List[float]] = {}
                 for pt in hr_points:
-                    st = pt.get("startTime", "")[:10]
-                    bpm = pt.get("heartRate", {}).get("bpm") or pt.get("value")
-                    if st in daily_map and bpm is not None:
+                    st = _extract_date_ref_from_point(pt, "heart_rate") or _extract_date_ref_from_point(pt, "heart-rate")
+                    bpm = pt.get("heartRate", {}).get("bpm") or pt.get("heart_rate", {}).get("bpm") or pt.get("value")
+                    if st and st in daily_map and bpm is not None:
                         hr_by_date.setdefault(st, []).append(float(bpm))
 
                 for d_str, bpms in hr_by_date.items():
@@ -363,13 +384,13 @@ class GoogleHealthClient:
 
         # 3. Sono (sleep) com estágios
         if "sleep" in types_to_fetch:
-            sleep_points, err = self.fetch_data_points("sleep", start_time=start_time, end_time=now, chunk_days=14)
+            sleep_points, err = self.fetch_data_points("sleep", start_time=start_time, end_time=now)
             if err:
                 errors.append(f"sleep: {err}")
             else:
                 for pt in sleep_points:
-                    st = pt.get("startTime", "")[:10]
-                    if st not in daily_map:
+                    st = _extract_date_ref_from_point(pt, "sleep")
+                    if not st or st not in daily_map:
                         continue
 
                     sleep_data = pt.get("sleep", {})
@@ -389,15 +410,15 @@ class GoogleHealthClient:
 
         # 4. SpO2 (oxygen-saturation)
         if "oxygen-saturation" in types_to_fetch:
-            spo2_points, err = self.fetch_data_points("oxygen-saturation", start_time=start_time, end_time=now, chunk_days=14)
+            spo2_points, err = self.fetch_data_points("oxygen-saturation", start_time=start_time, end_time=now)
             if err:
                 errors.append(f"oxygen-saturation: {err}")
             else:
                 spo2_by_date: Dict[str, List[float]] = {}
                 for pt in spo2_points:
-                    st = pt.get("startTime", "")[:10]
-                    pct = pt.get("oxygenSaturation", {}).get("percentage") or pt.get("value")
-                    if st in daily_map and pct is not None:
+                    st = _extract_date_ref_from_point(pt, "oxygen_saturation") or _extract_date_ref_from_point(pt, "oxygen-saturation")
+                    pct = pt.get("oxygenSaturation", {}).get("percentage") or pt.get("oxygen_saturation", {}).get("percentage") or pt.get("value")
+                    if st and st in daily_map and pct is not None:
                         spo2_by_date.setdefault(st, []).append(float(pct))
 
                 for d_str, vals in spo2_by_date.items():
@@ -405,27 +426,38 @@ class GoogleHealthClient:
                         daily_map[d_str]["spo2_avg_pct"] = round(sum(vals) / len(vals), 1)
                         daily_map[d_str]["spo2_min_pct"] = round(min(vals), 1)
 
-        # 5. Peso Corporal (weight)
+        # 5. Peso Corporal (weight em gramas ou kg)
         if "weight" in types_to_fetch:
-            weight_points, err = self.fetch_data_points("weight", start_time=start_time, end_time=now, chunk_days=30)
+            weight_points, err = self.fetch_data_points("weight", start_time=start_time, end_time=now)
             if err:
                 errors.append(f"weight: {err}")
             else:
                 for pt in weight_points:
-                    st = pt.get("startTime", "")[:10]
-                    kg = pt.get("weight", {}).get("kilograms") or pt.get("value")
-                    if st in daily_map and kg is not None:
-                        daily_map[st]["weight_kg"] = round(float(kg), 2)
+                    st = _extract_date_ref_from_point(pt, "weight")
+                    w_obj = pt.get("weight", {})
+                    # Google Health v4 retorna weightGrams (ex: 90000 = 90.0kg) ou kilograms
+                    kg = None
+                    if "weightGrams" in w_obj:
+                        kg = float(w_obj["weightGrams"]) / 1000.0
+                    elif "kilograms" in w_obj:
+                        kg = float(w_obj["kilograms"])
+                    elif "value" in pt:
+                        kg = float(pt["value"])
+
+                    if st and st in daily_map and kg is not None:
+                        daily_map[st]["weight_kg"] = round(kg, 2)
+                        if "dataSource" in pt and "source_device" not in daily_map[st]:
+                            daily_map[st]["source_device"] = pt.get("dataSource", {}).get("platform")
 
         # 6. Variabilidade de Frequência Cardíaca (heart-rate-variability)
         if "heart-rate-variability" in types_to_fetch:
-            hrv_points, err = self.fetch_data_points("heart-rate-variability", start_time=start_time, end_time=now, chunk_days=14)
+            hrv_points, err = self.fetch_data_points("heart-rate-variability", start_time=start_time, end_time=now)
             if not err:
                 hrv_by_date: Dict[str, List[float]] = {}
                 for pt in hrv_points:
-                    st = pt.get("startTime", "")[:10]
-                    ms = pt.get("heartRateVariability", {}).get("rmssdMs") or pt.get("value")
-                    if st in daily_map and ms is not None:
+                    st = _extract_date_ref_from_point(pt, "heart_rate_variability") or _extract_date_ref_from_point(pt, "heart-rate-variability")
+                    ms = pt.get("heartRateVariability", {}).get("rmssdMs") or pt.get("heart_rate_variability", {}).get("rmssdMs") or pt.get("value")
+                    if st and st in daily_map and ms is not None:
                         hrv_by_date.setdefault(st, []).append(float(ms))
 
                 for d_str, vals in hrv_by_date.items():
