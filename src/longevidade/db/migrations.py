@@ -375,7 +375,45 @@ MIGRATIONS: Sequence[Migration] = (
             "CREATE INDEX IF NOT EXISTS idx_phenoage_records_origin_date ON phenoage_records(record_origin, calculated_at DESC, id DESC);",
         ),
     ),
+    Migration(
+        version=5,
+        name="workouts_table",
+        statements=(
+            """
+            CREATE TABLE IF NOT EXISTS workouts (
+                id TEXT PRIMARY KEY,
+                workout_date TEXT NOT NULL,
+                workout_time TEXT NOT NULL,
+                category TEXT NOT NULL,
+                activity_type TEXT NOT NULL,
+                duration_min REAL NOT NULL,
+                calories INTEGER DEFAULT 0,
+                distance_km REAL DEFAULT 0.0,
+                avg_hr INTEGER,
+                max_hr INTEGER,
+                training_effect INTEGER,
+                steps INTEGER,
+                city TEXT,
+                device TEXT,
+                raw_json TEXT,
+                source TEXT DEFAULT 'Zepp',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(workout_date DESC, workout_time DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_workouts_category ON workouts(category);",
+        ),
+    ),
+    Migration(
+        version=6,
+        name="add_calories_to_daily_metrics",
+        statements=(
+            "ALTER TABLE daily_metrics ADD COLUMN calories INTEGER;",
+        ),
+    ),
 )
+
 
 
 def apply_migrations(conn: sqlite3.Connection) -> int:
@@ -390,8 +428,9 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
                     try:
                         conn.execute(statement)
                     except sqlite3.OperationalError as exc:
-                        # Permite colunas já existentes se banco baseline for legado
-                        if "duplicate column name" in str(exc).lower():
+                        # Permite colunas já existentes se banco baseline for legado ou tabelas ausentes em fixtures sintéticas
+                        err_msg = str(exc).lower()
+                        if "duplicate column name" in err_msg or "no such table: daily_metrics" in err_msg:
                             continue
                         raise exc
                 conn.execute(f"PRAGMA user_version = {migration.version};")

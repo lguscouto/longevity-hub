@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from 'react'
-import { Activity, Flame, Footprints, Heart, Moon, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
+import { Activity, ChevronDown, Flame, Footprints, Heart, Moon, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
 
 import { Header } from './components/Header'
 import { MetricCard } from './components/MetricCard'
@@ -22,6 +22,8 @@ const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWid
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
 const SleepView = lazy(() => import('./components/SleepView').then(m => ({ default: m.SleepView })))
 const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthModal').then(m => ({ default: m.GoogleHealthAuthModal })))
+const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => ({ default: m.WorkoutsTable })))
+
 
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
@@ -56,10 +58,11 @@ type DailyMetric = {
   training_load_optimal_max?: number | null
   workout_count?: number | null
   workout_duration_min?: number | null
+  calories?: number | null
 }
 
 type SyncResult = {
-  status: 'ok' | 'error'
+  status: 'ok' | 'error' | 'warning'
   message?: string
   zepp_records_imported?: number
   google_fit_records_imported?: number
@@ -152,6 +155,7 @@ export default function App() {
   const [isSyncingGoogle, setIsSyncingGoogle] = useState(false)
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
+  const [showWorkoutsTable, setShowWorkoutsTable] = useState(false)
 
   const [pipelineRuns, setPipelineRuns] = useState<PipelineRun[]>([])
   const [pipelineLoading, setPipelineLoading] = useState(false)
@@ -182,61 +186,57 @@ export default function App() {
       color: 'emerald' as const,
     },
     {
-      title: 'RHR REPOUSO',
-      value: hasMetric && activeMetric?.rhr_bpm != null ? `${activeMetric.rhr_bpm} bpm` : '—',
-      subtitle: hasMetric ? 'Alvo: < 55 bpm' : NO_DATA_LABEL,
+      title: 'FC REPOUSO',
+      value: hasMetric && activeMetric?.rhr_bpm != null ? `${Math.round(activeMetric.rhr_bpm)} bpm` : '—',
+      unit: hasMetric && activeMetric?.rhr_bpm != null ? 'bpm' : undefined,
+      subtitle: hasMetric ? 'Meta: < 55 bpm' : NO_DATA_LABEL,
       icon: Heart,
-      color: 'rose' as const,
+      color: 'emerald' as const,
     },
     {
-      title: 'HRV NOTURNA',
-      value: hasMetric && activeMetric?.hrv_ms != null ? `${formatDecimal(activeMetric.hrv_ms)} ms` : '—',
-      subtitle: hasMetric ? 'Variabilidade FC' : NO_DATA_LABEL,
-      icon: Activity,
-      color: 'cyan' as const,
+      title: 'HRV (RMSSD)',
+      value: hasMetric && activeMetric?.hrv_ms != null ? `${Math.round(activeMetric.hrv_ms)} ms` : '—',
+      unit: hasMetric && activeMetric?.hrv_ms != null ? 'ms' : undefined,
+      subtitle: hasMetric ? 'Meta: > 50 ms' : NO_DATA_LABEL,
+      icon: Zap,
+      color: 'emerald' as const,
     },
     {
       title: 'SONO TOTAL',
       value: hasMetric && activeMetric?.sleep_minutes != null ? formatSleepMinutes(activeMetric.sleep_minutes) : '—',
-      subtitle: hasMetric ? 'Monitorado' : NO_DATA_LABEL,
+      subtitle: hasMetric ? 'Meta: 8h' : NO_DATA_LABEL,
       icon: Moon,
-      color: 'violet' as const,
+      color: 'emerald' as const,
     },
     {
-      title: 'VO2 MAX',
-      value: hasMetric && activeMetric?.vo2_max != null ? `${formatDecimal(activeMetric.vo2_max)} mL/kg/min` : '—',
-      subtitle: hasMetric ? 'Capacidade Cardiorespiratória' : NO_DATA_LABEL,
+      title: 'CALORIAS ATIVAS',
+      value: hasMetric && activeMetric?.calories != null ? `${Math.round(activeMetric.calories)} kcal` : '—',
+      unit: hasMetric && activeMetric?.calories != null ? 'kcal' : undefined,
+      subtitle: hasMetric ? 'Estimativa 24h' : NO_DATA_LABEL,
       icon: Flame,
-      color: 'amber' as const,
+      color: 'emerald' as const,
     },
     {
-      title: 'SPO2 OXIGENAÇÃO',
-      value: hasMetric && activeMetric?.spo2_avg_pct != null ? `${formatDecimal(activeMetric.spo2_avg_pct)}%` : '—',
-      subtitle: hasMetric && activeMetric?.spo2_min_pct != null ? `Mínimo: ${formatDecimal(activeMetric.spo2_min_pct)}%` : (hasMetric ? 'Alvo: ≥ 95%' : NO_DATA_LABEL),
-      icon: Activity,
-      color: 'cyan' as const,
-    },
-    {
-      title: 'FREQ. RESPIRATÓRIA',
-      value: hasMetric && activeMetric?.respiratory_rate_rpm != null ? `${formatDecimal(activeMetric.respiratory_rate_rpm)} rpm` : '—',
-      subtitle: hasMetric ? 'Alvo: 12 - 20 rpm' : NO_DATA_LABEL,
+      title: 'VO₂ MÁXIMO',
+      value: hasMetric && activeMetric?.vo2_max != null ? `${activeMetric.vo2_max.toFixed(1)}` : '—',
+      unit: hasMetric && activeMetric?.vo2_max != null ? 'ml/kg/min' : undefined,
+      subtitle: hasMetric ? 'Meta: > 45' : NO_DATA_LABEL,
       icon: Wind,
-      color: 'violet' as const,
+      color: 'emerald' as const,
     },
     {
-      title: 'SCORE PAI',
-      value: hasMetric && activeMetric?.pai_score != null ? `${formatDecimal(activeMetric.pai_score)}` : '—',
-      subtitle: hasMetric ? 'Meta: ≥ 100 PAI' : NO_DATA_LABEL,
-      icon: Zap,
-      color: 'amber' as const,
+      title: 'TAXA RESPIRATÓRIA',
+      value: hasMetric && activeMetric?.respiratory_rate_rpm != null ? `${activeMetric.respiratory_rate_rpm.toFixed(1)} rpm` : '—',
+      unit: hasMetric && activeMetric?.respiratory_rate_rpm != null ? 'rpm' : undefined,
+      subtitle: hasMetric ? 'Normal: 12-20' : NO_DATA_LABEL,
+      icon: Activity,
+      color: 'emerald' as const,
     },
     {
-      title: 'PRESSÃO ARTERIAL',
-      value:
-        hasMetric && activeMetric?.systolic_bp != null && activeMetric?.diastolic_bp != null
-          ? `${activeMetric.systolic_bp}/${activeMetric.diastolic_bp}`
-          : '—',
-      subtitle: hasMetric ? 'Use +Registrar para aferir' : NO_DATA_LABEL,
+      title: 'SPO₂ MÉDIO',
+      value: hasMetric && activeMetric?.spo2_avg_pct != null ? `${activeMetric.spo2_avg_pct.toFixed(0)}%` : '—',
+      unit: hasMetric && activeMetric?.spo2_avg_pct != null ? '%' : undefined,
+      subtitle: hasMetric ? 'Meta: ≥ 95%' : NO_DATA_LABEL,
       icon: Shield,
       color: 'emerald' as const,
     },
@@ -310,10 +310,17 @@ export default function App() {
         await fetchDashboardData()
       }
     } catch (caught) {
-      setSyncResult({
-        status: 'error',
-        message: caught instanceof ApiError ? caught.message : 'Falha ao sincronizar as fontes.',
-      })
+      if (caught instanceof ApiError && caught.status === 409) {
+        setSyncResult({
+          status: 'warning',
+          message: caught.message || 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.',
+        })
+      } else {
+        setSyncResult({
+          status: 'error',
+          message: caught instanceof ApiError ? caught.message : 'Falha ao sincronizar as fontes.',
+        })
+      }
     } finally {
       setIsSyncing(false)
     }
@@ -570,6 +577,26 @@ export default function App() {
                   workoutCount={activeMetric?.workout_count}
                   workoutDurationMin={activeMetric?.workout_duration_min}
                 />
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setShowWorkoutsTable((prev) => !prev)}
+                      className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors py-1.5 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
+                    >
+                      <Activity className="w-4 h-4 text-emerald-500" />
+                      <span>{showWorkoutsTable ? 'Ocultar Histórico de Treinos' : 'Ver Histórico Detalhado de Treinos'}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showWorkoutsTable ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                  {showWorkoutsTable && (
+                    <Suspense fallback={<div className="py-6 text-center text-xs text-slate-400 animate-pulse">Carregando treinos...</div>}>
+                      <WorkoutsTable />
+                    </Suspense>
+                  )}
+                </div>
+
 
                 <EnergyCircadianWidget selectedDate={selectedDate} />
 

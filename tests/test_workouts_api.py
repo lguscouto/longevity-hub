@@ -1,0 +1,232 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import pytest
+from longevidade.db.repository import LongevityRepository
+from longevidade.db.schema import initialize_db
+
+
+def test_get_workouts_returns_empty_list_when_no_workouts(client, tmp_path, monkeypatch):
+    import backend.app.routers.workouts as workouts_router
+    empty_zepp = tmp_path / "empty_zepp"
+    empty_zepp.mkdir()
+    monkeypatch.setattr(workouts_router, "ZEPP_DATA_DIR", empty_zepp)
+
+    res = client.get("/api/workouts")
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+
+def test_get_workouts_with_data_and_filters(client, tmp_path, monkeypatch):
+    db_path = tmp_path / "longevity-test.sqlite3"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    sample_workouts = [
+        {
+            "id": "1001",
+            "workout_date": "2026-08-15",
+            "workout_time": "08:30",
+            "category": "Corrida",
+            "activity_type": "Corrida",
+            "duration_min": 35.0,
+            "calories": 300,
+            "distance_km": 5.0,
+            "avg_hr": 150,
+            "max_hr": 170,
+            "training_effect": 35,
+            "steps": 4500,
+            "city": "São Paulo",
+            "device": "Amazfit Band 7",
+            "source": "Zepp",
+        },
+        {
+            "id": "1002",
+            "workout_date": "2026-08-16",
+            "workout_time": "09:00",
+            "category": "Ciclismo",
+            "activity_type": "Ciclismo",
+            "duration_min": 50.0,
+            "calories": 400,
+            "distance_km": 15.0,
+            "avg_hr": 140,
+            "max_hr": 160,
+            "training_effect": 30,
+            "steps": 0,
+            "city": "São Paulo",
+            "device": "Amazfit Band 7",
+            "source": "Zepp",
+        },
+        {
+            "id": "1003",
+            "workout_date": "2026-08-17",
+            "workout_time": "18:00",
+            "category": "Treino Força",
+            "activity_type": "Treino Força",
+            "duration_min": 45.0,
+            "calories": 250,
+            "distance_km": 0.0,
+            "avg_hr": 120,
+            "max_hr": 145,
+            "training_effect": 25,
+            "steps": 1000,
+            "city": "Campinas",
+            "device": "Amazfit Band 7",
+            "source": "Zepp",
+        },
+    ]
+
+    inserted = repo.upsert_workouts(sample_workouts)
+    assert inserted == 3
+
+    # Busca geral ordenada (mais recente primeiro: 2026-08-17)
+    res = client.get("/api/workouts")
+    assert res.status_code == 200
+    items = res.json()
+    assert len(items) == 3
+    assert items[0]["id"] == "1003"
+    assert items[1]["id"] == "1002"
+    assert items[2]["id"] == "1001"
+
+    # Filtro por categoria
+    res_corrida = client.get("/api/workouts?category=Corrida")
+    assert res_corrida.status_code == 200
+    items_corrida = res_corrida.json()
+    assert len(items_corrida) == 1
+    assert items_corrida[0]["category"] == "Corrida"
+    assert items_corrida[0]["id"] == "1001"
+
+    # Filtro por data
+    res_date = client.get("/api/workouts?start_date=2026-08-16&end_date=2026-08-17")
+    assert res_date.status_code == 200
+    items_date = res_date.json()
+    assert len(items_date) == 2
+    assert [it["id"] for it in items_date] == ["1003", "1002"]
+
+    # Filtro com limit
+    res_limit = client.get("/api/workouts?limit=1")
+    assert res_limit.status_code == 200
+    assert len(res_limit.json()) == 1
+    assert res_limit.json()[0]["id"] == "1003"
+
+
+def test_get_workouts_lazy_load_fallback(client, tmp_path, monkeypatch):
+    """Quando o banco está vazio mas workout_history.json existe, popula via lazy-load."""
+    zepp_dir = tmp_path / "zepp_data"
+    zepp_dir.mkdir(parents=True, exist_ok=True)
+
+    fake_history = {
+        "code": 1,
+        "message": "success",
+        "data": {
+            "summary": [
+                {
+                    "trackid": "1787006220",
+                    "type": 1,
+                    "run_time": "1800",
+                    "calorie": "200",
+                    "dis": "3000",
+                    "avg_heart_rate": "135",
+                    "max_heart_rate": "155",
+                    "te": 28,
+                    "total_step": 3600,
+                    "city": "Santos",
+                    "source": "run.huami.com",
+                }
+            ]
+        },
+    }
+    (zepp_dir / "workout_history.json").write_text(json.dumps(fake_history), encoding="utf-8")
+
+    import backend.app.routers.workouts as workouts_router
+    monkeypatch.setattr(workouts_router, "ZEPP_DATA_DIR", zepp_dir)
+
+    res = client.get("/api/workouts")
+    assert res.status_code == 200
+    items = res.json()
+    assert len(items) == 1
+    assert items[0]["id"] == "1787006220"
+    assert items[0]["category"] == "Corrida"
+    assert items[0]["duration_min"] == 30.0
+    assert items[0]["distance_km"] == 3.0
+    assert items[0]["calories"] == 200
+    assert items[0]["city"] == "Santos"
+
+
+def test_get_workouts_case_insensitive_and_todas_category(client, tmp_path):
+    db_path = tmp_path / "longevity-test.sqlite3"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    repo.upsert_workouts([
+        {
+            "id": "c1",
+            "workout_date": "2026-08-10",
+            "workout_time": "07:00",
+            "category": "Corrida",
+            "activity_type": "Corrida",
+            "duration_min": 25.0,
+        },
+        {
+            "id": "b1",
+            "workout_date": "2026-08-11",
+            "workout_time": "08:00",
+            "category": "Ciclismo",
+            "activity_type": "Ciclismo",
+            "duration_min": 40.0,
+        },
+    ])
+
+    # Case-insensitive query
+    res_lower = client.get("/api/workouts?category=corrida")
+    assert res_lower.status_code == 200
+    assert len(res_lower.json()) == 1
+    assert res_lower.json()[0]["id"] == "c1"
+
+    # Category "Todas" should return all
+    res_all = client.get("/api/workouts?category=Todas")
+    assert res_all.status_code == 200
+    assert len(res_all.json()) == 2
+
+
+def test_upsert_workouts_handles_none_and_numeric_strings(tmp_path):
+    db_path = tmp_path / "longevity-types.sqlite3"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    # Edge cases: explicit None on workout_time, category, source; string floats on calories & avg_hr
+    record = {
+        "id": "edge_1",
+        "workout_date": "2026-08-12",
+        "workout_time": None,
+        "category": None,
+        "activity_type": None,
+        "duration_min": "45.5",
+        "calories": "350.8",
+        "distance_km": "5.25",
+        "avg_hr": "142.8",
+        "max_hr": "165.0",
+        "training_effect": "30.0",
+        "steps": "5000.0",
+        "source": None,
+    }
+
+    inserted = repo.upsert_workouts([record])
+    assert inserted == 1
+
+    saved = repo.get_workouts()
+    assert len(saved) == 1
+    item = saved[0]
+    assert item["workout_time"] == "00:00"  # Must NOT be literal 'None'
+    assert item["category"] == "Outros"     # Must NOT be literal 'None'
+    assert item["activity_type"] == "Outro" # Must NOT be literal 'None'
+    assert item["source"] == "Zepp"
+    assert item["duration_min"] == 45.5
+    assert item["calories"] == 351
+    assert item["avg_hr"] == 143
+    assert item["max_hr"] == 165
+    assert item["training_effect"] == 30
+    assert item["steps"] == 5000
+

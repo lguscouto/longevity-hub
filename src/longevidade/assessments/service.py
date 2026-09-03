@@ -10,6 +10,7 @@ import io
 import os
 import shutil
 import uuid
+import zipfile
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -370,3 +371,47 @@ class PhysicalAssessmentService:
             },
             "matched_photos": matched_photos,
         }
+
+    def export_photos_zip(self, assessment_id: str) -> Tuple[io.BytesIO, str]:
+        assessment = self.repo.get_physical_assessment(assessment_id)
+        if not assessment:
+            raise ValueError(f"Avaliação física {assessment_id} não encontrada")
+
+        photos = assessment.get("photos", [])
+        if not photos:
+            raise ValueError("Esta avaliação não possui fotos para download")
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_STORED) as zf:
+            used_names: set[str] = set()
+            files_added = 0
+            for idx, photo in enumerate(photos, 1):
+                try:
+                    file_path = self.get_photo_file_path(assessment_id, photo["id"])
+                    if not file_path.exists():
+                        continue
+
+                    angle = photo.get("angle") or "foto"
+                    orig_name = photo.get("original_filename") or photo.get("stored_filename", f"foto_{idx}.jpg")
+                    base_name = f"{idx:02d}_{angle}_{orig_name}"
+
+                    clean_name = base_name
+                    counter = 1
+                    while clean_name in used_names:
+                        clean_name = f"{idx:02d}_{angle}_{counter}_{orig_name}"
+                        counter += 1
+                    used_names.add(clean_name)
+
+                    zf.write(file_path, arcname=clean_name)
+                    files_added += 1
+                except Exception:
+                    continue
+
+        if files_added == 0:
+            raise ValueError("Nenhum arquivo físico de foto foi encontrado para esta avaliação")
+
+        zip_buffer.seek(0)
+        date_str = str(assessment.get("assessment_date", "fotos"))[:10]
+        filename = f"fotos_avaliacao_{date_str}.zip"
+        return zip_buffer, filename
+

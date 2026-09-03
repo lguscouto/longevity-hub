@@ -126,9 +126,27 @@ class ZeppClient:
         timeout: float = 30.0,
         extra_headers: dict[str, str] | None = None,
     ) -> None:
+        clean_host = host.strip().lower()
+        if "://" in clean_host:
+            clean_host = clean_host.split("://", 1)[1]
+        clean_host = clean_host.split("/", 1)[0].split(":", 1)[0].strip()
+
+        allowed_hosts = {
+            "api-mifit-us3.zepp.com",
+            "api-mifit-us2.zepp.com",
+            "api-mifit-de2.zepp.com",
+            "api-mifit.huami.com",
+            "api-mifit-ru.zepp.com",
+            "api-mifit-in2.zepp.com",
+        }
+        if clean_host not in allowed_hosts:
+            raise ValueError(
+                f"Host Zepp não autorizado: '{clean_host}'. Hosts autorizados: {', '.join(sorted(allowed_hosts))}"
+            )
+
         self.apptoken = apptoken
         self.user_id = user_id
-        self.base = f"https://{host}"
+        self.base = f"https://{clean_host}"
         self.session = requests.Session()
         self.timeout = timeout
         self.session.headers.update(self._headers(app_platform, extra_headers or {}))

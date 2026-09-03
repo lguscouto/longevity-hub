@@ -41,6 +41,21 @@ DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 try:
+    from .storage_utils import (
+        atomic_write_json,
+        is_valid_payload,
+        merge_health_payload,
+        safe_load_json,
+    )
+except ImportError:  # pragma: no cover - supports direct script execution
+    from storage_utils import (
+        atomic_write_json,
+        is_valid_payload,
+        merge_health_payload,
+        safe_load_json,
+    )
+
+try:
     from .zepp_quality import diff_manifests, validate_payloads
 except ImportError:  # pragma: no cover - supports direct script execution
     from zepp_quality import diff_manifests, validate_payloads
@@ -88,23 +103,35 @@ def run_zepp_cmd(subcommand: str, *args: str) -> dict:
         "--json",
     ] + list(args)
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(ZEPP_CLI_DIR))
+    result = subprocess.run(cmd, capture_output=True, text=False, timeout=120, cwd=str(ZEPP_CLI_DIR))
 
     if result.returncode != 0:
-        print(f"[WARN] {subcommand} failed: {result.stderr.strip()}", file=sys.stderr)
-        return {"error": result.stderr.strip(), "returncode": result.returncode}
+        err_msg = result.stderr.decode("utf-8", errors="replace").strip()
+        print(f"[WARN] {subcommand} failed: {err_msg}", file=sys.stderr)
+        return {"error": err_msg, "returncode": result.returncode}
 
     try:
-        return json.loads(result.stdout)
+        raw_text = result.stdout.decode("utf-8", errors="replace")
+        return json.loads(raw_text)
     except json.JSONDecodeError:
-        return {"error": "Invalid JSON response", "raw": result.stdout[:500]}
+        return {"error": "Invalid JSON response", "raw": result.stdout.decode("utf-8", errors="replace")[:500]}
 
 
-def save_json(data: dict, filename: str) -> Path:
-    """Save data to DATA_DIR/filename with timestamp."""
+def save_json(data: dict, filename: str) -> tuple[bool, str | None]:
+    """Salva dados em DATA_DIR/filename atomicamente; NUNCA sobrescreve arquivos válidos em caso de erro."""
     path = DATA_DIR / filename
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False, default=str))
-    return path
+    if not is_valid_payload(data):
+        err = data.get("error") if isinstance(data, dict) else "Payload inválido"
+        return False, str(err)
+
+    existing = safe_load_json(path)
+    if isinstance(existing, dict):
+        merged = merge_health_payload(existing, data)
+    else:
+        merged = data
+
+    atomic_write_json(path, merged)
+    return True, None
 
 
 def _payload_records(data_type: str, payload: dict) -> list[dict]:
@@ -236,43 +263,72 @@ def build_data_manifest(
 
 
 def _save_manifest(manifest: dict) -> Path:
-    return save_json(manifest, "manifest.json")
+    return atomic_write_json(DATA_DIR / "manifest.json", manifest)
 
 
 def _read_previous_manifest() -> dict:
-    manifest_path = DATA_DIR / "manifest.json"
-    try:
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return {}
+    payload = safe_load_json(DATA_DIR / "manifest.json")
     return payload if isinstance(payload, dict) else {}
 
 
-def fetch_all_data(days: int = 14) -> dict:
+def calculate_incremental_days(
+    metadata_path: Path | None = None,
+    default_full: int = 365,
+    overlap_days: int = 2,
+) -> int:
+    """Calcula os dias necessários para sync incremental baseado na última coleta com sucesso."""
+    path = metadata_path or (DATA_DIR / "metadata.json")
+    meta = safe_load_json(path)
+    if not isinstance(meta, dict):
+        return default_full
+
+    last_str = meta.get("fetched_at")
+    if not last_str:
+        return default_full
+
+    try:
+        if last_str.endswith("Z"):
+            last_str = last_str[:-1] + "+00:00"
+        last_dt = datetime.fromisoformat(last_str)
+        now_dt = datetime.now(timezone.utc)
+        elapsed_days = max(0, (now_dt - last_dt).days)
+        return min(default_full, max(1, elapsed_days + overlap_days))
+    except Exception:
+        return default_full
+
+
+def fetch_all_data(days: int | None = None, mode: str = "custom") -> dict:
     """Fetch all available data types and save to disk."""
     previous_manifest = _read_previous_manifest()
     results = {}
     start_time = time.time()
 
+    if mode == "incremental":
+        fetch_days = calculate_incremental_days(DATA_DIR / "metadata.json")
+    elif mode == "full" or (days is None and mode != "custom"):
+        fetch_days = 365
+    else:
+        fetch_days = max(1, days if days is not None else 14)
+
     # ── Heart Rate ──────────────────────────────────────────────────
-    print(f"  ❤️  Heart rate (last {days}d)...", end=" ", flush=True)
-    hr = run_zepp_cmd("heart-rate", "--days", str(days))
+    print(f"  ❤️  Heart rate (last {fetch_days}d)...", end=" ", flush=True)
+    hr = run_zepp_cmd("heart-rate", "--days", str(fetch_days))
     save_json(hr, "heart_rate.json")
     hr_count = len(hr.get("items", []))
     print(f"{hr_count} samples")
     results["heart_rate"] = hr
 
     # ── Band Data (sleep + steps) ───────────────────────────────────
-    print("  😴 Sleep & steps (band-data)...", end=" ", flush=True)
-    band = run_zepp_cmd("band-data", "--days", str(days), "--query-type", "detail")
+    print(f"  😴 Sleep & steps (band-data, last {fetch_days}d)...", end=" ", flush=True)
+    band = run_zepp_cmd("band-data", "--days", str(fetch_days), "--query-type", "detail")
     save_json(band, "band_data.json")
     band_count = len(band.get("data", []))
     print(f"{band_count} days")
     results["band_data"] = band
 
     # ── Training Load ──────────────────────────────────────────────
-    print(f"  🏋️  Training load (last {days}d)...", end=" ", flush=True)
-    load = run_zepp_cmd("sport-load", "--days", str(days))
+    print(f"  🏋️  Training load (last {fetch_days}d)...", end=" ", flush=True)
+    load = run_zepp_cmd("sport-load", "--days", str(fetch_days))
     save_json(load, "training_load.json")
     load_count = len(load.get("items", []))
     print(f"{load_count} days")
@@ -290,12 +346,12 @@ def fetch_all_data(days: int = 14) -> dict:
     results["workout_history"] = workouts
 
     # ── Stress / HRV / Readiness ────────────────────────────────────
-    print("  🧘 Stress/HRV/Readiness...", end=" ", flush=True)
-    readiness = run_zepp_cmd("events", "--preset", "readiness", "--days", str(days))
-    stress = run_zepp_cmd("events", "--preset", "stress", "--days", str(days))
-    hrv = run_zepp_cmd("events", "--preset", "hrv-rmssd", "--days", str(days))
-    respiratory = run_zepp_cmd("events", "--preset", "respiratory", "--days", str(days))
-    blood_pressure = run_zepp_cmd("events", "--preset", "blood-pressure", "--days", str(days))
+    print(f"  🧘 Stress/HRV/Readiness (last {fetch_days}d)...", end=" ", flush=True)
+    readiness = run_zepp_cmd("events", "--preset", "readiness", "--days", str(fetch_days))
+    stress = run_zepp_cmd("events", "--preset", "stress", "--days", str(fetch_days))
+    hrv = run_zepp_cmd("events", "--preset", "hrv-rmssd", "--days", str(fetch_days))
+    respiratory = run_zepp_cmd("events", "--preset", "respiratory", "--days", str(fetch_days))
+    blood_pressure = run_zepp_cmd("events", "--preset", "blood-pressure", "--days", str(fetch_days))
     save_json(readiness, "readiness.json")
     save_json(stress, "stress.json")
     save_json(hrv, "hrv.json")
@@ -314,11 +370,11 @@ def fetch_all_data(days: int = 14) -> dict:
     results["blood_pressure"] = blood_pressure
 
     # ── User timeline metrics ──────────────────────────────────────
-    print("  🫁 SpO₂/ODI/OSA/PAI...", end=" ", flush=True)
-    spo2 = run_zepp_cmd("user-events", "--preset", "spo2", "--days", str(days))
-    pai = run_zepp_cmd("user-events", "--preset", "pai", "--days", str(days))
-    all_day_stress = run_zepp_cmd("user-events", "--preset", "all-day-stress", "--days", str(days))
-    start_iso, end_iso, timezone_name = _collection_window(days)
+    print(f"  🫁 SpO₂/ODI/OSA/PAI (last {fetch_days}d)...", end=" ", flush=True)
+    spo2 = run_zepp_cmd("user-events", "--preset", "spo2", "--days", str(fetch_days))
+    pai = run_zepp_cmd("user-events", "--preset", "pai", "--days", str(fetch_days))
+    all_day_stress = run_zepp_cmd("user-events", "--preset", "all-day-stress", "--days", str(fetch_days))
+    start_iso, end_iso, timezone_name = _collection_window(fetch_days)
     spo2_odi = run_zepp_cmd(
         "user-events-day", "--preset", "spo2-odi", "--start", start_iso, "--end", end_iso, "--timezone", timezone_name
     )
@@ -340,8 +396,8 @@ def fetch_all_data(days: int = 14) -> dict:
     )
 
     # ── Temperature ─────────────────────────────────────────────────
-    print("  🌡️  Skin temperature...", end=" ", flush=True)
-    temp = run_zepp_cmd("temperature", "--days", str(days), "--raw")
+    print(f"  🌡️  Skin temperature (last {fetch_days}d)...", end=" ", flush=True)
+    temp = run_zepp_cmd("temperature", "--days", str(fetch_days), "--raw")
     save_json(temp, "temperature.json")
     t_count = len(temp.get("items", []))
     print(f"{t_count} samples")
@@ -349,7 +405,7 @@ def fetch_all_data(days: int = 14) -> dict:
 
     # ── Weight ──────────────────────────────────────────────────────
     print("  ⚖️  Weight records...", end=" ", flush=True)
-    weight = run_zepp_cmd("weight", "--days", "90")
+    weight = run_zepp_cmd("weight", "--days", str(max(fetch_days, 90)))
     save_json(weight, "weight.json")
     w_count = len(weight.get("items", []))
     print(f"{w_count} records")
@@ -357,15 +413,15 @@ def fetch_all_data(days: int = 14) -> dict:
 
     # ── VO2 Max ─────────────────────────────────────────────────────
     print("  🫁 VO2 Max...", end=" ", flush=True)
-    vo2 = run_zepp_cmd("vo2", "--days", str(max(days, 365)))
+    vo2 = run_zepp_cmd("vo2", "--days", str(max(fetch_days, 365)))
     save_json(vo2, "vo2_max.json")
     v_count = len(vo2.get("items", []))
     print(f"{v_count} records")
     results["vo2_max"] = vo2
 
     # ── Body Battery ────────────────────────────────────────────────
-    print("  🔋 Body battery...", end=" ", flush=True)
-    battery = run_zepp_cmd("events", "--preset", "body-battery", "--days", str(days))
+    print(f"  🔋 Body battery (last {fetch_days}d)...", end=" ", flush=True)
+    battery = run_zepp_cmd("events", "--preset", "body-battery", "--days", str(fetch_days))
     save_json(battery, "body_battery.json")
     b_count = len(battery.get("items", []))
     print(f"{b_count} samples")
@@ -380,12 +436,13 @@ def fetch_all_data(days: int = 14) -> dict:
         data_type: _payload_record_count(data_type, payload)
         for data_type, payload in results.items()
     }
-    current_manifest = build_data_manifest(DATA_DIR, fetched_at, days, data_types)
+    current_manifest = build_data_manifest(DATA_DIR, fetched_at, fetch_days, data_types)
     validation = validate_payloads(results)
     snapshot_diff = diff_manifests(previous_manifest, current_manifest)
     meta = {
         "fetched_at": fetched_at,
-        "days": days,
+        "mode": mode,
+        "days": fetch_days,
         "elapsed_seconds": round(elapsed, 1),
         "data_types": data_types,
         "sample_counts": sample_counts,
@@ -395,9 +452,9 @@ def fetch_all_data(days: int = 14) -> dict:
         "validation": validation,
         "snapshot_diff_summary": snapshot_diff,
     }
-    save_json(meta, "metadata.json")
+    atomic_write_json(DATA_DIR / "metadata.json", meta)
     _save_manifest(current_manifest)
-    save_json(snapshot_diff, "snapshot_diff.json")
+    atomic_write_json(DATA_DIR / "snapshot_diff.json", snapshot_diff)
 
     if validation["status"] != "valid":
         print(
@@ -531,7 +588,9 @@ def _extract_steps_sleep(band_path: Path) -> list[tuple[str, dict]]:
 
 def main():
     parser = argparse.ArgumentParser(description="Hermes ↔ Amazfit/Zepp Data Fetcher")
-    parser.add_argument("--days", type=int, default=14, help="Days of history (default: 14)")
+    parser.add_argument("--days", type=int, default=None, help="Quantidade exata de dias a buscar")
+    parser.add_argument("--incremental", action="store_true", help="Sync incremental baseado no último sucesso + overlap")
+    parser.add_argument("--full", action="store_true", help="Full sync dos últimos 365 dias")
     parser.add_argument("--all", action="store_true", help="Fetch all available data types")
     parser.add_argument("--summary", action="store_true", help="Print summary from saved data")
     parser.add_argument("--check", action="store_true", help="Check if config is set up")
@@ -564,12 +623,15 @@ def main():
         print("   See: ~/hermes-amazfit/INSTRUCOES_TOKEN.md", file=sys.stderr)
         sys.exit(1)
 
-    print(f"\n📡 Fetching Amazfit/Zepp data (last {args.days} days)...")
+    mode = "incremental" if args.incremental else ("full" if args.full else ("custom" if args.days is not None else "incremental"))
+    days = args.days
+
+    print(f"\n📡 Fetching Amazfit/Zepp data (mode={mode}, days={days or 'auto'})...")
     print("─" * 50)
-    results = fetch_all_data(days=args.days)
+    results = fetch_all_data(days=days, mode=mode)
     meta = results["_meta"]
     print("─" * 50)
-    print(f"✅ Done in {meta['elapsed_seconds']}s — data saved to {DATA_DIR}")
+    print(f"✅ Done in {meta['elapsed_seconds']}s — status: {meta.get('mode', mode)} — data saved to {DATA_DIR}")
     print()
 
     # Print summary

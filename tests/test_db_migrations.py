@@ -74,3 +74,26 @@ def test_provenance_migration_marks_legacy_lab_and_phenoage_records_unverified(t
     assert conn.execute("SELECT record_origin FROM lab_results").fetchone()[0] == "unverified"
     assert conn.execute("SELECT record_origin FROM phenoage_records").fetchone()[0] == "unverified"
     conn.close()
+
+
+def test_migration_5_workouts_table_created_from_v4(tmp_path):
+    db_file = tmp_path / "legacy_v4.sqlite3"
+    conn = sqlite3.connect(str(db_file))
+    conn.execute("PRAGMA user_version = 4;")
+    conn.commit()
+
+    applied_version = apply_migrations(conn)
+
+    assert applied_version == len(MIGRATIONS)
+    # Verifica que tabela workouts existe
+    table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='workouts';").fetchone()
+    assert table is not None
+    assert table[0] == "workouts"
+
+    # Verifica índices
+    indexes = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='workouts';").fetchall()]
+    assert "idx_workouts_date" in indexes
+    assert "idx_workouts_category" in indexes
+
+    conn.close()
+

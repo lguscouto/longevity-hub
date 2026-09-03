@@ -58,6 +58,10 @@ describe('PhysicalAssessmentsView', () => {
     expect(screen.getByText('78.5 kg')).toBeInTheDocument();
     expect(screen.getByText('Gordura:')).toBeInTheDocument();
     expect(screen.getByText('16.5%')).toBeInTheDocument();
+
+    const downloadLink = screen.getByTitle(/Baixar todas as fotos \(1 fotos\)/i);
+    expect(downloadLink).toBeInTheDocument();
+    expect(downloadLink).toHaveAttribute('href', '/api/physical-assessments/ass-1/photos/download');
   });
 
   it('switches to create view when clicking Nova Avaliação button', async () => {
@@ -148,4 +152,38 @@ describe('PhysicalAssessmentsView', () => {
       expect(screen.getByText('79 kg')).toBeInTheDocument();
     });
   });
+
+  it('renders dedicated notes & bioimpedance section in details view with expand/collapse', async () => {
+    const assessmentWithLongNotes = {
+      ...mockAssessments[0],
+      notes: 'Bioimpedância Fitdays (30/08/2026):\n- Peso: 89.6 kg\n- Gordura: 27.9%\n- Massa Muscular: 61.3 kg\n- Água: 51.9%\n- Taxa Muscular: 68.3%\n- Massa Livre: 64.6 kg\n- Gordura Visceral: 11.0\n- Massa Óssea: 3.3 kg',
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [assessmentWithLongNotes],
+    });
+
+    render(<PhysicalAssessmentsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação Inicial')).toBeInTheDocument();
+    });
+
+    const detailsBtn = screen.getByRole('button', { name: /Ver Detalhes/i });
+    fireEvent.click(detailsBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Anotações Clínicas & Bioimpedância')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Bioimpedância Fitdays/)).toBeInTheDocument();
+
+    const expandBtn = screen.getByRole('button', { name: /Ver tudo/i });
+    expect(expandBtn).toBeInTheDocument();
+
+    fireEvent.click(expandBtn);
+    expect(screen.getByRole('button', { name: /Recolher/i })).toBeInTheDocument();
+  });
 });
+

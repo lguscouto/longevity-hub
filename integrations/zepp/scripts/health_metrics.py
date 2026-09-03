@@ -17,13 +17,25 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 
-_DEFAULT_TIMEZONE = "America/Sao_Paulo"
+APP_TIMEZONE_NAME = os.environ.get("APP_TIMEZONE", os.environ.get("ZEPP_TIMEZONE", "America/Sao_Paulo"))
+try:
+    APP_TIMEZONE = ZoneInfo(APP_TIMEZONE_NAME)
+except Exception:
+    APP_TIMEZONE = timezone.utc
+
+_DEFAULT_TIMEZONE = APP_TIMEZONE_NAME
 
 
 _RECORD_KEYS = (
     "data_referencia",
     "passos_zepp",
+    "calorias_zepp",
     "sono_zepp_min",
+    "tempo_na_cama_min",
+    "sono_profundo_min",
+    "sono_leve_min",
+    "sono_rem_min",
+    "tempo_acordado_min",
     "peso_kg",
     "data_pesagem",
     "imc",
@@ -53,6 +65,7 @@ _RECORD_KEYS = (
     "amostras_estresse",
     "amostras_temperatura",
     "temperatura_c",
+    "desvio_temperatura_c",
     "body_battery_inicial",
     "body_battery_final",
     "vo2_max",
@@ -83,25 +96,29 @@ def _items(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
 
 
-def _day_from_timestamp(value: Any, timezone_name: str | None = None) -> date | None:
+def _day_from_timestamp(
+    value: Any,
+    tz: ZoneInfo | None = None,
+    timezone_name: str | None = None,
+) -> date | None:
     if isinstance(value, bool) or not isinstance(value, (int, float, str)):
         return None
     try:
         timestamp = float(value.strip()) if isinstance(value, str) else float(value)
     except (TypeError, ValueError):
         return None
-    if not math.isfinite(timestamp):
+    if not math.isfinite(timestamp) or timestamp <= 0:
         return None
     if timestamp > 10_000_000_000:
-        timestamp /= 1000
+        timestamp /= 1000.0
     try:
-        name = timezone_name or os.environ.get("ZEPP_TIMEZONE", _DEFAULT_TIMEZONE)
-        return datetime.fromtimestamp(timestamp, timezone.utc).astimezone(ZoneInfo(name)).date()
+        target_tz = tz or (ZoneInfo(timezone_name) if timezone_name else APP_TIMEZONE)
+        return datetime.fromtimestamp(timestamp, target_tz).date()
     except (OverflowError, OSError, ValueError, KeyError):
         return None
 
 
-def _day_for_item(item: dict[str, Any]) -> date | None:
+def _day_for_item(item: dict[str, Any], tz: ZoneInfo | None = None) -> date | None:
     for key in ("date_time", "date", "dayId"):
         value = item.get(key)
         if isinstance(value, str):
@@ -112,12 +129,12 @@ def _day_for_item(item: dict[str, Any]) -> date | None:
 
     value = item.get("value")
     if isinstance(value, dict):
-        event_day = _day_from_timestamp(value.get("timestamp"))
+        event_day = _day_from_timestamp(value.get("timestamp"), tz=tz)
         if event_day is not None:
             return event_day
 
-    for key in ("timestamp", "trackid", "generatedTime", "createTime"):
-        item_day = _day_from_timestamp(item.get(key))
+    for key in ("timestamp", "trackid", "trackId", "generatedTime", "createTime", "startTime", "start_time"):
+        item_day = _day_from_timestamp(item.get(key), tz=tz)
         if item_day is not None:
             return item_day
     return None
@@ -164,17 +181,20 @@ def _select_band_values(
     int | float | None,
     int | float | None,
     int | float | None,
+    int | float | None,
 ]:
     entries = payload.get("data", [])
     if not isinstance(entries, list):
-        return None, None, None, None, None, None
+        return None, None, None, None, None, None, None
     for entry in entries:
         if not isinstance(entry, dict) or _day_for_item(entry) != reference:
             continue
         summary = _decode_band_summary(entry.get("summary"))
         if summary is None:
             continue
-        steps = _number((summary.get("stp") or {}).get("ttl"))
+        stp = summary.get("stp") or {}
+        steps = _number(stp.get("ttl"))
+        calories = _number(stp.get("cal"))
         sleep = summary.get("slp") or {}
         if not isinstance(sleep, dict):
             sleep = {}
@@ -185,8 +205,8 @@ def _select_band_values(
         sleep_minutes = None
         if any(value is not None for value in (deep_sleep, light_sleep, rem_sleep)):
             sleep_minutes = (deep_sleep or 0) + (light_sleep or 0) + (rem_sleep or 0)
-        return steps, sleep_minutes, deep_sleep, light_sleep, rem_sleep, awake_sleep
-    return None, None, None, None, None, None
+        return steps, calories, sleep_minutes, deep_sleep, light_sleep, rem_sleep, awake_sleep
+    return None, None, None, None, None, None, None
 
 
 def _select_training_load(payload: dict[str, Any], reference: date) -> dict[str, int | float | None]:
@@ -253,8 +273,23 @@ def _readiness_values(payload: dict[str, Any], reference: date) -> tuple[int | f
     )
 
 
+def get_workout_duration_seconds(workout: dict[str, Any]) -> int | float | None:
+    """Extrai a duração do treino em segundos de forma normalizada."""
+    for key in ("duration_min", "duration_minutes"):
+        val = _number(workout.get(key))
+        if val is not None and val > 0:
+            return val * 60.0
+    for key in ("run_time", "runtime", "duration", "durationTime", "totalTime", "total_time"):
+        val = _number(workout.get(key))
+        if val is not None and val > 0:
+            return val
+    return None
+
+
 def _workout_values(
-    payload: dict[str, Any], reference: date | None = None
+    payload: dict[str, Any],
+    reference: date | None = None,
+    tz: ZoneInfo | None = None,
 ) -> tuple[int | None, int | float | None]:
     if not isinstance(payload, dict) or payload.get("error") or not payload:
         return None, None
@@ -267,39 +302,23 @@ def _workout_values(
     if not summaries:
         return 0, None
 
+    effective_tz = tz or APP_TIMEZONE
     workouts = [
         workout
         for workout in summaries
         if isinstance(workout, dict)
-        and (reference is None or _day_for_item(workout) == reference)
+        and (reference is None or _day_for_item(workout, tz=effective_tz) == reference)
     ]
     if not workouts:
         return 0, None
 
-    durations: list[int | float] = []
+    durations: list[float] = []
     for workout in workouts:
-        duration = None
-        is_seconds_key = False
-        is_minutes_key = False
-        for key in ("duration_min", "duration_minutes", "run_time", "duration", "durationTime", "totalTime", "total_time"):
-            candidate = _number(workout.get(key))
-            if candidate is not None:
-                duration = candidate
-                if key in ("duration_min", "duration_minutes"):
-                    is_minutes_key = True
-                elif key in ("run_time", "durationTime", "totalTime", "total_time"):
-                    is_seconds_key = True
-                break
-        if duration is not None:
-            unit_str = str(workout.get("unit") or "").lower()
-            if is_minutes_key or "min" in unit_str or "m" == unit_str:
-                durations.append(duration)
-            elif is_seconds_key or "sec" in unit_str or "s" in unit_str:
-                durations.append(duration / 60.0)
-            elif is_minutes_key or is_seconds_key:
-                durations.append(duration if is_minutes_key else duration / 60.0)
-            # Generic key "duration" without explicit unit or flag is ambiguous — ignore to prevent wrong unit inference
-    return len(workouts), (sum(durations) if durations else None)
+        dur_sec = get_workout_duration_seconds(workout)
+        if dur_sec is not None:
+            dur_min = round(dur_sec / 60.0, 1) if dur_sec >= 60 else round(dur_sec, 1)
+            durations.append(dur_min)
+    return len(workouts), (round(sum(durations), 1) if durations else None)
 
 
 def _count_items_for_day(payload: dict[str, Any], reference: date) -> int:
@@ -470,6 +489,50 @@ def merge_google_fit_metrics(zepp_record: dict[str, Any], google_metrics: Any) -
     return record
 
 
+def _temperature_values(payload: dict[str, Any], reference: date) -> tuple[float | None, int | None]:
+    for item in _items(payload):
+        if not isinstance(item, dict) or _day_for_item(item) != reference:
+            continue
+        val = item.get("value")
+        if isinstance(val, dict):
+            calibrated = _number(val.get("skinTempCalibrated"))
+            score = _number(val.get("skinTempScore"))
+            # 255 and 32767 are invalid sentinel values in Zepp API
+            if calibrated is not None and calibrated not in (255, 32767, -32768) and abs(calibrated) < 1000:
+                delta_c = round(calibrated / 100.0, 2)
+                score_val = int(score) if score is not None and score <= 100 else None
+                return delta_c, score_val
+    return None, None
+
+
+def _body_battery_values(payload: dict[str, Any], reference: date) -> tuple[int | None, int | None]:
+    """Extrai valor inicial e final do Body Battery para o dia de referência."""
+    day_items = [item for item in _items(payload) if _day_for_item(item) == reference]
+    if not day_items:
+        return None, None
+
+    valid_samples: list[tuple[float, int]] = []
+    for it in day_items:
+        val = it.get("value")
+        score = None
+        ts = None
+        if isinstance(val, dict):
+            score = _number(val.get("value") or val.get("score") or val.get("bodyBattery"))
+            ts = _number(val.get("timestamp") or it.get("timestamp"))
+        else:
+            score = _number(val if val is not None else it.get("value"))
+            ts = _number(it.get("timestamp"))
+
+        if score is not None and 0 <= score <= 100:
+            valid_samples.append((float(ts or 0), int(score)))
+
+    if not valid_samples:
+        return None, None
+
+    valid_samples.sort(key=lambda x: x[0])
+    return valid_samples[0][1], valid_samples[-1][1]
+
+
 def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | datetime) -> dict[str, Any]:
     """Build a stable normalized Zepp record for ``reference_date``.
 
@@ -497,15 +560,18 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
         "respiratory",
         "blood_pressure",
         "pai",
+        "body_battery",
     ):
         payloads[name], available[name] = _read_json(directory, f"{name}.json")
 
-    steps, sleep_minutes, deep_sleep, light_sleep, rem_sleep, awake_sleep = _select_band_values(payloads["band_data"], reference)
+    steps, calories, sleep_minutes, deep_sleep, light_sleep, rem_sleep, awake_sleep = _select_band_values(payloads["band_data"], reference)
     load = _select_training_load(payloads["training_load"], reference)
     weight, weighing_date, bmi = _select_weight(payloads["weight"], reference)
     resting_hr, average_hr = _heart_rate_values(payloads["heart_rate"], reference)
     readiness, sleep_hrv, sleep_rhr = _readiness_values(payloads["readiness"], reference)
     workout_count, workout_duration = _workout_values(payloads["workout_history"], reference)
+    delta_temp_c, temp_score = _temperature_values(payloads["temperature"], reference)
+    bb_init, bb_final = _body_battery_values(payloads["body_battery"], reference)
     hrv_rmssd = _hrv_rmssd_values(payloads["hrv"], reference)
     hrv_rmssd_avg = (sum(hrv_rmssd) / len(hrv_rmssd)) if hrv_rmssd else None
     spo2_avg, spo2_min, spo2_max, spo2_count = _aggregate(
@@ -519,6 +585,15 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
     osa_decrease_values = _event_metric_values(payloads["spo2_osa"], reference, {"spodecrease", "spo2decrease"})
     pai = _pai_score_value(payloads["pai"], reference)
 
+    if calories is None:
+        w_cals = [
+            _number(w.get("calorie"))
+            for w in (payloads.get("workout_history", {}).get("data", {}).get("summary") or [])
+            if _day_for_item(w) == reference and _number(w.get("calorie")) is not None
+        ]
+        if w_cals:
+            calories = int(round(sum(w_cals)))
+
     missing = []
     if resting_hr is None and average_hr is None:
         missing.append("ausência de frequência cardíaca")
@@ -531,11 +606,10 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
     if unavailable:
         status_parts.append("arquivos indisponíveis: " + ", ".join(unavailable))
 
-    # The physical interpretations of the current temperature and body-battery
-    # payloads have not been documented. Deliberately leave these null.
     return {
         "data_referencia": reference.isoformat(),
         "passos_zepp": steps,
+        "calorias_zepp": calories,
         "sono_zepp_min": sleep_minutes,
         "sono_profundo_min": deep_sleep,
         "sono_leve_min": light_sleep,
@@ -569,9 +643,10 @@ def build_zepp_daily_record(data_dir: str | Path, reference_date: str | date | d
         "duracao_treinos_min": workout_duration,
         "amostras_estresse": _count_items_for_day(payloads["stress"], reference),
         "amostras_temperatura": _count_items_for_day(payloads["temperature"], reference),
-        "temperatura_c": None,
-        "body_battery_inicial": None,
-        "body_battery_final": None,
+        "temperatura_c": delta_temp_c,
+        "desvio_temperatura_c": delta_temp_c,
+        "body_battery_inicial": bb_init,
+        "body_battery_final": bb_final,
         "vo2_max": _vo2_value(payloads["vo2_max"], reference),
         "status_dados": ". ".join(status_parts) + ".",
     }

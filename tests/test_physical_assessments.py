@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -164,6 +165,31 @@ class TestPhysicalAssessmentService:
         assert front_match["previous_photo"] is not None
         assert front_match["current_photo"] is not None
 
+    def test_export_photos_zip(self, temp_env):
+        repo, service, _ = temp_env
+        assessment = service.create_assessment({"assessment_date": "2026-08-30", "title": "Agosto"})
+
+        # Tentar baixar sem fotos deve levantar erro
+        with pytest.raises(ValueError, match="não possui fotos"):
+            service.export_photos_zip(assessment["id"])
+
+        # Salvar duas fotos
+        img1 = _make_dummy_image("JPEG")
+        img2 = _make_dummy_image("PNG")
+        service.save_photo(assessment["id"], img1, "frente.jpg", angle="front", body_state="relaxed")
+        service.save_photo(assessment["id"], img2, "costas.png", angle="back", body_state="flexed")
+
+        zip_buf, filename = service.export_photos_zip(assessment["id"])
+        assert filename == "fotos_avaliacao_2026-08-30.zip"
+        assert zip_buf.getbuffer().nbytes > 0
+
+        # Valida que o zip é legível e contém os 2 arquivos
+        with zipfile.ZipFile(zip_buf, "r") as zf:
+            namelist = zf.namelist()
+            assert len(namelist) == 2
+            assert any("front" in name for name in namelist)
+            assert any("back" in name for name in namelist)
+
 
 class TestPhysicalAssessmentEndpoints:
     @pytest.fixture
@@ -203,6 +229,14 @@ class TestPhysicalAssessmentEndpoints:
         content_res = client.get(photos[0]["content_url"])
         assert content_res.status_code == 200
         assert content_res.headers["content-type"] == "image/jpeg"
+
+        # 3b. Download Photos ZIP
+        download_res = client.get(f"/api/physical-assessments/{assessment_id}/photos/download")
+        assert download_res.status_code == 200
+        assert download_res.headers["content-type"] == "application/zip"
+        assert "fotos_avaliacao_2026-07-29.zip" in download_res.headers["content-disposition"]
+        with zipfile.ZipFile(io.BytesIO(download_res.content), "r") as zf:
+            assert len(zf.namelist()) == 1
 
         # 4. List Assessments
         list_res = client.get("/api/physical-assessments")

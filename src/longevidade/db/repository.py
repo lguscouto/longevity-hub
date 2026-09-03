@@ -95,7 +95,7 @@ class LongevityRepository:
             raise ValueError("date_ref é obrigatório para daily_metrics")
 
         fields = [
-            "date_ref", "steps", "sleep_minutes", "sleep_deep_min", "sleep_light_min",
+            "date_ref", "steps", "calories", "sleep_minutes", "sleep_deep_min", "sleep_light_min",
             "sleep_rem_min", "sleep_awake_min", "rhr_bpm", "avg_hr_bpm", "hrv_ms",
             "readiness_score", "weight_kg", "bmi", "waist_cm", "body_fat_pct",
             "vo2_max", "skin_temp_c", "stress_samples", "systolic_bp", "diastolic_bp",
@@ -1003,4 +1003,126 @@ class LongevityRepository:
             cursor = conn.execute(sql, (photo_id,))
             conn.commit()
             return cursor.rowcount > 0
+
+    # --- WORKOUTS ---
+    def count_workouts(self) -> int:
+        sql = "SELECT COUNT(*) FROM workouts;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql).fetchone()
+            return row[0] if row else 0
+
+    def upsert_workouts(self, workouts: List[Dict[str, Any]]) -> int:
+        if not workouts:
+            return 0
+
+        sql = """
+        INSERT INTO workouts (
+            id, workout_date, workout_time, category, activity_type,
+            duration_min, calories, distance_km, avg_hr, max_hr,
+            training_effect, steps, city, device, raw_json, source,
+            updated_at
+        ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?,
+            CURRENT_TIMESTAMP
+        )
+        ON CONFLICT(id) DO UPDATE SET
+            workout_date = excluded.workout_date,
+            workout_time = excluded.workout_time,
+            category = excluded.category,
+            activity_type = excluded.activity_type,
+            duration_min = excluded.duration_min,
+            calories = excluded.calories,
+            distance_km = excluded.distance_km,
+            avg_hr = excluded.avg_hr,
+            max_hr = excluded.max_hr,
+            training_effect = excluded.training_effect,
+            steps = excluded.steps,
+            city = excluded.city,
+            device = excluded.device,
+            raw_json = excluded.raw_json,
+            source = excluded.source,
+            updated_at = CURRENT_TIMESTAMP;
+        """
+        def _to_int(val: Any) -> Optional[int]:
+            if val is None:
+                return None
+            try:
+                return int(round(float(val)))
+            except (TypeError, ValueError):
+                return None
+
+        def _to_float(val: Any, default: float = 0.0) -> float:
+            if val is None:
+                return default
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return default
+
+        rows = [
+            (
+                str(w.get("id")),
+                str(w.get("workout_date")),
+                str(w.get("workout_time") or "00:00"),
+                str(w.get("category") or "Outros"),
+                str(w.get("activity_type") or "Outro"),
+                _to_float(w.get("duration_min")),
+                _to_int(w.get("calories")) or 0,
+                _to_float(w.get("distance_km")),
+                _to_int(w.get("avg_hr")),
+                _to_int(w.get("max_hr")),
+                _to_int(w.get("training_effect")),
+                _to_int(w.get("steps")),
+                w.get("city") or "",
+                w.get("device") or "",
+                w.get("raw_json"),
+                str(w.get("source") or "Zepp"),
+            )
+            for w in workouts
+            if w.get("id") and w.get("workout_date")
+        ]
+
+        if not rows:
+            return 0
+
+        with self._get_connection() as conn:
+            conn.executemany(sql, rows)
+            conn.commit()
+            return len(rows)
+
+    def get_workouts(
+        self,
+        limit: int = 50,
+        category: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        conditions: list[str] = []
+        params: list[Any] = []
+
+        if category and category.strip().lower() not in ("todas", "all", "todos"):
+            conditions.append("category = ? COLLATE NOCASE")
+            params.append(category.strip())
+        if start_date:
+            conditions.append("workout_date >= ?")
+            params.append(start_date)
+        if end_date:
+            conditions.append("workout_date <= ?")
+            params.append(end_date)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        sql = f"""
+        SELECT * FROM workouts
+        {where_clause}
+        ORDER BY workout_date DESC, workout_time DESC
+        LIMIT ?;
+        """
+        params.append(limit)
+
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, params).fetchall()
+            return [dict(r) for r in rows]
+
 

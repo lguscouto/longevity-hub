@@ -13,6 +13,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS daily_metrics (
     date_ref TEXT PRIMARY KEY,
     steps INTEGER,
+    calories INTEGER,
     sleep_minutes INTEGER,
     sleep_deep_min INTEGER,
     sleep_light_min INTEGER,
@@ -281,7 +282,32 @@ CREATE INDEX IF NOT EXISTS idx_pa_date ON physical_assessments(assessment_date);
 CREATE INDEX IF NOT EXISTS idx_pap_assessment_id ON physical_assessment_photos(assessment_id);
 CREATE INDEX IF NOT EXISTS idx_pap_angle ON physical_assessment_photos(angle);
 CREATE INDEX IF NOT EXISTS idx_pap_sha256 ON physical_assessment_photos(sha256);
+
+CREATE TABLE IF NOT EXISTS workouts (
+    id TEXT PRIMARY KEY,
+    workout_date TEXT NOT NULL,
+    workout_time TEXT NOT NULL,
+    category TEXT NOT NULL,
+    activity_type TEXT NOT NULL,
+    duration_min REAL NOT NULL,
+    calories INTEGER DEFAULT 0,
+    distance_km REAL DEFAULT 0.0,
+    avg_hr INTEGER,
+    max_hr INTEGER,
+    training_effect INTEGER,
+    steps INTEGER,
+    city TEXT,
+    device TEXT,
+    raw_json TEXT,
+    source TEXT DEFAULT 'Zepp',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(workout_date DESC, workout_time DESC);
+CREATE INDEX IF NOT EXISTS idx_workouts_category ON workouts(category);
 """
+
 
 
 def initialize_db(db_path: str | Path) -> None:

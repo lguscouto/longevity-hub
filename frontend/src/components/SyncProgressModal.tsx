@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { X, RefreshCw, CheckCircle2, AlertCircle, Activity, Shield, Eye } from 'lucide-react'
 
 interface SyncResult {
-  status: 'ok' | 'error'
+  status: 'ok' | 'error' | 'warning'
   message?: string
   zepp_records_imported?: number
   google_fit_records_imported?: number
@@ -53,15 +53,17 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   const importedTotal = zeppCount + googleCount
   const isSuccess = !isSyncing && syncResult?.status === 'ok'
   const hasError = !isSyncing && syncResult?.status === 'error'
+  const isWarning = !isSyncing && syncResult?.status === 'warning'
 
   const heading = useMemo(() => {
     if (isSyncing) return 'Sincronizando Fontes de Longevidade...'
     if (isSuccess) {
       return importedTotal > 0 ? 'Sincronização Concluída!' : 'Sincronização Concluída, sem novos registros'
     }
+    if (isWarning) return 'Sincronização em Andamento'
     if (hasError) return 'Sincronização com erro'
     return 'Concluir Sincronização'
-  }, [hasError, importedTotal, isSuccess, isSyncing])
+  }, [hasError, importedTotal, isSuccess, isSyncing, isWarning])
 
   const description = useMemo(() => {
     if (isSyncing) return `Reconciliando Zepp + Google Fit Hub (${elapsedSeconds}s)`
@@ -70,17 +72,20 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
         ? 'As métricas sincronizadas foram persistidas com sucesso.'
         : 'A sincronização foi concluída, mas não havia novos registros para importar.'
     }
+    if (isWarning) return syncResult?.message ?? 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.'
     if (hasError) return syncResult?.message ?? 'A sincronização encontrou um erro e não foi concluída.'
     return 'Aguardando atualização das fontes.'
-  }, [elapsedSeconds, hasError, importedTotal, isSuccess, isSyncing, syncResult?.message])
+  }, [elapsedSeconds, hasError, importedTotal, isSuccess, isSyncing, isWarning, syncResult?.message])
 
   if (!isOpen) return null
 
   const statusTone = isSuccess
     ? 'border-emerald-500/30 bg-white dark:bg-slate-900'
-    : hasError
-      ? 'border-rose-500/40 bg-white dark:bg-slate-900'
-      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+    : isWarning
+      ? 'border-amber-500/40 bg-white dark:bg-slate-900'
+      : hasError
+        ? 'border-rose-500/40 bg-white dark:bg-slate-900'
+        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md animate-fade-in">
@@ -105,6 +110,10 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400 glow-emerald">
               <CheckCircle2 className="w-10 h-10" />
             </div>
+          ) : isWarning ? (
+            <div className="w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/40 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400">
+              <AlertCircle className="w-10 h-10" />
+            </div>
           ) : hasError ? (
             <div className="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/40 flex items-center justify-center mb-4 text-rose-600 dark:text-rose-400">
               <AlertCircle className="w-10 h-10" />
@@ -116,7 +125,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
           )}
 
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">{heading}</h2>
-          <p className={`text-xs mt-1 ${hasError ? 'text-rose-600 dark:text-rose-300' : 'text-slate-600 dark:text-slate-400'}`}>{description}</p>
+          <p className={`text-xs mt-1 ${hasError ? 'text-rose-600 dark:text-rose-300' : isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400'}`}>{description}</p>
         </div>
 
         <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-6 overflow-hidden">
@@ -126,31 +135,34 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                 ? 'w-3/4 bg-gradient-to-r from-emerald-500 to-cyan-500 animate-pulse'
                 : isSuccess
                   ? 'w-full bg-emerald-500'
-                  : hasError
-                    ? 'w-full bg-rose-500'
-                    : 'w-full bg-amber-500'
+                  : isWarning
+                    ? 'w-full bg-amber-500'
+                    : hasError
+                      ? 'w-full bg-rose-500'
+                      : 'w-full bg-amber-500'
             }`}
           />
         </div>
 
+
         <div className="space-y-2 mb-6 text-left">
-          <div className={`flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border text-xs ${hasError ? 'border-rose-500/30' : 'border-slate-200 dark:border-slate-800'}`}>
+          <div className={`flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border text-xs ${hasError ? 'border-rose-500/30' : isWarning ? 'border-amber-500/30' : 'border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
               <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Zepp / Amazfit Wearable (HRV, Sono, RHR)</span>
             </div>
-            <span className={isSyncing ? 'text-cyan-600 dark:text-cyan-400 font-semibold animate-pulse' : hasError ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
-              {isSyncing ? 'Processando...' : `${zeppCount} recs`}
+            <span className={isSyncing ? 'text-cyan-600 dark:text-cyan-400 font-semibold animate-pulse' : hasError ? 'text-rose-600 dark:text-rose-400 font-bold' : isWarning ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
+              {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${zeppCount} recs`}
             </span>
           </div>
 
-          <div className={`flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border text-xs ${hasError ? 'border-rose-500/30' : 'border-slate-200 dark:border-slate-800'}`}>
+          <div className={`flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border text-xs ${hasError ? 'border-rose-500/30' : isWarning ? 'border-amber-500/30' : 'border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
               <Shield className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               <span>Google Health API (Passos, Sono, RHR, Peso)</span>
             </div>
-            <span className={isSyncing ? 'text-cyan-600 dark:text-cyan-400 font-semibold animate-pulse' : hasError ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
-              {isSyncing ? 'Processando...' : `${googleCount} recs`}
+            <span className={isSyncing ? 'text-cyan-600 dark:text-cyan-400 font-semibold animate-pulse' : hasError ? 'text-rose-600 dark:text-rose-400 font-bold' : isWarning ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
+              {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${googleCount} recs`}
             </span>
           </div>
         </div>

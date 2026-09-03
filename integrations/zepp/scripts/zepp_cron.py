@@ -42,6 +42,18 @@ from health_workbook import WORKBOOK_PATH, upsert_daily_record
 def main():
     parser = argparse.ArgumentParser(description="Coleta Zepp e atualiza a planilha diária.")
     parser.add_argument("--include-today", action="store_true", help="Registra o dia parcial atual.")
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        default=True,
+        help="Habilita coleta incremental com base no último snapshot (padrão: True).",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_false",
+        dest="incremental",
+        help="Força coleta completa para o período total de dias configurados.",
+    )
     args = parser.parse_args()
     # Ensure data directory
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -55,11 +67,13 @@ def main():
 
     # Fetch data
     days = int(os.environ.get("ZEPP_DAYS", "7"))
-    print(f"📡 Coletando dados Amazfit/Zepp (últimos {days} dias)...")
+    mode = "incremental" if args.incremental else "custom"
+    print(f"📡 Coletando dados Amazfit/Zepp (modo {mode}, base {days} dias)...")
     print(f"🕐 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
     print()
 
-    results = fetch_all_data(days=days)
+    results = fetch_all_data(days=days, mode=mode)
+
 
     reference_date = datetime.now().astimezone().date()
     if not args.include_today:

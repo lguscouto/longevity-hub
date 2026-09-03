@@ -76,20 +76,22 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
     )
     client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
 
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
     def mock_fetch(data_type, *args, **kwargs):
         if data_type == "steps":
             return [
-                {"startTime": "2026-08-18T08:00:00Z", "steps": {"count": 8200}}
+                {"startTime": f"{today_str}T08:00:00Z", "steps": {"count": 8200}}
             ], None
         if data_type == "heart-rate":
             return [
-                {"startTime": "2026-08-18T08:00:00Z", "heartRate": {"bpm": 62}},
-                {"startTime": "2026-08-18T12:00:00Z", "heartRate": {"bpm": 74}},
+                {"startTime": f"{today_str}T08:00:00Z", "heartRate": {"bpm": 62}},
+                {"startTime": f"{today_str}T12:00:00Z", "heartRate": {"bpm": 74}},
             ], None
         if data_type == "sleep":
             return [
                 {
-                    "startTime": "2026-08-18T01:00:00Z",
+                    "startTime": f"{today_str}T01:00:00Z",
                     "sleep": {
                         "durationMinutes": 450,
                         "stages": {"deepMinutes": 90, "remMinutes": 100, "lightMinutes": 240, "awakeMinutes": 20},
@@ -98,11 +100,11 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
             ], None
         if data_type == "oxygen-saturation":
             return [
-                {"startTime": "2026-08-18T04:00:00Z", "oxygenSaturation": {"percentage": 98.0}}
+                {"startTime": f"{today_str}T04:00:00Z", "oxygenSaturation": {"percentage": 98.0}}
             ], None
         if data_type == "weight":
             return [
-                {"startTime": "2026-08-18T07:00:00Z", "weight": {"kilograms": 78.5}}
+                {"startTime": f"{today_str}T07:00:00Z", "weight": {"kilograms": 78.5}}
             ], None
         return [], None
 
@@ -110,7 +112,7 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
         records, errors = client.fetch_daily_metrics_summary(days=1)
         assert len(errors) == 0
         assert len(records) >= 1
-        rec = next(r for r in records if r["date_ref"] == "2026-08-18")
+        rec = next(r for r in records if r["date_ref"] == today_str)
         assert rec["steps"] == 8200
         assert rec["rhr_bpm"] == 62.0
         assert rec["avg_hr_bpm"] == 68.0

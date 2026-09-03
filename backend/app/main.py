@@ -11,7 +11,8 @@ from backend.app.config import get_db_path
 from longevidade import __version__
 from longevidade.db.schema import initialize_db
 
-from backend.app.routers import ai, cgm, checkins, compliance, correlations, daily_guidance, energy_circadian, google_health, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, quality, reports, supplements
+from backend.app.routers import ai, cgm, checkins, compliance, correlations, daily_guidance, energy_circadian, google_health, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, quality, reports, supplements, workouts
+
 
 
 DEFAULT_LOCAL_ALLOWED_ORIGINS: Tuple[str, ...] = (
@@ -83,9 +84,15 @@ app.include_router(checkins.router)
 app.include_router(daily_guidance.router)
 app.include_router(energy_circadian.router)
 app.include_router(correlations.router)
+app.include_router(workouts.router)
+
+# Aliases para integrações externas e scripts legados
+app.add_api_route("/api/v1/sync/zepp", metrics.sync_all_sources, methods=["POST"], tags=["Sync"])
+app.add_api_route("/api/sync/status", metrics.get_sync_status, methods=["GET"], tags=["Sync"])
 
 
 @app.get("/api/health")
+
 def health_check():
     return {
         "status": "ok",

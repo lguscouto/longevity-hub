@@ -41,4 +41,24 @@ describe('SyncProgressModal', () => {
 
     expect(screen.getByText('Sincronizando Fontes de Longevidade...')).toBeInTheDocument()
   })
+
+  it('renders warning heading and message for 409 conflict results', () => {
+    render(
+      <SyncProgressModal
+        isOpen
+        isSyncing={false}
+        syncResult={{
+          status: 'warning',
+          message: 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.',
+        }}
+        onClose={() => {}}
+      />,
+    )
+
+    expect(screen.getByText('Sincronização em Andamento')).toBeInTheDocument()
+    expect(screen.getByText(/já está em andamento/i)).toBeInTheDocument()
+    expect(screen.queryByText('Sincronização Concluída!')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sincronização com erro')).not.toBeInTheDocument()
+  })
 })
+

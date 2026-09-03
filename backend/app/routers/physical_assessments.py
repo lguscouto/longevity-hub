@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from backend.app.config import DATA_DIR, get_db_path
 from longevidade.assessments.service import PhysicalAssessmentService
@@ -159,6 +159,24 @@ async def upload_assessment_photos(
             )
 
     return saved_photos
+
+
+@router.get("/{assessment_id}/photos/download")
+def download_assessment_photos(assessment_id: str) -> Response:
+    service = _service()
+    try:
+        zip_buffer, filename = service.export_photos_zip(assessment_id)
+        return Response(
+            content=zip_buffer.getvalue(),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 
 @router.get("/{assessment_id}/photos/{photo_id}/content")

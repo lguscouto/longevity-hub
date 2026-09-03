@@ -346,9 +346,11 @@ class TestResultContract:
 
     CONTRACT_KEYS = {
         "records_read", "records_inserted", "records_rejected",
+        "workouts_inserted",
         "source_path", "status", "summary",
         "exception_type", "exception_message",
     }
+
 
     def test_contrato_erro(self, repo: LongevityRepository):
         inexistente = Path("/tmp/nao_existe_zepp")
