@@ -23,6 +23,7 @@ const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessme
 const SleepView = lazy(() => import('./components/SleepView').then(m => ({ default: m.SleepView })))
 const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthModal').then(m => ({ default: m.GoogleHealthAuthModal })))
 const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => ({ default: m.WorkoutsTable })))
+const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
 
 
 import { DateNavigator } from './components/DateNavigator'
@@ -34,7 +35,7 @@ import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 
-type Tab = 'overview' | 'labs' | 'supplements' | 'sleep' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
+type Tab = 'overview' | 'workouts' | 'labs' | 'supplements' | 'sleep' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
 
 type DailyMetric = {
   date_ref: string
@@ -84,7 +85,7 @@ function formatDecimal(value: number | null | undefined): string {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)
 }
 
-const VALID_TABS: Tab[] = ['overview', 'labs', 'supplements', 'sleep', 'ai', 'n-of-1', 'physical-assessments', 'profile']
+const VALID_TABS: Tab[] = ['overview', 'workouts', 'labs', 'supplements', 'sleep', 'ai', 'n-of-1', 'physical-assessments', 'profile']
 
 function getInitialTab(): Tab {
   try {
@@ -604,6 +605,11 @@ export default function App() {
               </>
             )}
 
+            {activeTab === 'workouts' && (
+              <Suspense fallback={<div className="py-12 text-center text-slate-400">Carregando painel de treinos...</div>}>
+                <WorkoutsView onSyncZepp={handleSyncZepp} isSyncingZepp={isSyncing} />
+              </Suspense>
+            )}
             {activeTab === 'labs' && <LabResultsTable labs={labs} onAddBatchLabs={handleAddBatchLabs} onRefreshData={fetchDashboardData} />}
             {activeTab === 'supplements' && <SupplementsView selectedDate={selectedDate} />}
             {activeTab === 'sleep' && <SleepView />}

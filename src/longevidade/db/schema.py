@@ -300,19 +300,89 @@ CREATE TABLE IF NOT EXISTS workouts (
     device TEXT,
     raw_json TEXT,
     source TEXT DEFAULT 'Zepp',
+    title TEXT,
+    volume_kg REAL DEFAULT 0.0,
+    sets_count INTEGER DEFAULT 0,
+    reps_count INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(workout_date DESC, workout_time DESC);
 CREATE INDEX IF NOT EXISTS idx_workouts_category ON workouts(category);
+CREATE INDEX IF NOT EXISTS idx_workouts_source ON workouts(source);
+
+CREATE TABLE IF NOT EXISTS workout_exercises (
+    id TEXT PRIMARY KEY,
+    workout_id TEXT NOT NULL,
+    exercise_index INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    exercise_template_id TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_we_workout_id ON workout_exercises(workout_id);
+CREATE INDEX IF NOT EXISTS idx_we_title ON workout_exercises(title);
+
+CREATE TABLE IF NOT EXISTS workout_sets (
+    id TEXT PRIMARY KEY,
+    exercise_id TEXT NOT NULL,
+    workout_id TEXT NOT NULL,
+    set_index INTEGER NOT NULL,
+    set_type TEXT DEFAULT 'normal',
+    weight_kg REAL DEFAULT 0.0,
+    reps INTEGER DEFAULT 0,
+    distance_meters REAL,
+    duration_seconds REAL,
+    rpe REAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE,
+    FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ws_exercise_id ON workout_sets(exercise_id);
+CREATE INDEX IF NOT EXISTS idx_ws_workout_id ON workout_sets(workout_id);
+
+CREATE TABLE IF NOT EXISTS exercise_catalog (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT,
+    body_part TEXT,
+    equipment TEXT,
+    target TEXT,
+    muscle_group TEXT,
+    secondary_muscles_json TEXT,
+    instructions_json TEXT,
+    image_path TEXT,
+    gif_path TEXT,
+    media_id TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ec_name ON exercise_catalog(name);
+CREATE INDEX IF NOT EXISTS idx_ec_body_part ON exercise_catalog(body_part);
+CREATE INDEX IF NOT EXISTS idx_ec_equipment ON exercise_catalog(equipment);
+CREATE INDEX IF NOT EXISTS idx_ec_target ON exercise_catalog(target);
+
+CREATE TABLE IF NOT EXISTS exercise_mappings (
+    exercise_title TEXT PRIMARY KEY,
+    catalog_exercise_id TEXT NOT NULL,
+    is_manual INTEGER DEFAULT 0,
+    confidence REAL DEFAULT 1.0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(catalog_exercise_id) REFERENCES exercise_catalog(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_em_catalog_id ON exercise_mappings(catalog_exercise_id);
 """
 
 
 
 def initialize_db(db_path: str | Path) -> None:
     """Inicializa o esquema do banco de dados SQLite usando migrações versionadas."""
-    from longevidade.db.migrations import apply_migrations
+    from longevidade.db.migrations import apply_migrations, seed_exercise_catalog
 
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -320,6 +390,7 @@ def initialize_db(db_path: str | Path) -> None:
     try:
         conn.execute("PRAGMA foreign_keys = ON;")
         apply_migrations(conn)
+        seed_exercise_catalog(conn)
 
         # Garante metadados de chaves de IA
         for column_sql in (

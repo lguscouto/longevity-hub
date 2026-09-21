@@ -5,10 +5,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 from longevidade.ingestion.google_health_client import GoogleHealthCredentials
 
-client = TestClient(app)
-
-
-def test_google_health_status_unauthenticated(tmp_path: Path):
+def test_google_health_status_unauthenticated(client: TestClient, tmp_path: Path):
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "absent.json"):
         resp = client.get("/api/google-health/status")
         assert resp.status_code == 200
@@ -21,7 +18,7 @@ def test_google_health_status_unauthenticated(tmp_path: Path):
         assert data["api_version"] == "v4"
 
 
-def test_google_health_sync_unauthenticated(tmp_path: Path):
+def test_google_health_sync_unauthenticated(client: TestClient, tmp_path: Path):
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "absent.json"):
         resp = client.post("/api/google-health/sync", json={"days": 7})
         assert resp.status_code == 200
@@ -31,7 +28,7 @@ def test_google_health_sync_unauthenticated(tmp_path: Path):
         assert "Google Health API" in data["summary"]
 
 
-def test_google_health_sync_dry_run(tmp_path: Path):
+def test_google_health_sync_dry_run(client: TestClient, tmp_path: Path):
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "absent.json"):
         resp = client.post("/api/google-health/sync", json={"days": 7, "dry_run": True})
         assert resp.status_code == 200
@@ -40,7 +37,7 @@ def test_google_health_sync_dry_run(tmp_path: Path):
         assert data["records_inserted"] == 0
 
 
-def test_google_health_save_credentials(tmp_path: Path):
+def test_google_health_save_credentials(client: TestClient, tmp_path: Path):
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "token.json"):
         resp = client.post(
             "/api/google-health/credentials",
@@ -61,14 +58,14 @@ def test_google_health_save_credentials(tmp_path: Path):
         assert "googlehealth.sleep.readonly" in url_data["auth_url"]
 
 
-def test_google_health_callback_error():
+def test_google_health_callback_error(client: TestClient):
     resp = client.get("/api/google-health/callback?error=access_denied")
     assert resp.status_code == 400
     assert "Falha na Autorização" in resp.text
     assert "access_denied" in resp.text
 
 
-def test_google_health_disconnect(tmp_path: Path):
+def test_google_health_disconnect(client: TestClient, tmp_path: Path):
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="tok_123", client_id="cid")
     creds.save_to_file(token_file)

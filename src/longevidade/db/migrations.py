@@ -412,6 +412,88 @@ MIGRATIONS: Sequence[Migration] = (
             "ALTER TABLE daily_metrics ADD COLUMN calories INTEGER;",
         ),
     ),
+    Migration(
+        version=7,
+        name="hevy_workouts_exercises_and_sets",
+        statements=(
+            "ALTER TABLE workouts ADD COLUMN title TEXT;",
+            "ALTER TABLE workouts ADD COLUMN volume_kg REAL DEFAULT 0.0;",
+            "ALTER TABLE workouts ADD COLUMN sets_count INTEGER DEFAULT 0;",
+            "ALTER TABLE workouts ADD COLUMN reps_count INTEGER DEFAULT 0;",
+            """
+            CREATE TABLE IF NOT EXISTS workout_exercises (
+                id TEXT PRIMARY KEY,
+                workout_id TEXT NOT NULL,
+                exercise_index INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                exercise_template_id TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_we_workout_id ON workout_exercises(workout_id);",
+            "CREATE INDEX IF NOT EXISTS idx_we_title ON workout_exercises(title);",
+            """
+            CREATE TABLE IF NOT EXISTS workout_sets (
+                id TEXT PRIMARY KEY,
+                exercise_id TEXT NOT NULL,
+                workout_id TEXT NOT NULL,
+                set_index INTEGER NOT NULL,
+                set_type TEXT DEFAULT 'normal',
+                weight_kg REAL DEFAULT 0.0,
+                reps INTEGER DEFAULT 0,
+                distance_meters REAL,
+                duration_seconds REAL,
+                rpe REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE,
+                FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_ws_exercise_id ON workout_sets(exercise_id);",
+            "CREATE INDEX IF NOT EXISTS idx_ws_workout_id ON workout_sets(workout_id);",
+            "CREATE INDEX IF NOT EXISTS idx_workouts_source ON workouts(source);",
+        ),
+    ),
+    Migration(
+        version=8,
+        name="exercise_catalog_and_mappings",
+        statements=(
+            """
+            CREATE TABLE IF NOT EXISTS exercise_catalog (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                category TEXT,
+                body_part TEXT,
+                equipment TEXT,
+                target TEXT,
+                muscle_group TEXT,
+                secondary_muscles_json TEXT,
+                instructions_json TEXT,
+                image_path TEXT,
+                gif_path TEXT,
+                media_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_ec_name ON exercise_catalog(name);",
+            "CREATE INDEX IF NOT EXISTS idx_ec_body_part ON exercise_catalog(body_part);",
+            "CREATE INDEX IF NOT EXISTS idx_ec_equipment ON exercise_catalog(equipment);",
+            "CREATE INDEX IF NOT EXISTS idx_ec_target ON exercise_catalog(target);",
+            """
+            CREATE TABLE IF NOT EXISTS exercise_mappings (
+                exercise_title TEXT PRIMARY KEY,
+                catalog_exercise_id TEXT NOT NULL,
+                is_manual INTEGER DEFAULT 0,
+                confidence REAL DEFAULT 1.0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(catalog_exercise_id) REFERENCES exercise_catalog(id) ON DELETE CASCADE
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_em_catalog_id ON exercise_mappings(catalog_exercise_id);",
+        ),
+    ),
 )
 
 
@@ -437,3 +519,49 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
             current_version = migration.version
 
     return current_version
+
+
+def seed_exercise_catalog(conn: sqlite3.Connection) -> int:
+    """Popula exercise_catalog com o snapshot em exercises_catalog.json se a tabela estiver vazia."""
+    import json
+    from pathlib import Path
+
+    try:
+        count = conn.execute("SELECT COUNT(*) FROM exercise_catalog;").fetchone()[0]
+        if count > 0:
+            return count
+        json_path = Path(__file__).resolve().parent.parent / "data" / "exercises_catalog.json"
+        if not json_path.exists():
+            return 0
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        rows = [
+            (
+                str(item.get("id")),
+                item.get("name", ""),
+                item.get("category", ""),
+                item.get("body_part", ""),
+                item.get("equipment", ""),
+                item.get("target", ""),
+                item.get("muscle_group", ""),
+                json.dumps(item.get("secondary_muscles", []), ensure_ascii=False),
+                json.dumps(item.get("instructions", {}), ensure_ascii=False),
+                item.get("image", ""),
+                item.get("gif_url", ""),
+                item.get("media_id", ""),
+            )
+            for item in data
+        ]
+        with conn:
+            conn.executemany(
+                """
+                INSERT OR IGNORE INTO exercise_catalog (
+                    id, name, category, body_part, equipment, target, muscle_group,
+                    secondary_muscles_json, instructions_json, image_path, gif_path, media_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                rows,
+            )
+        return len(rows)
+    except Exception:
+        return 0

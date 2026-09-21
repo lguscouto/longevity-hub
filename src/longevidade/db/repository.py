@@ -1020,11 +1020,13 @@ class LongevityRepository:
             id, workout_date, workout_time, category, activity_type,
             duration_min, calories, distance_km, avg_hr, max_hr,
             training_effect, steps, city, device, raw_json, source,
+            title, volume_kg, sets_count, reps_count,
             updated_at
         ) VALUES (
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?,
             CURRENT_TIMESTAMP
         )
         ON CONFLICT(id) DO UPDATE SET
@@ -1043,6 +1045,10 @@ class LongevityRepository:
             device = excluded.device,
             raw_json = excluded.raw_json,
             source = excluded.source,
+            title = excluded.title,
+            volume_kg = excluded.volume_kg,
+            sets_count = excluded.sets_count,
+            reps_count = excluded.reps_count,
             updated_at = CURRENT_TIMESTAMP;
         """
         def _to_int(val: Any) -> Optional[int]:
@@ -1079,6 +1085,10 @@ class LongevityRepository:
                 w.get("device") or "",
                 w.get("raw_json"),
                 str(w.get("source") or "Zepp"),
+                w.get("title") or w.get("category") or "Treino",
+                _to_float(w.get("volume_kg")),
+                _to_int(w.get("sets_count")) or 0,
+                _to_int(w.get("reps_count")) or 0,
             )
             for w in workouts
             if w.get("id") and w.get("workout_date")
@@ -1092,12 +1102,155 @@ class LongevityRepository:
             conn.commit()
             return len(rows)
 
+    def upsert_hevy_workouts(self, workouts: List[Dict[str, Any]]) -> int:
+        """Upserta treinos do Hevy com seus respectivos exercícios e séries de forma transacional."""
+        if not workouts:
+            return 0
+
+        # Primeiro upserta a tabela principal workouts
+        self.upsert_workouts(workouts)
+
+        with self._get_connection() as conn:
+            for w in workouts:
+                workout_id = str(w.get("id"))
+                exercises = w.get("exercises") or []
+                if not exercises:
+                    continue
+
+                # Remove exercícios e séries existentes deste treino para atualização limpa
+                conn.execute("DELETE FROM workout_sets WHERE workout_id = ?;", (workout_id,))
+                conn.execute("DELETE FROM workout_exercises WHERE workout_id = ?;", (workout_id,))
+
+                ex_rows = []
+                set_rows = []
+                for ex_idx, ex in enumerate(exercises):
+                    ex_id = str(ex.get("id") or f"{workout_id}_ex_{ex_idx}")
+                    ex_title = str(ex.get("title") or "Exercício")
+                    ex_tmpl_id = ex.get("exercise_template_id")
+                    notes = ex.get("notes") or ""
+                    ex_rows.append((ex_id, workout_id, ex_idx, ex_title, ex_tmpl_id, notes))
+
+                    sets = ex.get("sets") or []
+                    for s_idx, s in enumerate(sets):
+                        s_id = str(s.get("id") or f"{ex_id}_s_{s_idx}")
+                        s_type = str(s.get("set_type") or "normal")
+                        w_kg = float(s.get("weight_kg") or 0.0)
+                        reps = int(s.get("reps") or 0)
+                        dist_m = float(s["distance_meters"]) if s.get("distance_meters") is not None else None
+                        dur_s = float(s["duration_seconds"]) if s.get("duration_seconds") is not None else None
+                        rpe = float(s["rpe"]) if s.get("rpe") is not None else None
+                        set_rows.append((s_id, ex_id, workout_id, s_idx, s_type, w_kg, reps, dist_m, dur_s, rpe))
+
+                if ex_rows:
+                    conn.executemany(
+                        """
+                        INSERT INTO workout_exercises (id, workout_id, exercise_index, title, exercise_template_id, notes)
+                        VALUES (?, ?, ?, ?, ?, ?);
+                        """,
+                        ex_rows,
+                    )
+                if set_rows:
+                    conn.executemany(
+                        """
+                        INSERT INTO workout_sets (id, exercise_id, workout_id, set_index, set_type, weight_kg, reps, distance_meters, duration_seconds, rpe)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        """,
+                        set_rows,
+                    )
+
+            conn.commit()
+            return len(workouts)
+
+    def get_workout_details(self, workout_id: str) -> Optional[Dict[str, Any]]:
+        """Retorna uma sessão de treino completa com seus exercícios e séries estruturados."""
+        with self._get_connection() as conn:
+            w_row = conn.execute("SELECT * FROM workouts WHERE id = ?;", (workout_id,)).fetchone()
+            if not w_row:
+                return None
+            workout = dict(w_row)
+
+            # Busca exercícios ordenados
+            ex_rows = conn.execute(
+                "SELECT * FROM workout_exercises WHERE workout_id = ? ORDER BY exercise_index ASC;",
+                (workout_id,),
+            ).fetchall()
+
+            exercises = [dict(r) for r in ex_rows]
+
+            # Busca séries ordenadas
+            set_rows = conn.execute(
+                "SELECT * FROM workout_sets WHERE workout_id = ? ORDER BY exercise_id ASC, set_index ASC;",
+                (workout_id,),
+            ).fetchall()
+
+            sets_by_ex: Dict[str, List[Dict[str, Any]]] = {}
+            for s in set_rows:
+                s_dict = dict(s)
+                sets_by_ex.setdefault(s_dict["exercise_id"], []).append(s_dict)
+
+            # Enriquecimento com mídias do catálogo de exercícios
+            titles = [ex["title"] for ex in exercises if ex.get("title")]
+            catalog_by_title: Dict[str, Dict[str, Any]] = {}
+            if titles:
+                self._ensure_titles_mapped(conn, titles)
+                placeholders = ",".join("?" for _ in titles)
+                map_sql = f"""
+                SELECT m.exercise_title, c.*
+                FROM exercise_mappings m
+                JOIN exercise_catalog c ON m.catalog_exercise_id = c.id
+                WHERE m.exercise_title IN ({placeholders});
+                """
+                mapped_rows = conn.execute(map_sql, titles).fetchall()
+                for mr in mapped_rows:
+                    mr_dict = dict(mr)
+                    t = mr_dict.pop("exercise_title")
+                    catalog_by_title[t] = mr_dict
+
+            from longevidade.exercises.matcher import (
+                build_media_urls,
+                BODY_PARTS_PT,
+                TARGET_MUSCLES_PT,
+                EQUIPMENT_PT,
+            )
+            import json
+
+            for ex in exercises:
+                ex["sets"] = sets_by_ex.get(ex["id"], [])
+                cat = catalog_by_title.get(ex.get("title", ""))
+                if cat:
+                    urls = build_media_urls(cat.get("image_path"), cat.get("gif_path"))
+                    ex["media"] = {
+                        "catalog_id": cat["id"],
+                        "name": cat["name"],
+                        "category": cat.get("category"),
+                        "body_part": cat.get("body_part"),
+                        "body_part_pt": BODY_PARTS_PT.get(cat.get("body_part") or "", cat.get("body_part")),
+                        "target": cat.get("target"),
+                        "target_pt": TARGET_MUSCLES_PT.get(cat.get("target") or "", cat.get("target")),
+                        "equipment": cat.get("equipment"),
+                        "equipment_pt": EQUIPMENT_PT.get(cat.get("equipment") or "", cat.get("equipment")),
+                        "secondary_muscles": json.loads(cat.get("secondary_muscles_json") or "[]"),
+                        "instructions": json.loads(cat.get("instructions_json") or "{}"),
+                        "image_url": urls["image_url"],
+                        "image_fallback": urls["image_fallback"],
+                        "gif_url": urls["gif_url"],
+                        "gif_fallback": urls["gif_fallback"],
+                        "media_id": cat.get("media_id"),
+                    }
+                else:
+                    ex["media"] = None
+
+            workout["exercises"] = exercises
+            return workout
+
     def get_workouts(
         self,
         limit: int = 50,
         category: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        source: Optional[str] = None,
+        search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         conditions: list[str] = []
         params: list[Any] = []
@@ -1105,12 +1258,26 @@ class LongevityRepository:
         if category and category.strip().lower() not in ("todas", "all", "todos"):
             conditions.append("category = ? COLLATE NOCASE")
             params.append(category.strip())
+        if source and source.strip().lower() not in ("todas", "all", "todos"):
+            conditions.append("source = ? COLLATE NOCASE")
+            params.append(source.strip())
         if start_date:
             conditions.append("workout_date >= ?")
             params.append(start_date)
         if end_date:
             conditions.append("workout_date <= ?")
             params.append(end_date)
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            conditions.append(
+                """(
+                    title LIKE ? OR
+                    category LIKE ? OR
+                    activity_type LIKE ? OR
+                    id IN (SELECT workout_id FROM workout_exercises WHERE title LIKE ?)
+                )"""
+            )
+            params.extend([term, term, term, term])
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         sql = f"""
@@ -1124,5 +1291,242 @@ class LongevityRepository:
         with self._get_connection() as conn:
             rows = conn.execute(sql, params).fetchall()
             return [dict(r) for r in rows]
+
+    def get_workouts_summary(
+        self,
+        days: Optional[int] = 30,
+        source: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Calcula os KPIs agregados de treinos para o dashboard (volume, duração, calorias, frequência)."""
+        conditions: list[str] = []
+        params: list[Any] = []
+
+        if days is not None and days > 0:
+            from datetime import datetime, timedelta, timezone
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+            conditions.append("workout_date >= ?")
+            params.append(cutoff)
+
+        if source and source.strip().lower() not in ("todas", "all", "todos"):
+            conditions.append("source = ? COLLATE NOCASE")
+            params.append(source.strip())
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+        sql = f"""
+        SELECT
+            COUNT(*) AS total_workouts,
+            SUM(CASE WHEN source = 'Hevy' THEN 1 ELSE 0 END) AS hevy_workouts,
+            SUM(CASE WHEN source = 'Zepp' THEN 1 ELSE 0 END) AS zepp_workouts,
+            COALESCE(SUM(volume_kg), 0.0) AS total_volume_kg,
+            COALESCE(SUM(duration_min), 0.0) AS total_duration_min,
+            COALESCE(SUM(calories), 0) AS total_calories,
+            COALESCE(SUM(sets_count), 0) AS total_sets,
+            COALESCE(SUM(reps_count), 0) AS total_reps,
+            COALESCE(AVG(CASE WHEN avg_hr > 0 THEN avg_hr ELSE NULL END), 0) AS avg_hr
+        FROM workouts
+        {where_clause};
+        """
+
+        with self._get_connection() as conn:
+            row = conn.execute(sql, params).fetchone()
+            if not row:
+                return {
+                    "total_workouts": 0,
+                    "hevy_workouts": 0,
+                    "zepp_workouts": 0,
+                    "total_volume_kg": 0.0,
+                    "total_duration_min": 0.0,
+                    "total_calories": 0,
+                    "total_sets": 0,
+                    "total_reps": 0,
+                    "avg_hr": 0.0,
+                }
+            res = dict(row)
+            res["total_volume_kg"] = round(float(res.get("total_volume_kg") or 0.0), 1)
+            res["total_duration_min"] = round(float(res.get("total_duration_min") or 0.0), 1)
+            res["avg_hr"] = round(float(res.get("avg_hr") or 0.0), 0)
+            return res
+
+    def _ensure_titles_mapped(self, conn: sqlite3.Connection, titles: List[str]) -> None:
+        """Verifica se os títulos possuem mapeamento em exercise_mappings; se não, tenta pareamento automático."""
+        if not titles:
+            return
+
+        placeholders = ",".join("?" for _ in titles)
+        existing_rows = conn.execute(
+            f"SELECT exercise_title FROM exercise_mappings WHERE exercise_title IN ({placeholders});",
+            titles,
+        ).fetchall()
+        mapped_set = {r[0] for r in existing_rows}
+        unmapped = [t for t in titles if t not in mapped_set]
+
+        if not unmapped:
+            return
+
+        # Carrega catálogo simplificado para pareamento
+        cat_rows = conn.execute("SELECT id, name, equipment FROM exercise_catalog;").fetchall()
+        if not cat_rows:
+            return
+
+        cat_items = [{"id": r[0], "name": r[1], "equipment": r[2]} for r in cat_rows]
+
+        from longevidade.exercises.matcher import match_exercise_title
+
+        to_insert = []
+        for title in unmapped:
+            matched_id, score = match_exercise_title(title, cat_items)
+            if matched_id:
+                to_insert.append((title, matched_id, 0, score))
+
+        if to_insert:
+            conn.executemany(
+                """
+                INSERT OR REPLACE INTO exercise_mappings (exercise_title, catalog_exercise_id, is_manual, confidence)
+                VALUES (?, ?, ?, ?);
+                """,
+                to_insert,
+            )
+            conn.commit()
+
+    def get_exercise_catalog(
+        self,
+        query: Optional[str] = None,
+        muscle_group: Optional[str] = None,
+        equipment: Optional[str] = None,
+        body_part: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """Consulta e pagina exercícios do catálogo com filtros."""
+        import json
+        from longevidade.exercises.matcher import (
+            build_media_urls,
+            BODY_PARTS_PT,
+            TARGET_MUSCLES_PT,
+            EQUIPMENT_PT,
+        )
+
+        conditions: list[str] = []
+        params: list[Any] = []
+
+        if query and query.strip():
+            term = f"%{query.strip()}%"
+            conditions.append("(name LIKE ? OR target LIKE ? OR muscle_group LIKE ?)")
+            params.extend([term, term, term])
+
+        if muscle_group and muscle_group.strip().lower() not in ("todos", "all"):
+            conditions.append("muscle_group = ? COLLATE NOCASE")
+            params.append(muscle_group.strip())
+
+        if equipment and equipment.strip().lower() not in ("todos", "all"):
+            conditions.append("equipment = ? COLLATE NOCASE")
+            params.append(equipment.strip())
+
+        if body_part and body_part.strip().lower() not in ("todos", "all"):
+            conditions.append("body_part = ? COLLATE NOCASE")
+            params.append(body_part.strip())
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+        count_sql = f"SELECT COUNT(*) FROM exercise_catalog {where_clause};"
+        data_sql = f"""
+        SELECT * FROM exercise_catalog
+        {where_clause}
+        ORDER BY name ASC
+        LIMIT ? OFFSET ?;
+        """
+
+        with self._get_connection() as conn:
+            total = conn.execute(count_sql, params).fetchone()[0]
+            rows = conn.execute(data_sql, (*params, limit, offset)).fetchall()
+
+            items = []
+            for r in rows:
+                cat = dict(r)
+                urls = build_media_urls(cat.get("image_path"), cat.get("gif_path"))
+                items.append({
+                    "id": cat["id"],
+                    "name": cat["name"],
+                    "category": cat.get("category"),
+                    "body_part": cat.get("body_part"),
+                    "body_part_pt": BODY_PARTS_PT.get(cat.get("body_part") or "", cat.get("body_part")),
+                    "target": cat.get("target"),
+                    "target_pt": TARGET_MUSCLES_PT.get(cat.get("target") or "", cat.get("target")),
+                    "equipment": cat.get("equipment"),
+                    "equipment_pt": EQUIPMENT_PT.get(cat.get("equipment") or "", cat.get("equipment")),
+                    "secondary_muscles": json.loads(cat.get("secondary_muscles_json") or "[]"),
+                    "instructions": json.loads(cat.get("instructions_json") or "{}"),
+                    "image_url": urls["image_url"],
+                    "image_fallback": urls["image_fallback"],
+                    "gif_url": urls["gif_url"],
+                    "gif_fallback": urls["gif_fallback"],
+                    "media_id": cat.get("media_id"),
+                })
+
+            return {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "items": items,
+            }
+
+    def get_exercise_catalog_by_id(self, catalog_id: str) -> Optional[Dict[str, Any]]:
+        """Busca um exercício específico do catálogo pelo seu ID."""
+        import json
+        from longevidade.exercises.matcher import (
+            build_media_urls,
+            BODY_PARTS_PT,
+            TARGET_MUSCLES_PT,
+            EQUIPMENT_PT,
+        )
+
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM exercise_catalog WHERE id = ?;", (catalog_id,)).fetchone()
+            if not row:
+                return None
+            cat = dict(row)
+            urls = build_media_urls(cat.get("image_path"), cat.get("gif_path"))
+            return {
+                "id": cat["id"],
+                "name": cat["name"],
+                "category": cat.get("category"),
+                "body_part": cat.get("body_part"),
+                "body_part_pt": BODY_PARTS_PT.get(cat.get("body_part") or "", cat.get("body_part")),
+                "target": cat.get("target"),
+                "target_pt": TARGET_MUSCLES_PT.get(cat.get("target") or "", cat.get("target")),
+                "equipment": cat.get("equipment"),
+                "equipment_pt": EQUIPMENT_PT.get(cat.get("equipment") or "", cat.get("equipment")),
+                "secondary_muscles": json.loads(cat.get("secondary_muscles_json") or "[]"),
+                "instructions": json.loads(cat.get("instructions_json") or "{}"),
+                "image_url": urls["image_url"],
+                "image_fallback": urls["image_fallback"],
+                "gif_url": urls["gif_url"],
+                "gif_fallback": urls["gif_fallback"],
+                "media_id": cat.get("media_id"),
+            }
+
+    def set_exercise_mapping(
+        self,
+        exercise_title: str,
+        catalog_exercise_id: str,
+        is_manual: int = 1,
+        confidence: float = 1.0,
+    ) -> None:
+        """Salva ou atualiza a associação entre um título de treino e o exercício do catálogo."""
+        sql = """
+        INSERT OR REPLACE INTO exercise_mappings (exercise_title, catalog_exercise_id, is_manual, confidence, updated_at)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP);
+        """
+        with self._get_connection() as conn:
+            conn.execute(sql, (exercise_title.strip(), catalog_exercise_id.strip(), is_manual, confidence))
+            conn.commit()
+
+    def get_exercise_mappings(self) -> Dict[str, Dict[str, Any]]:
+        """Retorna todos os mapeamentos cadastrados."""
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM exercise_mappings;").fetchall()
+            return {r["exercise_title"]: dict(r) for r in rows}
+
 
 
