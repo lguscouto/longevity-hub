@@ -231,7 +231,7 @@ test.describe('Smoke – Longevidade Dashboard', () => {
     await expect(page.getByText('8.423')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('48 bpm')).toBeVisible()
     await expect(page.getByText('7h 25m')).toBeVisible()
-    await expect(page.getByText('118/76')).toBeVisible()
+    await expect(page.getByText('44.2')).toBeVisible()
   })
 
   test('Sync Zepp mostra erro da coleta sem exibir sucesso falso', async ({ page }) => {

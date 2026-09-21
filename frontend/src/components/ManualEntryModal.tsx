@@ -54,7 +54,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Registrar Métrica Manual"
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl text-slate-900 dark:text-slate-100"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
           <div className="flex items-center gap-2">
@@ -178,11 +178,11 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
 
           {error && <p role="alert" className="text-xs text-rose-600 dark:text-rose-300 font-medium">{error}</p>}
 
-          <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition text-center">
               Cancelar
             </button>
-            <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold glow-emerald transition shadow-md" disabled={isSaving}>
+            <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold glow-emerald transition shadow-md text-center" disabled={isSaving}>
               {isSaving ? 'Salvando…' : 'Salvar Registro'}
             </button>
           </div>

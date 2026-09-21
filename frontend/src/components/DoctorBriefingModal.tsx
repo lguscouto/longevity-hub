@@ -24,10 +24,10 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-3xl w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
               <Stethoscope className="h-5 w-5" />
             </div>
             <div>
@@ -36,7 +36,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
             <a
               href="/api/reports/doctor-briefing/pdf"
               target="_blank"
@@ -52,7 +52,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
               {copied ? <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
               {copied ? 'Copiado!' : 'Copiar MD'}
             </button>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-1">✕</button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-1" aria-label="Fechar">✕</button>
           </div>
         </div>
 

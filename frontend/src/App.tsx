@@ -507,7 +507,7 @@ export default function App() {
             </div>
           }
         >
-          <main className="max-w-7xl mx-auto px-6 space-y-8">
+          <main className="max-w-7xl mx-auto px-3.5 sm:px-6 space-y-5 sm:space-y-8">
             {error && (
               <div role="alert" className="rounded-2xl border border-rose-500/50 bg-rose-500/10 dark:bg-rose-950/40 p-4 text-rose-900 dark:text-rose-100">
                 {error}

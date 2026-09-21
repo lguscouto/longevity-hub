@@ -349,11 +349,11 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{summary.total_workouts}</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{summary.total_workouts ?? 0}</div>
               <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                <span className="text-purple-600 dark:text-purple-400 font-bold">{summary.hevy_workouts} Hevy</span>
+                <span className="text-purple-600 dark:text-purple-400 font-bold">{summary.hevy_workouts ?? 0} Hevy</span>
                 <span>•</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{summary.zepp_workouts} Zepp</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{summary.zepp_workouts ?? 0} Zepp</span>
               </div>
             </div>
           </div>
@@ -367,9 +367,9 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{formatVolume(summary.total_volume_kg)}</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{formatVolume(summary.total_volume_kg ?? 0)}</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                {summary.total_sets > 0 ? `${summary.total_sets} séries • ${summary.total_reps} reps` : 'Sem séries registradas'}
+                {(summary.total_sets ?? 0) > 0 ? `${summary.total_sets} séries • ${summary.total_reps ?? 0} reps` : 'Sem séries registradas'}
               </div>
             </div>
           </div>
@@ -383,9 +383,9 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{formatDuration(summary.total_duration_min)}</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{formatDuration(summary.total_duration_min ?? 0)}</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                Média de {summary.total_workouts > 0 ? Math.round(summary.total_duration_min / summary.total_workouts) : 0} min por sessão
+                Média de {(summary.total_workouts ?? 0) > 0 ? Math.round((summary.total_duration_min ?? 0) / (summary.total_workouts || 1)) : 0} min por sessão
               </div>
             </div>
           </div>
@@ -399,9 +399,9 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{summary.total_calories.toLocaleString('pt-BR')} kcal</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{(summary.total_calories ?? 0).toLocaleString('pt-BR')} kcal</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                {summary.avg_hr > 0 ? `FC média ${Math.round(summary.avg_hr)} bpm` : 'Atividade e musculação'}
+                {(summary.avg_hr ?? 0) > 0 ? `FC média ${Math.round(summary.avg_hr)} bpm` : 'Atividade e musculação'}
               </div>
             </div>
           </div>

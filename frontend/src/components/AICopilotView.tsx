@@ -314,23 +314,23 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
   return (
     <div className="space-y-6">
       {/* Banner de Topo */}
-      <div className="bg-gradient-to-r from-slate-100 dark:from-slate-900 via-slate-100 dark:via-slate-900 to-cyan-50/40 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-100 dark:from-slate-900 via-slate-100 dark:via-slate-900 to-cyan-50/40 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
           <Bot className="h-64 w-64 text-cyan-400" />
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
                 <Sparkles className="h-3 w-3" /> Copiloto Longevidade AI
               </span>
               <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Modelo: <strong className="text-slate-900 dark:text-white">{selectedModel}</strong> ({activeProvider.toUpperCase()})
+                <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" /> Modelo: <strong className="text-slate-900 dark:text-white break-all">{selectedModel}</strong> ({activeProvider.toUpperCase()})
               </span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Inteligência Médica de Precisão</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Inteligência Médica de Precisão</h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
               Análise integrativa de biomarcadores de sangue, idade biológica PhenoAge, HRV autonômica e curva glicêmica baseada nos princípios do Protocolo Blueprint.
             </p>
             <div
@@ -348,10 +348,10 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <button
               onClick={onOpenSettings}
-              className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
+              className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition shrink-0"
               title="Configurar Chaves de API e Provedor"
             >
               <Settings className="h-5 w-5" />
@@ -360,7 +360,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
             <button
               onClick={handleGenerateAnalysis}
               disabled={isGenerating || !hasApiKey}
-              className={`px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition ${
+              className={`flex-1 sm:flex-initial px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition text-xs sm:text-sm ${
                 !hasApiKey
                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
                   : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black shadow-lg shadow-cyan-500/25 glow-cyan'

@@ -283,8 +283,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
   const filledCount = Object.values(formValues).filter(v => v !== '' && !isNaN(Number(v))).length;
 
   return (
-    <div className="glass-panel rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Dna className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Exames Laboratoriais & Alvos de Longevidade
@@ -294,7 +294,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
 
         <button
           onClick={() => setShowBatchModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition glow-cyan"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition glow-cyan w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" /> Novo Painel de Exames
         </button>
@@ -361,7 +361,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       })()}
 
       {/* Tabela Consolidada (1 Linha por Laudo/Data) */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-w-full min-w-0">
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">

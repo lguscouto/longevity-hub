@@ -47,8 +47,8 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
   const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus:outline-none";
 
   return (
-    <div className="glass-panel rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
+    <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" /> Experimentos N-of-1 (A/B Testing Pessoal)
@@ -58,7 +58,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-violet-500 hover:bg-violet-400 text-slate-950 transition glow-violet shadow-md"
+          className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-violet-500 hover:bg-violet-400 text-slate-950 transition glow-violet shadow-md w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" /> Criar Experimento
         </button>

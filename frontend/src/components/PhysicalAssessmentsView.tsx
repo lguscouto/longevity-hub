@@ -449,43 +449,45 @@ export const PhysicalAssessmentsView: React.FC = () => {
         </div>
 
         {/* Sub-navigation Modes */}
-        <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
-          <button
-            onClick={() => setActiveMode('history')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeMode === 'history'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            <Eye className="h-4 w-4" /> Histórico ({assessments.length})
-          </button>
-          <button
-            onClick={() => setActiveMode('create')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeMode === 'create'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            <Plus className="h-4 w-4" /> Nova Avaliação
-          </button>
-          <button
-            onClick={() => {
-              setActiveMode('compare');
-              if (assessments.length >= 2 && (!comparePrevId || !compareCurrId)) {
-                setComparePrevId(assessments[assessments.length - 1].id);
-                setCompareCurrId(assessments[0].id);
-              }
-            }}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeMode === 'compare'
-                ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            <ArrowLeftRight className="h-4 w-4" /> Comparar Períodos
-          </button>
+        <div className="w-full md:w-auto overflow-x-auto no-scrollbar py-0.5 max-w-full">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 w-max md:w-auto">
+            <button
+              onClick={() => setActiveMode('history')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap ${
+                activeMode === 'history'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Histórico ({assessments.length})
+            </button>
+            <button
+              onClick={() => setActiveMode('create')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap ${
+                activeMode === 'create'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Nova Avaliação
+            </button>
+            <button
+              onClick={() => {
+                setActiveMode('compare');
+                if (assessments.length >= 2 && (!comparePrevId || !compareCurrId)) {
+                  setComparePrevId(assessments[assessments.length - 1].id);
+                  setCompareCurrId(assessments[0].id);
+                }
+              }}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap ${
+                activeMode === 'compare'
+                  ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Comparar Períodos
+            </button>
+          </div>
         </div>
       </div>
 

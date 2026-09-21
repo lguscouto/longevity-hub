@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: 'list',
-  testMatch: ['**/smoke.spec.ts'],
+  testMatch: ['**/*.spec.ts'],
   testIgnore: ['**/src/**', '**/node_modules/**'],
   use: {
     baseURL: 'http://127.0.0.1:3030',
@@ -19,6 +19,10 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 7'] },
     },
   ],
   webServer: {

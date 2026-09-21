@@ -222,7 +222,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
       <div
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl space-y-5 text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto"
         role="dialog"
         aria-modal="true"
         aria-labelledby="ai-settings-title"
@@ -339,15 +339,83 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
               </div>
             </div>
 
+            {/* Seletor de Modelos */}
+            <div>
+              <label htmlFor="ai-model-select" className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
+                Modelo de IA Selecionado:
+              </label>
+              <select
+                id="ai-model-select"
+                aria-label="Modelo de IA Selecionado"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
+              >
+                {activeProvider === 'openrouter' && (
+                  <>
+                    <option value="deepseek/deepseek-v4-pro">DeepSeek v4 Pro (Recomendado - Raciocínio Clínico)</option>
+                    <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash (Ultra Rápido)</option>
+                    <option value="deepseek/deepseek-r1">DeepSeek R1 (Raciocínio Profundo)</option>
+                    <option value="anthropic/claude-3.5-sonnet">Anthropic Claude 3.5 Sonnet (via OpenRouter)</option>
+                    <option value="openai/gpt-4o">OpenAI GPT-4o (via OpenRouter)</option>
+                  </>
+                )}
+                {activeProvider === 'openai' && (
+                  <>
+                    <option value="gpt-4o-mini">GPT-4o Mini (Rápido e Eficiente)</option>
+                    <option value="gpt-4o">GPT-4o (Máxima Precisão)</option>
+                    <option value="o3-mini">OpenAI o3 Mini (Raciocínio Matemático)</option>
+                  </>
+                )}
+                {activeProvider === 'anthropic' && (
+                  <>
+                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Recomendado Anthropic)</option>
+                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Mais Rápido)</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            {/* Modo de privacidade */}
+            <div>
+              <label htmlFor="ai-privacy-mode" className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
+                Modo de privacidade do contexto IA:
+              </label>
+              <select
+                id="ai-privacy-mode"
+                aria-label="Modo de privacidade do contexto IA"
+                value={privacyMode}
+                onChange={(event) => setPrivacyMode(normalizePrivacyMode(event.target.value))}
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
+              >
+                <option value="minimal">Mínimo (padrão)</option>
+                <option value="full">Completo (opt-in)</option>
+              </select>
+              <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">
+                {PRIVACY_MODE_DESCRIPTIONS[privacyMode]}
+              </p>
+              {privacyMode === 'full' && (
+                <div role="alert" className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                  <span>Modo completo é opt-in: revise antes de enviar, pois pode incluir contexto ampliado nas chamadas de IA externa.</span>
+                </div>
+              )}
+            </div>
+
             {/* Chaves de API */}
             <div className="space-y-3 pt-2">
+              <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                As chaves ficam no cofre de credenciais local do Windows. Campos vazios ou valores mascarados preservam o estado atual no backend.
+              </p>
               <div>
-                <label className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
-                  OpenRouter API Key {hasOpenrouterKey && <span className="text-emerald-500 text-[10px]">● Salva</span>}
+                <label htmlFor="openrouter-api-key" className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between font-semibold">
+                  <span>Chave API OpenRouter</span>
+                  {hasOpenrouterKey && <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">Cofre do Windows</span>}
                 </label>
                 <input
+                  id="openrouter-api-key"
                   type="password"
-                  placeholder="sk-or-v1-..."
+                  placeholder="sk-or-v1-... ou mantenha mascarada"
                   value={openrouterKey}
                   onChange={(event) => setOpenrouterKey(event.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
@@ -355,12 +423,14 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
-                  OpenAI API Key {hasOpenaiKey && <span className="text-emerald-500 text-[10px]">● Salva</span>}
+                <label htmlFor="openai-api-key" className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between font-semibold">
+                  <span>Chave API OpenAI</span>
+                  {hasOpenaiKey && <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">Cofre do Windows</span>}
                 </label>
                 <input
+                  id="openai-api-key"
                   type="password"
-                  placeholder="sk-proj-..."
+                  placeholder="sk-proj-... ou mantenha mascarada"
                   value={openaiKey}
                   onChange={(event) => setOpenaiKey(event.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
@@ -368,12 +438,14 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
-                  Anthropic API Key {hasAnthropicKey && <span className="text-emerald-500 text-[10px]">● Salva</span>}
+                <label htmlFor="anthropic-api-key" className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between font-semibold">
+                  <span>Chave API Anthropic</span>
+                  {hasAnthropicKey && <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">Cofre do Windows</span>}
                 </label>
                 <input
+                  id="anthropic-api-key"
                   type="password"
-                  placeholder="sk-ant-..."
+                  placeholder="sk-ant-... ou mantenha mascarada"
                   value={anthropicKey}
                   onChange={(event) => setAnthropicKey(event.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
@@ -401,27 +473,31 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={handleTestConnection}
                 disabled={isTesting}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-200 dark:border-slate-700 transition"
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-200 dark:border-slate-700 transition w-full sm:w-auto"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isTesting ? 'animate-spin' : ''}`} />
                 {isTesting ? 'Validando...' : 'Testar Chave IA'}
               </button>
 
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition text-center"
+                >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold glow-cyan transition shadow-md"
+                  className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold glow-cyan transition shadow-md text-center"
                 >
-                  {isSaving ? 'Salvando...' : 'Salvar IA'}
+                  {isSaving ? 'Salvando...' : 'Salvar Configurações'}
                 </button>
               </div>
             </div>

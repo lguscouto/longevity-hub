@@ -314,10 +314,10 @@ export const SleepView: React.FC = () => {
               </div>
 
               {/* Range Selector Controls */}
-              <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
                 <button
                   onClick={() => setChartRange('last20')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap ${
                     chartRange === 'last20' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -521,7 +521,7 @@ export const SleepView: React.FC = () => {
           </div>
 
           {/* HISTORICAL RECORDS TABLE (All Records in Database) */}
-          <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="glass-panel p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -534,21 +534,21 @@ export const SleepView: React.FC = () => {
               </div>
 
               {/* Search & Export Controls */}
-              <div className="flex items-center gap-3">
-                <div className="relative">
+              <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
                   <Search className="h-4 w-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Filtrar por data (AAAA-MM-DD)..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 w-60"
+                    className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 w-full sm:w-60"
                   />
                 </div>
 
                 <button
                   onClick={() => setSortAsc(!sortAsc)}
-                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all"
+                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all shrink-0"
                   title="Inverter Ordem de Data"
                 >
                   {sortAsc ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -558,7 +558,7 @@ export const SleepView: React.FC = () => {
                 <button
                   onClick={handleExportCSV}
                   disabled={tableData.length === 0}
-                  className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center gap-1.5 disabled:opacity-50 shrink-0"
                   title="Exportar registros como arquivo CSV"
                 >
                   <Download className="h-4 w-4" /> Exportar CSV
@@ -572,7 +572,7 @@ export const SleepView: React.FC = () => {
                 Nenhum registro de sono encontrado para os filtros aplicados.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-w-full min-w-0">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">
