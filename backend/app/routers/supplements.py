@@ -54,7 +54,7 @@ def add_supplement(input_data: SupplementInput):
     supp_id = repo.add_supplement(data)
     return {"status": "ok", "id": supp_id, "message": "Suplemento cadastrado com sucesso"}
 
-@router.post("/update")
+@router.api_route("/update", methods=["POST", "PUT"])
 def update_supplement(input_data: SupplementUpdateInput):
     db_path = get_db_path()
     initialize_db(db_path)
@@ -90,6 +90,15 @@ def toggle_supplement_log(input_data: ToggleLogInput):
     target_date = input_data.date_ref or date.today().isoformat()
     repo.toggle_supplement_log(input_data.supplement_id, target_date)
     return {"status": "ok", "message": "Status do suplemento alterado"}
+
+class AnalyzeSupplementsInput(BaseModel):
+    date_ref: Optional[str] = None
+
+@router.post("/analyze-ai")
+def analyze_supplements_ai(payload: Optional[AnalyzeSupplementsInput] = None):
+    from backend.app.routers.ai import analyze_supplements, AnalyzeSupplementsInput as AiInput
+    ai_input = AiInput(date_ref=payload.date_ref) if payload else None
+    return analyze_supplements(payload=ai_input)
 
 @router.delete("/{supplement_id}")
 def delete_supplement(supplement_id: int):

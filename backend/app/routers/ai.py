@@ -9,7 +9,12 @@ from backend.app.config import get_db_path
 from longevidade.ai.context_builder import build_patient_clinical_context
 from longevidade.ai.prompts import DEFAULT_LONGEVITY_SYSTEM_PROMPT, STRUCTURED_INSIGHTS_PROMPT
 from longevidade.ai.provider_factory import generate_llm_response, validate_provider_connection
-from longevidade.ai.secrets_store import AISecretsStore, KeyringSecretsStore, mask_secret
+from longevidade.ai.secrets_store import (
+    AISecretsStore,
+    KeyringSecretsStore,
+    is_masked_or_blank_secret,
+    mask_secret,
+)
 from longevidade.ai.safety_policy import (
     DETERMINISTIC_SAFETY_MODEL,
     DETERMINISTIC_SAFETY_PROVIDER,
@@ -153,9 +158,18 @@ def update_ai_settings(input_data: AISettingsInput):
 
 @router.post("/test-connection")
 def test_connection(input_data: TestConnectionInput):
+    repo = _repo_for_current_db()
+    api_key = input_data.api_key
+    if is_masked_or_blank_secret(api_key):
+        api_key = repo.get_ai_secret(input_data.provider) or ""
+    if not api_key:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Nenhuma chave de API informada ou salva no cofre para o provedor '{input_data.provider}'.",
+        )
     success, msg = validate_provider_connection(
         provider=input_data.provider,
-        api_key=input_data.api_key,
+        api_key=api_key,
         model=input_data.model,
     )
     if not success:
@@ -344,8 +358,12 @@ def get_ai_history():
         return []
 
 
+class AnalyzeSupplementsInput(BaseModel):
+    date_ref: Optional[str] = None
+
+
 @router.post("/analyze-supplements")
-def analyze_supplements():
+def analyze_supplements(payload: Optional[AnalyzeSupplementsInput] = None):
     db_path = get_db_path()
     repo = LongevityRepository(db_path, secrets_store=get_ai_secrets_store())
 
@@ -358,8 +376,9 @@ def analyze_supplements():
 
     context_text = build_patient_clinical_context(db_path, privacy_mode=privacy_mode)
     system_prompt = settings.get("system_prompt_custom") or DEFAULT_LONGEVITY_SYSTEM_PROMPT
+    ref_note = f"\nData de referência ativa: {payload.date_ref}" if (payload and payload.date_ref) else ""
     prompt = (
-        f"DADOS DO PACIENTE:\n{context_text}\n\n"
+        f"DADOS DO PACIENTE:{ref_note}\n{context_text}\n\n"
         "TAREFA:\n"
         "Faça uma análise profunda e detalhada da pilha de suplementação ativa do paciente. "
         "Avalie a cronobiologia dos horários de tomada (Manhã, Almoço, Jantar, Noite), sinergias entre os compostos, "

@@ -19,9 +19,16 @@ import { requestJson, ApiError } from '../lib/api'
 interface GoogleHealthStatus {
   connected: boolean
   authenticated: boolean
+  token_valid?: boolean
   reauthentication_required: boolean
   last_sync: string | null
   authorized_scopes: string[]
+  scopes?: {
+    activity: boolean
+    health_metrics: boolean
+    sleep: boolean
+    nutrition: boolean
+  }
   last_error: string | null
   has_client_id: boolean
   client_id?: string | null
@@ -265,6 +272,48 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                 >
                   {showConfig ? 'Ocultar chaves' : 'Alterar chaves'}
                 </button>
+              </div>
+            )}
+
+            {status.scopes && (status.connected || status.authenticated) && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  Módulos Autorizados (Consentimento):
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${
+                      status.scopes.activity
+                        ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Atividade Física: {status.scopes.activity ? 'Autorizado' : 'Não concedido'}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${
+                      status.scopes.health_metrics
+                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Métricas Vitais: {status.scopes.health_metrics ? 'Autorizado' : 'Não concedido'}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${
+                      status.scopes.sleep
+                        ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Sono: {status.scopes.sleep ? 'Autorizado' : 'Não concedido'}
+                  </span>
+                </div>
+                {status.connected && (!status.scopes.activity || !status.scopes.health_metrics || !status.scopes.sleep) && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                    Consentimento parcial: métricas de módulos não concedidos serão ignoradas.
+                  </p>
+                )}
               </div>
             )}
           </div>

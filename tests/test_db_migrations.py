@@ -97,3 +97,34 @@ def test_migration_5_workouts_table_created_from_v4(tmp_path):
 
     conn.close()
 
+
+def test_migration_9_google_health_sync_state_created(tmp_path):
+    from longevidade.db.repository import LongevityRepository
+
+    db_file = tmp_path / "legacy_v8.sqlite3"
+    conn = sqlite3.connect(str(db_file))
+    conn.execute("PRAGMA user_version = 8;")
+    conn.commit()
+
+    applied_version = apply_migrations(conn)
+    assert applied_version == len(MIGRATIONS)
+
+    # Verifica existência das tabelas da migração 9
+    tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
+    assert "google_health_sync_state" in tables
+    assert "health_data_points" in tables
+    conn.close()
+
+    # Testa operações no repositório
+    repo = LongevityRepository(db_file)
+    repo.upsert_google_health_sync_state(
+        data_type="steps",
+        last_successful_sync="2026-09-24T10:00:00Z",
+        records_imported=5,
+    )
+    state = repo.get_google_health_sync_state("steps")
+    assert len(state) == 1
+    assert state[0]["data_type"] == "steps"
+    assert state[0]["records_imported"] == 5
+
+

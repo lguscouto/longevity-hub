@@ -494,6 +494,42 @@ MIGRATIONS: Sequence[Migration] = (
             "CREATE INDEX IF NOT EXISTS idx_em_catalog_id ON exercise_mappings(catalog_exercise_id);",
         ),
     ),
+    Migration(
+        version=9,
+        name="google_health_sync_state_and_data_points",
+        statements=(
+            """
+            CREATE TABLE IF NOT EXISTS google_health_sync_state (
+                data_type TEXT PRIMARY KEY,
+                last_successful_sync TEXT,
+                last_attempt TEXT,
+                records_imported INTEGER DEFAULT 0,
+                records_updated INTEGER DEFAULT 0,
+                last_error TEXT,
+                next_retry TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS health_data_points (
+                id TEXT PRIMARY KEY,
+                provider TEXT NOT NULL,
+                data_type TEXT NOT NULL,
+                source TEXT,
+                start_time TEXT,
+                end_time TEXT,
+                recorded_at TEXT,
+                value REAL,
+                unit TEXT,
+                raw_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_hdp_provider_type ON health_data_points(provider, data_type);",
+            "CREATE INDEX IF NOT EXISTS idx_hdp_start_time ON health_data_points(start_time);",
+        ),
+    ),
 )
 
 

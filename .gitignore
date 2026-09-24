@@ -30,6 +30,8 @@ integrations/zepp/acompanhamento/backups/
 *.sqlite3
 *.db
 data/longevity.sqlite3
+*.log
+data/*.log
 
 # OS / IDE
 .DS_Store

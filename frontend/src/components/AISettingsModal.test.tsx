@@ -132,4 +132,64 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     expect(darkBtn).toHaveAttribute('aria-checked', 'false')
     expect(document.documentElement.classList.contains('light')).toBe(true)
   })
+
+  it('dynamically switches models and focuses active provider API key when clicking OpenAI', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input)
+      if (path === '/api/ai/settings' && init?.method === 'POST') return { status: 'ok' }
+      if (path === '/api/ai/settings') {
+        return {
+          active_provider: 'openrouter',
+          selected_model: 'deepseek/deepseek-v4-pro',
+          privacy_mode: 'minimal',
+          has_openrouter_key: true,
+          openrouter_api_key_masked: 'sk-or-v1-fake-openrouter-key',
+        }
+      }
+      throw new Error(`Unexpected request in test: ${path}`)
+    })
+
+    renderModal({ isOpen: true, onClose })
+
+    // Initially OpenRouter is active
+    expect(await screen.findByText('Ativo: OpenRouter')).toBeInTheDocument()
+    const modelSelect = screen.getByRole('combobox', { name: /modelo de ia selecionado/i })
+    expect(modelSelect).toHaveValue('deepseek/deepseek-v4-pro')
+
+    // Click OpenAI provider button
+    const openaiBtn = screen.getByRole('button', { name: /openai/i })
+    await user.click(openaiBtn)
+
+    // Now active provider is OpenAI
+    expect(screen.getByText('Ativo: OpenAI')).toBeInTheDocument()
+    expect(modelSelect).toHaveValue('gpt-4o')
+    expect(screen.getByText('Chave API — OpenAI (Provedor Selecionado)')).toBeInTheDocument()
+
+    // Fill in OpenAI key
+    const openaiInput = screen.getByLabelText(/chave api openai/i)
+    await user.type(openaiInput, 'sk-proj-my-openai-key')
+
+    // Save settings
+    await user.click(screen.getByRole('button', { name: /salvar configurações/i }))
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled()
+    })
+
+    const postCall = requestJsonMock.mock.calls.find(
+      ([path, init]) => path === '/api/ai/settings' && init?.method === 'POST',
+    )
+    expect(postCall).toBeDefined()
+    const body = JSON.parse(String(postCall?.[1]?.body))
+    expect(body).toMatchObject({
+      active_provider: 'openai',
+      selected_model: 'gpt-4o',
+      openai_api_key: 'sk-proj-my-openai-key',
+      openrouter_api_key: 'sk-or-v1-fake-openrouter-key',
+    })
+  })
 })
+

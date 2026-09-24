@@ -113,6 +113,58 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
       .catch(() => {})
   }, [isOpen])
 
+  const providerMetaMap: Record<
+    Provider,
+    {
+      id: Provider
+      label: string
+      keyId: string
+      keyVal: string
+      setKeyVal: (v: string) => void
+      hasKey: boolean
+      placeholder: string
+      description: string
+      keyLabel: string
+    }
+  > = {
+    openrouter: {
+      id: 'openrouter',
+      label: 'OpenRouter',
+      keyId: 'openrouter-api-key',
+      keyVal: openrouterKey,
+      setKeyVal: setOpenrouterKey,
+      hasKey: hasOpenrouterKey,
+      placeholder: 'sk-or-v1-... ou mantenha mascarada',
+      description: 'Acesso a múltiplos modelos como DeepSeek v4 Pro, Gemini e Claude via roteador.',
+      keyLabel: 'Chave API OpenRouter',
+    },
+    openai: {
+      id: 'openai',
+      label: 'OpenAI',
+      keyId: 'openai-api-key',
+      keyVal: openaiKey,
+      setKeyVal: setOpenaiKey,
+      hasKey: hasOpenaiKey,
+      placeholder: 'sk-proj-... ou mantenha mascarada',
+      description: 'Acesso direto à API da OpenAI (GPT-4o, GPT-4o Mini, o3-mini).',
+      keyLabel: 'Chave API OpenAI',
+    },
+    anthropic: {
+      id: 'anthropic',
+      label: 'Anthropic',
+      keyId: 'anthropic-api-key',
+      keyVal: anthropicKey,
+      setKeyVal: setAnthropicKey,
+      hasKey: hasAnthropicKey,
+      placeholder: 'sk-ant-... ou mantenha mascarada',
+      description: 'Acesso direto à API da Anthropic (Claude 3.5 Sonnet, Claude 3.5 Haiku).',
+      keyLabel: 'Chave API Anthropic',
+    },
+  }
+
+  const activeMeta = providerMetaMap[activeProvider]
+  const otherProviders = (['openrouter', 'openai', 'anthropic'] as Provider[]).filter((p) => p !== activeProvider)
+
   if (!isOpen) return null
 
   // Testar conexão de IA
@@ -315,27 +367,46 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
 
             {/* Provedor de IA */}
             <div>
-              <label className="block text-slate-800 dark:text-slate-300 font-bold mb-1">Provedor de LLM</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-slate-800 dark:text-slate-300 font-bold">Provedor de LLM</label>
+                <span className="text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold">
+                  Ativo: {activeMeta.label}
+                </span>
+              </div>
               <div className="grid grid-cols-3 gap-2">
-                {(['openrouter', 'openai', 'anthropic'] as Provider[]).map((prov) => (
-                  <button
-                    key={prov}
-                    type="button"
-                    onClick={() => {
-                      setActiveProvider(prov)
-                      if (prov === 'openrouter') setSelectedModel('deepseek/deepseek-v4-pro')
-                      if (prov === 'openai') setSelectedModel('gpt-4o')
-                      if (prov === 'anthropic') setSelectedModel('claude-3-5-sonnet-20241022')
-                    }}
-                    className={`p-2 rounded-xl border text-center font-semibold capitalize transition ${
-                      activeProvider === prov
-                        ? 'bg-cyan-500/10 border-cyan-500 text-cyan-600 dark:text-cyan-400 ring-1 ring-cyan-500/40'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                    }`}
-                  >
-                    {prov}
-                  </button>
-                ))}
+                {(['openrouter', 'openai', 'anthropic'] as Provider[]).map((prov) => {
+                  const meta = providerMetaMap[prov]
+                  const isSelected = activeProvider === prov
+                  return (
+                    <button
+                      key={prov}
+                      type="button"
+                      onClick={() => {
+                        setActiveProvider(prov)
+                        if (prov === 'openrouter') setSelectedModel('deepseek/deepseek-v4-pro')
+                        if (prov === 'openai') setSelectedModel('gpt-4o')
+                        if (prov === 'anthropic') setSelectedModel('claude-3-5-sonnet-20241022')
+                      }}
+                      className={`p-2.5 rounded-2xl border text-left transition flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-cyan-500/10 border-cyan-500 text-slate-900 dark:text-white ring-1 ring-cyan-500/40 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className="font-bold text-xs">{meta.label}</span>
+                        {isSelected && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950">
+                            Ativo
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {meta.hasKey ? '● No Cofre' : '○ Sem chave'}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -404,53 +475,82 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
 
             {/* Chaves de API */}
             <div className="space-y-3 pt-2">
-              <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
-                As chaves ficam no cofre de credenciais local do Windows. Campos vazios ou valores mascarados preservam o estado atual no backend.
-              </p>
-              <div>
-                <label htmlFor="openrouter-api-key" className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between font-semibold">
-                  <span>Chave API OpenRouter</span>
-                  {hasOpenrouterKey && <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">Cofre do Windows</span>}
-                </label>
-                <input
-                  id="openrouter-api-key"
-                  type="password"
-                  placeholder="sk-or-v1-... ou mantenha mascarada"
-                  value={openrouterKey}
-                  onChange={(event) => setOpenrouterKey(event.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
-                />
+              <div className="flex items-center justify-between">
+                <span className="text-slate-800 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5">
+                  <Key className="h-3.5 w-3.5 text-cyan-500" />
+                  Chave API — {activeMeta.label} (Provedor Selecionado)
+                </span>
+                {activeMeta.hasKey ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <ShieldCheck className="h-3 w-3" /> Chave Configurada
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                    Chave não configurada
+                  </span>
+                )}
               </div>
 
-              <div>
-                <label htmlFor="openai-api-key" className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between font-semibold">
-                  <span>Chave API OpenAI</span>
-                  {hasOpenaiKey && <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">Cofre do Windows</span>}
-                </label>
+              {/* Input Chave Provedor Ativo */}
+              <div className="p-3.5 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 dark:bg-cyan-950/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor={activeMeta.keyId} className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
+                    {activeMeta.keyLabel}
+                  </label>
+                  {activeMeta.hasKey && (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
+                      Cofre do Windows
+                    </span>
+                  )}
+                </div>
                 <input
-                  id="openai-api-key"
+                  id={activeMeta.keyId}
                   type="password"
-                  placeholder="sk-proj-... ou mantenha mascarada"
-                  value={openaiKey}
-                  onChange={(event) => setOpenaiKey(event.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
+                  placeholder={activeMeta.placeholder}
+                  value={activeMeta.keyVal}
+                  onChange={(event) => activeMeta.setKeyVal(event.target.value)}
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
                 />
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {activeMeta.description}
+                </p>
               </div>
 
-              <div>
-                <label htmlFor="anthropic-api-key" className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between font-semibold">
-                  <span>Chave API Anthropic</span>
-                  {hasAnthropicKey && <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">Cofre do Windows</span>}
-                </label>
-                <input
-                  id="anthropic-api-key"
-                  type="password"
-                  placeholder="sk-ant-... ou mantenha mascarada"
-                  value={anthropicKey}
-                  onChange={(event) => setAnthropicKey(event.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
-                />
-              </div>
+              {/* Gerenciar outros provedores */}
+              <details className="group border border-slate-200 dark:border-slate-800 rounded-2xl p-3 text-xs bg-slate-50/50 dark:bg-slate-950/40">
+                <summary className="cursor-pointer font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-between list-none">
+                  <span>Gerenciar chaves dos outros provedores ({otherProviders.map((p) => providerMetaMap[p].label).join(', ')})</span>
+                  <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="mt-3 space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    As chaves ficam no cofre de credenciais local do Windows. Campos vazios ou valores mascarados preservam o estado atual no backend.
+                  </p>
+                  {otherProviders.map((prov) => {
+                    const meta = providerMetaMap[prov]
+                    return (
+                      <div key={prov} className="space-y-1">
+                        <label htmlFor={meta.keyId} className="block text-slate-700 dark:text-slate-300 font-semibold flex items-center justify-between">
+                          <span>{meta.keyLabel}</span>
+                          {meta.hasKey && (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
+                              Cofre do Windows
+                            </span>
+                          )}
+                        </label>
+                        <input
+                          id={meta.keyId}
+                          type="password"
+                          placeholder={meta.placeholder}
+                          value={meta.keyVal}
+                          onChange={(event) => meta.setKeyVal(event.target.value)}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </details>
             </div>
 
             {testResult && (
@@ -481,7 +581,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                 className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-200 dark:border-slate-700 transition w-full sm:w-auto"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isTesting ? 'animate-spin' : ''}`} />
-                {isTesting ? 'Validando...' : 'Testar Chave IA'}
+                {isTesting ? `Testando ${activeMeta.label}...` : `Testar Chave (${activeMeta.label})`}
               </button>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">

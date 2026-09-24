@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import json
 import os
+import random
+import time as pytime
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -22,13 +24,22 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
+from longevidade.ingestion.google_health_registry import (
+    GoogleHealthDataTypeRegistry,
+    SCOPE_ACTIVITY,
+    SCOPE_HEALTH_METRICS,
+    SCOPE_SLEEP,
+    SCOPE_NUTRITION,
+    SCOPE_CATEGORY_MAP,
+)
+
 GOOGLE_HEALTH_BASE_URL = "https://health.googleapis.com/v4"
 GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 GOOGLE_HEALTH_SCOPES = [
-    "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
-    "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly",
-    "https://www.googleapis.com/auth/googlehealth.sleep.readonly",
+    SCOPE_ACTIVITY,
+    SCOPE_HEALTH_METRICS,
+    SCOPE_SLEEP,
 ]
 
 
@@ -39,10 +50,25 @@ class GoogleHealthCredentials:
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     token_uri: str = GOOGLE_OAUTH_TOKEN_URL
+    token_type: Optional[str] = "Bearer"
     expiry: Optional[datetime] = None
     scopes: List[str] = field(default_factory=lambda: list(GOOGLE_HEALTH_SCOPES))
     reauthentication_required: bool = False
     last_error: Optional[str] = None
+
+    def has_scope(self, scope_or_category: str) -> bool:
+        """Verifica se um escopo específico ou categoria foi autorizado."""
+        target_scope = SCOPE_CATEGORY_MAP.get(scope_or_category, scope_or_category)
+        return target_scope in (self.scopes or [])
+
+    def get_scope_status(self) -> Dict[str, bool]:
+        """Retorna o status de consentimento detalhado por módulo."""
+        return {
+            "activity": self.has_scope("activity"),
+            "health_metrics": self.has_scope("health_metrics"),
+            "sleep": self.has_scope("sleep"),
+            "nutrition": self.has_scope("nutrition"),
+        }
 
     @classmethod
     def from_file(cls, path: str | Path) -> Optional[GoogleHealthCredentials]:
@@ -63,6 +89,7 @@ class GoogleHealthCredentials:
                 access_token=data.get("access_token") or data.get("token"),
                 refresh_token=data.get("refresh_token"),
                 token_uri=data.get("token_uri") or GOOGLE_OAUTH_TOKEN_URL,
+                token_type=data.get("token_type") or "Bearer",
                 expiry=expiry_dt,
                 scopes=data.get("scopes") or list(GOOGLE_HEALTH_SCOPES),
                 reauthentication_required=bool(data.get("reauthentication_required", False)),
@@ -80,6 +107,7 @@ class GoogleHealthCredentials:
             "access_token": self.access_token,
             "refresh_token": self.refresh_token,
             "token_uri": self.token_uri,
+            "token_type": self.token_type or "Bearer",
             "expiry": self.expiry.isoformat() if self.expiry else None,
             "scopes": self.scopes,
             "reauthentication_required": self.reauthentication_required,
@@ -236,8 +264,14 @@ class GoogleHealthClient:
 
         return False, "Nenhum token válido encontrado."
 
-    def _get_json(self, url: str, params: Optional[Dict[str, Any]] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """Executa chamada GET autenticada."""
+    def _get_json(
+        self,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Executa chamada GET autenticada com retry, exponential backoff com jitter e tratamento de 401/403."""
         valid, msg = self.ensure_valid_token()
         if not valid:
             return None, msg
@@ -246,34 +280,44 @@ class GoogleHealthClient:
         if params:
             full_url = f"{url}?{urlencode(params)}"
 
-        req = Request(
-            full_url,
-            headers={
-                "Authorization": f"Bearer {self.credentials.access_token}",
-                "Accept": "application/json",
-            },
-            method="GET",
-        )
+        for attempt in range(max_retries + 1):
+            req = Request(
+                full_url,
+                headers={
+                    "Authorization": f"Bearer {self.credentials.access_token}",
+                    "Accept": "application/json",
+                },
+                method="GET",
+            )
 
-        try:
-            with urlopen(req, timeout=20) as resp:
-                return json.loads(resp.read().decode("utf-8")), None
-        except HTTPError as err:
-            if err.code == 401 and self.credentials and self.credentials.refresh_token:
-                ref_ok, _ = self.refresh_access_token()
-                if ref_ok:
-                    req.headers["Authorization"] = f"Bearer {self.credentials.access_token}"
-                    try:
-                        with urlopen(req, timeout=20) as retry_resp:
-                            return json.loads(retry_resp.read().decode("utf-8")), None
-                    except Exception as retry_err:
-                        return None, f"Erro após retry: {retry_err}"
-            err_body = err.read().decode("utf-8", errors="ignore")
-            if "ACCOUNT_NOT_LINKED" in err_body:
-                return None, "Conta Google não vinculada ao ecossistema Google Health/Fitbit. Ative seu perfil em: https://fitbit.google.com/auth/signup"
-            return None, f"HTTP {err.code}: {err_body}"
-        except Exception as exc:
-            return None, str(exc)
+            try:
+                with urlopen(req, timeout=20) as resp:
+                    return json.loads(resp.read().decode("utf-8")), None
+            except HTTPError as err:
+                if err.code == 401 and self.credentials and self.credentials.refresh_token:
+                    ref_ok, _ = self.refresh_access_token()
+                    if ref_ok:
+                        continue
+                if err.code == 403:
+                    err_body = err.read().decode("utf-8", errors="ignore")
+                    return None, f"HTTP 403 (Permissão negada / Escopo não autorizado): {err_body}"
+                if err.code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                    jitter = random.uniform(0.1, 0.4)
+                    sleep_time = (base_delay * (2 ** attempt)) + jitter
+                    pytime.sleep(sleep_time)
+                    continue
+
+                err_body = err.read().decode("utf-8", errors="ignore")
+                if "ACCOUNT_NOT_LINKED" in err_body:
+                    return None, "Conta Google não vinculada ao ecossistema Google Health/Fitbit. Ative seu perfil em: https://fitbit.google.com/auth/signup"
+                return None, f"HTTP {err.code}: {err_body}"
+            except Exception as exc:
+                if attempt < max_retries:
+                    pytime.sleep(base_delay * (attempt + 1))
+                    continue
+                return None, str(exc)
+
+        return None, "Limite de tentativas excedido na Google Health API."
 
     def fetch_data_points(
         self,
@@ -330,7 +374,7 @@ class GoogleHealthClient:
         days: int = 30,
         selected_types: Optional[List[str]] = None,
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
-        """Coleta e agrega métricas diárias, cobrindo POC (steps, HR, sleep, weight) e Expansão."""
+        """Coleta e agrega métricas diárias, cobrindo POC e expansão com suporte a consentimento parcial."""
         now = datetime.now(timezone.utc)
         start_time = now - timedelta(days=days)
         errors: List[str] = []
@@ -343,11 +387,19 @@ class GoogleHealthClient:
                 "date_ref": d_str,
                 "source": "GoogleHealthAPI",
                 "source_platform": "GoogleHealth_v4",
+                "provider": "google_health",
             }
 
-        types_to_fetch = set(selected_types) if selected_types else {
+        candidate_types = set(selected_types) if selected_types else {
             "steps", "heart-rate", "sleep", "weight", "oxygen-saturation", "heart-rate-variability"
         }
+
+        # Filtrar tipos autorizados pelo usuário (Consentimento Parcial)
+        authorized_scopes = set(self.credentials.scopes or []) if self.credentials else set()
+        if authorized_scopes:
+            types_to_fetch = set(GoogleHealthDataTypeRegistry.filter_types_by_scopes(candidate_types, authorized_scopes))
+        else:
+            types_to_fetch = candidate_types
 
         # 1. Passos (steps)
         if "steps" in types_to_fetch:

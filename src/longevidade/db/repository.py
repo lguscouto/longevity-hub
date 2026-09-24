@@ -1528,5 +1528,75 @@ class LongevityRepository:
             rows = conn.execute("SELECT * FROM exercise_mappings;").fetchall()
             return {r["exercise_title"]: dict(r) for r in rows}
 
+    def get_google_health_sync_state(self, data_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retorna os registros de estado de sincronização da Google Health API."""
+        sql = "SELECT * FROM google_health_sync_state"
+        params: list[Any] = []
+        if data_type:
+            sql += " WHERE data_type = ?"
+            params.append(data_type)
+        sql += " ORDER BY data_type ASC;"
+
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, params).fetchall()
+            return [dict(r) for r in rows]
+
+    def upsert_google_health_sync_state(
+        self,
+        data_type: str,
+        last_successful_sync: Optional[str] = None,
+        last_attempt: Optional[str] = None,
+        records_imported: int = 0,
+        records_updated: int = 0,
+        last_error: Optional[str] = None,
+        next_retry: Optional[str] = None,
+    ) -> None:
+        """Atualiza ou insere o estado de sincronização para um tipo de dado da Google Health API."""
+        sql = """
+        INSERT INTO google_health_sync_state (
+            data_type, last_successful_sync, last_attempt, records_imported, records_updated, last_error, next_retry, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(data_type) DO UPDATE SET
+            last_successful_sync = COALESCE(excluded.last_successful_sync, google_health_sync_state.last_successful_sync),
+            last_attempt = COALESCE(excluded.last_attempt, google_health_sync_state.last_attempt),
+            records_imported = google_health_sync_state.records_imported + excluded.records_imported,
+            records_updated = google_health_sync_state.records_updated + excluded.records_updated,
+            last_error = excluded.last_error,
+            next_retry = excluded.next_retry,
+            updated_at = CURRENT_TIMESTAMP;
+        """
+        with self._get_connection() as conn:
+            conn.execute(sql, (data_type, last_successful_sync, last_attempt, records_imported, records_updated, last_error, next_retry))
+            conn.commit()
+
+    def insert_health_data_points(self, points: List[Dict[str, Any]]) -> int:
+        """Insere registros na camada de dados brutos (health_data_points)."""
+        if not points:
+            return 0
+        sql = """
+        INSERT OR REPLACE INTO health_data_points (
+            id, provider, data_type, source, start_time, end_time, recorded_at, value, unit, raw_json, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+        """
+        rows = [
+            (
+                p.get("id"),
+                p.get("provider", "google_health"),
+                p.get("data_type", "unknown"),
+                p.get("source"),
+                p.get("start_time"),
+                p.get("end_time"),
+                p.get("recorded_at"),
+                p.get("value"),
+                p.get("unit"),
+                p.get("raw_json"),
+            )
+            for p in points
+        ]
+        with self._get_connection() as conn:
+            conn.executemany(sql, rows)
+            conn.commit()
+        return len(rows)
+
 
 

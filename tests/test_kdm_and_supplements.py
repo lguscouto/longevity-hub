@@ -89,14 +89,23 @@ def test_supplement_update_and_audit_logs(client):
     res_update = client.post("/api/supplements/update", json=update_payload)
     assert res_update.status_code == 200
 
+    # Atualização via método PUT (como enviado pelo frontend SupplementsView)
+    timing_update_payload = {
+        "supplement_id": supp_id,
+        "timing": "Noite",
+    }
+    res_timing = client.put("/api/supplements/update", json=timing_update_payload)
+    assert res_timing.status_code == 200
+
     res_audit = client.get("/api/supplements/audit-logs")
     assert res_audit.status_code == 200
     logs = res_audit.json()
     assert isinstance(logs, list)
-    assert len(logs) >= 2
+    assert len(logs) >= 3
     actions = [l["action_type"] for l in logs]
     assert "ADICIONADO" in actions
     assert "DOSE_ALTERADA" in actions
+    assert "HORARIO_ALTERADO" in actions
 
 
 def test_compliance_endpoints(client):
@@ -114,3 +123,24 @@ def test_compliance_endpoints(client):
     assert res_get.status_code == 200
     history = res_get.json()
     assert isinstance(history, list)
+
+
+def test_analyze_supplements_endpoint(client, monkeypatch):
+    import backend.app.routers.ai as ai_module
+
+    monkeypatch.setattr(
+        ai_module,
+        "generate_llm_response",
+        lambda **kwargs: ("Análise simulada: pilha equilibrada com creatina pela manhã.", None),
+    )
+    monkeypatch.setattr(
+        ai_module,
+        "_require_provider_secret",
+        lambda repo, provider, msg: "mock-key",
+    )
+
+    res = client.post("/api/supplements/analyze-ai", json={"date_ref": "2026-09-22"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "Análise simulada" in data["analysis"]

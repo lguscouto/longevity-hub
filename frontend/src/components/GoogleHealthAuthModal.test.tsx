@@ -123,4 +123,52 @@ describe('GoogleHealthAuthModal', () => {
     expect(idInput).toHaveValue('my-test-client-id.apps.googleusercontent.com')
     expect(secretInput).toHaveValue('my-secret-value')
   })
+
+  it('renders authorized scopes and partial consent notice when connected', async () => {
+    requestJsonMock.mockResolvedValueOnce({
+      connected: true,
+      authenticated: true,
+      token_valid: true,
+      reauthentication_required: false,
+      last_sync: '2026-09-24T10:00:00Z',
+      authorized_scopes: [
+        'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly',
+        'https://www.googleapis.com/auth/googlehealth.sleep.readonly',
+      ],
+      scopes: {
+        activity: true,
+        health_metrics: false,
+        sleep: true,
+        nutrition: false,
+      },
+      last_error: null,
+      has_client_id: true,
+      client_id: '721724668570.apps.googleusercontent.com',
+      has_client_secret: true,
+      masked_client_id: '72172466...rcontent.com',
+      token_path: 'token.json',
+      has_token_file: true,
+      token_expiry: '2026-09-24T12:00:00Z',
+      api_version: 'v4',
+      service: 'Google Health API',
+      redirect_uri: 'http://127.0.0.1:8887/api/google-health/callback',
+    })
+
+    render(
+      <GoogleHealthAuthModal
+        isOpen={true}
+        onClose={() => {}}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Conectado & Ativo')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText(/Módulos Autorizados \(Consentimento\):/i)).toBeInTheDocument()
+    expect(screen.getByText('Atividade Física: Autorizado')).toBeInTheDocument()
+    expect(screen.getByText('Métricas Vitais: Não concedido')).toBeInTheDocument()
+    expect(screen.getByText('Sono: Autorizado')).toBeInTheDocument()
+    expect(screen.getByText(/Consentimento parcial: métricas de módulos não concedidos serão ignoradas\./i)).toBeInTheDocument()
+  })
 })

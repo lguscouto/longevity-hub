@@ -109,6 +109,18 @@ def sync_google_health_api(
     if errors:
         summary += f" | Erros: {'; '.join(errors[:3])}"
 
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        repo.upsert_google_health_sync_state(
+            data_type="all",
+            last_successful_sync=now_iso if inserted > 0 else None,
+            last_attempt=now_iso,
+            records_imported=inserted,
+            last_error="; ".join(errors) if errors else None,
+        )
+    except Exception:
+        pass
+
     result = _make_result(
         records_read=len(records),
         records_inserted=inserted,

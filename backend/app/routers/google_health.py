@@ -70,6 +70,14 @@ def get_google_health_status() -> Dict[str, Any]:
     has_client_secret = bool(creds and creds.client_secret and "test_secret" not in creds.client_secret)
     masked_client_id = (raw_client_id[:8] + "..." + raw_client_id[-12:]) if (raw_client_id and len(raw_client_id) > 20) else raw_client_id
 
+    scope_status = (
+        creds.get_scope_status()
+        if creds
+        else {"activity": False, "health_metrics": False, "sleep": False, "nutrition": False}
+    )
+    token_valid = is_auth and not reauth_req
+    has_any_scope = any(scope_status.values())
+
     if creds:
         if creds.expiry:
             expiry_iso = creds.expiry.isoformat()
@@ -77,10 +85,12 @@ def get_google_health_status() -> Dict[str, Any]:
         last_error = creds.last_error
 
     return {
-        "connected": is_auth and not reauth_req,
+        "connected": token_valid and has_any_scope,
         "authenticated": is_auth,
+        "token_valid": token_valid,
         "reauthentication_required": reauth_req,
         "last_sync": last_sync,
+        "scopes": scope_status,
         "authorized_scopes": scopes,
         "last_error": last_error,
         "has_client_id": has_client_id,
@@ -134,6 +144,7 @@ def get_google_health_auth_url(
         "scope": " ".join(GOOGLE_HEALTH_SCOPES),
         "access_type": "offline",
         "prompt": "consent",
+        "include_granted_scopes": "true",
     }
     auth_url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
     return {
@@ -231,9 +242,17 @@ def google_health_oauth_callback(
             access_token = data.get("access_token")
             refresh_token = data.get("refresh_token") or (creds.refresh_token if creds else None)
             expires_in = data.get("expires_in", 3600)
+            token_type = data.get("token_type", "Bearer")
+            raw_scope = data.get("scope")
 
             if not access_token:
                 raise ValueError("access_token ausente na resposta do Google.")
+
+            # Suporte a consentimento parcial: salva os escopos efetivamente autorizados pelo usuário
+            if raw_scope:
+                granted_scopes = [s for s in raw_scope.split() if s]
+            else:
+                granted_scopes = creds.scopes if (creds and creds.scopes) else list(GOOGLE_HEALTH_SCOPES)
 
             new_creds = GoogleHealthCredentials(
                 client_id=cid,
@@ -241,8 +260,9 @@ def google_health_oauth_callback(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_uri=GOOGLE_OAUTH_TOKEN_URL,
+                token_type=token_type,
                 expiry=datetime.now(timezone.utc) + timedelta(seconds=expires_in),
-                scopes=list(GOOGLE_HEALTH_SCOPES),
+                scopes=granted_scopes,
                 reauthentication_required=False,
                 last_error=None,
             )

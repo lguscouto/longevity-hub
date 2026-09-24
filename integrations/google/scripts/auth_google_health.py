@@ -52,6 +52,7 @@ def authenticate_interactive(
         "scope": " ".join(GOOGLE_HEALTH_SCOPES),
         "access_type": "offline",
         "prompt": "consent",
+        "include_granted_scopes": "true",
     }
     auth_url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
 
@@ -95,10 +96,17 @@ def authenticate_interactive(
             access_token = data.get("access_token")
             refresh_token = data.get("refresh_token")
             expires_in = data.get("expires_in", 3600)
+            token_type = data.get("token_type", "Bearer")
+            raw_scope = data.get("scope")
 
             if not access_token:
                 print("[ERRO] Resposta do Google não continha access_token.")
                 return False
+
+            if raw_scope:
+                granted_scopes = [s for s in raw_scope.split() if s]
+            else:
+                granted_scopes = list(GOOGLE_HEALTH_SCOPES)
 
             creds = GoogleHealthCredentials(
                 client_id=client_id,
@@ -106,10 +114,18 @@ def authenticate_interactive(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_uri=GOOGLE_OAUTH_TOKEN_URL,
+                token_type=token_type,
                 expiry=datetime.now(timezone.utc) + timedelta(seconds=expires_in),
+                scopes=granted_scopes,
             )
             creds.save_to_file(output_path)
+
+            scope_status = creds.get_scope_status()
             print(f"\n[SUCESSO] Credenciais salvas com sucesso em:\n{output_path}")
+            print("\nStatus dos Escopos Autorizados (Consentimento):")
+            print(f" - Atividade Física & Passos: {'[AUTORIZADO]' if scope_status['activity'] else '[NÃO CONCEDIDO]'}")
+            print(f" - Métricas Vitais & FC/SpO2/Peso: {'[AUTORIZADO]' if scope_status['health_metrics'] else '[NÃO CONCEDIDO]'}")
+            print(f" - Sono & Estágios: {'[AUTORIZADO]' if scope_status['sleep'] else '[NÃO CONCEDIDO]'}")
             return True
     except HTTPError as err:
         err_msg = err.read().decode("utf-8", errors="ignore")

@@ -161,3 +161,30 @@ def test_mock_llm_generation(mock_post):
 
     assert err is None
     assert "HRV excelente" in res
+
+
+def test_test_connection_falls_back_to_secret_store(client, monkeypatch):
+    from backend.app.routers import ai as ai_router
+
+    secret_store = MemorySecretsStore()
+    secret_store.set("openai", "stored-secret-key")
+    monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
+
+    with patch("backend.app.routers.ai.validate_provider_connection") as mock_val:
+        mock_val.return_value = (True, "Conexão validada")
+        response = client.post(
+            "/api/ai/test-connection",
+            json={
+                "provider": "openai",
+                "api_key": "sk-proj-****masked****",
+                "model": "gpt-4o",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok", "message": "Conexão validada"}
+        mock_val.assert_called_once_with(
+            provider="openai",
+            api_key="stored-secret-key",
+            model="gpt-4o",
+        )
+

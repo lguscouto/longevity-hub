@@ -6,7 +6,7 @@ echo ========================================================
 
 cd /d "%~dp0"
 
-set "PYTHONPATH="
+set "PYTHONPATH=%CD%;%CD%\src"
 set "PYTHONHOME="
 set "PYTHON_EXE=%CD%\.venv\Scripts\python.exe"
 

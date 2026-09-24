@@ -121,3 +121,113 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
         assert rec["sleep_rem_min"] == 100
         assert rec["spo2_avg_pct"] == 98.0
         assert rec["weight_kg"] == 78.5
+
+
+def test_google_health_credentials_scope_status():
+    from longevidade.ingestion.google_health_registry import SCOPE_ACTIVITY, SCOPE_SLEEP
+
+    creds = GoogleHealthCredentials(
+        scopes=[SCOPE_ACTIVITY, SCOPE_SLEEP],
+        token_type="Bearer",
+    )
+    assert creds.token_type == "Bearer"
+    assert creds.has_scope("activity") is True
+    assert creds.has_scope("sleep") is True
+    assert creds.has_scope("health_metrics") is False
+    assert creds.has_scope("nutrition") is False
+
+    status = creds.get_scope_status()
+    assert status == {
+        "activity": True,
+        "health_metrics": False,
+        "sleep": True,
+        "nutrition": False,
+    }
+
+
+def test_google_health_client_partial_consent_fetch(tmp_path: Path):
+    from longevidade.ingestion.google_health_registry import SCOPE_ACTIVITY
+
+    # Credenciais concederam apenas atividade física (steps), recusando sono e métricas corporais
+    creds = GoogleHealthCredentials(
+        access_token="valid_token",
+        expiry=datetime.now(timezone.utc) + timedelta(hours=1),
+        scopes=[SCOPE_ACTIVITY],
+    )
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+
+    queried_types = []
+
+    def mock_fetch(data_type, *args, **kwargs):
+        queried_types.append(data_type)
+        if data_type == "steps":
+            today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            return [{"startTime": f"{today_str}T08:00:00Z", "steps": {"count": 10000}}], None
+        return [], None
+
+    with patch.object(client, "fetch_data_points", side_effect=mock_fetch):
+        records, errors = client.fetch_daily_metrics_summary(days=1)
+        assert len(errors) == 0
+        # Apenas steps deve ser consultado, respeitando o consentimento parcial
+        assert queried_types == ["steps"]
+        assert len(records) >= 1
+        assert records[0]["steps"] == 10000
+        assert "sleep_minutes" not in records[0]
+        assert "avg_hr_bpm" not in records[0]
+
+
+def test_google_health_client_retry_on_429(tmp_path: Path):
+    from urllib.error import HTTPError
+    import io
+
+    creds = GoogleHealthCredentials(
+        access_token="valid_token",
+        expiry=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+
+    attempts = 0
+
+    def mock_urlopen(req, *args, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            fp = io.BytesIO(b'{"error": "rate limit"}')
+            raise HTTPError(req.full_url, 429, "Too Many Requests", {}, fp)
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({"dataPoints": [{"value": 1}]}).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.__exit__.return_value = False
+        return mock_resp
+
+    with patch("longevidade.ingestion.google_health_client.urlopen", side_effect=mock_urlopen):
+        with patch("time.sleep", return_value=None):
+            data, err = client._get_json("https://health.googleapis.com/v4/test", base_delay=0.01)
+            assert err is None
+            assert data == {"dataPoints": [{"value": 1}]}
+            assert attempts == 3
+
+
+def test_google_health_data_type_registry():
+    from longevidade.ingestion.google_health_registry import (
+        GoogleHealthDataTypeRegistry,
+        SCOPE_ACTIVITY,
+        SCOPE_HEALTH_METRICS,
+    )
+
+    assert GoogleHealthDataTypeRegistry.is_active("steps") is True
+    assert GoogleHealthDataTypeRegistry.is_active("basal-metabolic-rate") is False
+    assert GoogleHealthDataTypeRegistry.is_active("skin-temperature") is False
+
+    # Blood pressure é gerenciado pelo Health Connect, não pela Google Health API direta
+    bp_cfg = GoogleHealthDataTypeRegistry.get("blood-pressure")
+    assert bp_cfg is not None
+    assert bp_cfg.provider == "health_connect"
+
+    # Filtragem de escopos
+    filtered = GoogleHealthDataTypeRegistry.filter_types_by_scopes(
+        ["steps", "heart-rate", "sleep"],
+        authorized_scopes=[SCOPE_ACTIVITY, SCOPE_HEALTH_METRICS],
+    )
+    assert set(filtered) == {"steps", "heart-rate"}
+
