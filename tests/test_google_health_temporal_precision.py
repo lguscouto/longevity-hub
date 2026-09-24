@@ -125,3 +125,56 @@ def test_empty_interval():
     # Quando nenhum limite é passado
     assert build_server_filter(None, None) is None
     assert is_point_in_interval({"startTime": "2026-09-01T10:00:00Z"}, None, None) is True
+
+
+def test_server_filter_data_types():
+    """Valida que build_server_filter gera o member path correto para cada categoria (AIP-160)."""
+    st = datetime(2026, 9, 1, 10, 0, 0, tzinfo=timezone.utc)
+    et = datetime(2026, 9, 2, 10, 0, 0, tzinfo=timezone.utc)
+
+    # 1. Interval (steps, heart-rate)
+    filter_steps = build_server_filter(st, et, data_type="steps")
+    assert filter_steps == 'steps.interval.start_time >= "2026-09-01T10:00:00Z" AND steps.interval.start_time < "2026-09-02T10:00:00Z"'
+
+    filter_hr = build_server_filter(st, et, data_type="heart-rate")
+    assert filter_hr == 'heart_rate.interval.start_time >= "2026-09-01T10:00:00Z" AND heart_rate.interval.start_time < "2026-09-02T10:00:00Z"'
+
+    # 2. Daily (daily-resting-heart-rate)
+    filter_rhr = build_server_filter(st, et, data_type="daily-resting-heart-rate")
+    assert filter_rhr == 'daily_resting_heart_rate.date >= "2026-09-01" AND daily_resting_heart_rate.date < "2026-09-02"'
+
+    # 3. Sample (weight, body-fat)
+    filter_weight = build_server_filter(st, et, data_type="weight")
+    assert filter_weight == 'weight.sample_time.physical_time >= "2026-09-01T10:00:00Z" AND weight.sample_time.physical_time < "2026-09-02T10:00:00Z"'
+
+
+def test_fetch_data_points_invalid_filter_auto_fallback(tmp_path):
+    """Valida recuperação resiliente automática quando a Google Health API rejeita o filtro com INVALID_DATA_POINT_FILTER."""
+    from unittest.mock import patch
+    from longevidade.integrations.google_health.client import GoogleHealthClient, GoogleHealthCredentials
+
+    creds = GoogleHealthCredentials(access_token="valid_token")
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+
+    st = datetime(2026, 9, 1, 0, 0, 0, tzinfo=timezone.utc)
+    et = datetime(2026, 9, 2, 0, 0, 0, tzinfo=timezone.utc)
+
+    err_400 = 'HTTP 400: {"error": {"message": "Invalid data point filter: INVALID_DATA_POINT_FILTER_RESTRICTION_COMPARABLE"}}'
+    mock_resp = {
+        "dataPoints": [
+            {"startTime": "2026-09-01T10:00:00Z", "steps": {"count": 4000}},
+            {"startTime": "2026-09-03T10:00:00Z", "steps": {"count": 9999}},  # Fora do intervalo
+        ]
+    }
+
+    # 1ª chamada com filter dá 400; 2ª chamada sem filter retorna sucesso
+    with patch.object(client, "_get_json", side_effect=[(None, err_400), (mock_resp, None)]) as mock_get:
+        pts, err = client.fetch_data_points("steps", start_time=st, end_time=et)
+        assert err is None
+        # Ponto fora do intervalo foi filtrado client-side por is_point_in_interval
+        assert len(pts) == 1
+        assert pts[0]["steps"]["count"] == 4000
+        assert mock_get.call_count == 2
+        # Segunda chamada teve o parâmetro filter removido
+        assert "filter" not in mock_get.call_args_list[1][0][1]
+

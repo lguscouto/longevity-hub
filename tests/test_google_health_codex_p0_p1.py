@@ -81,7 +81,7 @@ def test_fetch_data_points_propagates_server_filter(tmp_path: Path):
         mock_get.assert_called_once()
         call_url, call_params = mock_get.call_args[0]
         assert "steps/dataPoints" in call_url
-        assert call_params["filter"] == 'start_time >= "2026-03-01T00:00:00Z" AND end_time < "2026-03-02T00:00:00Z"'
+        assert call_params["filter"] == 'steps.interval.start_time >= "2026-03-01T00:00:00Z" AND steps.interval.start_time < "2026-03-02T00:00:00Z"'
 
 
 def test_list_method_alias(tmp_path: Path):
@@ -118,7 +118,7 @@ def test_reconcile_method(tmp_path: Path):
         # Verifica URL e filter
         url_1, params_1 = mock_get.call_args_list[0][0]
         assert "dataTypes/steps/dataPoints:reconcile" in url_1
-        assert params_1["filter"] == 'start_time >= "2026-03-01T00:00:00Z" AND end_time < "2026-03-02T00:00:00Z"'
+        assert params_1["filter"] == 'steps.interval.start_time >= "2026-03-01T00:00:00Z" AND steps.interval.start_time < "2026-03-02T00:00:00Z"'
         assert "pageToken" not in params_1
 
         url_2, params_2 = mock_get.call_args_list[1][0]

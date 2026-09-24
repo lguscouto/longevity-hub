@@ -24,7 +24,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 from longevidade.integrations.google_health.registry import (
@@ -143,29 +143,82 @@ def format_rfc3339_utc(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+DAILY_DATA_TYPES = {
+    "daily-resting-heart-rate",
+    "daily_resting_heart_rate",
+    "daily-heart-rate-variability",
+    "daily_heart_rate_variability",
+    "heart-rate-variability",
+    "heart_rate_variability",
+    "daily-oxygen-saturation",
+    "daily_oxygen_saturation",
+}
+
+SAMPLE_DATA_TYPES = {
+    "weight",
+    "body-fat",
+    "body_fat",
+    "oxygen-saturation",
+    "oxygen_saturation",
+    "vo2-max",
+    "vo2_max",
+}
+
+
 def build_server_filter(
     start_time: Optional[datetime] = None,
     end_time: Optional[datetime] = None,
+    data_type: Optional[str] = None,
 ) -> Optional[str]:
     """
-    Constrói a expressão de filtro temporal server-side para a Google Health API v4.
+    Constrói a expressão de filtro temporal server-side para a Google Health API v4 (AIP-160).
     
-    Regras da especificação:
-    - Campos em snake_case: start_time e end_time
-    - Datas formatadas em RFC 3339 UTC
-    - Validação de que start_time < end_time quando ambos fornecidos
+    Regras da especificação oficial do Google:
+    - Tipos Daily (ex: daily-resting-heart-rate, daily-heart-rate-variability):
+      filtra por data civil YYYY-MM-DD: {dataType}.date >= "YYYY-MM-DD" AND {dataType}.date < "YYYY-MM-DD"
+    - Tipos Sample / Instantâneo (ex: weight, body-fat):
+      filtra por physical_time UTC: {dataType}.sample_time.physical_time >= "..." AND {dataType}.sample_time.physical_time < "..."
+    - Tipos Interval (ex: steps, heart-rate, active-energy-burned, sleep):
+      filtra por start_time UTC: {dataType}.interval.start_time >= "..." AND {dataType}.interval.start_time < "..."
+    - Compatibilidade: se data_type for None, utiliza a expressão genérica start_time / end_time.
     """
     if start_time is not None and end_time is not None:
         st_utc = start_time if start_time.tzinfo else start_time.replace(tzinfo=timezone.utc)
         et_utc = end_time if end_time.tzinfo else end_time.replace(tzinfo=timezone.utc)
         if st_utc >= et_utc:
             raise ValueError("start_time deve ser estritamente anterior a end_time")
+
+    if data_type is not None:
+        filter_name = data_type.replace("-", "_")
+        if data_type in DAILY_DATA_TYPES:
+            field_path = f"{filter_name}.date"
+            st_val = (start_time if start_time.tzinfo else start_time.replace(tzinfo=timezone.utc)).strftime("%Y-%m-%d") if start_time else None
+            et_val = (end_time if end_time.tzinfo else end_time.replace(tzinfo=timezone.utc)).strftime("%Y-%m-%d") if end_time else None
+        elif data_type in SAMPLE_DATA_TYPES:
+            field_path = f"{filter_name}.sample_time.physical_time"
+            st_val = format_rfc3339_utc(start_time) if start_time else None
+            et_val = format_rfc3339_utc(end_time) if end_time else None
+        else:
+            field_path = f"{filter_name}.interval.start_time"
+            st_val = format_rfc3339_utc(start_time) if start_time else None
+            et_val = format_rfc3339_utc(end_time) if end_time else None
+
+        if st_val is not None and et_val is not None:
+            return f'{field_path} >= "{st_val}" AND {field_path} < "{et_val}"'
+        if st_val is not None:
+            return f'{field_path} >= "{st_val}"'
+        if et_val is not None:
+            return f'{field_path} < "{et_val}"'
+        return None
+
+    if start_time is not None and end_time is not None:
         return f'start_time >= "{format_rfc3339_utc(start_time)}" AND end_time < "{format_rfc3339_utc(end_time)}"'
     if start_time is not None:
         return f'start_time >= "{format_rfc3339_utc(start_time)}"'
     if end_time is not None:
         return f'end_time < "{format_rfc3339_utc(end_time)}"'
     return None
+
 
 
 def parse_point_timestamp_utc(pt: Dict[str, Any], field_key: Optional[str] = None) -> Optional[datetime]:
@@ -478,7 +531,7 @@ class GoogleHealthClient:
 
         full_url = url
         if params:
-            full_url = f"{url}?{urlencode(params)}"
+            full_url = f"{url}?{urlencode(params, quote_via=quote)}"
 
         for attempt in range(max_retries + 1):
             req = Request(
@@ -589,7 +642,7 @@ class GoogleHealthClient:
         params: Dict[str, Any] = {"pageSize": page_size}
 
         try:
-            server_filter = build_server_filter(start_time, end_time)
+            server_filter = build_server_filter(start_time, end_time, data_type=data_type)
         except ValueError as exc:
             return [], str(exc)
 
@@ -605,6 +658,18 @@ class GoogleHealthClient:
                 call_params["pageToken"] = next_page_token
 
             data, err = self._get_json(url, call_params)
+            if err and ("INVALID_DATA_POINT_FILTER" in err or "INVALID_ARGUMENT" in err) and "filter" in call_params:
+                logger.warning(
+                    "Filtro server-side rejeitado pela Google Health API para %s (%s). Retentando sem filtro com validação client-side.",
+                    data_type,
+                    err,
+                )
+                fallback_params = dict(call_params)
+                fallback_params.pop("filter", None)
+                data, err = self._get_json(url, fallback_params)
+                if not err:
+                    params.pop("filter", None)
+
             if err:
                 return all_points, err
             if not data:
@@ -647,7 +712,7 @@ class GoogleHealthClient:
         params: Dict[str, Any] = {"pageSize": page_size}
 
         try:
-            server_filter = build_server_filter(start_time, end_time)
+            server_filter = build_server_filter(start_time, end_time, data_type=data_type)
         except ValueError as exc:
             return [], str(exc)
 
@@ -666,6 +731,18 @@ class GoogleHealthClient:
                 call_params["pageToken"] = next_page_token
 
             data, err = self._get_json(url, call_params)
+            if err and ("INVALID_DATA_POINT_FILTER" in err or "INVALID_ARGUMENT" in err) and "filter" in call_params:
+                logger.warning(
+                    "Filtro server-side em reconcile rejeitado pela Google Health API para %s (%s). Retentando sem filtro com validação client-side.",
+                    data_type,
+                    err,
+                )
+                fallback_params = dict(call_params)
+                fallback_params.pop("filter", None)
+                data, err = self._get_json(url, fallback_params)
+                if not err:
+                    params.pop("filter", None)
+
             if err:
                 return all_points, err
             if not data:
