@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Sistema Longevidade — Blueprint Protocol API",
+    title="Longevidade Hub API",
     version=__version__,
     description="API local e auditável para inteligência e monitoramento de longevidade com Copiloto IA.",
     lifespan=lifespan,

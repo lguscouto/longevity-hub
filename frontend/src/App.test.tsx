@@ -168,7 +168,7 @@ describe('App', () => {
 
     // Click 'Perfil' tab
     await user.click(screen.getByRole('button', { name: /perfil/i }))
-    expect(await screen.findByText(/perfil do protocolo blueprint/i)).toBeInTheDocument()
+    expect(await screen.findByText(/perfil do longevidade hub/i)).toBeInTheDocument()
   })
 
   it('keeps a pending check-in autosave alive when navigating away from overview', async () => {

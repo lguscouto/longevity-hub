@@ -336,7 +336,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
                 <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">Alvo: &lt; 0.60</span>
               </div>
-              <p className="text-[10px] text-slate-500">Índice primário de risco aterogênico celular (Attia / Blueprint)</p>
+              <p className="text-[10px] text-slate-500">Índice primário de risco aterogênico celular (Attia / Longevidade Hub)</p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">

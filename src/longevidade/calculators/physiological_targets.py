@@ -11,7 +11,7 @@ PHYSIOLOGICAL_TARGETS: Dict[str, Dict[str, Any]] = {
     "rhr_bpm": {
         "label": "FC de Repouso (RHR)",
         "target": "< 60 bpm",
-        "description": "Frequência cardíaca noturna/repouso (Protocolo Blueprint / Attia)",
+        "description": "Frequência cardíaca noturna/repouso (Longevidade Hub / Attia)",
     },
     "hrv_ms": {
         "label": "Variabilidade Cardíaca (HRV)",

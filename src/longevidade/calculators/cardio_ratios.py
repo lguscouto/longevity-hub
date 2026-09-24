@@ -1,6 +1,6 @@
 """
 Calculadora de Razões e Índices Cardiovasculares Avançados.
-Baseado nas diretrizes de cardiologia de longevidade (Dr. Peter Attia & Protocolo Blueprint).
+Baseado nas diretrizes de cardiologia de longevidade (Dr. Peter Attia & Longevidade Hub).
 """
 
 from __future__ import annotations

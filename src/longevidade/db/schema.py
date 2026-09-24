@@ -455,7 +455,7 @@ def initialize_db(db_path: str | Path) -> None:
         # Garante linha inicial nas configurações de IA se vazia
         conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-pro');")
 
-        # Garante inserção de suplementos básicos Blueprint se a tabela estiver vazia
+        # Garante inserção de suplementos básicos de longevidade se a tabela estiver vazia
         count_supps = conn.execute("SELECT COUNT(*) FROM supplement_stack;").fetchone()[0]
         if count_supps == 0:
             supps = [

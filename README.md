@@ -1,4 +1,4 @@
-# Sistema Longevidade — Blueprint Protocol & Local Health Hub
+# Longevidade Hub — Open-Source Personal Longevity OS & Healthspan Platform
 
 Aplicação Web e plataforma local auditável de inteligência para longevidade, combinando métricas de wearables (**Zepp/Amazfit**, **Google Health API v4**, **Health Connect**, **Hevy**), exames laboratoriais, cálculo de idade biológica epigenética (**PhenoAge Morgan Levine** e **KDM Age**), experimentos estocásticos **N-of-1**, catálogo completo de treinos, monitoramento contínuo de glicemia (**CGM**) e gerador de relatórios clínicos (**Doctor Briefing**).
 

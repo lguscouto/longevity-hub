@@ -218,8 +218,8 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
         lines.append("\n=== HISTÓRICO AUDITÁVEL DE ALTERAÇÕES DE SUPLEMENTOS E HORMÔNIOS ===")
         lines.append("Omitido por privacy_mode=minimal; histórico completo permanece somente no SQLite local.")
 
-    # 6. Conformidade Diária Blueprint (Score)
-    lines.append("\n=== CONFORMIDADE DIÁRIA DO PROTOCOLO BLUEPRINT ===")
+    # 6. Conformidade Diária Longevidade Hub (Score)
+    lines.append("\n=== CONFORMIDADE DIÁRIA DO PROTOCOLO LONGEVIDADE HUB ===")
     if compliance_list:
         valid_scores = [c.get("compliance_score", 0) for c in compliance_list]
         avg_score = round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else 0

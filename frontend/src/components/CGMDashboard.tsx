@@ -125,7 +125,7 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
           <div className={`text-2xl font-extrabold mt-1 ${metricTone}`}>
             {latest ? `${latest.mean_glucose} mg/dL` : '—'}
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">{latest ? 'Alvo Blueprint: < 90 mg/dL' : 'Sem dados para a data'}</span>
+          <span className="text-[10px] text-slate-500 mt-1 block">{latest ? 'Target Funcional: < 90 mg/dL' : 'Sem dados para a data'}</span>
         </div>
 
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">

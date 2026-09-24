@@ -27,7 +27,7 @@ from longevidade.ingestion.lab_normalization import (
     validate_phenoage_inputs,
 )
 
-# Tabela Completa de Alvos Ótimos de Longevidade (Protocolo Blueprint / Medicina Funcional)
+# Tabela Completa de Alvos Ótimos de Longevidade (Longevidade Hub / Medicina Funcional)
 OPTIMAL_LONGEVITY_TARGETS = {
     # Cardiovascular & Lípides
     "apob": {"name": "Apolipoproteína B (ApoB)", "unit": "mg/dL", "ref_min": 60, "ref_max": 130, "optimal": 60.0, "category": "Cardiovascular"},

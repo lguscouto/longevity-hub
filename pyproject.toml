@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "longevidade"
 version = "0.6.0"
-description = "Sistema local, modular e auditável de monitoramento e inteligência de longevidade (Protocolo Blueprint)."
+description = "Longevidade Hub: Plataforma local e auditável de inteligência de saúde, biomarcadores e longevidade."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

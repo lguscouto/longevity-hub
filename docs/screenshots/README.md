@@ -1,4 +1,4 @@
-# Screenshots do Projeto Longevidade Blueprint
+# Screenshots do Projeto Longevidade Hub
 
 Esta pasta contém as capturas de tela e mockups das interfaces principais do Longevidade Hub.
 

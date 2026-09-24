@@ -86,7 +86,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </button>
                 )}
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{profile.email} • Perfil do Protocolo Blueprint</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{profile.email} • Perfil do Longevidade Hub</p>
             </div>
           </div>
 

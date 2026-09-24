@@ -128,7 +128,7 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
         "3. Ajuste fino de suplementação baseada nas deficiências detectadas no painel sanguíneo.",
         "",
         "---",
-        "*Documento gerado automaticamente pelo Sistema Longevidade (Blueprint Protocol Local Hub).*"
+        "*Documento gerado automaticamente pelo Longevidade Hub (Healthspan & Longevity Platform).*"
     ])
 
     return "\n".join(lines)

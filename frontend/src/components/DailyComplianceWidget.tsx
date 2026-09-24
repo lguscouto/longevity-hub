@@ -81,7 +81,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
             <Target className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Score de Disciplina Blueprint</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Protocol Compliance Score</h3>
             <p className="text-[11px] text-slate-600 dark:text-slate-400">Padrão de Longevidade ({selectedDate})</p>
           </div>
         </div>

@@ -331,7 +331,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Inteligência Médica de Precisão</h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-              Análise integrativa de biomarcadores de sangue, idade biológica PhenoAge, HRV autonômica e curva glicêmica baseada nos princípios do Protocolo Blueprint.
+              Análise integrativa de biomarcadores de sangue, idade biológica PhenoAge, HRV autonômica e curva glicêmica baseada nos princípios do Longevidade Hub.
             </p>
             <div
               role="status"
@@ -420,7 +420,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               <RefreshCw className="h-10 w-10 text-cyan-600 dark:text-cyan-400 animate-spin mx-auto" />
               <div className="space-y-1">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">Processando Dados no {selectedModel}...</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Cruzando biomarcadores com a fórmula Morgan Levine PhenoAge e Protocolo Blueprint...</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Cruzando biomarcadores com a fórmula Morgan Levine PhenoAge e Longevidade Hub...</p>
               </div>
             </div>
           )}
@@ -448,7 +448,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               {item.actionable_steps && (
                 <div className="p-3 rounded-2xl bg-cyan-500/5 border border-cyan-500/15 text-xs space-y-1">
                   <span className="font-bold text-cyan-700 dark:text-cyan-300 text-[11px] uppercase tracking-wide flex items-center gap-1">
-                    <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Recomendação Prática Blueprint:
+                    <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Insight de Otimização Biológica:
                   </span>
                   <p className="text-slate-700 dark:text-slate-300 font-medium">{item.actionable_steps}</p>
                 </div>
