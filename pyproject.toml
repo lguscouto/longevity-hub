@@ -22,6 +22,7 @@ dependencies = [
     "requests>=2.31.0",
     "keyring>=25.0.0",
     "reportlab>=4.0.0",
+    "cryptography>=42.0.0",
     "pytest>=8.0.0"
 ]
 

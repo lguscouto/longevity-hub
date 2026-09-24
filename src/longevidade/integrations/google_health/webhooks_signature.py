@@ -22,9 +22,16 @@ from typing import Any, Dict, Optional, Tuple
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec
+try:
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import ec
+    _HAS_CRYPTOGRAPHY = True
+except ImportError:
+    InvalidSignature = Exception  # type: ignore
+    hashes = None  # type: ignore
+    ec = None  # type: ignore
+    _HAS_CRYPTOGRAPHY = False
 
 from longevidade.integrations.google_health.errors import (
     GoogleHealthSignatureError,
@@ -67,9 +74,9 @@ class GoogleHealthWebhookSignatureVerifier:
         self.cache_ttl_seconds = cache_ttl_seconds
         self._cached_keyset: Optional[Dict[str, Any]] = None
         self._cache_timestamp: float = 0.0
-        self._custom_keys: Dict[int, ec.EllipticCurvePublicKey] = {}
+        self._custom_keys: Dict[int, Any] = {}
 
-    def register_test_key(self, key_id: int, public_key: ec.EllipticCurvePublicKey) -> None:
+    def register_test_key(self, key_id: int, public_key: Any) -> None:
         """Registra uma chave de teste diretamente em memória (útil para suítes unitárias)."""
         self._custom_keys[key_id] = public_key
 
@@ -101,7 +108,7 @@ class GoogleHealthWebhookSignatureVerifier:
         return self._cached_keyset
 
     @staticmethod
-    def parse_ecdsa_p256_public_key(value_base64: str) -> ec.EllipticCurvePublicKey:
+    def parse_ecdsa_p256_public_key(value_base64: str) -> Any:
         """
         Extrai a chave pública ECDSA P-256 a partir do protobuf serializado EcdsaPublicKey do Tink.
         
@@ -110,6 +117,9 @@ class GoogleHealthWebhookSignatureVerifier:
         - field 3: x coordinate (tag 0x1a, length 33 com byte 0 inicial ou 32 bytes)
         - field 4: y coordinate (tag 0x22, length 33 com byte 0 inicial ou 32 bytes)
         """
+        if not _HAS_CRYPTOGRAPHY or ec is None:
+            raise GoogleHealthSignatureError("Biblioteca 'cryptography' é necessária para decodificar chaves públicas ECDSA.")
+
         raw = base64.b64decode(value_base64)
         
         # Localiza tag 0x1a (field 3) e tag 0x22 (field 4)
@@ -150,7 +160,7 @@ class GoogleHealthWebhookSignatureVerifier:
         public_numbers = ec.EllipticCurvePublicNumbers(x_int, y_int, ec.SECP256R1())
         return public_numbers.public_key()
 
-    def get_public_key_by_id(self, key_id: int) -> Optional[ec.EllipticCurvePublicKey]:
+    def get_public_key_by_id(self, key_id: int) -> Optional[Any]:
         """Localiza a chave pública correspondente ao key_id."""
         if key_id in self._custom_keys:
             return self._custom_keys[key_id]
@@ -185,6 +195,10 @@ class GoogleHealthWebhookSignatureVerifier:
         
         Retorna True se válida, False se inválida ou chave desconhecida.
         """
+        if not _HAS_CRYPTOGRAPHY or ec is None or hashes is None:
+            logger.warning("Biblioteca 'cryptography' não está instalada. Verificação de assinatura ignorada.")
+            return False
+
         if not signature_header or not raw_body_bytes:
             return False
 

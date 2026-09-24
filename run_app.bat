@@ -16,6 +16,12 @@ IF NOT EXIST ".venv\Scripts\python.exe" (
     echo [INFO] Instalando dependencias do backend...
     "%PYTHON_EXE%" -m pip install -q -r backend\requirements.txt
     "%PYTHON_EXE%" -m pip install -q -e .
+) ELSE (
+    "%PYTHON_EXE%" -c "import cryptography" >nul 2>&1 || (
+        echo [INFO] Atualizando dependencias do backend no ambiente virtual...
+        "%PYTHON_EXE%" -m pip install -q -r backend\requirements.txt
+        "%PYTHON_EXE%" -m pip install -q -e .
+    )
 )
 
 IF NOT EXIST "frontend\node_modules" (
