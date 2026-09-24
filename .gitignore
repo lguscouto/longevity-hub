@@ -1,41 +1,146 @@
-# Python
+# ==========================================
+# Ambientes Virtuais e Pacotes Python
+# ==========================================
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 .venv/
 venv/
 ENV/
-*.egg-info/
-.pytest_cache/
+env/
 
-# Node / React / Vite
+# ==========================================
+# Testes, Cobertura e Qualidade de Código
+# ==========================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# ==========================================
+# Frontend (Node, Vite, Playwright)
+# ==========================================
 node_modules/
 frontend/node_modules/
 frontend/dist/
-dist/
+frontend/build/
+frontend/.vite/
 frontend/test-results/
 frontend/playwright-report/
 .eslintcache
 
-# Runtime health data and local integration exports
-# These paths may contain personal health records, photos, or credentials.
-data/physical_assessments/
-integrations/google/data/
-integrations/zepp/data/
+# ==========================================
+# Credenciais, Segredos e Tokens Sensíveis
+# ==========================================
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+*.env
+
+# Chaves de API, segredos e certificados
+*.pem
+*.key
+*.cert
+*.pfx
+*.p12
+.secrets/
+secrets.json
+secret.json
+
+# Tokens OAuth e credenciais de nuvem (Google Health, Zepp, etc.)
+*token*.json
+client_secret*.json
+credentials.json
 integrations/zepp/zepp-health-cli/config.json
-integrations/zepp/acompanhamento/*.xlsx
-integrations/zepp/acompanhamento/backups/
+integrations/zepp/zepp-health-cli/config.local.json
 
-# Databases & Runtime Local Files
+# Exceção explícita para manter fixtures de testes rastreadas (arquivos JSON de mock)
+!tests/fixtures/*.json
+
+# ==========================================
+# Dados Pessoais de Saúde em Tempo de Execução
+# ==========================================
+# Diretório de dados em tempo de execução (banco, fotos, exames e logs)
+/data/*
+!/data/.gitkeep
+
+# Diretórios de dados das integrações (capturas, planilhas e backups)
+integrations/**/data/
+integrations/**/acompanhamento/
+
+# Relatórios médicos gerados contendo dados de saúde
+doctor_briefing_*.pdf
+relatorio_*.pdf
+*.pdf
+
+# ==========================================
+# Bancos de Dados SQLite & Arquivos WAL
+# ==========================================
 *.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
 *.db
-data/longevity.sqlite3
-*.log
-data/*.log
+*.db-wal
+*.db-shm
+*.db-journal
 
-# OS / IDE
+# ==========================================
+# Logs
+# ==========================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================
+# Sistema Operacional e Editores / IDEs
+# ==========================================
 .DS_Store
 Thumbs.db
+ehthumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# Sessões e Planos de Agentes de IA
+# ==========================================
 .hermes/
+.gemini/
+.cursor/
+.claude/
