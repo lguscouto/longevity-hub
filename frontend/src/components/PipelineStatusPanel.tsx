@@ -34,7 +34,8 @@ function formatRunAt(isoString: string): string {
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: React.FC<{ className?: string }>; color: string }> = {
   Zepp: { label: 'Zepp / Amazfit Wearable', icon: Activity, color: 'text-emerald-600 dark:text-emerald-400' },
-  GoogleFit: { label: 'Google Fit Hub', icon: Database, color: 'text-cyan-600 dark:text-cyan-400' },
+  GoogleHealth: { label: 'Google Health Hub', icon: Database, color: 'text-cyan-600 dark:text-cyan-400' },
+  GoogleHealthAPI: { label: 'Google Health API v4', icon: Database, color: 'text-cyan-600 dark:text-cyan-400' },
 }
 
 function getSourceConfig(source: string): { label: string; icon: React.FC<{ className?: string }>; color: string } {

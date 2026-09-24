@@ -12,10 +12,7 @@ from longevidade.ingestion.google_health_client import get_default_token_path
 
 router = APIRouter(prefix="/api/profile", tags=["Profile"])
 
-GOOGLE_CONFIG_DIR = BASE_DIR.parent / "google health" / "config"
-GOOGLE_TOKEN_FILE = GOOGLE_CONFIG_DIR / "google_token.json"
 GOOGLE_HEALTH_TOKEN_FILE = get_default_token_path()
-GOOGLE_DATA_DIR = BASE_DIR.parent / "google health" / "data"
 
 class UserProfileInput(BaseModel):
     name: Optional[str] = None
@@ -38,76 +35,42 @@ def get_profile():
         daily = []
     latest_weight = next((m["weight_kg"] for m in daily if m.get("weight_kg") is not None), None)
 
-    # Tenta extrair peso do google_weight.json se ainda ausente
-    if latest_weight is None and (GOOGLE_DATA_DIR / "google_weight.json").is_file():
-        try:
-            payload = json.loads((GOOGLE_DATA_DIR / "google_weight.json").read_text(encoding="utf-8"))
-            for b in reversed(payload.get("bucket", [])):
-                for ds in b.get("dataset", []):
-                    for pt in ds.get("point", []):
-                        for val in pt.get("value", []):
-                            v = val.get("fpVal") or val.get("intVal")
-                            if v:
-                                latest_weight = float(v)
-                                break
-                    if latest_weight: break
-                if latest_weight: break
-        except Exception:
-            pass
-
-    # Tenta extrair altura do google_height.json se presente
-    google_height_cm = None
-    if (GOOGLE_DATA_DIR / "google_height.json").is_file():
-        try:
-            payload = json.loads((GOOGLE_DATA_DIR / "google_height.json").read_text(encoding="utf-8"))
-            for b in reversed(payload.get("bucket", [])):
-                for ds in b.get("dataset", []):
-                    for pt in ds.get("point", []):
-                        for val in pt.get("value", []):
-                            v = val.get("fpVal") or val.get("intVal")
-                            if v:
-                                # Se estiver em metros (ex: 1.70), converte para cm (170.0)
-                                google_height_cm = float(v) * 100.0 if float(v) < 3.0 else float(v)
-                                break
-                    if google_height_cm: break
-                if google_height_cm: break
-        except Exception:
-            pass
-
     current_weight = latest_weight or profile.get("current_weight_kg")
-    height_cm = google_height_cm or profile.get("height_cm") or 170.0
+    height_cm = profile.get("height_cm")
 
-    # Cálculo do IMC
+    # Cálculo do IMC (somente quando dados clínicos reais estão presentes)
     bmi = None
     if current_weight and height_cm and height_cm > 0:
         height_m = height_cm / 100.0
         bmi = round(current_weight / (height_m * height_m), 1)
 
-    # Cálculo da Idade Cronológica via Data de Nascimento
-    birthdate_str = profile.get("birthdate") or "1994-03-22"
-    chrono_age = 32.0
+    # Cálculo da Idade Cronológica via Data de Nascimento ou perfil
+    birthdate_str = profile.get("birthdate")
+    chrono_age = None
     if birthdate_str:
         try:
             bdate = date.fromisoformat(birthdate_str[:10])
             today = date.today()
             chrono_age = float(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)))
         except Exception:
-            chrono_age = float(profile.get("chronological_age") or 32.0)
+            chrono_age = float(profile["chronological_age"]) if profile.get("chronological_age") is not None else None
+    elif profile.get("chronological_age") is not None:
+        chrono_age = float(profile["chronological_age"])
 
-    google_token_present = GOOGLE_HEALTH_TOKEN_FILE.is_file() or GOOGLE_TOKEN_FILE.is_file()
+    google_connected = GOOGLE_HEALTH_TOKEN_FILE.is_file()
 
     return {
-        "name": profile.get("name") or "Paciente Longevidade",
-        "email": profile.get("email") or "googlefit@longevidade.local",
+        "name": profile.get("name") or "Paciente",
+        "email": profile.get("email"),
         "birthdate": birthdate_str,
         "chronological_age": chrono_age,
         "height_cm": height_cm,
         "current_weight_kg": current_weight,
-        "target_weight_kg": profile.get("target_weight_kg") or 75.0,
+        "target_weight_kg": profile.get("target_weight_kg"),
         "bmi": bmi,
-        "gender": profile.get("gender") or "Masculino",
+        "gender": profile.get("gender"),
         "avatar_url": profile.get("avatar_url"),
-        "google_connected": google_token_present,
+        "google_connected": google_connected,
         "source": "Google Health API & Hub Longevidade"
     }
 

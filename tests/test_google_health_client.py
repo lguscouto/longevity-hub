@@ -88,6 +88,10 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
                 {"startTime": f"{today_str}T08:00:00Z", "heartRate": {"bpm": 62}},
                 {"startTime": f"{today_str}T12:00:00Z", "heartRate": {"bpm": 74}},
             ], None
+        if data_type == "daily-resting-heart-rate":
+            return [
+                {"startTime": f"{today_str}T06:00:00Z", "dailyRestingHeartRate": {"bpm": 58.0}}
+            ], None
         if data_type == "sleep":
             return [
                 {
@@ -114,8 +118,9 @@ def test_google_health_client_fetch_daily_summary(tmp_path: Path):
         assert len(records) >= 1
         rec = next(r for r in records if r["date_ref"] == today_str)
         assert rec["steps"] == 8200
-        assert rec["rhr_bpm"] == 62.0
+        assert rec["rhr_bpm"] == 58.0
         assert rec["avg_hr_bpm"] == 68.0
+        assert rec["max_hr_bpm"] == 74.0
         assert rec["sleep_minutes"] == 450
         assert rec["sleep_deep_min"] == 90
         assert rec["sleep_rem_min"] == 100

@@ -177,7 +177,7 @@ def run_sync(
 
     # 2. Google Health Ingestion
     if not skip_google:
-        logger.info("[2/4] Sincronizando Google Health / Google Fit...")
+        logger.info("[2/4] Sincronizando Google Health API...")
         google_summary = []
         try:
             # 2a. Reconciliação de dados locais (arquivos gerados por scripts/exportações)

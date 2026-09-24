@@ -40,6 +40,26 @@ class DataTypeConfig:
     unit: Optional[str] = None
     metric_fields: List[str] = field(default_factory=list)
     description: str = ""
+    official_name: Optional[str] = None
+    endpoint_name: Optional[str] = None
+    supported_operations: Optional[List[str]] = None
+    normalizer: Optional[str] = None
+    enabled: Optional[bool] = None
+    status: str = "stable"
+
+    def __post_init__(self):
+        if self.official_name is None:
+            object.__setattr__(self, "official_name", self.data_type)
+        if self.endpoint_name is None:
+            object.__setattr__(self, "endpoint_name", self.data_type)
+        if self.supported_operations is None:
+            object.__setattr__(self, "supported_operations", list(self.operations))
+        if self.enabled is None:
+            object.__setattr__(self, "enabled", self.is_active and not self.is_roadmap)
+        if self.is_roadmap and self.status == "stable":
+            object.__setattr__(self, "status", "roadmap")
+        if self.provider == "health_connect" and self.status == "stable":
+            object.__setattr__(self, "status", "health_connect_only")
 
 
 # Registry com mapeamento completo de data types
@@ -96,7 +116,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         webhook_supported=True,
         is_active=True,
         unit="bpm",
-        metric_fields=["avg_hr_bpm", "rhr_bpm"],
+        metric_fields=["avg_hr_bpm", "max_hr_bpm"],
         description="Frequência cardíaca contínua e intradiária.",
     ),
     "daily-resting-heart-rate": DataTypeConfig(
@@ -108,7 +128,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         is_active=True,
         unit="bpm",
         metric_fields=["rhr_bpm"],
-        description="Frequência cardíaca de repouso diária.",
+        description="Frequência cardíaca de repouso diária oficial.",
     ),
     "heart-rate-variability": DataTypeConfig(
         data_type="heart-rate-variability",
@@ -164,6 +184,17 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         unit="percentage",
         metric_fields=["body_fat_pct"],
         description="Percentual de gordura corporal.",
+    ),
+    "respiratory-rate": DataTypeConfig(
+        data_type="respiratory-rate",
+        filter_name="respiratory_rate",
+        scope=SCOPE_HEALTH_METRICS,
+        operations=["list", "dailyRollup"],
+        webhook_supported=False,
+        is_active=True,
+        unit="rpm",
+        metric_fields=["respiratory_rate_rpm"],
+        description="Frequência respiratória diária e intradiária.",
     ),
     # Itens de Roadmap (Não habilitados para sincronização até estarem disponíveis e estáveis)
     "basal-metabolic-rate": DataTypeConfig(
@@ -249,4 +280,17 @@ class GoogleHealthDataTypeRegistry:
         cfg = DATA_TYPES.get(data_type)
         if not cfg:
             return False
-        return operation in cfg.operations
+        return operation in cfg.operations or (cfg.supported_operations is not None and operation in cfg.supported_operations)
+
+    @staticmethod
+    def get_by_status(status: str) -> List[DataTypeConfig]:
+        """Retorna todos os tipos de dados com o status especificado (stable, available, roadmap, health_connect_only)."""
+        return [cfg for cfg in DATA_TYPES.values() if cfg.status == status]
+
+    @staticmethod
+    def get_by_operation(operation: str) -> List[DataTypeConfig]:
+        """Retorna todos os tipos de dados que suportam determinada operação (list, reconcile, rollUp, dailyRollUp)."""
+        return [
+            cfg for cfg in DATA_TYPES.values()
+            if operation in cfg.operations or (cfg.supported_operations is not None and operation in cfg.supported_operations)
+        ]

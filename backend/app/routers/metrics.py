@@ -120,9 +120,9 @@ def sync_all_sources():
         return {
             "status": "ok",
             "zepp": zepp_result,
-            "google_fit": google_result,
+            "google_health": google_result,
             "zepp_records_imported": zepp_count,
-            "google_fit_records_imported": google_count,
+            "google_health_records_imported": google_count,
             "total_sources": 2,
         }
     except HTTPException as exc:

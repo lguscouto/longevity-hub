@@ -68,3 +68,43 @@ def test_sync_google_health_reauthentication_required(repo: LongevityRepository,
     assert res["status"] == "AVISO"
     assert res["records_inserted"] == 0
     assert "Reautenticação necessária" in res["summary"]
+
+
+def test_sync_google_health_persists_raw_layer(repo: LongevityRepository, tmp_path: Path):
+    """P1.3: Verifica que a sincronização persiste os pontos brutos em health_data_points preservando raw_json."""
+    creds = GoogleHealthCredentials(access_token="valid_token")
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+
+    mock_raw_points = [
+        {
+            "id": "raw_step_01",
+            "provider": "google_health",
+            "data_type": "steps",
+            "source": "Pixel Watch",
+            "start_time": "2026-08-18T10:00:00Z",
+            "end_time": "2026-08-18T11:00:00Z",
+            "recorded_at": "2026-08-18T10:00:00Z",
+            "value": 4500.0,
+            "unit": "count",
+            "raw_json": '{"steps": {"count": 4500}}',
+        }
+    ]
+    mock_records = [{"date_ref": "2026-08-18", "steps": 4500}]
+
+    def mock_fetch(*args, **kwargs):
+        client.last_collected_raw_points = mock_raw_points
+        return mock_records, []
+
+    with patch.object(client, "fetch_daily_metrics_summary", side_effect=mock_fetch):
+        res = sync_google_health_api(repo, days=1, client=client)
+        assert res["status"] == "SUCESSO"
+        assert "pontos brutos arquivados" in res["summary"]
+
+        # Verifica na tabela health_data_points
+        with repo._get_connection() as conn:
+            row = conn.execute("SELECT provider, data_type, value, raw_json FROM health_data_points WHERE id = 'raw_step_01';").fetchone()
+            assert row is not None
+            assert row[0] == "google_health"
+            assert row[1] == "steps"
+            assert row[2] == 4500.0
+            assert '{"steps": {"count": 4500}}' in row[3]

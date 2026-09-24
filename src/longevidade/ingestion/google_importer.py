@@ -34,15 +34,11 @@ def _parse_timestamp_to_date_str(ts_ms: str | int | float) -> str | None:
 
 
 def trigger_google_cloud_fetch(google_backend_dir: Path, days: int = 30) -> None:
-    """Aciona o cliente do Google Health/Fit para baixar retroativamente os dados da nuvem."""
+    """Aciona o cliente do Google Health API para baixar retroativamente os dados da nuvem."""
     try:
-        if str(google_backend_dir) not in sys.path:
-            sys.path.insert(0, str(google_backend_dir))
-        from google_fit_client import fetch_all_google_health
-
-        fetch_all_google_health(days=days)
-    except ImportError:
-        pass
+        gh_client = GoogleHealthClient()
+        if gh_client.is_authenticated():
+            gh_client.fetch_daily_metrics_summary(days=days)
     except Exception:
         pass
 
@@ -75,7 +71,7 @@ def sync_google_health_api(
     client: Optional[GoogleHealthClient] = None,
     selected_types: Optional[list[str]] = None,
 ) -> Dict[str, Any]:
-    """Sincroniza dados diretamente da Google Health API v4 para o repositório SQLite."""
+    """Sincroniza dados diretamente da Google Health API v4 para a camada raw e daily_metrics."""
     gh_client = client or GoogleHealthClient()
     if not gh_client.is_authenticated():
         reason = "Google Health API não autenticada."
@@ -94,6 +90,16 @@ def sync_google_health_api(
         return result
 
     records, errors = gh_client.fetch_daily_metrics_summary(days=days, selected_types=selected_types)
+
+    # P1.3: Persistência na camada raw health_data_points preservando raw_json
+    raw_points = getattr(gh_client, "last_collected_raw_points", [])
+    raw_inserted = 0
+    if raw_points:
+        try:
+            raw_inserted = repo.insert_health_data_points(raw_points)
+        except Exception:
+            pass
+
     inserted = 0
     rejected = 0
 
@@ -105,7 +111,10 @@ def sync_google_health_api(
             rejected += 1
 
     status = "SUCESSO" if not errors else ("AVISO" if inserted > 0 else "ERRO")
-    summary = f"Sincronizados {inserted} registros da Google Health API v4 ({len(records)} lidos)"
+    summary = f"Sincronizados {inserted} registros da Google Health API v4 ({len(records)} lidos"
+    if raw_inserted > 0:
+        summary += f", {raw_inserted} pontos brutos arquivados"
+    summary += ")"
     if errors:
         summary += f" | Erros: {'; '.join(errors[:3])}"
 

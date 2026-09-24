@@ -5,9 +5,11 @@ interface SyncResult {
   status: 'ok' | 'error' | 'warning'
   message?: string
   zepp_records_imported?: number
+  google_health_records_imported?: number
   google_fit_records_imported?: number
   total_sources?: number
   zepp?: { records_inserted?: number; status?: string; summary?: string } | number
+  google_health?: { records_inserted?: number; status?: string; summary?: string } | number
   google_fit?: { records_inserted?: number; status?: string; summary?: string } | number
 }
 
@@ -49,7 +51,10 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   }, [isOpen, isSyncing])
 
   const zeppCount = getRecordCount(syncResult?.zepp, syncResult?.zepp_records_imported)
-  const googleCount = getRecordCount(syncResult?.google_fit, syncResult?.google_fit_records_imported)
+  const googleCount = getRecordCount(
+    syncResult?.google_health ?? syncResult?.google_fit,
+    syncResult?.google_health_records_imported ?? syncResult?.google_fit_records_imported
+  )
   const importedTotal = zeppCount + googleCount
   const isSuccess = !isSyncing && syncResult?.status === 'ok'
   const hasError = !isSyncing && syncResult?.status === 'error'
@@ -66,7 +71,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   }, [hasError, importedTotal, isSuccess, isSyncing, isWarning])
 
   const description = useMemo(() => {
-    if (isSyncing) return `Reconciliando Zepp + Google Fit Hub (${elapsedSeconds}s)`
+    if (isSyncing) return `Reconciliando Zepp + Google Health Hub (${elapsedSeconds}s)`
     if (isSuccess) {
       return importedTotal > 0
         ? 'As métricas sincronizadas foram persistidas com sucesso.'

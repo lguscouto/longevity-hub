@@ -61,13 +61,23 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
     # 1. Perfil Básico
     lines = ["=== PERFIL DO PACIENTE ==="]
     lines.append(f"Modo de privacidade aplicado: {normalized_privacy_mode}")
+    chrono_val = profile.get('chronological_age')
+    chrono_str = f"{chrono_val} anos" if chrono_val is not None else "Não informada"
     if minimal_mode:
         lines.append("Identificadores diretos removidos: nome, e-mail e data de nascimento não foram enviados ao provedor externo.")
-        lines.append(f"Idade Cronológica: {profile.get('chronological_age', 32.0)} anos")
+        lines.append(f"Idade Cronológica: {chrono_str}")
     else:
         lines.append(f"Nome: {profile.get('name', 'Paciente')}")
-        lines.append(f"Idade Cronológica: {profile.get('chronological_age', 32.0)} anos (Nascimento: {profile.get('birthdate', 'N/A')})")
-    lines.append(f"Altura: {profile.get('height_cm', 170.0)} cm | Peso Atual: {profile.get('current_weight_kg', 'Sem dados')} kg | Meta: {profile.get('target_weight_kg', 75.0)} kg")
+        bdate_val = profile.get('birthdate') or 'N/A'
+        lines.append(f"Idade Cronológica: {chrono_str} (Nascimento: {bdate_val})")
+
+    height_val = profile.get('height_cm')
+    height_str = f"{height_val} cm" if height_val is not None else "Sem dados"
+    curr_weight = profile.get('current_weight_kg')
+    curr_weight_str = f"{curr_weight} kg" if curr_weight is not None else "Sem dados"
+    target_weight = profile.get('target_weight_kg')
+    target_weight_str = f"{target_weight} kg" if target_weight is not None else "Sem meta"
+    lines.append(f"Altura: {height_str} | Peso Atual: {curr_weight_str} | Meta: {target_weight_str}")
     if profile.get('bmi'):
         lines.append(f"IMC: {profile.get('bmi')} kg/m²")
 
@@ -101,7 +111,16 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
     if daily_list and daily_list[0].get("rhr_bpm"):
         kdm_input["rhr_bpm"] = float(daily_list[0]["rhr_bpm"])
 
-    kdm_res = calculate_kdm_biological_age(profile.get("chronological_age", 32.0), kdm_input)
+    chrono_age_val = profile.get("chronological_age")
+    if chrono_age_val is not None:
+        kdm_res = calculate_kdm_biological_age(chrono_age_val, kdm_input)
+    else:
+        kdm_res = {
+            "status": "incomplete",
+            "reason": "Idade cronológica não definida no perfil",
+            "biomarkers_count": 0,
+            "missing_biomarkers": ["chronological_age"],
+        }
     if kdm_res.get("status") == "complete":
         delta = kdm_res.get("kdm_delta") or 0
         lines.append(f"- Klemera-Doubal (KDM) Age: {kdm_res.get('kdm_age')} anos (Delta: {'+' if delta > 0 else ''}{delta} anos) | Biomarcadores usados: {kdm_res.get('biomarkers_count', 0)}")

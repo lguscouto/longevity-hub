@@ -49,7 +49,7 @@ MIGRATIONS: Sequence[Migration] = (
                 spo2_min_pct REAL,
                 respiratory_rate_rpm REAL,
                 pai_score REAL,
-                source TEXT DEFAULT 'Zepp/GoogleFit',
+                source TEXT DEFAULT 'Zepp/GoogleHealth',
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """,
@@ -58,12 +58,12 @@ MIGRATIONS: Sequence[Migration] = (
                 id INTEGER PRIMARY KEY DEFAULT 1,
                 name TEXT DEFAULT 'Paciente',
                 email TEXT,
-                birthdate TEXT DEFAULT '1994-03-22',
-                chronological_age REAL DEFAULT 32.0,
-                height_cm REAL DEFAULT 170.0,
+                birthdate TEXT,
+                chronological_age REAL,
+                height_cm REAL,
                 current_weight_kg REAL,
-                target_weight_kg REAL DEFAULT 75.0,
-                gender TEXT DEFAULT 'Masculino',
+                target_weight_kg REAL,
+                gender TEXT,
                 avatar_url TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );

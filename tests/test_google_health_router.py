@@ -59,7 +59,9 @@ def test_google_health_save_credentials(client: TestClient, tmp_path: Path):
 
 
 def test_google_health_callback_error(client: TestClient):
-    resp = client.get("/api/google-health/callback?error=access_denied")
+    auth_resp = client.get("/api/google-health/auth-url?client_id=test_id")
+    state = auth_resp.json().get("state")
+    resp = client.get(f"/api/google-health/callback?error=access_denied&state={state}")
     assert resp.status_code == 400
     assert "Falha na Autorização" in resp.text
     assert "access_denied" in resp.text
@@ -140,9 +142,12 @@ def test_google_health_callback_partial_consent_success(client: TestClient, tmp_
     mock_resp.__enter__.return_value = mock_resp
     mock_resp.__exit__.return_value = False
 
+    auth_resp = client.get("/api/google-health/auth-url?client_id=cid&client_secret=secret")
+    state = auth_resp.json().get("state")
+
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
         with patch("backend.app.routers.google_health.urlopen", return_value=mock_resp):
-            resp = client.get("/api/google-health/callback?code=mock_code_123")
+            resp = client.get(f"/api/google-health/callback?code=mock_code_123&state={state}")
             assert resp.status_code == 200
             assert "Conectado com Sucesso" in resp.text
 
@@ -153,4 +158,67 @@ def test_google_health_callback_partial_consent_success(client: TestClient, tmp_
             assert saved_creds.scopes == [SCOPE_ACTIVITY]
             assert saved_creds.has_scope("activity") is True
             assert saved_creds.has_scope("sleep") is False
+
+
+def test_google_health_webhook_unauthenticated(client: TestClient, tmp_path: Path):
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "nonexistent.json"):
+        resp = client.post("/api/google-health/webhook", json={"collectionType": "activity", "date": "2026-03-24"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "acknowledged"
+        assert data["sync_triggered"] is False
+
+
+def test_google_health_webhook_authenticated_triggers_sync(client: TestClient, tmp_path: Path):
+    token_file = tmp_path / "token.json"
+    creds = GoogleHealthCredentials(access_token="valid_access_token")
+    creds.save_to_file(token_file)
+
+    mock_sync_result = {
+        "records_read": 10,
+        "records_inserted": 5,
+        "records_rejected": 5,
+        "status": "SUCESSO",
+        "summary": "Sincronizados 5 registros",
+        "source_path": str(token_file),
+    }
+
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
+        with patch("backend.app.routers.google_health.sync_google_health_api", return_value=mock_sync_result) as mock_sync:
+            resp = client.post(
+                "/api/google-health/webhook",
+                json={"collectionType": "sleep", "date": "2026-03-24"},
+            )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["status"] == "acknowledged"
+            assert data["sync_triggered"] is True
+            assert data["sync_result"]["records_inserted"] == 5
+            mock_sync.assert_called_once()
+            call_kwargs = mock_sync.call_args[1]
+            assert call_kwargs["selected_types"] == ["sleep"]
+
+
+def test_google_health_sync_response_naming(client: TestClient, tmp_path: Path):
+    token_file = tmp_path / "token.json"
+    creds = GoogleHealthCredentials(access_token="valid_access_token")
+    creds.save_to_file(token_file)
+
+    mock_sync_result = {
+        "records_read": 2,
+        "records_inserted": 2,
+        "records_rejected": 0,
+        "status": "SUCESSO",
+        "summary": "Sincronizados 2 registros",
+        "source_path": str(token_file),
+    }
+
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
+        with patch("backend.app.routers.google_health.sync_google_health_api", return_value=mock_sync_result):
+            resp = client.post("/api/google-health/sync", json={"days": 7})
+            assert resp.status_code == 200
+            data = resp.json()
+            assert "google_health_records_imported" in data
+            assert data["google_health_records_imported"] == 2
+            assert "google_fit_records_imported" not in data
 

@@ -62,7 +62,7 @@ class LongevityRepository:
                     except Exception:
                         pass
                 return res
-            return {"id": 1, "name": "Paciente", "chronological_age": 32.0, "height_cm": 170.0, "target_weight_kg": 75.0}
+            return {"id": 1, "name": "Paciente", "chronological_age": None, "height_cm": None, "target_weight_kg": None}
 
     def upsert_user_profile(self, data: Dict[str, Any]) -> None:
         data = dict(data)

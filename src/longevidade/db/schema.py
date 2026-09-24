@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS daily_metrics (
     spo2_min_pct REAL,
     respiratory_rate_rpm REAL,
     pai_score REAL,
-    source TEXT DEFAULT 'Zepp/GoogleFit',
+    source TEXT DEFAULT 'Zepp/GoogleHealth',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -45,12 +45,12 @@ CREATE TABLE IF NOT EXISTS user_profile (
     id INTEGER PRIMARY KEY DEFAULT 1,
     name TEXT DEFAULT 'Paciente',
     email TEXT,
-    birthdate TEXT DEFAULT '1994-03-22',
-    chronological_age REAL DEFAULT 32.0,
-    height_cm REAL DEFAULT 170.0,
+    birthdate TEXT,
+    chronological_age REAL,
+    height_cm REAL,
     current_weight_kg REAL,
-    target_weight_kg REAL DEFAULT 75.0,
-    gender TEXT DEFAULT 'Masculino',
+    target_weight_kg REAL,
+    gender TEXT,
     avatar_url TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -451,7 +451,7 @@ def initialize_db(db_path: str | Path) -> None:
         )
 
         # Garante linha inicial no user_profile se vazia
-        conn.execute("INSERT OR IGNORE INTO user_profile (id, name, chronological_age, height_cm, target_weight_kg) VALUES (1, 'Paciente', 32.0, 170.0, 75.0);")
+        conn.execute("INSERT OR IGNORE INTO user_profile (id, name) VALUES (1, 'Paciente');")
         # Garante linha inicial nas configurações de IA se vazia
         conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-pro');")
 

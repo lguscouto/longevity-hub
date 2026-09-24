@@ -1,8 +1,11 @@
+import html
 import json
 import os
+import secrets
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -27,6 +30,52 @@ router = APIRouter(prefix="/api/google-health", tags=["GoogleHealth"])
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 DEFAULT_REDIRECT_URI = "http://127.0.0.1:8887/api/google-health/callback"
+
+
+class OAuthStateManager:
+    """Gerencia estados OAuth 2.0 criptograficamente seguros para prevenção contra CSRF."""
+
+    def __init__(self, ttl_seconds: int = 600):
+        self.ttl_seconds = ttl_seconds
+        self._states: Dict[str, datetime] = {}
+        self._lock = threading.Lock()
+
+    def generate_state(self) -> str:
+        state = secrets.token_urlsafe(32)
+        now = datetime.now(timezone.utc)
+        with self._lock:
+            self._cleanup_expired(now)
+            self._states[state] = now
+        return state
+
+    def validate_and_consume(self, state: Optional[str]) -> Tuple[bool, str]:
+        if not state:
+            return False, "Parâmetro state ausente na requisição de callback."
+        now = datetime.now(timezone.utc)
+        with self._lock:
+            self._cleanup_expired(now)
+            matched_key = None
+            for key, created_at in self._states.items():
+                if secrets.compare_digest(key, state):
+                    matched_key = key
+                    break
+
+            if not matched_key:
+                return False, "Parâmetro state inválido, expirado ou já utilizado."
+
+            del self._states[matched_key]
+            return True, "State válido."
+
+    def _cleanup_expired(self, now: datetime) -> None:
+        expired_keys = [
+            k for k, created_at in self._states.items()
+            if (now - created_at).total_seconds() > self.ttl_seconds
+        ]
+        for k in expired_keys:
+            del self._states[k]
+
+
+oauth_state_manager = OAuthStateManager()
 
 
 class GoogleHealthSyncRequest(BaseModel):
@@ -137,6 +186,7 @@ def get_google_health_auth_url(
         }
 
     r_uri = redirect_uri or DEFAULT_REDIRECT_URI
+    state = oauth_state_manager.generate_state()
     params = {
         "client_id": cid,
         "redirect_uri": r_uri,
@@ -145,14 +195,21 @@ def get_google_health_auth_url(
         "access_type": "offline",
         "prompt": "consent",
         "include_granted_scopes": "true",
+        "state": state,
     }
     auth_url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
     return {
         "status": "ok",
         "auth_url": auth_url,
+        "state": state,
         "redirect_uri": r_uri,
         "scopes": GOOGLE_HEALTH_SCOPES,
     }
+
+
+def safe_json_for_script(data: Any) -> str:
+    """Serializa JSON com escape seguro de caracteres HTML (<, >, &) para inclusão dentro de <script>."""
+    return json.dumps(data).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
 @router.get("/callback")
@@ -162,8 +219,46 @@ def google_health_oauth_callback(
     state: Optional[str] = None,
 ):
     """Callback do fluxo OAuth 2.0 chamado pelo Google após o consentimento do usuário."""
+    # 1. Validação estrita de state contra ataques CSRF (obrigatório, uso único e expiração)
+    valid_state, state_msg = oauth_state_manager.validate_and_consume(state)
+    if not valid_state:
+        safe_msg = html.escape(state_msg)
+        js_payload = safe_json_for_script({"type": "GOOGLE_AUTH_ERROR", "error": state_msg})
+        html_resp = f"""
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <title>Erro de Segurança OAuth</title>
+            <style>
+                body {{ font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+                .card {{ background: #1e293b; padding: 2rem; border-radius: 1rem; border: 1px solid #ef4444; text-align: center; max-width: 420px; }}
+                h2 {{ color: #ef4444; margin-top: 0; }}
+                button {{ background: #ef4444; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold; margin-top: 1rem; }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>Falha na Autorização</h2>
+                <p>Falha de validação CSRF (state):</p>
+                <p><strong>{safe_msg}</strong></p>
+                <button onclick="window.close()">Fechar Janela</button>
+            </div>
+            <script>
+                if (window.opener) {{
+                    try {{ window.opener.postMessage({js_payload}, window.location.origin); }} catch (e) {{}}
+                }}
+            </script>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_resp, status_code=400)
+
+    # 2. Se o provedor retornou erro
     if error:
-        html = f"""
+        safe_error = html.escape(str(error))
+        js_payload = safe_json_for_script({"type": "GOOGLE_AUTH_ERROR", "error": str(error)})
+        html_resp = f"""
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head>
@@ -180,25 +275,25 @@ def google_health_oauth_callback(
             <div class="card">
                 <h2>Falha na Autorização</h2>
                 <p>O Google retornou o seguinte erro:</p>
-                <p><strong>{error}</strong></p>
+                <p><strong>{safe_error}</strong></p>
                 <button onclick="window.close()">Fechar Janela</button>
             </div>
             <script>
                 if (window.opener) {{
-                    window.opener.postMessage({{ type: 'GOOGLE_AUTH_ERROR', error: '{error}' }}, '*');
+                    try {{ window.opener.postMessage({js_payload}, window.location.origin); }} catch (e) {{}}
                 }}
             </script>
         </body>
         </html>
         """
-        return HTMLResponse(content=html, status_code=400)
+        return HTMLResponse(content=html_resp, status_code=400)
 
     if not code:
-        html = """
+        html_resp = """
         <!DOCTYPE html>
         <html><body><p>Código de autorização ausente.</p><script>window.close();</script></body></html>
         """
-        return HTMLResponse(content=html, status_code=400)
+        return HTMLResponse(content=html_resp, status_code=400)
 
     token_path = get_default_token_path()
     client = GoogleHealthClient(token_path=token_path)
@@ -208,7 +303,7 @@ def google_health_oauth_callback(
     csecret = (creds.client_secret if creds else None) or os.environ.get("GOOGLE_HEALTH_CLIENT_SECRET")
 
     if not cid or not csecret:
-        html = """
+        html_resp = """
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head><meta charset="UTF-8"><style>body{font-family:sans-serif;background:#0f172a;color:white;padding:2rem;text-align:center;}</style></head>
@@ -219,7 +314,7 @@ def google_health_oauth_callback(
         </body>
         </html>
         """
-        return HTMLResponse(content=html, status_code=400)
+        return HTMLResponse(content=html_resp, status_code=400)
 
     token_data = {
         "client_id": cid,
@@ -268,7 +363,7 @@ def google_health_oauth_callback(
             )
             new_creds.save_to_file(token_path)
 
-            html = """
+            html_resp = """
             <!DOCTYPE html>
             <html lang="pt-BR">
             <head>
@@ -293,7 +388,7 @@ def google_health_oauth_callback(
                 <script>
                     if (window.opener) {
                         try {
-                            window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, '*');
+                            window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, window.location.origin);
                         } catch (e) {}
                     }
                     setTimeout(function() {
@@ -303,34 +398,40 @@ def google_health_oauth_callback(
             </body>
             </html>
             """
-            return HTMLResponse(content=html, status_code=200)
+            return HTMLResponse(content=html_resp, status_code=200)
     except HTTPError as err:
         err_msg = err.read().decode("utf-8", errors="ignore")
-        html = f"""
+        safe_msg = html.escape(err_msg)
+        js_payload = json.dumps({"type": "GOOGLE_AUTH_ERROR", "error": err_msg})
+        html_resp = f"""
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head><meta charset="UTF-8"><style>body{{font-family:sans-serif;background:#0f172a;color:white;padding:2rem;text-align:center;}}</style></head>
         <body>
             <h3 style="color:#ef4444;">Erro HTTP {err.code} ao trocar código por token</h3>
-            <pre style="background:#1e293b;padding:1rem;border-radius:0.5rem;text-align:left;max-width:500px;margin:1rem auto;overflow:auto;">{err_msg}</pre>
+            <pre style="background:#1e293b;padding:1rem;border-radius:0.5rem;text-align:left;max-width:500px;margin:1rem auto;overflow:auto;">{safe_msg}</pre>
             <button onclick="window.close()">Fechar</button>
-            <script>if (window.opener) {{ window.opener.postMessage({{ type: 'GOOGLE_AUTH_ERROR', error: '{err_msg}' }}, '*'); }}</script>
+            <script>if (window.opener) {{ try {{ window.opener.postMessage({js_payload}, window.location.origin); }} catch(e) {{}} }}</script>
         </body>
         </html>
         """
-        return HTMLResponse(content=html, status_code=400)
+        return HTMLResponse(content=html_resp, status_code=400)
     except Exception as exc:
-        html = f"""
+        exc_str = str(exc)
+        safe_exc = html.escape(exc_str)
+        js_payload = json.dumps({"type": "GOOGLE_AUTH_ERROR", "error": exc_str})
+        html_resp = f"""
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head><meta charset="UTF-8"><style>body{{font-family:sans-serif;background:#0f172a;color:white;padding:2rem;text-align:center;}}</style></head>
         <body>
-            <h3 style="color:#ef4444;">Erro inesperado: {exc}</h3>
+            <h3 style="color:#ef4444;">Erro inesperado: {safe_exc}</h3>
             <button onclick="window.close()">Fechar</button>
+            <script>if (window.opener) {{ try {{ window.opener.postMessage({js_payload}, window.location.origin); }} catch(e) {{}} }}</script>
         </body>
         </html>
         """
-        return HTMLResponse(content=html, status_code=500)
+        return HTMLResponse(content=html_resp, status_code=500)
 
 
 @router.post("/credentials")
@@ -407,8 +508,83 @@ def sync_google_health(req: GoogleHealthSyncRequest = GoogleHealthSyncRequest())
         "status": status,
         "records_read": result["records_read"],
         "records_inserted": result["records_inserted"],
-        "google_fit_records_imported": result["records_inserted"],
+        "google_health_records_imported": result["records_inserted"],
         "summary": result["summary"],
         "message": result["summary"],
         "exception_message": result.get("exception_message"),
+    }
+
+
+class GoogleHealthWebhookPayload(BaseModel):
+    collectionType: Optional[str] = None
+    dataType: Optional[str] = None
+    date: Optional[str] = None
+    ownerId: Optional[str] = None
+    subscriptionId: Optional[str] = None
+    notificationType: Optional[str] = None
+
+
+@router.post("/webhook")
+def google_health_webhook(payload: GoogleHealthWebhookPayload = GoogleHealthWebhookPayload()) -> Dict[str, Any]:
+    """
+    Endpoint de notificação e webhook da Google Health API (P1.7).
+    Recebe evento de mudança, mapeia tipo de dado/intervalo e dispara sincronização idempotente.
+    """
+    token_path = get_default_token_path()
+    client = GoogleHealthClient(token_path=token_path)
+
+    types_to_sync: Optional[List[str]] = None
+    target_type = payload.dataType or payload.collectionType
+
+    COLLECTION_MAP: Dict[str, List[str]] = {
+        "activity": ["steps", "active-energy-burned", "distance"],
+        "steps": ["steps"],
+        "body": ["weight", "body-fat"],
+        "weight": ["weight"],
+        "sleep": ["sleep"],
+        "heart_rate": ["heart-rate", "daily-resting-heart-rate"],
+        "heart-rate": ["heart-rate", "daily-resting-heart-rate"],
+        "daily-resting-heart-rate": ["daily-resting-heart-rate"],
+        "oxygen_saturation": ["oxygen-saturation"],
+        "oxygen-saturation": ["oxygen-saturation"],
+        "heart_rate_variability": ["heart-rate-variability"],
+        "heart-rate-variability": ["heart-rate-variability"],
+    }
+
+    if target_type:
+        types_to_sync = COLLECTION_MAP.get(target_type, [target_type])
+
+    days = 3
+    if payload.date:
+        try:
+            target_date = date.fromisoformat(payload.date[:10])
+            diff = (date.today() - target_date).days
+            days = max(1, min(diff + 2, 30))
+        except Exception:
+            days = 7
+
+    if not client.is_authenticated():
+        return {
+            "status": "acknowledged",
+            "sync_triggered": False,
+            "message": "Webhook recebido, mas cliente Google Health não está autenticado.",
+            "notification": payload.model_dump(),
+        }
+
+    db_path = get_db_path()
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    result = sync_google_health_api(repo=repo, days=days, client=client, selected_types=types_to_sync)
+
+    return {
+        "status": "acknowledged",
+        "sync_triggered": True,
+        "sync_result": {
+            "records_read": result.get("records_read", 0),
+            "records_inserted": result.get("records_inserted", 0),
+            "status": result.get("status"),
+            "summary": result.get("summary"),
+        },
+        "notification": payload.model_dump(),
     }

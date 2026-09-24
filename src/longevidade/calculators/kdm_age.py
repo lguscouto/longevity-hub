@@ -161,7 +161,7 @@ def _incomplete_result(
         "status": "incomplete",
         "reason": reason,
         "kdm_age": None,
-        "chronological_age": round(float(chronological_age), 2),
+        "chronological_age": round(float(chronological_age), 2) if chronological_age is not None else None,
         "kdm_delta": None,
         "biomarkers_count": len(biomarkers_used or []),
         "biomarkers_used": list(biomarkers_used or []),
@@ -332,7 +332,15 @@ def calculate_kdm_biological_age(
     arbitrários. Isso impede valores fabricados por offset constante ou por coeficientes locais
     sem evidência de treinamento.
     """
-    age = _finite_float(chronological_age) or 40.0
+    age = _finite_float(chronological_age)
+    if age is None or age <= 0:
+        expected_missing = [marker for marker in KDM_BIOMARKERS]
+        return _incomplete_result(
+            None,
+            "missing_chronological_age",
+            biomarkers_used=[],
+            missing_biomarkers=["chronological_age"] + expected_missing,
+        )
     current_values = normalize_kdm_biomarkers(lab_and_metric_data)
 
     if fit is None:
@@ -450,7 +458,9 @@ def build_kdm_history_rows(
 ) -> list[dict[str, Any]]:
     """Combina exames e métricas diárias em linhas históricas para treinar KDM."""
     ref_date = reference_date or date.today()
-    current_age = _finite_float(chronological_age) or 40.0
+    current_age = _finite_float(chronological_age)
+    if current_age is None or current_age <= 0:
+        return []
     rows_by_date: dict[str, dict[str, Any]] = {}
 
     def row_for(obs_date: date) -> dict[str, Any]:

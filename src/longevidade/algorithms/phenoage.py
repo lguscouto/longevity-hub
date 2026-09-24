@@ -43,12 +43,13 @@ _REF_WBC_1000UL = 6.0
 
 
 def _incomplete_phenoage(data: PhenoAgeInput, missing: list[str], used: list[str]) -> dict[str, Any]:
-    chrono_age = float(data.get("chronological_age", 40.0))
+    chrono_val = data.get("chronological_age")
+    chrono_age = float(chrono_val) if chrono_val is not None else None
     return {
         "status": "incomplete",
         "reason": "missing_required_biomarkers",
         "pheno_age": None,
-        "chronological_age": round(chrono_age, 2),
+        "chronological_age": round(chrono_age, 2) if chrono_age is not None else None,
         "age_delta": None,
         "mortality_risk_10yr_pct": None,
         "missing_biomarkers": missing,
@@ -61,15 +62,22 @@ def _incomplete_phenoage(data: PhenoAgeInput, missing: list[str], used: list[str
 def calculate_phenoage(data: PhenoAgeInput) -> dict[str, Any]:
     """Calcula a PhenoAge ou retorna estado incompleto explícito.
 
-    A função não preenche biomarcadores laboratoriais ausentes com defaults. Isso
-    evita gerar uma idade biológica enganosa a partir de painel parcial.
+    A função não preenche biomarcadores laboratoriais nem idade cronológica com defaults fictícios.
     """
     validation = validate_phenoage_inputs(data)
+    chrono_val = data.get("chronological_age")
+    if chrono_val is None:
+        missing = ["chronological_age"]
+        for m in validation.get("missing", []):
+            if m not in missing:
+                missing.append(m)
+        return _incomplete_phenoage(data, missing, validation.get("biomarkers_used", []))
+
     if validation["status"] != "complete":
         return _incomplete_phenoage(data, validation["missing"], validation["biomarkers_used"])
 
     values = validation["values"]
-    chrono_age = float(data.get("chronological_age", 40.0))
+    chrono_age = float(chrono_val)
 
     # Conversão de unidades padrão da literatura
     glucose = float(values["glucose_mgdl"]) * 0.0555
