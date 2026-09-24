@@ -130,7 +130,7 @@ def test_roll_up_and_daily_roll_up(tmp_path: Path):
     client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
 
     mock_resp = {
-        "aggregates": [
+        "rollupDataPoints": [
             {"date": "2026-03-01", "steps": {"count": 10500}},
             {"date": "2026-03-02", "steps": {"count": 11200}},
         ]
@@ -139,15 +139,27 @@ def test_roll_up_and_daily_roll_up(tmp_path: Path):
     start = datetime(2026, 3, 1, 0, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 3, 3, 0, 0, 0, tzinfo=timezone.utc)
 
-    with patch.object(client, "_get_json", return_value=(mock_resp, None)) as mock_get:
+    # dailyRollUp usa POST :dailyRollUp
+    with patch.object(client, "_post_json", return_value=(mock_resp, None)) as mock_post:
         aggs, err = client.daily_roll_up("steps", start_time=start, end_time=end)
         assert err is None
         assert len(aggs) == 2
-        mock_get.assert_called_once()
-        url, params = mock_get.call_args[0]
-        assert "dataTypes/steps/dataPoints:rollUp" in url
-        assert params["aggregationPeriod"] == "DAILY"
-        assert "filter" in params
+        mock_post.assert_called_once()
+        url, body = mock_post.call_args[0]
+        assert "dataTypes/steps/dataPoints:dailyRollUp" in url
+        assert body["windowSizeDays"] == 1
+        assert "range" in body
+
+    # rollUp usa POST :rollUp
+    with patch.object(client, "_post_json", return_value=(mock_resp, None)) as mock_post_rollup:
+        aggs2, err2 = client.roll_up("steps", start_time=start, end_time=end, window_size="3600s")
+        assert err2 is None
+        assert len(aggs2) == 2
+        mock_post_rollup.assert_called_once()
+        url2, body2 = mock_post_rollup.call_args[0]
+        assert "dataTypes/steps/dataPoints:rollUp" in url2
+        assert body2["windowSize"] == "3600s"
+
 
 
 def test_rhr_never_uses_min_heart_rate(tmp_path: Path):

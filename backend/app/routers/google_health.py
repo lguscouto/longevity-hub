@@ -8,10 +8,19 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request as UrlRequest, urlopen
 
-from fastapi import APIRouter, Query
-from fastapi.responses import HTMLResponse
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
 from backend.app.config import get_db_path
@@ -25,6 +34,7 @@ from longevidade.ingestion.google_health_client import (
     get_default_token_path,
 )
 from longevidade.ingestion.google_importer import sync_google_health_api
+from longevidade.integrations.google_health.webhooks_signature import signature_verifier
 
 router = APIRouter(prefix="/api/google-health", tags=["GoogleHealth"])
 
@@ -324,7 +334,7 @@ def google_health_oauth_callback(
         "redirect_uri": DEFAULT_REDIRECT_URI,
     }
 
-    req = Request(
+    req = UrlRequest(
         GOOGLE_OAUTH_TOKEN_URL,
         data=urlencode(token_data).encode("utf-8"),
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -515,7 +525,23 @@ def sync_google_health(req: GoogleHealthSyncRequest = GoogleHealthSyncRequest())
     }
 
 
+class WebhookInterval(BaseModel):
+    startTime: Optional[str] = None
+    endTime: Optional[str] = None
+
+
+class WebhookNotificationData(BaseModel):
+    healthUserId: Optional[str] = None
+    operation: Optional[str] = None
+    dataType: Optional[str] = None
+    intervals: Optional[List[WebhookInterval]] = None
+
+
 class GoogleHealthWebhookPayload(BaseModel):
+    type: Optional[str] = "notification"
+    data: Optional[WebhookNotificationData] = None
+
+    # Compatibilidade com payloads diretos / simplificados
     collectionType: Optional[str] = None
     dataType: Optional[str] = None
     date: Optional[str] = None
@@ -524,17 +550,15 @@ class GoogleHealthWebhookPayload(BaseModel):
     notificationType: Optional[str] = None
 
 
-@router.post("/webhook")
-def google_health_webhook(payload: GoogleHealthWebhookPayload = GoogleHealthWebhookPayload()) -> Dict[str, Any]:
-    """
-    Endpoint de notificação e webhook da Google Health API (P1.7).
-    Recebe evento de mudança, mapeia tipo de dado/intervalo e dispara sincronização idempotente.
-    """
+def _process_webhook_sync(
+    data_type: Optional[str] = None,
+    date_str: Optional[str] = None,
+) -> None:
+    """Tarefa em background para executar sincronização idempotente após recebimento do webhook."""
     token_path = get_default_token_path()
     client = GoogleHealthClient(token_path=token_path)
-
-    types_to_sync: Optional[List[str]] = None
-    target_type = payload.dataType or payload.collectionType
+    if not client.is_authenticated():
+        return
 
     COLLECTION_MAP: Dict[str, List[str]] = {
         "activity": ["steps", "active-energy-burned", "distance"],
@@ -547,44 +571,104 @@ def google_health_webhook(payload: GoogleHealthWebhookPayload = GoogleHealthWebh
         "daily-resting-heart-rate": ["daily-resting-heart-rate"],
         "oxygen_saturation": ["oxygen-saturation"],
         "oxygen-saturation": ["oxygen-saturation"],
+        "daily-oxygen-saturation": ["daily-oxygen-saturation"],
         "heart_rate_variability": ["heart-rate-variability"],
         "heart-rate-variability": ["heart-rate-variability"],
+        "daily-heart-rate-variability": ["daily-heart-rate-variability"],
+        "respiratory-rate": ["respiratory-rate"],
     }
 
-    if target_type:
-        types_to_sync = COLLECTION_MAP.get(target_type, [target_type])
+    types_to_sync: Optional[List[str]] = None
+    if data_type:
+        types_to_sync = COLLECTION_MAP.get(data_type, [data_type])
 
     days = 3
-    if payload.date:
+    if date_str:
         try:
-            target_date = date.fromisoformat(payload.date[:10])
+            target_date = date.fromisoformat(date_str[:10])
             diff = (date.today() - target_date).days
             days = max(1, min(diff + 2, 30))
         except Exception:
             days = 7
 
-    if not client.is_authenticated():
-        return {
-            "status": "acknowledged",
-            "sync_triggered": False,
-            "message": "Webhook recebido, mas cliente Google Health não está autenticado.",
-            "notification": payload.model_dump(),
-        }
-
     db_path = get_db_path()
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
 
-    result = sync_google_health_api(repo=repo, days=days, client=client, selected_types=types_to_sync)
+    sync_google_health_api(repo=repo, days=days, client=client, selected_types=types_to_sync)
 
-    return {
-        "status": "acknowledged",
-        "sync_triggered": True,
-        "sync_result": {
-            "records_read": result.get("records_read", 0),
-            "records_inserted": result.get("records_inserted", 0),
-            "status": result.get("status"),
-            "summary": result.get("summary"),
-        },
-        "notification": payload.model_dump(),
-    }
+
+@router.post("/webhook")
+async def google_health_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+    signature: Optional[str] = Header(None, alias="GOOGLE-HEALTH-API-SIGNATURE"),
+) -> Response:
+    """
+    Endpoint de notificação e webhook da Google Health API (P1.7).
+    - Validação de endpointAuthorization (Header Authorization).
+    - Handshake de verificação ({"type": "verification"}).
+    - Verificação criptográfica de GOOGLE-HEALTH-API-SIGNATURE (ECDSA P-256 / SHA-256).
+    - Resposta imediata HTTP 204 No Content para eventos.
+    - Sincronização assíncrona em background com processamento idempotente.
+    """
+    raw_body = await request.body()
+
+    try:
+        body_dict = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+    except Exception:
+        raise HTTPException(status_code=400, detail="Corpo da requisição deve ser JSON válido.")
+
+    webhook_type = body_dict.get("type", "notification")
+    is_verification = (webhook_type == "verification")
+
+    # 1. Validação de Autorização (endpointAuthorization)
+    expected_secret = os.environ.get("GOOGLE_HEALTH_WEBHOOK_SECRET") or os.environ.get("GOOGLE_HEALTH_ENDPOINT_AUTH")
+    if expected_secret:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Header Authorization ausente.")
+        clean_auth = authorization[7:].strip() if authorization.startswith("Bearer ") else authorization.strip()
+        if not secrets.compare_digest(clean_auth, expected_secret):
+            raise HTTPException(status_code=401, detail="Credenciais de Authorization inválidas.")
+    elif is_verification:
+        # No handshake, a documentação exige rejeitar requisições não autorizadas
+        if not authorization or not authorization.strip():
+            raise HTTPException(status_code=401, detail="Autorização obrigatória para verificação de webhook.")
+
+    # 2. Handshake de verificação
+    if is_verification:
+        return JSONResponse(status_code=200, content={"status": "verified"})
+
+    # 3. Verificação da assinatura GOOGLE-HEALTH-API-SIGNATURE
+    if signature:
+        sig_valid = signature_verifier.verify(raw_body, signature)
+        if not sig_valid:
+            raise HTTPException(status_code=401, detail="Assinatura GOOGLE-HEALTH-API-SIGNATURE inválida.")
+    elif os.environ.get("GOOGLE_HEALTH_REQUIRE_SIGNATURE", "").lower() in ("true", "1"):
+        raise HTTPException(status_code=401, detail="Header GOOGLE-HEALTH-API-SIGNATURE obrigatório.")
+
+    # 4. Mapeamento dos parâmetros da notificação
+    data_info = body_dict.get("data") if isinstance(body_dict.get("data"), dict) else {}
+    target_type = (
+        data_info.get("dataType")
+        or body_dict.get("dataType")
+        or body_dict.get("collectionType")
+    )
+    date_str = body_dict.get("date")
+    intervals = data_info.get("intervals") or []
+    if intervals and isinstance(intervals, list) and isinstance(intervals[0], dict):
+        st_val = intervals[0].get("startTime")
+        if st_val and isinstance(st_val, str) and len(st_val) >= 10:
+            date_str = st_val[:10]
+
+    # 5. Enfileiramento de sincronização em background
+    background_tasks.add_task(
+        _process_webhook_sync,
+        data_type=target_type,
+        date_str=date_str,
+    )
+
+    # 6. Resposta imediata 204 No Content
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+

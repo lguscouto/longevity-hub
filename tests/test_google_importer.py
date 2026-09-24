@@ -247,7 +247,7 @@ class TestGoogleImporterCombinado:
         assert m["systolic_bp"] == 118
         assert m["diastolic_bp"] == 76
         assert m["rhr_bpm"] == 55.0
-        assert m["source"] == "GoogleFit"
+        assert m["source"] == "GoogleHealth"
 
     def test_json_invalido(self, repo: LongevityRepository, google_data_dir: Path):
         """Arquivo JSON mal-formado é reportado como erro."""

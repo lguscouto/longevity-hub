@@ -159,7 +159,7 @@ def import_google_health_data(
             status="AVISO",
             summary=f"Diretório {data_dir} não existe",
         )
-        repo.log_pipeline_run("GoogleFit", 0, result["status"], result["summary"])
+        repo.log_pipeline_run("GoogleHealth", 0, result["status"], result["summary"])
         return result
 
     google_backend_dir = data_dir.parent / "backend"
@@ -172,7 +172,7 @@ def import_google_health_data(
 
     def get_or_create(date_str: str) -> Dict[str, Any]:
         if date_str not in daily_records:
-            daily_records[date_str] = {"date_ref": date_str, "source": "GoogleFit"}
+            daily_records[date_str] = {"date_ref": date_str, "source": "GoogleHealth"}
         return daily_records[date_str]
 
     # 0. Google Health v4 JSON Direto (google_health_daily.json)

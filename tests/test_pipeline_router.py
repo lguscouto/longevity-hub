@@ -58,7 +58,7 @@ class TestPipelineRouter:
         initialize_db(db_path)
         repo = LongevityRepository(db_path)
         repo.log_pipeline_run("Zepp", 100, "sucesso", "Zepp ok")
-        repo.log_pipeline_run("GoogleFit", 0, "erro", "Arquivo não encontrado")
+        repo.log_pipeline_run("GoogleHealth", 0, "erro", "Arquivo não encontrado")
         repo.log_pipeline_run("Zepp", 50, "sucesso", "50 registros")
 
         import os
@@ -82,7 +82,7 @@ class TestPipelineRouter:
         assert first["records_inserted"] == 50
 
         second = data[1]
-        assert second["source"] == "GoogleFit"
+        assert second["source"] == "GoogleHealth"
         assert second["records_inserted"] == 0
         assert second["status"] == "erro"
 

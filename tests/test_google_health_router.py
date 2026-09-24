@@ -162,11 +162,10 @@ def test_google_health_callback_partial_consent_success(client: TestClient, tmp_
 
 def test_google_health_webhook_unauthenticated(client: TestClient, tmp_path: Path):
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "nonexistent.json"):
-        resp = client.post("/api/google-health/webhook", json={"collectionType": "activity", "date": "2026-03-24"})
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "acknowledged"
-        assert data["sync_triggered"] is False
+        with patch("backend.app.routers.google_health.sync_google_health_api") as mock_sync:
+            resp = client.post("/api/google-health/webhook", json={"collectionType": "activity", "date": "2026-03-24"})
+            assert resp.status_code == 204
+            mock_sync.assert_not_called()
 
 
 def test_google_health_webhook_authenticated_triggers_sync(client: TestClient, tmp_path: Path):
@@ -189,14 +188,11 @@ def test_google_health_webhook_authenticated_triggers_sync(client: TestClient, t
                 "/api/google-health/webhook",
                 json={"collectionType": "sleep", "date": "2026-03-24"},
             )
-            assert resp.status_code == 200
-            data = resp.json()
-            assert data["status"] == "acknowledged"
-            assert data["sync_triggered"] is True
-            assert data["sync_result"]["records_inserted"] == 5
+            assert resp.status_code == 204
             mock_sync.assert_called_once()
             call_kwargs = mock_sync.call_args[1]
             assert call_kwargs["selected_types"] == ["sleep"]
+
 
 
 def test_google_health_sync_response_naming(client: TestClient, tmp_path: Path):

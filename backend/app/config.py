@@ -15,6 +15,7 @@ ZEPP_SCRIPTS_DIR = ZEPP_DIR / "scripts"
 
 GOOGLE_DIR = INTEGRATIONS_DIR / "google"
 GOOGLE_DATA_DIR = GOOGLE_DIR / "data"
+GOOGLE_HEALTH_DATA_DIR = GOOGLE_DATA_DIR
 GOOGLE_SCRIPTS_DIR = GOOGLE_DIR / "scripts"
 
 
@@ -26,6 +27,11 @@ def get_zepp_data_dir() -> Path:
 def get_google_data_dir() -> Path:
     GOOGLE_DATA_DIR.mkdir(parents=True, exist_ok=True)
     return GOOGLE_DATA_DIR
+
+
+def get_google_health_data_dir() -> Path:
+    return get_google_data_dir()
+
 
 
 def get_db_path() -> Path:

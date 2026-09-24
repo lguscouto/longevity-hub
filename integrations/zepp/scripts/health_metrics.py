@@ -453,16 +453,16 @@ def reconcile_metric(
     google_value: Any,
     primary_source: str = "Zepp",
 ) -> tuple[Any | None, str]:
-    """Prefer Zepp, use Google Fit only when Zepp has no value."""
+    """Prefer Zepp, use Google Health only when Zepp has no value."""
     if zepp_value is not None:
         return zepp_value, primary_source
     if google_value is not None:
-        return google_value, "Google Fit"
+        return google_value, "Google Health"
     return None, "indisponível"
 
 
-def merge_google_fit_metrics(zepp_record: dict[str, Any], google_metrics: Any) -> dict[str, Any]:
-    """Add optional Fit values while retaining every Zepp record field.
+def merge_google_health_metrics(zepp_record: dict[str, Any], google_metrics: Any) -> dict[str, Any]:
+    """Add optional Google Health values while retaining every Zepp record field.
 
     ``google_metrics`` is intentionally duck-typed so this pure reconciler
     stays independent from the runtime HTTP/token reader.
@@ -473,10 +473,10 @@ def merge_google_fit_metrics(zepp_record: dict[str, Any], google_metrics: Any) -
     consolidated_steps, steps_source = reconcile_metric(record.get("passos_zepp"), google_steps)
     consolidated_sleep, sleep_source = reconcile_metric(record.get("sono_zepp_min"), google_sleep)
 
-    record["passos_google_fit"] = google_steps
+    record["passos_google_health"] = google_steps
     record["passos_consolidado"] = consolidated_steps
     record["fonte_passos"] = steps_source
-    record["sono_google_fit_min"] = google_sleep
+    record["sono_google_health_min"] = google_sleep
     record["sono_consolidado_min"] = consolidated_sleep
     record["fonte_sono"] = sleep_source
 
@@ -485,8 +485,13 @@ def merge_google_fit_metrics(zepp_record: dict[str, Any], google_metrics: Any) -
     if safe_errors:
         status = record.get("status_dados")
         prefix = status.strip().rstrip(".") if isinstance(status, str) and status.strip() else "dados normalizados do Zepp"
-        record["status_dados"] = f"{prefix}. Google Fit: {'; '.join(safe_errors)}."
+        record["status_dados"] = f"{prefix}. Google Health: {'; '.join(safe_errors)}."
     return record
+
+
+# Backward compatibility alias
+merge_google_fit_metrics = merge_google_health_metrics
+
 
 
 def _temperature_values(payload: dict[str, Any], reference: date) -> tuple[float | None, int | None]:

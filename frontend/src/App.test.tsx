@@ -64,7 +64,7 @@ describe('App', () => {
         return {
           status: 'ok',
           zepp_records_imported: 0,
-          google_fit_records_imported: 0,
+          google_health_records_imported: 0,
           total_sources: 0,
         }
       }

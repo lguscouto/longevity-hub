@@ -58,14 +58,14 @@ sequenceDiagram
     API->>DB: upsert daily_metrics (fonte Zepp)
     API->>G: lê JSONs e opcionalmente aciona cliente Google
     G-->>API: passos, PA, FC
-    API->>DB: upsert daily_metrics (fonte GoogleFit)
+    API->>DB: upsert daily_metrics (fonte GoogleHealth)
     API-->>UI: contagens por fonte
 ```
 
 - `zepp_importer.py` percorre até 30 dias e prioriza snapshots retornados por `build_zepp_daily_record`.
-- `google_importer.py` lê `google_steps.json`, `google_blood_pressure.json` e `google_heart.json` quando presentes.
-- Cada fonte sobrescreve apenas os campos enviados no `UPSERT` de `daily_metrics`; o último importador pode alterar `source` para `GoogleFit`.
-- As integrações são dependências de projetos irmãos, não código versionado deste repositório.
+- `google_importer.py` lê `google_steps.json`, `google_blood_pressure.json` e `google_heart.json` quando presentes ou aciona `GoogleHealthClient` diretamente via REST v4.
+- Cada fonte sobrescreve apenas os campos enviados no `UPSERT` de `daily_metrics`; o importador Google Health registra `source` como `GoogleHealth`.
+- As integrações residem no pacote interno `integrations/` e `src/longevidade/integrations/`.
 
 ### 3.2 Exames e PhenoAge
 

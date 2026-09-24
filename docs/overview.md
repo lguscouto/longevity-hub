@@ -10,7 +10,7 @@
 O **Longevidade Hub** é uma plataforma local, privada e autônoma de **inteligência de dados de saúde e longevidade de precisão**. O sistema é projetado para consolidar, analisar e calcular métricas de biomarcadores inspiradas nos mais modernos protocolos de medicina preventiva e longevidade (como o protocolo *Blueprint* / Bryan Johnson, *PhenoAge* de Morgan Levine, e a Idade Biológica de *Klemera-Doubal / KDM*).
 
 ### Objetivos Principais:
-1. **Centralização de Dados Clínicos e Wearables**: Agregação de dados diários de wearables (**Zepp/Amazfit** e **Google Fit / Health Connect**), exames laboratoriais de sangue, sensores de glicemia contínua (CGM), e registros de suplementos/hormônios.
+1. **Centralização de Dados Clínicos e Wearables**: Agregação de dados diários de wearables (**Zepp/Amazfit** e **Google Health / Health Connect**), exames laboratoriais de sangue, sensores de glicemia contínua (CGM), e registros de suplementos/hormônios.
 2. **Cálculo de Biomarcadores de Idade Biológica**: Algoritmos matemáticos determinísticos em Python para cálculo do **PhenoAge** (9 biomarcadores laboratoriais) e **KDM Biological Age**.
 3. **Validação Científica de Intervenções (N-of-1)**: Motor estatístico para testes *N-of-1* pessoais utilizando estatística inferencial (teste *t* de Welch, *Cohen's d* para tamanho do efeito e valor-*p*).
 4. **Assistente Clínico Inteligente (Copiloto de IA)**: Integração com provedores de modelos de linguagem (OpenAI, Anthropic, OpenRouter) com privacidade configurável para análise de dados e geração de resumos médicos (*Doctor Briefing*).
@@ -26,8 +26,9 @@ O projeto adota uma arquitetura em camadas clara, desacoplada e autônoma:
 graph TD
     A["Interface do Usuário (React 18 + Vite + TS + Tailwind)"] -->|HTTP / REST API| B["Servidor Backend (FastAPI - Porta 8887)"]
     B --> C["Core de Domínio (src/longevidade)"]
+    B --> H["Integração Google Health (src/longevidade/integrations/google_health)"]
     C --> D["Banco de Dados (SQLite - data/longevity.sqlite3)"]
-    C --> E["Módulos de Integração Interna (integrations/zepp & integrations/google)"]
+    C --> E["Módulos de Integração Interna (integrations/zepp)"]
     C --> F["Algoritmos Determinísticos (Daily Guidance, Energy Bank, PhenoAge, KDM, N-of-1)"]
     C --> G["Provedores de IA & Context Builder (OpenAI, Anthropic, OpenRouter)"]
 ```
@@ -39,7 +40,8 @@ graph TD
 | [frontend/](file:///e:/hermes/longevidade/frontend) | Aplicação web SPA em React 18, TypeScript, Tailwind CSS, Lucide Icons e Recharts. |
 | [backend/app/](file:///e:/hermes/longevidade/backend/app) | Servidor web FastAPI (rotas REST `/api/*`, gerenciamento de sessão, inicializador de banco). |
 | [src/longevidade/](file:///e:/hermes/longevidade/src/longevidade) | Módulo principal do Python contendo banco de dados, repositório SQLite, regras de negócio, parsers e calculadores. |
-| [integrations/](file:///e:/hermes/longevidade/integrations) | **Conectores e arquivos internos autônomos** para o Zepp (Amazfit) e Google Fit (snapshots JSON, scripts e CLI). |
+| [src/longevidade/integrations/google_health/](file:///e:/hermes/longevidade/src/longevidade/integrations/google_health) | Pacote modular isolado para a Google Health API v4 (REST, webhooks, auth, registry). |
+| [integrations/](file:///e:/hermes/longevidade/integrations) | **Conectores e arquivos internos autônomos** para o Zepp (Amazfit) (snapshots JSON, scripts e CLI). |
 | [docs/](file:///e:/hermes/longevidade/docs) | Documentação técnica, arquitetura, referências da API REST, segurança e roteiros de evolução. |
 | [data/](file:///e:/hermes/longevidade/data) | Armazenamento do banco de dados operacional SQLite (`longevity.sqlite3`). |
 
@@ -84,7 +86,7 @@ graph TD
 
 ### 👤 Perfil & Histórico de Sincronizações
 - Perfil do usuário (idade cronológica, nascimento, altura, peso atual, meta de peso e IMC).
-- **Histórico de Sincronizações (Pipelines)**: Visualizador de histórico de chamadas de ingestão dos dados dos conectores Zepp e Google Fit localizado na parte inferior do Perfil.
+- **Histórico de Sincronizações (Pipelines)**: Visualizador de histórico de chamadas de ingestão dos dados dos conectores Zepp e Google Health localizado na parte inferior do Perfil.
 
 ---
 
@@ -126,7 +128,7 @@ npm run build
 Ao modificar ou evoluir o código deste repositório, qualquer assistente de IA deve seguir as regras estritas abaixo:
 
 > [!CAUTION]
-> 1. **Isolamento de Arquivos 100% Interno**: **Nunca** importar, ler ou depender de caminhos fora da pasta `e:\hermes\longevidade`. Todas as integrações (Zepp e Google Fit) devem ser resolvidas via `integrations/`.
+> 1. **Isolamento de Arquivos 100% Interno**: **Nunca** importar, ler ou depender de caminhos fora da pasta `e:\hermes\longevidade`. Todas as integrações (Zepp e Google Health) devem ser resolvidas via `integrations/` ou `src/longevidade/integrations/`.
 > 2. **Integridade de Esquema do SQLite**: Não alterar assinaturas de métodos do `LongevityRepository` sem atualizar todas as chamadas correspondentes em `backend/app/routers/` e nos testes em `tests/`.
 > 3. **Sem Correções Superficiais**: Quando um teste falhar, investigue a causa raiz lendo o log completo. Não comente testes nem suprima exceções com blocos genéricos `except: pass`.
 > 4. **Verificação Obrigatória**: Sempre valide alterações executando a suíte de testes (`python -m pytest` e `npm run test -- --run`) antes de declarar uma tarefa concluída.

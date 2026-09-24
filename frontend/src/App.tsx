@@ -66,7 +66,7 @@ type SyncResult = {
   status: 'ok' | 'error' | 'warning'
   message?: string
   zepp_records_imported?: number
-  google_fit_records_imported?: number
+  google_health_records_imported?: number
   total_sources?: number
 }
 

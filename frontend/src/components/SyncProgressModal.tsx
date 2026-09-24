@@ -6,11 +6,9 @@ interface SyncResult {
   message?: string
   zepp_records_imported?: number
   google_health_records_imported?: number
-  google_fit_records_imported?: number
   total_sources?: number
   zepp?: { records_inserted?: number; status?: string; summary?: string } | number
   google_health?: { records_inserted?: number; status?: string; summary?: string } | number
-  google_fit?: { records_inserted?: number; status?: string; summary?: string } | number
 }
 
 interface SyncProgressModalProps {
@@ -52,8 +50,8 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
 
   const zeppCount = getRecordCount(syncResult?.zepp, syncResult?.zepp_records_imported)
   const googleCount = getRecordCount(
-    syncResult?.google_health ?? syncResult?.google_fit,
-    syncResult?.google_health_records_imported ?? syncResult?.google_fit_records_imported
+    syncResult?.google_health,
+    syncResult?.google_health_records_imported
   )
   const importedTotal = zeppCount + googleCount
   const isSuccess = !isSyncing && syncResult?.status === 'ok'

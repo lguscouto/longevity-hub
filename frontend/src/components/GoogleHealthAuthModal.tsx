@@ -202,7 +202,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Conexão Google Health API v4</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Pixel Watch, Fitbit e Android Health Connect</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Pixel Watch e dispositivos compatíveis Google Health</p>
           </div>
         </div>
 
@@ -222,7 +222,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-sm transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Ativar Perfil Google Health / Fitbit (1 clique)
+                  Ativar Perfil Google Health (1 clique)
                 </a>
               </div>
             )}
