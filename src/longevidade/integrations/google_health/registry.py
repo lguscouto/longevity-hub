@@ -450,7 +450,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="irregular_rhythm_notification",
         scope=SCOPE_IRN,
         operations=["list"],
-        webhook_supported=True,
+        webhook_supported=False,
         is_active=False,
         is_roadmap=False,
         status="opt_in",
@@ -569,3 +569,15 @@ class GoogleHealthDataTypeRegistry:
             if op_norm in [o.lower() for o in cfg.operations]
             or (cfg.supported_operations is not None and op_norm in [o.lower() for o in cfg.supported_operations])
         ]
+
+    @staticmethod
+    def is_webhook_supported(data_type: str) -> bool:
+        """Verifica se o data type suporta notificações via webhook."""
+        cfg = DATA_TYPES.get(data_type)
+        return bool(cfg and cfg.webhook_supported)
+
+    @staticmethod
+    def get_webhook_supported_types() -> List[str]:
+        """Retorna a lista de data types que suportam notificações via webhook."""
+        return [dt for dt, cfg in DATA_TYPES.items() if cfg.webhook_supported]
+

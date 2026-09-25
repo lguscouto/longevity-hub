@@ -155,12 +155,21 @@ def test_registry_ecg_and_irn_opt_in():
     assert ecg_cfg.status == "opt_in"
     assert ecg_cfg.is_active is False
     assert ecg_cfg.scope == SCOPE_ECG
+    assert ecg_cfg.webhook_supported is False
+    assert GoogleHealthDataTypeRegistry.is_webhook_supported("electrocardiogram") is False
 
     irn_cfg = GoogleHealthDataTypeRegistry.get("irregular-rhythm-notification")
     assert irn_cfg is not None
     assert irn_cfg.status == "opt_in"
     assert irn_cfg.is_active is False
     assert irn_cfg.scope == SCOPE_IRN
+    # P0: IRN não é documentado como tipo com suporte a webhook na Google Health API
+    assert irn_cfg.webhook_supported is False
+    assert GoogleHealthDataTypeRegistry.is_webhook_supported("irregular-rhythm-notification") is False
+
+    webhook_types = GoogleHealthDataTypeRegistry.get_webhook_supported_types()
+    assert "irregular-rhythm-notification" not in webhook_types
+    assert "electrocardiogram" not in webhook_types
 
     # Garantir que NÃO estão nos escopos padrão de consentimento
     assert SCOPE_ECG not in GOOGLE_HEALTH_SCOPES
