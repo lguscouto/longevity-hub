@@ -535,6 +535,10 @@ def sync_google_health(req: GoogleHealthSyncRequest = GoogleHealthSyncRequest())
     repo = LongevityRepository(db_path)
 
     result = sync_google_health_api(repo=repo, days=days, client=client, selected_types=req.types)
+    try:
+        repo.sync_latest_profile_weight()
+    except Exception:
+        pass
     status = "ok" if result["status"] in ("SUCESSO", "AVISO") else "error"
     return {
         "status": status,

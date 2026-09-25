@@ -20,6 +20,7 @@ class UserProfileInput(BaseModel):
     birthdate: Optional[str] = None
     chronological_age: Optional[float] = None
     height_cm: Optional[float] = None
+    current_weight_kg: Optional[float] = None
     target_weight_kg: Optional[float] = None
     gender: Optional[str] = None
 
@@ -29,13 +30,21 @@ def get_profile():
     try:
         repo = LongevityRepository(db_path)
         profile = repo.get_user_profile()
-        daily = repo.get_daily_metrics(days=30)
+        latest_meas = repo.get_latest_weight_measurement()
     except FileNotFoundError:
         profile = {}
-        daily = []
-    latest_weight = next((m["weight_kg"] for m in daily if m.get("weight_kg") is not None), None)
+        latest_meas = None
 
-    current_weight = latest_weight or profile.get("current_weight_kg")
+    current_weight = profile.get("current_weight_kg")
+    if latest_meas and latest_meas.get("weight_kg") is not None:
+        meas_weight = latest_meas["weight_kg"]
+        if current_weight != meas_weight:
+            current_weight = meas_weight
+            try:
+                repo.upsert_user_profile({"current_weight_kg": current_weight})
+            except Exception:
+                pass
+
     height_cm = profile.get("height_cm")
 
     # Cálculo do IMC (somente quando dados clínicos reais estão presentes)

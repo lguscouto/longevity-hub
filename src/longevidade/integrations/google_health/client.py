@@ -415,17 +415,28 @@ def _build_raw_point(data_type: str, pt: Dict[str, Any], provider: str = "google
     source_val = pt.get("dataSource", {}).get("platform") or pt.get("source") or "GoogleHealthAPI"
 
     # Extração de tempos
-    st_val = pt.get("startTime") or (
-        pt.get("interval", {}).get("startTime", {}).get("physicalTime")
-        if isinstance(pt.get("interval"), dict)
-        else None
+    parsed_dt = parse_point_timestamp_utc(pt, field_key=data_type)
+    parsed_iso = parsed_dt.isoformat() if parsed_dt else None
+
+    st_val = (
+        pt.get("startTime")
+        or (
+            pt.get("interval", {}).get("startTime", {}).get("physicalTime")
+            if isinstance(pt.get("interval"), dict)
+            else None
+        )
+        or parsed_iso
     )
-    et_val = pt.get("endTime") or (
-        pt.get("interval", {}).get("endTime", {}).get("physicalTime")
-        if isinstance(pt.get("interval"), dict)
-        else None
+    et_val = (
+        pt.get("endTime")
+        or (
+            pt.get("interval", {}).get("endTime", {}).get("physicalTime")
+            if isinstance(pt.get("interval"), dict)
+            else None
+        )
+        or parsed_iso
     )
-    rec_at = pt.get("recordedAt") or st_val or datetime.now(timezone.utc).isoformat()
+    rec_at = pt.get("recordedAt") or parsed_iso or st_val or datetime.now(timezone.utc).isoformat()
 
     val = None
     unit = None

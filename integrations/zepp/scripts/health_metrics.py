@@ -236,7 +236,7 @@ def _select_weight(payload: dict[str, Any], reference: date) -> tuple[int | floa
     for item in _items(payload):
         item_day = _day_from_timestamp(item.get("generatedTime")) or _day_from_timestamp(item.get("createTime"))
         summary = item.get("summary")
-        if item_day is None or item_day > reference or not isinstance(summary, dict):
+        if item_day is None or item_day != reference or not isinstance(summary, dict):
             continue
         if _number(summary.get("weight")) is not None:
             candidates.append((item_day, summary))

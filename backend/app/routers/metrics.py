@@ -125,6 +125,11 @@ def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False
             else (google_result if isinstance(google_result, int) else 0)
         )
 
+        try:
+            repo.sync_latest_profile_weight()
+        except Exception:
+            pass
+
         _zepp_sync_state["last_sync"] = datetime.now(timezone.utc).isoformat()
         _zepp_sync_state["last_status"] = "success"
         _zepp_sync_state["last_error"] = None

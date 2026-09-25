@@ -483,8 +483,6 @@ def import_zepp_data(
                         "avg_hr_bpm": rec.get("fc_media_bpm"),
                         "hrv_ms": rec.get("hrv_rmssd_media_ms") if rec.get("hrv_rmssd_media_ms") is not None else rec.get("hrv_sono_ms"),
                         "readiness_score": rec.get("readiness"),
-                        "weight_kg": rec.get("peso_kg"),
-                        "bmi": rec.get("imc"),
                         "vo2_max": rec.get("vo2_max"),
                         "skin_temp_c": rec.get("temperatura_c"),
                         "stress_samples": rec.get("amostras_estresse"),
@@ -502,6 +500,10 @@ def import_zepp_data(
                         "workout_duration_min": rec.get("duracao_treinos_min"),
                         "source": "Zepp",
                     }
+                    if rec.get("peso_kg") is not None:
+                        mapped["weight_kg"] = rec.get("peso_kg")
+                    if rec.get("imc") is not None:
+                        mapped["bmi"] = rec.get("imc")
                     repo.upsert_daily_metric(mapped)
 
                     # Persiste a cobertura e qualidade dos dados para o dia via METRICS_CATALOG
@@ -570,6 +572,10 @@ def import_zepp_data(
         repo.log_pipeline_run(
             "Zepp", records_inserted, result["status"], result["summary"]
         )
+        try:
+            repo.sync_latest_profile_weight()
+        except Exception:
+            pass
         return result
 
 

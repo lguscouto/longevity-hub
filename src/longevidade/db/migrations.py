@@ -530,6 +530,14 @@ MIGRATIONS: Sequence[Migration] = (
             "CREATE INDEX IF NOT EXISTS idx_hdp_start_time ON health_data_points(start_time);",
         ),
     ),
+    Migration(
+        version=10,
+        name="weight_sync_indexes",
+        statements=(
+            "CREATE INDEX IF NOT EXISTS idx_hdp_recorded_at ON health_data_points(recorded_at);",
+            "CREATE INDEX IF NOT EXISTS idx_daily_metrics_weight ON daily_metrics(weight_kg);",
+        ),
+    ),
 )
 
 
@@ -548,7 +556,7 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
                     except sqlite3.OperationalError as exc:
                         # Permite colunas já existentes se banco baseline for legado ou tabelas ausentes em fixtures sintéticas
                         err_msg = str(exc).lower()
-                        if "duplicate column name" in err_msg or "no such table: daily_metrics" in err_msg:
+                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg)):
                             continue
                         raise exc
                 conn.execute(f"PRAGMA user_version = {migration.version};")

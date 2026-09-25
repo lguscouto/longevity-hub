@@ -38,20 +38,38 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: profile.name || 'Paciente Longevidade',
-    birthdate: profile.birthdate || '1986-07-28',
-    height_cm: profile.height_cm || 178,
-    target_weight_kg: profile.target_weight_kg || 75,
+    name: profile.name || '',
+    birthdate: profile.birthdate || '',
+    height_cm: profile.height_cm || 0,
+    current_weight_kg: profile.current_weight_kg !== undefined && profile.current_weight_kg !== null ? String(profile.current_weight_kg) : '',
+    target_weight_kg: profile.target_weight_kg || 0,
     gender: profile.gender || 'Masculino'
   });
 
+  React.useEffect(() => {
+    setFormData({
+      name: profile.name || '',
+      birthdate: profile.birthdate || '',
+      height_cm: profile.height_cm || 0,
+      current_weight_kg: profile.current_weight_kg !== undefined && profile.current_weight_kg !== null ? String(profile.current_weight_kg) : '',
+      target_weight_kg: profile.target_weight_kg || 0,
+      gender: profile.gender || 'Masculino'
+    });
+  }, [profile]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateProfile(formData);
+    const payload: any = { ...formData };
+    if (payload.current_weight_kg === '' || isNaN(Number(payload.current_weight_kg))) {
+      delete payload.current_weight_kg;
+    } else {
+      payload.current_weight_kg = Number(payload.current_weight_kg);
+    }
+    onUpdateProfile(payload);
     setIsEditing(false);
   };
 
-  const heightInMeters = (formData.height_cm / 100).toFixed(2);
+  const heightInMeters = formData.height_cm ? (formData.height_cm / 100).toFixed(2) : (profile.height_cm ? (profile.height_cm / 100).toFixed(2) : '0.00');
   const currentWeight = profile.current_weight_kg;
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus:outline-none";
@@ -196,6 +214,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 value={formData.height_cm}
                 onChange={e => setFormData({ ...formData, height_cm: +e.target.value })}
                 className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Peso Atual (kg)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={formData.current_weight_kg}
+                onChange={e => setFormData({ ...formData, current_weight_kg: e.target.value })}
+                className={inputClass}
+                placeholder="Ex: 87.0"
               />
             </div>
 

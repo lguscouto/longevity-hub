@@ -86,8 +86,95 @@ class LongevityRepository:
         sql = f"UPDATE user_profile SET {update_set}, updated_at = CURRENT_TIMESTAMP WHERE id = 1;"
         values = [data[col] for col in columns]
         with self._get_connection() as conn:
-            conn.execute(sql, values)
+            cursor = conn.execute(sql, values)
+            if cursor.rowcount == 0:
+                col_names = ", ".join(["id"] + columns)
+                placeholders = ", ".join(["?"] * (len(columns) + 1))
+                conn.execute(f"INSERT OR IGNORE INTO user_profile ({col_names}) VALUES ({placeholders});", [1] + values)
             conn.commit()
+
+    def get_latest_weight_measurement(self) -> Optional[Dict[str, Any]]:
+        """
+        Retorna a medição de peso mais recente e auditável do sistema,
+        priorizando a data real de medição entre dados brutos (health_data_points)
+        e métricas diárias (daily_metrics).
+        """
+        candidates: List[Dict[str, Any]] = []
+
+        # 1. Busca em health_data_points (Google Health, Fitbit, etc.)
+        sql_raw = """
+        SELECT value AS weight_kg, COALESCE(start_time, recorded_at) AS measured_at, source, provider, raw_json
+        FROM health_data_points
+        WHERE data_type = 'weight' AND value IS NOT NULL AND value > 0
+        ORDER BY measured_at DESC
+        LIMIT 10;
+        """
+        # 2. Busca em daily_metrics (Zepp, manuais, etc.)
+        sql_daily = """
+        SELECT weight_kg, date_ref AS measured_at, source, 'daily_metrics' AS provider
+        FROM daily_metrics
+        WHERE weight_kg IS NOT NULL AND weight_kg > 0
+        ORDER BY date_ref DESC
+        LIMIT 10;
+        """
+        with self._get_connection() as conn:
+            try:
+                for row in conn.execute(sql_raw).fetchall():
+                    ts = row["measured_at"] or ""
+                    if not ts and row["raw_json"]:
+                        try:
+                            rj = json.loads(row["raw_json"])
+                            ts = (
+                                rj.get("weight", {}).get("sampleTime", {}).get("physicalTime")
+                                or rj.get("sampleTime", {}).get("physicalTime")
+                                or ""
+                            )
+                        except Exception:
+                            pass
+                    day_str = ts[:10] if len(ts) >= 10 else ""
+                    if day_str:
+                        candidates.append({
+                            "weight_kg": float(row["weight_kg"]),
+                            "measured_at": ts,
+                            "date_ref": day_str,
+                            "source": row["source"] or row["provider"],
+                        })
+            except (sqlite3.OperationalError, Exception):
+                pass
+
+            try:
+                for row in conn.execute(sql_daily).fetchall():
+                    ts = row["measured_at"] or ""
+                    day_str = ts[:10] if len(ts) >= 10 else ""
+                    if day_str:
+                        candidates.append({
+                            "weight_kg": float(row["weight_kg"]),
+                            "measured_at": ts,
+                            "date_ref": day_str,
+                            "source": row["source"],
+                        })
+            except (sqlite3.OperationalError, Exception):
+                pass
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda c: (c["date_ref"], c["measured_at"]), reverse=True)
+        return candidates[0]
+
+    def sync_latest_profile_weight(self) -> Optional[float]:
+        """
+        Sincroniza o peso atual do perfil do usuário (user_profile.current_weight_kg)
+        com a medição real mais recente disponível no banco de dados.
+        Retorna o novo peso sincronizado ou None caso não haja medições.
+        """
+        latest = self.get_latest_weight_measurement()
+        if not latest or latest.get("weight_kg") is None:
+            return None
+
+        new_weight = float(latest["weight_kg"])
+        self.upsert_user_profile({"current_weight_kg": new_weight})
+        return new_weight
 
     # --- DAILY METRICS ---
     def upsert_daily_metric(self, data: Dict[str, Any]) -> None:
@@ -108,7 +195,11 @@ class LongevityRepository:
         columns = [f for f in fields if f in data]
         placeholders = ", ".join("?" for _ in columns)
         col_names = ", ".join(columns)
-        update_set = ", ".join(f"{col} = excluded.{col}" for col in columns if col != "date_ref")
+        update_set = ", ".join(
+            f"{col} = COALESCE(excluded.{col}, daily_metrics.{col})"
+            if col != "source" else "source = COALESCE(excluded.source, daily_metrics.source)"
+            for col in columns if col != "date_ref"
+        )
 
         sql = f"""
         INSERT INTO daily_metrics ({col_names})

@@ -141,6 +141,10 @@ def sync_google_health_api(
         exception_message="; ".join(errors) if errors else None,
     )
     repo.log_pipeline_run("GoogleHealthAPI", inserted, result["status"], result["summary"])
+    try:
+        repo.sync_latest_profile_weight()
+    except Exception:
+        pass
     return result
 
 
@@ -324,4 +328,8 @@ def import_google_health_data(
         result["exception_message"] = "; ".join(all_errors[:10]) if all_errors else None
 
     repo.log_pipeline_run("GoogleHealth", records_inserted, result["status"], result["summary"])
+    try:
+        repo.sync_latest_profile_weight()
+    except Exception:
+        pass
     return result
