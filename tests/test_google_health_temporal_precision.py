@@ -132,20 +132,39 @@ def test_server_filter_data_types():
     st = datetime(2026, 9, 1, 10, 0, 0, tzinfo=timezone.utc)
     et = datetime(2026, 9, 2, 10, 0, 0, tzinfo=timezone.utc)
 
-    # 1. Interval (steps, heart-rate)
+    # 1. Interval (steps, active-energy-burned) -> {type}.interval.start_time
     filter_steps = build_server_filter(st, et, data_type="steps")
     assert filter_steps == 'steps.interval.start_time >= "2026-09-01T10:00:00Z" AND steps.interval.start_time < "2026-09-02T10:00:00Z"'
 
+    # 2. Sample (heart-rate, heart-rate-variability, weight) -> {type}.sample_time.physical_time
     filter_hr = build_server_filter(st, et, data_type="heart-rate")
-    assert filter_hr == 'heart_rate.interval.start_time >= "2026-09-01T10:00:00Z" AND heart_rate.interval.start_time < "2026-09-02T10:00:00Z"'
+    assert filter_hr == 'heart_rate.sample_time.physical_time >= "2026-09-01T10:00:00Z" AND heart_rate.sample_time.physical_time < "2026-09-02T10:00:00Z"'
 
-    # 2. Daily (daily-resting-heart-rate)
+    filter_hrv = build_server_filter(st, et, data_type="heart-rate-variability")
+    assert filter_hrv == 'heart_rate_variability.sample_time.physical_time >= "2026-09-01T10:00:00Z" AND heart_rate_variability.sample_time.physical_time < "2026-09-02T10:00:00Z"'
+
+    filter_weight = build_server_filter(st, et, data_type="weight")
+    assert filter_weight == 'weight.sample_time.physical_time >= "2026-09-01T10:00:00Z" AND weight.sample_time.physical_time < "2026-09-02T10:00:00Z"'
+
+    # 3. Daily (daily-resting-heart-rate, daily-heart-rate-variability) -> {type}.date
     filter_rhr = build_server_filter(st, et, data_type="daily-resting-heart-rate")
     assert filter_rhr == 'daily_resting_heart_rate.date >= "2026-09-01" AND daily_resting_heart_rate.date < "2026-09-02"'
 
-    # 3. Sample (weight, body-fat)
-    filter_weight = build_server_filter(st, et, data_type="weight")
-    assert filter_weight == 'weight.sample_time.physical_time >= "2026-09-01T10:00:00Z" AND weight.sample_time.physical_time < "2026-09-02T10:00:00Z"'
+    filter_dhrv = build_server_filter(st, et, data_type="daily-heart-rate-variability")
+    assert filter_dhrv == 'daily_heart_rate_variability.date >= "2026-09-01" AND daily_heart_rate_variability.date < "2026-09-02"'
+
+    # 4. Sleep Session (sleep) -> sleep.interval.end_time (A API Google rejeita start_time)
+    filter_sleep = build_server_filter(st, et, data_type="sleep")
+    assert filter_sleep == 'sleep.interval.end_time >= "2026-09-01T10:00:00Z" AND sleep.interval.end_time < "2026-09-02T10:00:00Z"'
+
+    # Sleep defensivo client-side usa endTime
+    pt_sleep_ok = {
+        "interval": {
+            "startTime": {"physicalTime": "2026-09-01T06:00:00Z"},
+            "endTime": {"physicalTime": "2026-09-01T14:00:00Z"},
+        }
+    }
+    assert is_point_in_interval(pt_sleep_ok, st, et, field_key="sleep") is True
 
 
 def test_fetch_data_points_invalid_filter_auto_fallback(tmp_path):

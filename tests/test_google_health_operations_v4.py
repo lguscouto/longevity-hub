@@ -65,8 +65,8 @@ def test_reconcile_filter(client_instance: GoogleHealthClient):
         points, err = client_instance.reconcile("heart-rate", start_time=st, end_time=et)
         assert err is None
         url, params = mock_get.call_args[0]
-        assert 'heart_rate.interval.start_time >= "2026-09-01T00:00:00Z"' in params["filter"]
-        assert 'heart_rate.interval.start_time < "2026-09-02T00:00:00Z"' in params["filter"]
+        assert 'heart_rate.sample_time.physical_time >= "2026-09-01T00:00:00Z"' in params["filter"]
+        assert 'heart_rate.sample_time.physical_time < "2026-09-02T00:00:00Z"' in params["filter"]
 
 
 def test_reconcile_pagination(client_instance: GoogleHealthClient):

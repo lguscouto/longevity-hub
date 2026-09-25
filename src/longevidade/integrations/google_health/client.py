@@ -156,20 +156,42 @@ DAILY_DATA_TYPES = {
     "daily_resting_heart_rate",
     "daily-heart-rate-variability",
     "daily_heart_rate_variability",
-    "heart-rate-variability",
-    "heart_rate_variability",
     "daily-oxygen-saturation",
     "daily_oxygen_saturation",
+    "daily-respiratory-rate",
+    "daily_respiratory_rate",
+    "daily-heart-rate-zones",
+    "daily_heart_rate_zones",
+    "daily-sleep-temperature-derivations",
+    "daily_sleep_temperature_derivations",
+    "daily-vo2-max",
+    "daily_vo2_max",
 }
 
 SAMPLE_DATA_TYPES = {
+    "heart-rate",
+    "heart_rate",
+    "heart-rate-variability",
+    "heart_rate_variability",
     "weight",
     "body-fat",
     "body_fat",
     "oxygen-saturation",
     "oxygen_saturation",
+    "respiratory-rate",
+    "respiratory_rate",
+    "core-body-temperature",
+    "core_body_temperature",
+    "respiratory-rate-sleep-summary",
+    "respiratory_rate_sleep_summary",
     "vo2-max",
     "vo2_max",
+    "run-vo2-max",
+    "run_vo2_max",
+}
+
+SLEEP_DATA_TYPES = {
+    "sleep",
 }
 
 
@@ -181,12 +203,15 @@ def build_server_filter(
     """
     Constrói a expressão de filtro temporal server-side para a Google Health API v4 (AIP-160).
     
-    Regras da especificação oficial do Google:
-    - Tipos Daily (ex: daily-resting-heart-rate, daily-heart-rate-variability):
+    Regras da especificação oficial do Google (Record Types):
+    - Sessões de Sono (sleep):
+      filtra exclusivamente por physical end_time UTC: sleep.interval.end_time >= "..." AND sleep.interval.end_time < "..."
+      (A API rejeita sleep.interval.start_time com INVALID_DATA_POINT_FILTER)
+    - Tipos Daily (ex: daily-resting-heart-rate, daily-heart-rate-variability, daily-oxygen-saturation):
       filtra por data civil YYYY-MM-DD: {dataType}.date >= "YYYY-MM-DD" AND {dataType}.date < "YYYY-MM-DD"
-    - Tipos Sample / Instantâneo (ex: weight, body-fat):
+    - Tipos Sample / Instantâneo (ex: heart-rate, heart-rate-variability, weight, body-fat, oxygen-saturation):
       filtra por physical_time UTC: {dataType}.sample_time.physical_time >= "..." AND {dataType}.sample_time.physical_time < "..."
-    - Tipos Interval (ex: steps, heart-rate, active-energy-burned, sleep):
+    - Tipos Interval / Sessão (ex: steps, active-energy-burned, distance, exercise):
       filtra por start_time UTC: {dataType}.interval.start_time >= "..." AND {dataType}.interval.start_time < "..."
     - Compatibilidade: se data_type for None, utiliza a expressão genérica start_time / end_time.
     """
@@ -198,11 +223,22 @@ def build_server_filter(
 
     if data_type is not None:
         filter_name = data_type.replace("-", "_")
-        if data_type in DAILY_DATA_TYPES:
+        clean_type = data_type.lower().strip()
+
+        if clean_type in SLEEP_DATA_TYPES or clean_type.replace("_", "-") in SLEEP_DATA_TYPES:
+            field_path = "sleep.interval.end_time"
+            st_val = format_rfc3339_utc(start_time) if start_time else None
+            et_val = format_rfc3339_utc(end_time) if end_time else None
+        elif (
+            clean_type in DAILY_DATA_TYPES
+            or clean_type.replace("_", "-") in DAILY_DATA_TYPES
+            or clean_type.startswith("daily-")
+            or clean_type.startswith("daily_")
+        ):
             field_path = f"{filter_name}.date"
             st_val = (start_time if start_time.tzinfo else start_time.replace(tzinfo=timezone.utc)).strftime("%Y-%m-%d") if start_time else None
             et_val = (end_time if end_time.tzinfo else end_time.replace(tzinfo=timezone.utc)).strftime("%Y-%m-%d") if end_time else None
-        elif data_type in SAMPLE_DATA_TYPES:
+        elif clean_type in SAMPLE_DATA_TYPES or clean_type.replace("_", "-") in SAMPLE_DATA_TYPES:
             field_path = f"{filter_name}.sample_time.physical_time"
             st_val = format_rfc3339_utc(start_time) if start_time else None
             et_val = format_rfc3339_utc(end_time) if end_time else None
@@ -228,13 +264,17 @@ def build_server_filter(
     return None
 
 
-
 def parse_point_timestamp_utc(pt: Dict[str, Any], field_key: Optional[str] = None) -> Optional[datetime]:
     """
     Extrai datetime UTC de alta precisão de um dataPoint da Google Health API.
-    Preserva nanos/microssegundos e suporta physicalTime, startTime, recordedAt e civilTime.
+    Preserva nanos/microssegundos e suporta physicalTime, startTime, endTime, recordedAt e civilTime.
+    Para registros de sono (sleep), prioriza endTime como referência temporal canônica.
     """
-    data_obj = (pt.get(field_key) if field_key and isinstance(pt.get(field_key), dict) else None) or {}
+    data_obj = {}
+    if field_key:
+        val = pt.get(field_key) or pt.get(field_key.replace("-", "_"))
+        if isinstance(val, dict):
+            data_obj = val
 
     sample_time = data_obj.get("sampleTime") or pt.get("sampleTime") or {}
     interval = data_obj.get("interval") or pt.get("interval") or {}
@@ -242,14 +282,27 @@ def parse_point_timestamp_utc(pt: Dict[str, Any], field_key: Optional[str] = Non
     st_val = interval.get("startTime") if isinstance(interval, dict) else None
     st_phys = st_val.get("physicalTime") if isinstance(st_val, dict) else (st_val if isinstance(st_val, str) else None)
 
-    phys = (
-        (sample_time.get("physicalTime") if isinstance(sample_time, dict) else None)
-        or st_phys
-        or pt.get("startTime")
-        or pt.get("endTime")
-        or data_obj.get("startTime")
-        or pt.get("recordedAt")
+    et_val = interval.get("endTime") if isinstance(interval, dict) else None
+    et_phys = et_val.get("physicalTime") if isinstance(et_val, dict) else (et_val if isinstance(et_val, str) else None)
+
+    is_sleep = (
+        (field_key and field_key.lower().replace("_", "-") in ("sleep", "sleep-session"))
+        or "sleep" in pt
+        or "sleep" in data_obj
     )
+
+    if is_sleep and et_phys:
+        phys = et_phys
+    else:
+        phys = (
+            (sample_time.get("physicalTime") if isinstance(sample_time, dict) else None)
+            or st_phys
+            or et_phys
+            or pt.get("startTime")
+            or pt.get("endTime")
+            or data_obj.get("startTime")
+            or pt.get("recordedAt")
+        )
 
     if isinstance(phys, str):
         try:
@@ -264,6 +317,7 @@ def parse_point_timestamp_utc(pt: Dict[str, Any], field_key: Optional[str] = Non
         (sample_time.get("civilTime") if isinstance(sample_time, dict) else None)
         or (data_obj.get("civilTime") if isinstance(data_obj, dict) else None)
         or (interval.get("civilStartTime") if isinstance(interval, dict) else None)
+        or (interval.get("civilEndTime") if isinstance(interval, dict) else None)
         or {}
     )
     if isinstance(civil, dict):
@@ -1163,7 +1217,7 @@ class GoogleHealthClient:
 
             points = data.get("dataPoints", [])
             for pt in points:
-                if is_point_in_interval(pt, start_time, end_time):
+                if is_point_in_interval(pt, start_time, end_time, field_key=data_type):
                     all_points.append(pt)
 
             next_page_token = data.get("nextPageToken")
@@ -1236,7 +1290,7 @@ class GoogleHealthClient:
 
             points = data.get("dataPoints", []) or data.get("reconciledDataPoints", [])
             for pt in points:
-                if is_point_in_interval(pt, start_time, end_time):
+                if is_point_in_interval(pt, start_time, end_time, field_key=data_type):
                     all_points.append(pt)
 
             next_page_token = data.get("nextPageToken")
