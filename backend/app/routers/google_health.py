@@ -490,7 +490,7 @@ def disconnect_google_health() -> Dict[str, Any]:
 @router.post("/sync")
 def sync_google_health(req: GoogleHealthSyncRequest = GoogleHealthSyncRequest()) -> Dict[str, Any]:
     """Aciona a sincronização dos dados da Google Health API para o banco SQLite."""
-    days = max(1, min(req.days or 30, 90))  # Limita entre 1 e 90 dias
+    days = max(1, min(req.days or 90, 365))  # Padrão 90 dias, até 365 dias
 
     token_path = get_default_token_path()
     client = GoogleHealthClient(token_path=token_path)

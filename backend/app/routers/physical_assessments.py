@@ -4,6 +4,7 @@ Router FastAPI para Avaliações Físicas e Fotografias Corporais.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
@@ -73,6 +74,140 @@ def compare_physical_assessments(
         return manifest
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get("/timeline", response_model=Dict[str, Any])
+def get_composition_timeline(
+    days: Optional[int] = Query(None, ge=1, description="Número de dias para filtrar o histórico"),
+) -> Dict[str, Any]:
+    """Retorna linha do tempo consolidada de composição corporal mesclando avaliações físicas e wearables."""
+    try:
+        service = _service()
+        repo = service.repo
+        cutoff_date: Optional[str] = None
+        if days:
+            cutoff_date = (datetime.now().date() - timedelta(days=days)).isoformat()
+
+        daily_metrics = repo.get_daily_metrics(days=days or 3650)
+        assessments = service.list_assessments(
+            limit=500, offset=0, start_date=cutoff_date
+        )
+
+        profile = repo.get_user_profile() if hasattr(repo, "get_user_profile") else {}
+        target_weight_kg = profile.get("target_weight_kg") if isinstance(profile, dict) else None
+
+        merged: Dict[str, Dict[str, Any]] = {}
+
+        # 1. Popula com métricas diárias de wearables (Zepp, Google Health)
+        for m in daily_metrics:
+            date_str = str(m.get("date_ref") or "")[:10]
+            if not date_str or (cutoff_date and date_str < cutoff_date):
+                continue
+            w = m.get("weight_kg")
+            bf = m.get("body_fat_pct")
+            waist = m.get("waist_cm")
+            if w is not None or bf is not None or waist is not None:
+                merged[date_str] = {
+                    "date": date_str,
+                    "weight_kg": w,
+                    "body_fat_pct": bf,
+                    "source": m.get("source") or "Wearable",
+                    "is_physical_assessment": False,
+                    "assessment_id": None,
+                    "assessment_title": None,
+                    "photo_count": 0,
+                    "waist_cm": waist,
+                    "abdomen_cm": None,
+                    "hip_cm": None,
+                }
+
+        # 2. Avaliações físicas têm precedência padrão-ouro em datas coincidentes
+        for ass in assessments:
+            date_str = str(ass.get("assessment_date") or "")[:10]
+            if not date_str or (cutoff_date and date_str < cutoff_date):
+                continue
+            existing = merged.get(date_str, {})
+            w = ass.get("weight_kg") if ass.get("weight_kg") is not None else existing.get("weight_kg")
+            bf = ass.get("body_fat_percentage") if ass.get("body_fat_percentage") is not None else existing.get("body_fat_pct")
+            waist = ass.get("waist_cm") if ass.get("waist_cm") is not None else existing.get("waist_cm")
+
+            merged[date_str] = {
+                "date": date_str,
+                "weight_kg": w,
+                "body_fat_pct": bf,
+                "source": "Avaliação Física",
+                "is_physical_assessment": True,
+                "assessment_id": ass.get("id"),
+                "assessment_title": ass.get("title"),
+                "photo_count": len(ass.get("photos", [])),
+                "waist_cm": waist,
+                "abdomen_cm": ass.get("abdomen_cm"),
+                "hip_cm": ass.get("hip_cm"),
+            }
+
+        # 3. Calcula massa magra e massa gorda cronologicamente
+        points: List[Dict[str, Any]] = []
+        for d in sorted(merged.keys()):
+            pt = merged[d]
+            w = pt.get("weight_kg")
+            bf = pt.get("body_fat_pct")
+            if w is not None and bf is not None and w > 0 and 0 <= bf <= 100:
+                fat_mass = round(float(w) * (float(bf) / 100.0), 2)
+                lean_mass = round(float(w) - fat_mass, 2)
+                pt["fat_mass_kg"] = fat_mass
+                pt["lean_mass_kg"] = lean_mass
+            else:
+                pt["fat_mass_kg"] = None
+                pt["lean_mass_kg"] = None
+            points.append(pt)
+
+        # 4. Sumário estatístico
+        summary: Dict[str, Any] = {
+            "latest_weight_kg": None,
+            "weight_delta": None,
+            "latest_body_fat_pct": None,
+            "body_fat_delta": None,
+            "latest_lean_mass_kg": None,
+            "lean_mass_delta": None,
+            "total_points": len(points),
+            "assessment_count": sum(1 for p in points if p.get("is_physical_assessment")),
+        }
+
+        weights = [p["weight_kg"] for p in points if p.get("weight_kg") is not None]
+        if weights:
+            summary["latest_weight_kg"] = weights[-1]
+            summary["weight_delta"] = round(weights[-1] - weights[0], 2)
+
+        fats = [p["body_fat_pct"] for p in points if p.get("body_fat_pct") is not None]
+        if fats:
+            summary["latest_body_fat_pct"] = fats[-1]
+            summary["body_fat_delta"] = round(fats[-1] - fats[0], 2)
+
+        leans = [p["lean_mass_kg"] for p in points if p.get("lean_mass_kg") is not None]
+        if leans:
+            summary["latest_lean_mass_kg"] = leans[-1]
+            summary["lean_mass_delta"] = round(leans[-1] - leans[0], 2)
+
+        return {
+            "target_weight_kg": target_weight_kg,
+            "points": points,
+            "summary": summary,
+        }
+    except FileNotFoundError:
+        return {
+            "target_weight_kg": None,
+            "points": [],
+            "summary": {
+                "latest_weight_kg": None,
+                "weight_delta": None,
+                "latest_body_fat_pct": None,
+                "body_fat_delta": None,
+                "latest_lean_mass_kg": None,
+                "lean_mass_delta": None,
+                "total_points": 0,
+                "assessment_count": 0,
+            },
+        }
 
 
 @router.get("/{assessment_id}", response_model=Dict[str, Any])

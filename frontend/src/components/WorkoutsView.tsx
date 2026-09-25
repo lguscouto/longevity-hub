@@ -31,7 +31,7 @@ interface WorkoutsViewProps {
   isSyncingZepp?: boolean
 }
 
-type PeriodFilter = 7 | 30 | 90 | 0 // 0 = Todos
+type PeriodFilter = 7 | 30 | 90 | 2026 | 0 // 0 = Todos, 2026 = Desde Jan/2026
 type SourceFilter = 'all' | 'Hevy' | 'Zepp'
 
 export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
@@ -48,9 +48,10 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
 
   // Filtros
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(30)
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(2026)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas')
+  const [limit, setLimit] = useState(500)
 
   // Estado de sincronização Hevy
   const [isSyncingHevy, setIsSyncingHevy] = useState(false)
@@ -104,17 +105,25 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
     setLoading(true)
     setError(null)
     try {
-      const periodParam = selectedPeriod > 0 ? `days=${selectedPeriod}` : ''
+      const periodParam =
+        selectedPeriod === 2026
+          ? 'start_date=2026-01-01'
+          : selectedPeriod > 0
+          ? `days=${selectedPeriod}`
+          : ''
       const sourceParam = sourceFilter !== 'all' ? `source=${sourceFilter}` : ''
       const categoryParam = selectedCategory !== 'Todas' ? `category=${encodeURIComponent(selectedCategory)}` : ''
       const searchParam = searchQuery.trim() ? `search=${encodeURIComponent(searchQuery.trim())}` : ''
 
-      const queryParts = [periodParam, sourceParam, categoryParam, searchParam, 'limit=100'].filter(Boolean)
+      const queryParts = [periodParam, sourceParam, categoryParam, searchParam, `limit=${limit}`].filter(Boolean)
       const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
+
+      const summaryParts = [periodParam, sourceParam].filter(Boolean)
+      const summaryQuery = summaryParts.length > 0 ? `?${summaryParts.join('&')}` : ''
 
       const [workoutsData, summaryData] = await Promise.all([
         requestJson<WorkoutSession[]>(`/api/workouts${queryString}`),
-        requestJson<WorkoutsSummary>(`/api/workouts/summary${periodParam ? `?${periodParam}` : ''}`),
+        requestJson<WorkoutsSummary>(`/api/workouts/summary${summaryQuery ? `?${summaryQuery}` : ''}`),
       ])
 
       setWorkouts(Array.isArray(workoutsData) ? workoutsData : [])
@@ -128,7 +137,13 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
 
   useEffect(() => {
     loadData()
-  }, [sourceFilter, selectedPeriod, selectedCategory, searchQuery])
+  }, [sourceFilter, selectedPeriod, selectedCategory, searchQuery, limit])
+
+  useEffect(() => {
+    if (!isSyncingZepp) {
+      void loadData()
+    }
+  }, [isSyncingZepp])
 
   // Sincronizar Hevy
   const handleSyncHevy = async () => {
@@ -242,17 +257,23 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
         <div className="flex items-center gap-3 flex-wrap">
           {/* Seletor de Período */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
-            {([7, 30, 90, 0] as PeriodFilter[]).map((p) => (
+            {([
+              { id: 2026 as PeriodFilter, label: 'Ano 2026' },
+              { id: 30 as PeriodFilter, label: '30 dias' },
+              { id: 90 as PeriodFilter, label: '90 dias' },
+              { id: 7 as PeriodFilter, label: '7 dias' },
+              { id: 0 as PeriodFilter, label: 'Tudo' },
+            ]).map((p) => (
               <button
-                key={p}
-                onClick={() => setSelectedPeriod(p)}
+                key={p.id}
+                onClick={() => setSelectedPeriod(p.id)}
                 className={`px-3 py-1.5 rounded-xl font-medium transition ${
-                  selectedPeriod === p
+                  selectedPeriod === p.id
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                {p === 0 ? 'Tudo' : `${p} dias`}
+                {p.label}
               </button>
             ))}
           </div>
@@ -444,6 +465,25 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
           />
         </div>
       </div>
+
+      {/* Contagem e Status de Treinos */}
+      {!loading && !error && (
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 py-0.5">
+          <span>
+            Exibindo <strong className="text-slate-900 dark:text-white font-bold">{workouts.length}</strong> {workouts.length === 1 ? 'treino' : 'treinos'}
+            {sourceFilter !== 'all' ? ` da fonte ${sourceFilter}` : ''}
+            {selectedPeriod === 2026 ? ' em 2026 (desde 01/01/2026)' : selectedPeriod > 0 ? ` nos últimos ${selectedPeriod} dias` : ''}
+          </span>
+          {workouts.length >= limit && (
+            <button
+              onClick={() => setLimit((prev) => prev + 500)}
+              className="text-purple-600 dark:text-purple-400 hover:underline font-semibold"
+            >
+              Carregar mais (+500)...
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Lista de Sessões de Treino */}
       {loading ? (
@@ -749,6 +789,16 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               </div>
             )
           })}
+          {workouts.length >= limit && (
+            <div className="text-center pt-2">
+              <button
+                onClick={() => setLimit((prev) => prev + 500)}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 transition shadow-xs"
+              >
+                Carregar mais treinos (+500)...
+              </button>
+            </div>
+          )}
         </div>
       )}
         </>

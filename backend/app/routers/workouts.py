@@ -25,12 +25,13 @@ class HevySyncRequest(BaseModel):
 
 @router.get("", response_model=List[Dict[str, Any]])
 def get_workouts(
-    limit: int = Query(50, ge=1, le=500),
+    limit: int = Query(500, ge=1, le=2000),
     category: Optional[str] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     source: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    days: Optional[int] = Query(None),
 ):
     """Retorna lista de treinos individuais com filtros por fonte (Hevy/Zepp), categoria, busca textual e lazy-load."""
     db_path = get_db_path()
@@ -43,6 +44,10 @@ def get_workouts(
             parsed = parse_zepp_workouts(ZEPP_DATA_DIR)
             if parsed:
                 repo.upsert_workouts(parsed)
+
+        if days is not None and days > 0 and not start_date:
+            from datetime import date, timedelta
+            start_date = (date.today() - timedelta(days=days)).isoformat()
 
         return repo.get_workouts(
             limit=limit,
@@ -58,14 +63,21 @@ def get_workouts(
 
 @router.get("/summary")
 def get_workouts_summary(
-    days: Optional[int] = Query(30),
+    days: Optional[int] = Query(None),
     source: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
     """Retorna os KPIs agregados de treinos (volume total em kg, sessões, calorias, duração e FC média)."""
     db_path = get_db_path()
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
-    return repo.get_workouts_summary(days=days, source=source)
+    return repo.get_workouts_summary(
+        days=days,
+        source=source,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 @router.get("/hevy/status")

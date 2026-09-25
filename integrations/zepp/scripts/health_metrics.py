@@ -81,14 +81,24 @@ def _reference_date(value: str | date | datetime) -> date:
     return date.fromisoformat(str(value)[:10])
 
 
+_JSON_CACHE: dict[tuple[str, int], dict[str, Any]] = {}
+
+
 def _read_json(data_dir: Path, filename: str) -> tuple[dict[str, Any], bool]:
     """Return a JSON object and whether the source was usable."""
     path = data_dir / filename
     try:
+        mtime = path.stat().st_mtime_ns
+        cache_key = (str(path), mtime)
+        if cache_key in _JSON_CACHE:
+            return _JSON_CACHE[cache_key], True
         payload = json.loads(path.read_text(encoding="utf-8"))
+        is_dict = isinstance(payload, dict)
+        if is_dict:
+            _JSON_CACHE[cache_key] = payload
+        return (payload, is_dict)
     except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return {}, False
-    return (payload, isinstance(payload, dict))
 
 
 def _items(payload: dict[str, Any]) -> list[dict[str, Any]]:

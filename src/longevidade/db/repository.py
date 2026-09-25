@@ -1296,16 +1296,25 @@ class LongevityRepository:
         self,
         days: Optional[int] = 30,
         source: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Calcula os KPIs agregados de treinos para o dashboard (volume, duração, calorias, frequência)."""
         conditions: list[str] = []
         params: list[Any] = []
 
-        if days is not None and days > 0:
+        if start_date:
+            conditions.append("workout_date >= ?")
+            params.append(start_date)
+        elif days is not None and days > 0:
             from datetime import datetime, timedelta, timezone
             cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
             conditions.append("workout_date >= ?")
             params.append(cutoff)
+
+        if end_date:
+            conditions.append("workout_date <= ?")
+            params.append(end_date)
 
         if source and source.strip().lower() not in ("todas", "all", "todos"):
             conditions.append("source = ? COLLATE NOCASE")

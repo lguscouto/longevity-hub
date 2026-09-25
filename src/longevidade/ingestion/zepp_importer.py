@@ -95,7 +95,12 @@ def _validate_primary_snapshot_sources(data_dir: Path) -> None:
         )
 
 
-def run_zepp_cloud_fetch(zepp_scripts_dir: Path, timeout_seconds: int = 600) -> None:
+def run_zepp_cloud_fetch(
+    zepp_scripts_dir: Path,
+    timeout_seconds: int = 600,
+    days: int | None = None,
+    full: bool = False,
+) -> None:
     """Atualiza os snapshots Zepp e só retorna quando o processo terminou.
 
     A importação que ocorria após disparar uma thread relia o snapshot anterior
@@ -108,11 +113,19 @@ def run_zepp_cloud_fetch(zepp_scripts_dir: Path, timeout_seconds: int = 600) -> 
         # zepp_cron.py existe e a coleta ocorre obrigatoriamente antes do import.
         return
 
+    cmd = [sys.executable, str(cron_script)]
+    if full:
+        cmd.append("--full")
+    if days is not None:
+        cmd.extend(["--days", str(days)])
+
     try:
         env = dict(os.environ)
         env["PYTHONIOENCODING"] = "utf-8"
+        if days is not None:
+            env["ZEPP_DAYS"] = str(days)
         completed = subprocess.run(
-            [sys.executable, str(cron_script)],
+            cmd,
             cwd=str(zepp_scripts_dir.parent),
             env=env,
             stdout=subprocess.DEVNULL,
@@ -348,12 +361,16 @@ def _make_result(
 def import_zepp_data(
     zepp_data_dir: str | Path,
     repo: LongevityRepository,
-    days: int = 30,
+    days: int | None = None,
+    full: bool = False,
 ) -> Dict[str, Any]:
     """Aciona a coleta da nuvem Zepp e importa as métricas para o repositório.
 
     Retorna um dicionário ImportResult com diagnóstico completo.
     """
+    if days is None:
+        days = max(365, (date.today() - date(2026, 1, 1)).days + 1)
+
     data_dir = Path(zepp_data_dir)
     if not data_dir.exists():
         result = _make_result(
@@ -404,7 +421,10 @@ def import_zepp_data(
     zepp_scripts_dir = data_dir.parent / "scripts"
     if zepp_scripts_dir.exists():
         try:
-            run_zepp_cloud_fetch(zepp_scripts_dir)
+            try:
+                run_zepp_cloud_fetch(zepp_scripts_dir, days=days, full=full)
+            except TypeError:
+                run_zepp_cloud_fetch(zepp_scripts_dir)
         except ZeppCloudFetchError as exc:
             result = _make_result(
                 records_read=0,

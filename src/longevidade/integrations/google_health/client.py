@@ -905,7 +905,7 @@ class GoogleHealthClient:
             }
 
         candidate_types = set(selected_types) if selected_types else {
-            "steps", "heart-rate", "daily-resting-heart-rate", "sleep", "weight", "oxygen-saturation", "heart-rate-variability"
+            "steps", "heart-rate", "daily-resting-heart-rate", "sleep", "weight", "body-fat", "oxygen-saturation", "heart-rate-variability"
         }
 
         # Filtrar tipos autorizados pelo usuário (Consentimento Parcial)
@@ -1032,8 +1032,39 @@ class GoogleHealthClient:
                     elif "value" in pt:
                         kg = float(pt["value"])
 
-                    if st and st in daily_map and kg is not None:
+                    if st and kg is not None:
+                        if st not in daily_map:
+                            daily_map[st] = {
+                                "date_ref": st,
+                                "source": "GoogleHealthAPI",
+                                "source_platform": "GoogleHealth_v4",
+                                "provider": "google_health",
+                            }
                         daily_map[st]["weight_kg"] = round(kg, 2)
+                        if "dataSource" in pt and "source_device" not in daily_map[st]:
+                            daily_map[st]["source_device"] = pt.get("dataSource", {}).get("platform")
+
+        # 5b. Percentual de Gordura Corporal (body-fat)
+        if "body-fat" in types_to_fetch or "body_fat" in types_to_fetch:
+            target_bf = "body-fat" if "body-fat" in types_to_fetch else "body_fat"
+            fat_points, err = self.fetch_data_points(target_bf, start_time=start_time, end_time=now)
+            if err:
+                errors.append(f"body-fat: {err}")
+            else:
+                for pt in fat_points:
+                    raw_points_collected.append(_build_raw_point("body-fat", pt))
+                    st = _extract_date_ref_from_point(pt, "bodyFat") or _extract_date_ref_from_point(pt, "body-fat") or _extract_date_ref_from_point(pt, "body_fat")
+                    bf_obj = pt.get("bodyFat") or pt.get("body_fat") or pt.get("body-fat") or {}
+                    pct = bf_obj.get("percentage") or bf_obj.get("value") or pt.get("value")
+                    if st and pct is not None:
+                        if st not in daily_map:
+                            daily_map[st] = {
+                                "date_ref": st,
+                                "source": "GoogleHealthAPI",
+                                "source_platform": "GoogleHealth_v4",
+                                "provider": "google_health",
+                            }
+                        daily_map[st]["body_fat_pct"] = round(float(pct), 2)
                         if "dataSource" in pt and "source_device" not in daily_map[st]:
                             daily_map[st]["source_device"] = pt.get("dataSource", {}).get("platform")
 

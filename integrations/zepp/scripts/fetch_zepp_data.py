@@ -305,8 +305,8 @@ def fetch_all_data(days: int | None = None, mode: str = "custom") -> dict:
 
     if mode == "incremental":
         fetch_days = calculate_incremental_days(DATA_DIR / "metadata.json")
-    elif mode == "full" or (days is None and mode != "custom"):
-        fetch_days = 365
+    elif mode == "full":
+        fetch_days = days if days is not None else 365
     else:
         fetch_days = max(1, days if days is not None else 14)
 

@@ -39,14 +39,34 @@ const mockAssessments = [
 describe('PhysicalAssessmentsView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockImplementation(async (url: string) => {
+      if (typeof url === 'string' && url.includes('/timeline')) {
+        return {
+          ok: true,
+          json: async () => ({
+            target_weight_kg: null,
+            points: [],
+            summary: {
+              latest_weight_kg: null,
+              weight_delta: null,
+              latest_body_fat_pct: null,
+              body_fat_delta: null,
+              latest_lean_mass_kg: null,
+              lean_mass_delta: null,
+              total_points: 0,
+              assessment_count: 0,
+            },
+          }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => mockAssessments,
+      };
+    });
   });
 
   it('renders history view with assessments list', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockAssessments,
-    });
-
     render(<PhysicalAssessmentsView />);
 
     expect(screen.getByText(/Carregando avaliações físicas/i)).toBeInTheDocument();
@@ -65,11 +85,6 @@ describe('PhysicalAssessmentsView', () => {
   });
 
   it('switches to create view when clicking Nova Avaliação button', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockAssessments,
-    });
-
     render(<PhysicalAssessmentsView />);
 
     await waitFor(() => {
@@ -85,11 +100,6 @@ describe('PhysicalAssessmentsView', () => {
   });
 
   it('switches to compare view and renders comparison mode', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockAssessments,
-    });
-
     render(<PhysicalAssessmentsView />);
 
     await waitFor(() => {
@@ -105,9 +115,26 @@ describe('PhysicalAssessmentsView', () => {
   });
 
   it('opens edit modal and submits updated assessment metrics', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockAssessments,
+    mockFetch.mockImplementation(async (url: string, opts?: any) => {
+      if (typeof url === 'string' && url.includes('/timeline')) {
+        return {
+          ok: true,
+          json: async () => ({ target_weight_kg: null, points: [], summary: {} }),
+        };
+      }
+      if (opts?.method === 'PATCH') {
+        return {
+          ok: true,
+          json: async () => ({
+            ...mockAssessments[0],
+            weight_kg: 79.0,
+          }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => mockAssessments,
+      };
     });
 
     render(<PhysicalAssessmentsView />);
@@ -125,14 +152,6 @@ describe('PhysicalAssessmentsView', () => {
     expect(weightInput).toHaveValue(78.5);
 
     fireEvent.change(weightInput, { target: { value: '79.0' } });
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        ...mockAssessments[0],
-        weight_kg: 79.0,
-      }),
-    });
 
     const saveBtn = screen.getByRole('button', { name: /Salvar Alterações/i });
     fireEvent.click(saveBtn);
@@ -159,9 +178,17 @@ describe('PhysicalAssessmentsView', () => {
       notes: 'Bioimpedância Fitdays (30/08/2026):\n- Peso: 89.6 kg\n- Gordura: 27.9%\n- Massa Muscular: 61.3 kg\n- Água: 51.9%\n- Taxa Muscular: 68.3%\n- Massa Livre: 64.6 kg\n- Gordura Visceral: 11.0\n- Massa Óssea: 3.3 kg',
     };
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => [assessmentWithLongNotes],
+    mockFetch.mockImplementation(async (url: string) => {
+      if (typeof url === 'string' && url.includes('/timeline')) {
+        return {
+          ok: true,
+          json: async () => ({ target_weight_kg: null, points: [], summary: {} }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => [assessmentWithLongNotes],
+      };
     });
 
     render(<PhysicalAssessmentsView />);

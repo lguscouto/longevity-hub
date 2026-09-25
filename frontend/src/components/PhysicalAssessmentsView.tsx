@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, Calendar, Scale, Activity, Plus, Trash2, ArrowLeftRight, Eye, ShieldCheck, Upload, AlertCircle, X, ChevronRight, CheckCircle2, ChevronLeft, RefreshCw, Pencil, FileText, Download } from 'lucide-react';
+import { BodyCompositionChart } from './BodyCompositionChart';
 
 export interface Photo {
   id: string;
@@ -122,6 +123,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
   const [editNotes, setEditNotes] = useState<string>('');
   const [editSubmitting, setEditSubmitting] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [chartRefreshKey, setChartRefreshKey] = useState<number>(0);
 
   const fetchAssessments = async () => {
     setLoading(true);
@@ -131,6 +133,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
       if (!res.ok) throw new Error('Falha ao carregar histórico de avaliações físicas');
       const data = await res.json();
       setAssessments(data);
+      setChartRefreshKey((prev) => prev + 1);
     } catch (err: any) {
       setError(err.message || 'Erro desconhecido ao buscar dados');
     } finally {
@@ -516,7 +519,15 @@ export const PhysicalAssessmentsView: React.FC = () => {
 
       {/* MODE 1: HISTÓRICO */}
       {!loading && !error && activeMode === 'history' && (
-        <div>
+        <div className="space-y-6">
+          <BodyCompositionChart
+            refreshKey={chartRefreshKey}
+            onSelectAssessment={(id) => {
+              setSelectedAssessmentId(id);
+              setActiveMode('details');
+            }}
+          />
+
           {assessments.length === 0 ? (
             <div className="glass-panel p-12 text-center rounded-2xl border border-slate-800">
               <Camera className="h-12 w-12 text-slate-600 mx-auto mb-4" />

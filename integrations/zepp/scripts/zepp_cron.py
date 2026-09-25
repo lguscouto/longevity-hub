@@ -43,6 +43,12 @@ def main():
     parser = argparse.ArgumentParser(description="Coleta Zepp e atualiza a planilha diária.")
     parser.add_argument("--include-today", action="store_true", help="Registra o dia parcial atual.")
     parser.add_argument(
+        "--days",
+        type=int,
+        default=None,
+        help="Número de dias para coleta (padrão: 365 para full, ou calculado para incremental).",
+    )
+    parser.add_argument(
         "--incremental",
         action="store_true",
         default=True,
@@ -66,8 +72,12 @@ def main():
         sys.exit(1)
 
     # Fetch data
-    days = int(os.environ.get("ZEPP_DAYS", "7"))
-    mode = "incremental" if args.incremental else "custom"
+    if not args.incremental:
+        mode = "full"
+        days = args.days or int(os.environ.get("ZEPP_DAYS", "365"))
+    else:
+        mode = "incremental"
+        days = args.days or int(os.environ.get("ZEPP_DAYS", "30"))
     print(f"📡 Coletando dados Amazfit/Zepp (modo {mode}, base {days} dias)...")
     print(f"🕐 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
     print()

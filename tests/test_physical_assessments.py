@@ -263,3 +263,89 @@ class TestPhysicalAssessmentEndpoints:
         # 5. Delete Assessment (Cascade)
         del_res = client.delete(f"/api/physical-assessments/{assessment_id}")
         assert del_res.status_code == 204
+
+    def test_composition_timeline_endpoint(self, client: TestClient):
+        # 1. Timeline inicialmente vazia
+        empty_res = client.get("/api/physical-assessments/timeline")
+        assert empty_res.status_code == 200
+        empty_data = empty_res.json()
+        assert empty_data["points"] == []
+        assert empty_data["summary"]["latest_weight_kg"] is None
+
+        # 2. Insere métrica diária de wearable (Zepp / Google Health)
+        metric_res = client.post("/api/metrics", json={
+            "date_ref": "2026-07-01",
+            "weight_kg": 80.0,
+            "body_fat_pct": 20.0,
+            "source": "Zepp",
+        })
+        assert metric_res.status_code == 200
+
+        # 3. Insere uma Avaliação Física oficial em outra data
+        ass1_res = client.post("/api/physical-assessments", json={
+            "assessment_date": "2026-07-15",
+            "title": "Avaliação Inicial",
+            "weight_kg": 79.0,
+            "body_fat_percentage": 18.0,
+            "waist_cm": 82.0,
+        })
+        assert ass1_res.status_code == 201
+        ass1_id = ass1_res.json()["id"]
+
+        # 4. Insere uma Avaliação Física na mesma data de um wearable para testar precedência
+        client.post("/api/metrics", json={
+            "date_ref": "2026-07-30",
+            "weight_kg": 78.5,
+            "body_fat_pct": 17.5,
+            "source": "GoogleHealth",
+        })
+        ass2_res = client.post("/api/physical-assessments", json={
+            "assessment_date": "2026-07-30",
+            "title": "Avaliação de Controle",
+            "weight_kg": 78.0,  # Valor padrão-ouro da avaliação deve prevalecer sobre 78.5
+            "body_fat_percentage": 17.0,
+            "waist_cm": 80.5,
+        })
+        assert ass2_res.status_code == 201
+
+        # 5. Consulta timeline consolidada
+        tl_res = client.get("/api/physical-assessments/timeline")
+        assert tl_res.status_code == 200
+        tl_data = tl_res.json()
+
+        points = tl_data["points"]
+        assert len(points) == 3
+
+        # Ponto 1: 2026-07-01 (Wearable)
+        assert points[0]["date"] == "2026-07-01"
+        assert points[0]["weight_kg"] == 80.0
+        assert points[0]["body_fat_pct"] == 20.0
+        assert points[0]["fat_mass_kg"] == 16.0  # 80 * 0.20
+        assert points[0]["lean_mass_kg"] == 64.0  # 80 - 16
+        assert points[0]["is_physical_assessment"] is False
+        assert points[0]["assessment_id"] is None
+
+        # Ponto 2: 2026-07-15 (Avaliação Física)
+        assert points[1]["date"] == "2026-07-15"
+        assert points[1]["weight_kg"] == 79.0
+        assert points[1]["body_fat_pct"] == 18.0
+        assert points[1]["fat_mass_kg"] == 14.22  # 79 * 0.18
+        assert points[1]["lean_mass_kg"] == 64.78  # 79 - 14.22
+        assert points[1]["is_physical_assessment"] is True
+        assert points[1]["assessment_id"] == ass1_id
+
+        # Ponto 3: 2026-07-30 (Avaliação Física sobrepõe wearable na mesma data)
+        assert points[2]["date"] == "2026-07-30"
+        assert points[2]["weight_kg"] == 78.0
+        assert points[2]["body_fat_pct"] == 17.0
+        assert points[2]["is_physical_assessment"] is True
+
+        # Sumário
+        summary = tl_data["summary"]
+        assert summary["latest_weight_kg"] == 78.0
+        assert summary["weight_delta"] == -2.0  # 78.0 - 80.0
+        assert summary["latest_body_fat_pct"] == 17.0
+        assert summary["body_fat_delta"] == -3.0  # 17.0 - 20.0
+        assert summary["latest_lean_mass_kg"] == 64.74  # 78 - (78 * 0.17 = 13.26)
+        assert summary["assessment_count"] == 2
+

@@ -322,3 +322,63 @@ def test_hevy_status_and_credentials_endpoints(client):
             assert cred_res.json()["status"] == "ok"
 
 
+def test_get_workouts_start_date_and_summary_filters(client, tmp_path):
+    db_path = tmp_path / "longevity-test.sqlite3"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    sample_workouts = [
+        {
+            "id": "zepp_2026_01",
+            "workout_date": "2026-01-15",
+            "workout_time": "07:00",
+            "category": "Corrida",
+            "activity_type": "Corrida",
+            "duration_min": 30.0,
+            "calories": 250,
+            "source": "Zepp",
+        },
+        {
+            "id": "zepp_2026_08",
+            "workout_date": "2026-08-20",
+            "workout_time": "08:00",
+            "category": "Caminhada",
+            "activity_type": "Caminhada",
+            "duration_min": 40.0,
+            "calories": 200,
+            "source": "Zepp",
+        },
+        {
+            "id": "zepp_2025_12",
+            "workout_date": "2025-12-25",
+            "workout_time": "09:00",
+            "category": "Ciclismo",
+            "activity_type": "Ciclismo",
+            "duration_min": 60.0,
+            "calories": 500,
+            "source": "Zepp",
+        },
+    ]
+    repo.upsert_workouts(sample_workouts)
+
+    # Filtrar desde 2026-01-01
+    res = client.get("/api/workouts?start_date=2026-01-01&source=Zepp")
+    assert res.status_code == 200
+    items = res.json()
+    assert len(items) == 2
+    ids = [it["id"] for it in items]
+    assert "zepp_2026_08" in ids
+    assert "zepp_2026_01" in ids
+    assert "zepp_2025_12" not in ids
+
+    # Resumo filtrado por start_date
+    res_s = client.get("/api/workouts/summary?start_date=2026-01-01&source=Zepp")
+    assert res_s.status_code == 200
+    summary = res_s.json()
+    assert summary["total_workouts"] == 2
+    assert summary["zepp_workouts"] == 2
+    assert summary["total_duration_min"] == 70.0
+    assert summary["total_calories"] == 450
+
+
+

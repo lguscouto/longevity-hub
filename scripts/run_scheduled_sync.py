@@ -127,6 +127,7 @@ def run_sync(
     skip_hevy: bool = False,
     skip_kdm: bool = False,
     logger: Optional[logging.Logger] = None,
+    days: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Executa o pipeline consolidado de sincronização."""
     resolved_db = db_path or get_db_path()
@@ -157,7 +158,7 @@ def run_sync(
     if not skip_zepp:
         logger.info("[1/4] Sincronizando Zepp/Amazfit...")
         try:
-            zepp_res = import_zepp_data(ZEPP_DATA_DIR, repo, days=30)
+            zepp_res = import_zepp_data(ZEPP_DATA_DIR, repo, days=days)
             results["zepp"] = zepp_res
             status = zepp_res.get("status", "DESCONHECIDO")
             inserted = zepp_res.get("records_inserted", 0)
@@ -256,6 +257,7 @@ def main() -> int:
     parser.add_argument("--skip-google", action="store_true", help="Pula a sincronização Google Health")
     parser.add_argument("--skip-hevy", action="store_true", help="Pula a sincronização Hevy")
     parser.add_argument("--skip-kdm", action="store_true", help="Pula o recálculo do KDM")
+    parser.add_argument("--days", type=int, default=None, help="Número de dias para sincronização Zepp (padrão: todo o ano)")
     args = parser.parse_args()
 
     db_path = Path(args.db_path) if args.db_path else None
@@ -270,6 +272,7 @@ def main() -> int:
             skip_hevy=args.skip_hevy,
             skip_kdm=args.skip_kdm,
             logger=logger,
+            days=args.days,
         )
         return 0 if res.get("success") else 1
     except Exception as exc:

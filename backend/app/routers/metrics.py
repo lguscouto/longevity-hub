@@ -37,6 +37,7 @@ class DailyMetricInput(BaseModel):
     weight_kg: Optional[float] = None
     bmi: Optional[float] = None
     waist_cm: Optional[float] = None
+    body_fat_pct: Optional[float] = None
     systolic_bp: Optional[int] = None
     diastolic_bp: Optional[int] = None
     grip_strength_kg: Optional[float] = None
@@ -45,6 +46,7 @@ class DailyMetricInput(BaseModel):
     spo2_min_pct: Optional[float] = None
     respiratory_rate_rpm: Optional[float] = None
     pai_score: Optional[float] = None
+    source: Optional[str] = None
 
 
 @router.get("", response_model=List[Dict[str, Any]])
@@ -74,7 +76,7 @@ def get_sync_status():
 
 
 @router.post("/sync/zepp")
-def sync_all_sources():
+def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False)):
     if not _zepp_sync_lock.acquire(blocking=False):
         raise HTTPException(
             status_code=409,
@@ -89,7 +91,7 @@ def sync_all_sources():
         repo = LongevityRepository(db_path)
 
         # 1. Importa dados do Zepp (Fonte primária de wearable)
-        zepp_result = import_zepp_data(ZEPP_DATA_DIR, repo, days=30)
+        zepp_result = import_zepp_data(ZEPP_DATA_DIR, repo, days=days, full=full)
 
         # Não mascarar falha de coleta Zepp como sucesso nem reconciliar fontes
         # secundárias sobre snapshots sabidamente antigos.
@@ -99,8 +101,18 @@ def sync_all_sources():
             _zepp_sync_state["last_error"] = detail
             raise HTTPException(status_code=502, detail=detail)
 
-        # 2. Importa/Reconcilia dados do Google Fit / Health Connect (Passos, PA, Frequência Cardíaca)
-        google_result = import_google_health_data(GOOGLE_DATA_DIR, repo)
+        # 2. Importa/Reconcilia dados do Google Fit / Health Connect (Passos, PA, Frequência Cardíaca, Peso, Gordura)
+        try:
+            from longevidade.ingestion.google_health_client import GoogleHealthClient
+            from longevidade.ingestion.google_importer import sync_google_health_api
+
+            gh_client = GoogleHealthClient()
+            if gh_client.is_authenticated():
+                google_result = sync_google_health_api(repo=repo, days=days or 90, client=gh_client)
+            else:
+                google_result = import_google_health_data(GOOGLE_DATA_DIR, repo)
+        except Exception:
+            google_result = import_google_health_data(GOOGLE_DATA_DIR, repo)
 
         zepp_count = (
             zepp_result.get("records_inserted", 0)
