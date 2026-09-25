@@ -37,17 +37,18 @@ from longevidade.ingestion.google_health_client import (
 )
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"  # Fluxo manual ou localhost
+DEFAULT_REDIRECT_URI = "http://127.0.0.1:8887/api/google-health/callback"
 
 
 def authenticate_interactive(
     client_id: str,
     client_secret: str,
     output_path: Path,
+    redirect_uri: str = DEFAULT_REDIRECT_URI,
 ) -> bool:
     params = {
         "client_id": client_id,
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": " ".join(GOOGLE_HEALTH_SCOPES),
         "access_type": "offline",
@@ -61,7 +62,8 @@ def authenticate_interactive(
     print("=" * 70)
     print("\n1. Abra o seguinte link no seu navegador para autorizar o acesso:\n")
     print(auth_url)
-    print("\n2. Faça login com sua conta Google e copie o código de autorização gerado.")
+    print(f"\n2. Redirecionamento configurado para: {redirect_uri}")
+    print("   Faça login com sua conta Google e insira o código de autorização.")
     print("=" * 70)
 
     try:
@@ -80,7 +82,7 @@ def authenticate_interactive(
         "client_secret": client_secret,
         "code": auth_code,
         "grant_type": "authorization_code",
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": redirect_uri,
     }
 
     req = Request(
@@ -118,10 +120,20 @@ def authenticate_interactive(
                 expiry=datetime.now(timezone.utc) + timedelta(seconds=expires_in),
                 scopes=granted_scopes,
             )
+
+            # P0.1: Obtém o healthUserId via GetIdentity
+            from longevidade.ingestion.google_health_client import GoogleHealthClient
+            temp_client = GoogleHealthClient(credentials=creds, token_path=output_path)
+            id_data, _ = temp_client.get_identity(access_token)
+            if id_data and id_data.get("healthUserId"):
+                creds.health_user_id = id_data.get("healthUserId")
+
             creds.save_to_file(output_path)
 
             scope_status = creds.get_scope_status()
             print(f"\n[SUCESSO] Credenciais salvas com sucesso em:\n{output_path}")
+            if creds.health_user_id:
+                print(f" - Health User ID: {creds.health_user_id}")
             print("\nStatus dos Escopos Autorizados (Consentimento):")
             print(f" - Atividade Física & Passos: {'[AUTORIZADO]' if scope_status['activity'] else '[NÃO CONCEDIDO]'}")
             print(f" - Métricas Vitais & FC/SpO2/Peso: {'[AUTORIZADO]' if scope_status['health_metrics'] else '[NÃO CONCEDIDO]'}")
@@ -134,6 +146,7 @@ def authenticate_interactive(
     except Exception as exc:
         print(f"\n[ERRO] Falha na requisição: {exc}")
         return False
+
 
 
 def main() -> int:

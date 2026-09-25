@@ -22,9 +22,15 @@ from longevidade.integrations.google_health.client import (
     parse_point_timestamp_utc,
 )
 from longevidade.integrations.google_health.errors import (
+    GoogleHealthAccessRevokedError,
     GoogleHealthAuthError,
     GoogleHealthError,
+    GoogleHealthMissingScopeError,
+    GoogleHealthRateLimitError,
     GoogleHealthSignatureError,
+    GoogleHealthTokenInvalidError,
+    GoogleHealthTransientError,
+    GoogleHealthUnsupportedDataTypeError,
     GoogleHealthValidationError,
     GoogleHealthWebhookError,
 )
@@ -34,7 +40,9 @@ from longevidade.integrations.google_health.registry import (
     GoogleHealthDataTypeRegistry,
     SCOPE_ACTIVITY,
     SCOPE_CATEGORY_MAP,
+    SCOPE_ECG,
     SCOPE_HEALTH_METRICS,
+    SCOPE_IRN,
     SCOPE_NUTRITION,
     SCOPE_SLEEP,
 )
@@ -42,6 +50,8 @@ from longevidade.integrations.google_health.webhooks import (
     GoogleHealthWebhookPayload,
     WebhookInterval,
     WebhookNotificationData,
+    extract_notification_events,
+    normalize_webhook_payloads,
     parse_webhook_payload,
 )
 from longevidade.integrations.google_health.webhooks_signature import (
@@ -61,6 +71,9 @@ __all__ = [
     "WebhookNotificationData",
     "WebhookInterval",
     "parse_webhook_payload",
+    "normalize_webhook_payloads",
+    "extract_notification_events",
+
     "OAuthStateManager",
     "oauth_state_manager",
     "safe_json_for_script",
@@ -72,6 +85,12 @@ __all__ = [
     "parse_point_timestamp_utc",
     "GoogleHealthError",
     "GoogleHealthAuthError",
+    "GoogleHealthMissingScopeError",
+    "GoogleHealthTokenInvalidError",
+    "GoogleHealthAccessRevokedError",
+    "GoogleHealthRateLimitError",
+    "GoogleHealthTransientError",
+    "GoogleHealthUnsupportedDataTypeError",
     "GoogleHealthValidationError",
     "GoogleHealthWebhookError",
     "GoogleHealthSignatureError",
@@ -82,5 +101,8 @@ __all__ = [
     "SCOPE_HEALTH_METRICS",
     "SCOPE_SLEEP",
     "SCOPE_NUTRITION",
+    "SCOPE_ECG",
+    "SCOPE_IRN",
     "SCOPE_CATEGORY_MAP",
 ]
+

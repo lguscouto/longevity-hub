@@ -1,11 +1,15 @@
 import html
 import json
+import logging
 import os
 import secrets
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger("backend.app.routers.google_health")
+
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request as UrlRequest, urlopen
@@ -34,9 +38,14 @@ from longevidade.ingestion.google_health_client import (
     get_default_token_path,
 )
 from longevidade.ingestion.google_importer import sync_google_health_api
+from longevidade.integrations.google_health.webhooks import (
+    extract_notification_events,
+    normalize_webhook_payloads,
+)
 from longevidade.integrations.google_health.webhooks_signature import signature_verifier
 
 router = APIRouter(prefix="/api/google-health", tags=["GoogleHealth"])
+
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 DEFAULT_REDIRECT_URI = "http://127.0.0.1:8887/api/google-health/callback"
@@ -162,7 +171,9 @@ def get_google_health_status() -> Dict[str, Any]:
         "api_version": "v4",
         "service": "Google Health API",
         "redirect_uri": DEFAULT_REDIRECT_URI,
+        "health_user_id": creds.health_user_id if creds else None,
     }
+
 
 
 @router.get("/auth-url")
@@ -359,6 +370,15 @@ def google_health_oauth_callback(
             else:
                 granted_scopes = creds.scopes if (creds and creds.scopes) else list(GOOGLE_HEALTH_SCOPES)
 
+            # P0.1: Obtém o healthUserId oficial via GetIdentity (GET /v4/users/me/identity)
+            health_user_id = None
+            try:
+                id_data, _ = client.get_identity(access_token)
+                if id_data:
+                    health_user_id = id_data.get("healthUserId")
+            except Exception as id_err:
+                logger.warning("Falha ao obter identity durante OAuth callback: %s", id_err)
+
             new_creds = GoogleHealthCredentials(
                 client_id=cid,
                 client_secret=csecret,
@@ -370,8 +390,10 @@ def google_health_oauth_callback(
                 scopes=granted_scopes,
                 reauthentication_required=False,
                 last_error=None,
+                health_user_id=health_user_id,
             )
             new_creds.save_to_file(token_path)
+
 
             html_resp = """
             <!DOCTYPE html>
@@ -553,12 +575,29 @@ class GoogleHealthWebhookPayload(BaseModel):
 def _process_webhook_sync(
     data_type: Optional[str] = None,
     date_str: Optional[str] = None,
+    health_user_id: Optional[str] = None,
 ) -> None:
     """Tarefa em background para executar sincronização idempotente após recebimento do webhook."""
     token_path = get_default_token_path()
     client = GoogleHealthClient(token_path=token_path)
     if not client.is_authenticated():
         return
+
+    # P1.4: Lookup e validação defensiva de healthUserId
+    if health_user_id:
+        if client.credentials and client.credentials.health_user_id:
+            if client.credentials.health_user_id != health_user_id:
+                logger.warning(
+                    "Google Health webhook: healthUserId '%s' recebido difere do usuário local ('%s'). Sincronização ignorada.",
+                    health_user_id,
+                    client.credentials.health_user_id,
+                )
+                return
+        elif client.credentials and not client.credentials.health_user_id:
+            # Associa se ainda não persistido
+            client.credentials.health_user_id = health_user_id
+            client.credentials.save_to_file(token_path)
+            logger.info("healthUserId '%s' associado à credencial local.", health_user_id)
 
     COLLECTION_MAP: Dict[str, List[str]] = {
         "activity": ["steps", "active-energy-burned", "distance"],
@@ -576,6 +615,9 @@ def _process_webhook_sync(
         "heart-rate-variability": ["heart-rate-variability"],
         "daily-heart-rate-variability": ["daily-heart-rate-variability"],
         "respiratory-rate": ["respiratory-rate"],
+        "daily-respiratory-rate": ["daily-respiratory-rate"],
+        "daily-heart-rate-zones": ["daily-heart-rate-zones"],
+        "daily-vo2-max": ["daily-vo2-max"],
     }
 
     types_to_sync: Optional[List[str]] = None
@@ -606,22 +648,24 @@ async def google_health_webhook(
     signature: Optional[str] = Header(None, alias="GOOGLE-HEALTH-API-SIGNATURE"),
 ) -> Response:
     """
-    Endpoint de notificação e webhook da Google Health API (P1.7).
+    Endpoint de notificação e webhook da Google Health API (P1.3, P1.4, P1.7).
     - Validação de endpointAuthorization (Header Authorization).
     - Handshake de verificação ({"type": "verification"}).
     - Verificação criptográfica de GOOGLE-HEALTH-API-SIGNATURE (ECDSA P-256 / SHA-256).
+    - Suporte a lotes/batches de eventos e normalização resiliente (P1.3).
+    - Tratamento de operações UPSERT, DELETE, user-deleted e user-revoked-access.
+    - Mapeamento e lookup de healthUserId (P1.4).
     - Resposta imediata HTTP 204 No Content para eventos.
     - Sincronização assíncrona em background com processamento idempotente.
     """
     raw_body = await request.body()
 
     try:
-        body_dict = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+        body_json = json.loads(raw_body.decode("utf-8")) if raw_body else {}
     except Exception:
         raise HTTPException(status_code=400, detail="Corpo da requisição deve ser JSON válido.")
 
-    webhook_type = body_dict.get("type", "notification")
-    is_verification = (webhook_type == "verification")
+    is_verification = isinstance(body_json, dict) and body_json.get("type") == "verification"
 
     # 1. Validação de Autorização (endpointAuthorization)
     expected_secret = os.environ.get("GOOGLE_HEALTH_WEBHOOK_SECRET") or os.environ.get("GOOGLE_HEALTH_ENDPOINT_AUTH")
@@ -648,27 +692,55 @@ async def google_health_webhook(
     elif os.environ.get("GOOGLE_HEALTH_REQUIRE_SIGNATURE", "").lower() in ("true", "1"):
         raise HTTPException(status_code=401, detail="Header GOOGLE-HEALTH-API-SIGNATURE obrigatório.")
 
-    # 4. Mapeamento dos parâmetros da notificação
-    data_info = body_dict.get("data") if isinstance(body_dict.get("data"), dict) else {}
-    target_type = (
-        data_info.get("dataType")
-        or body_dict.get("dataType")
-        or body_dict.get("collectionType")
-    )
-    date_str = body_dict.get("date")
-    intervals = data_info.get("intervals") or []
-    if intervals and isinstance(intervals, list) and isinstance(intervals[0], dict):
-        st_val = intervals[0].get("startTime")
-        if st_val and isinstance(st_val, str) and len(st_val) >= 10:
-            date_str = st_val[:10]
+    # 4. Normalização de batches e extração de eventos (P1.3)
+    payloads = normalize_webhook_payloads(body_json)
+    events = extract_notification_events(payloads)
 
-    # 5. Enfileiramento de sincronização em background
-    background_tasks.add_task(
-        _process_webhook_sync,
-        data_type=target_type,
-        date_str=date_str,
-    )
+    # 5. Processamento independente de cada evento no lote com tolerância a falhas parciais
+    token_path = get_default_token_path()
+    for ev in events:
+        try:
+            op = (ev.operation or "UPSERT").lower()
+            if op in ("user-deleted", "user-revoked-access", "revoked"):
+                logger.warning(
+                    "Google Health webhook: evento de ciclo de vida '%s' recebido para healthUserId=%s.",
+                    ev.operation,
+                    ev.healthUserId,
+                )
+                cl = GoogleHealthClient(token_path=token_path)
+                if cl.credentials:
+                    if not ev.healthUserId or cl.credentials.health_user_id == ev.healthUserId:
+                        cl.credentials.reauthentication_required = True
+                        cl.credentials.last_error = f"Acesso revogado/deletado (evento webhook: {ev.operation})."
+                        cl.credentials.save_to_file(token_path)
+                continue
+
+            if op == "delete":
+                logger.info(
+                    "Google Health webhook: notificação DELETE recebida para dataType=%s, healthUserId=%s.",
+                    ev.dataType,
+                    ev.healthUserId,
+                )
+                continue
+
+            # Eventos de UPSERT ou modificação de dados
+            target_type = ev.dataType
+            date_str = None
+            if ev.intervals and len(ev.intervals) > 0:
+                st = ev.intervals[0].startTime
+                if st and isinstance(st, str) and len(st) >= 10:
+                    date_str = st[:10]
+
+            background_tasks.add_task(
+                _process_webhook_sync,
+                data_type=target_type,
+                date_str=date_str,
+                health_user_id=ev.healthUserId,
+            )
+        except Exception as item_err:
+            logger.error("Erro isolado ao processar evento de webhook: %s", item_err)
 
     # 6. Resposta imediata 204 No Content
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 

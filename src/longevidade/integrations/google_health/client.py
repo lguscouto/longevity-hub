@@ -60,6 +60,7 @@ class GoogleHealthCredentials:
     scopes: List[str] = field(default_factory=lambda: list(GOOGLE_HEALTH_SCOPES))
     reauthentication_required: bool = False
     last_error: Optional[str] = None
+    health_user_id: Optional[str] = None
 
     def has_scope(self, scope_or_category: str) -> bool:
         """Verifica se um escopo específico ou categoria foi autorizado."""
@@ -99,6 +100,7 @@ class GoogleHealthCredentials:
                 scopes=data.get("scopes") or list(GOOGLE_HEALTH_SCOPES),
                 reauthentication_required=bool(data.get("reauthentication_required", False)),
                 last_error=data.get("last_error"),
+                health_user_id=data.get("health_user_id") or data.get("healthUserId"),
             )
         except Exception:
             return None
@@ -117,8 +119,11 @@ class GoogleHealthCredentials:
             "scopes": self.scopes,
             "reauthentication_required": self.reauthentication_required,
             "last_error": self.last_error,
+            "health_user_id": self.health_user_id,
+            "healthUserId": self.health_user_id,
         }
         token_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
 
 
 def get_default_token_path() -> Path:
@@ -518,6 +523,105 @@ class GoogleHealthClient:
         except Exception as exc:
             return False, f"Erro inesperado ao renovar token: {exc}"
 
+    def ensure_active_token(self) -> Tuple[bool, Optional[str]]:
+        """Garante que há um token de acesso válido, renovando se expirado e migrando health_user_id se ausente."""
+        if not self.is_authenticated():
+            return False, "Credenciais ausentes ou reautenticação necessária."
+
+        now = datetime.now(timezone.utc)
+        # Renova se não houver access_token ou se expirar em menos de 60 segundos
+        if (
+            not self.credentials.access_token
+            or (self.credentials.expiry and (self.credentials.expiry - now).total_seconds() < 60)
+        ):
+            if self.credentials.refresh_token:
+                ok, err = self.refresh_access_token()
+                if not ok:
+                    return False, err
+            elif not self.credentials.access_token:
+                return False, "Token de acesso expirado e refresh_token ausente."
+
+        # Migração transparente de usuários existentes (P0.2):
+        # Se autenticado mas sem health_user_id, busca e persiste sem exigir novo consentimento
+        if not self.credentials.health_user_id:
+            try:
+                self.get_identity()
+            except Exception as exc:
+                logger.debug("Tentativa de migração de healthUserId em ensure_active_token falhou: %s", exc)
+
+        return True, None
+
+    def get_identity(self, access_token: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """
+        Executa GET https://health.googleapis.com/v4/users/me/identity (P0.1).
+        Retorna dicionário contendo healthUserId e metadados, ou (None, erro).
+        Atualiza e persiste health_user_id nas credenciais se disponíveis.
+        """
+        token = access_token
+        if not token:
+            if not self.credentials:
+                return None, "Não autenticado no Google Health."
+            if not self.credentials.access_token or (
+                self.credentials.expiry
+                and (self.credentials.expiry - datetime.now(timezone.utc)).total_seconds() < 30
+            ):
+                if self.credentials.refresh_token:
+                    self.refresh_access_token()
+            token = self.credentials.access_token
+
+        if not token:
+            return None, "Token de acesso ausente para obter identidade."
+
+        url = f"{GOOGLE_HEALTH_BASE_URL}/users/me/identity"
+        max_retries = 3
+        base_delay = 1.0
+
+        for attempt in range(max_retries + 1):
+            req = Request(
+                url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                },
+                method="GET",
+            )
+            try:
+                with _get_urlopen()(req, timeout=20) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    h_uid = data.get("healthUserId")
+                    if self.credentials and h_uid:
+                        self.credentials.health_user_id = h_uid
+                        if self.token_path:
+                            try:
+                                self.credentials.save_to_file(self.token_path)
+                            except Exception as save_err:
+                                logger.warning("Falha ao persistir health_user_id: %s", save_err)
+                    return data, None
+            except HTTPError as err:
+                err_body = err.read().decode("utf-8", errors="ignore")
+                if err.code == 401 and not access_token and self.credentials and self.credentials.refresh_token:
+                    ref_ok, _ = self.refresh_access_token()
+                    if ref_ok and self.credentials:
+                        token = self.credentials.access_token
+                        continue
+                if err.code == 403:
+                    if "MISSING_OAUTH_SCOPE" in err_body or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in err_body:
+                        return None, f"HTTP 403 MISSING_OAUTH_SCOPE: {err_body}"
+                    return None, f"HTTP 403 (Permissão negada / Escopo não autorizado): {err_body}"
+                if err.code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                    jitter = random.uniform(0.1, 0.4)
+                    sleep_time = (base_delay * (2 ** attempt)) + jitter
+                    pytime.sleep(sleep_time)
+                    continue
+                return None, f"HTTP {err.code}: {err_body}"
+            except Exception as exc:
+                if attempt < max_retries:
+                    pytime.sleep(base_delay * (attempt + 1))
+                    continue
+                return None, str(exc)
+
+        return None, "Limite de tentativas excedido na Google Health API ao obter identidade."
+
     def _get_json(
         self,
         url: str,
@@ -553,6 +657,8 @@ class GoogleHealthClient:
                         continue
                 if err.code == 403:
                     err_body = err.read().decode("utf-8", errors="ignore")
+                    if "MISSING_OAUTH_SCOPE" in err_body or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in err_body:
+                        return None, f"HTTP 403 MISSING_OAUTH_SCOPE: {err_body}"
                     return None, f"HTTP 403 (Permissão negada / Escopo não autorizado): {err_body}"
                 if err.code in (429, 500, 502, 503, 504) and attempt < max_retries:
                     jitter = random.uniform(0.1, 0.4)
@@ -608,6 +714,8 @@ class GoogleHealthClient:
                         continue
                 if err.code == 403:
                     err_body = err.read().decode("utf-8", errors="ignore")
+                    if "MISSING_OAUTH_SCOPE" in err_body or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in err_body:
+                        return None, f"HTTP 403 MISSING_OAUTH_SCOPE: {err_body}"
                     return None, f"HTTP 403 (Permissão negada / Escopo não autorizado): {err_body}"
                 if err.code in (429, 500, 502, 503, 504) and attempt < max_retries:
                     jitter = random.uniform(0.1, 0.4)
@@ -626,6 +734,243 @@ class GoogleHealthClient:
                 return None, str(exc)
 
         return None, "Limite de tentativas excedido na Google Health API."
+
+    def _patch_json(
+        self,
+        url: str,
+        payload: Dict[str, Any],
+        params: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Executa requisição PATCH JSON autenticada."""
+        if not self.credentials or not self.credentials.access_token:
+            return None, "Não autenticado no Google Health."
+
+        full_url = url
+        if params:
+            full_url = f"{url}?{urlencode(params, quote_via=quote)}"
+
+        post_data = json.dumps(payload).encode("utf-8")
+
+        for attempt in range(max_retries + 1):
+            req = Request(
+                full_url,
+                data=post_data,
+                headers={
+                    "Authorization": f"Bearer {self.credentials.access_token}",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                method="PATCH",
+            )
+            try:
+                with _get_urlopen()(req, timeout=25) as resp:
+                    raw = resp.read().decode("utf-8")
+                    return json.loads(raw) if raw else {}, None
+            except HTTPError as err:
+                if err.code == 401 and self.credentials and self.credentials.refresh_token:
+                    ref_ok, _ = self.refresh_access_token()
+                    if ref_ok:
+                        continue
+                if err.code == 403:
+                    err_body = err.read().decode("utf-8", errors="ignore")
+                    if "MISSING_OAUTH_SCOPE" in err_body or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in err_body:
+                        return None, f"HTTP 403 MISSING_OAUTH_SCOPE: {err_body}"
+                    return None, f"HTTP 403 (Permissão negada / Escopo não autorizado): {err_body}"
+                if err.code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                    jitter = random.uniform(0.1, 0.4)
+                    sleep_time = (base_delay * (2 ** attempt)) + jitter
+                    pytime.sleep(sleep_time)
+                    continue
+                err_body = err.read().decode("utf-8", errors="ignore")
+                return None, f"HTTP {err.code}: {err_body}"
+            except Exception as exc:
+                if attempt < max_retries:
+                    pytime.sleep(base_delay * (attempt + 1))
+                    continue
+                return None, str(exc)
+
+        return None, "Limite de tentativas excedido na Google Health API."
+
+    def _delete(
+        self,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+    ) -> Tuple[bool, Optional[str]]:
+        """Executa requisição DELETE autenticada."""
+        if not self.credentials or not self.credentials.access_token:
+            return False, "Não autenticado no Google Health."
+
+        full_url = url
+        if params:
+            full_url = f"{url}?{urlencode(params, quote_via=quote)}"
+
+        for attempt in range(max_retries + 1):
+            req = Request(
+                full_url,
+                headers={
+                    "Authorization": f"Bearer {self.credentials.access_token}",
+                    "Accept": "application/json",
+                },
+                method="DELETE",
+            )
+            try:
+                with _get_urlopen()(req, timeout=20) as resp:
+                    return True, None
+            except HTTPError as err:
+                if err.code == 401 and self.credentials and self.credentials.refresh_token:
+                    ref_ok, _ = self.refresh_access_token()
+                    if ref_ok:
+                        continue
+                if err.code == 403:
+                    err_body = err.read().decode("utf-8", errors="ignore")
+                    if "MISSING_OAUTH_SCOPE" in err_body or "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in err_body:
+                        return False, f"HTTP 403 MISSING_OAUTH_SCOPE: {err_body}"
+                    return False, f"HTTP 403 (Permissão negada / Escopo não autorizado): {err_body}"
+                if err.code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                    jitter = random.uniform(0.1, 0.4)
+                    sleep_time = (base_delay * (2 ** attempt)) + jitter
+                    pytime.sleep(sleep_time)
+                    continue
+                err_body = err.read().decode("utf-8", errors="ignore")
+                return False, f"HTTP {err.code}: {err_body}"
+            except Exception as exc:
+                if attempt < max_retries:
+                    pytime.sleep(base_delay * (attempt + 1))
+                    continue
+                return False, str(exc)
+
+        return False, "Limite de tentativas excedido na Google Health API."
+
+    def _resolve_project_id(self, project_id: Optional[str] = None) -> str:
+        """Resolve o ID do projeto Google Cloud."""
+        if project_id:
+            return project_id
+        env_proj = os.environ.get("GOOGLE_HEALTH_PROJECT_ID")
+        if env_proj:
+            return env_proj
+        if self.credentials and self.credentials.client_id:
+            prefix = self.credentials.client_id.split("-")[0].strip()
+            if prefix and prefix.isalnum():
+                return prefix
+        return "default-project"
+
+    # ── Subscriber Lifecycle (P1.5) ─────────────────────────────────────
+    def create_subscriber(
+        self,
+        endpoint_uri: str,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+        endpoint_auth: Optional[str] = None,
+        subscription_create_policy: str = "AUTOMATIC",
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Cria um recurso subscriber (projects/{project}/subscribers/{subscriber}) na Google Health API (P1.5)."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers"
+        payload = {
+            "endpointUri": endpoint_uri,
+            "subscriptionCreatePolicy": subscription_create_policy,
+        }
+        if endpoint_auth:
+            payload["endpointAuthorization"] = endpoint_auth
+        params = {"subscriberId": subscriber_id}
+        full_url = f"{url}?{urlencode(params, quote_via=quote)}"
+        return self._post_json(full_url, payload)
+
+    def get_subscriber(
+        self,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Recupera metadados de um subscriber existente."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
+        return self._get_json(url)
+
+    def list_subscribers(
+        self,
+        project_id: Optional[str] = None,
+    ) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
+        """Lista os subscribers do projeto Google Cloud."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers"
+        data, err = self._get_json(url)
+        if err:
+            return None, err
+        return data.get("subscribers", []) if isinstance(data, dict) else [], None
+
+    def update_subscriber(
+        self,
+        endpoint_uri: str,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+        endpoint_auth: Optional[str] = None,
+        subscription_create_policy: Optional[str] = None,
+        update_mask: Optional[str] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Atualiza a configuração de um subscriber existente (PATCH)."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
+        payload: Dict[str, Any] = {"endpointUri": endpoint_uri}
+        if endpoint_auth:
+            payload["endpointAuthorization"] = endpoint_auth
+        if subscription_create_policy:
+            payload["subscriptionCreatePolicy"] = subscription_create_policy
+        params = {"updateMask": update_mask} if update_mask else None
+        return self._patch_json(url, payload, params=params)
+
+    def delete_subscriber(
+        self,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+    ) -> Tuple[bool, Optional[str]]:
+        """Remove um subscriber cadastrado."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
+        return self._delete(url)
+
+    # ── Subscription Lifecycle (P1.5) ───────────────────────────────────
+    def create_subscription(
+        self,
+        data_type: str,
+        subscription_id: str,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Cria manualmente uma subscription para um data type específico."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}/subscriptions"
+        payload = {"dataType": data_type}
+        params = {"subscriptionId": subscription_id}
+        full_url = f"{url}?{urlencode(params, quote_via=quote)}"
+        return self._post_json(full_url, payload)
+
+    def list_subscriptions(
+        self,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+    ) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
+        """Lista as subscriptions vinculadas a um subscriber."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}/subscriptions"
+        data, err = self._get_json(url)
+        if err:
+            return None, err
+        return data.get("subscriptions", []) if isinstance(data, dict) else [], None
+
+    def delete_subscription(
+        self,
+        subscription_id: str,
+        subscriber_id: str = "longevidade-subscriber",
+        project_id: Optional[str] = None,
+    ) -> Tuple[bool, Optional[str]]:
+        """Remove uma subscription específica."""
+        proj = self._resolve_project_id(project_id)
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}/subscriptions/{subscription_id}"
+        return self._delete(url)
 
     build_server_filter = staticmethod(build_server_filter)
 

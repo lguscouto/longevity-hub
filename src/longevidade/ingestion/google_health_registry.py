@@ -9,7 +9,9 @@ from longevidade.integrations.google_health.registry import (
     GoogleHealthDataTypeRegistry,
     SCOPE_ACTIVITY,
     SCOPE_CATEGORY_MAP,
+    SCOPE_ECG,
     SCOPE_HEALTH_METRICS,
+    SCOPE_IRN,
     SCOPE_NUTRITION,
     SCOPE_SLEEP,
 )
@@ -22,5 +24,8 @@ __all__ = [
     "SCOPE_HEALTH_METRICS",
     "SCOPE_SLEEP",
     "SCOPE_NUTRITION",
+    "SCOPE_ECG",
+    "SCOPE_IRN",
     "SCOPE_CATEGORY_MAP",
 ]
+
