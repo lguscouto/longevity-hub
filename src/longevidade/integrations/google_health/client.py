@@ -61,6 +61,7 @@ class GoogleHealthCredentials:
     reauthentication_required: bool = False
     last_error: Optional[str] = None
     health_user_id: Optional[str] = None
+    project_number: Optional[str] = None
 
     def has_scope(self, scope_or_category: str) -> bool:
         """Verifica se um escopo específico ou categoria foi autorizado."""
@@ -101,6 +102,7 @@ class GoogleHealthCredentials:
                 reauthentication_required=bool(data.get("reauthentication_required", False)),
                 last_error=data.get("last_error"),
                 health_user_id=data.get("health_user_id") or data.get("healthUserId"),
+                project_number=data.get("project_number") or data.get("projectNumber"),
             )
         except Exception:
             return None
@@ -121,6 +123,7 @@ class GoogleHealthCredentials:
             "last_error": self.last_error,
             "health_user_id": self.health_user_id,
             "healthUserId": self.health_user_id,
+            "project_number": self.project_number,
         }
         token_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -845,37 +848,98 @@ class GoogleHealthClient:
 
         return False, "Limite de tentativas excedido na Google Health API."
 
-    def _resolve_project_id(self, project_id: Optional[str] = None) -> str:
-        """Resolve o ID do projeto Google Cloud."""
-        if project_id:
-            return project_id
+    def _resolve_project_number(
+        self,
+        project_number: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Resolve o Google Cloud Project Number obrigatório para operações de subscriber na Google Health API v4.
+        A documentação oficial exige o Project Number numérico da GCP (diferente de project ID e client_id).
+        Retorna (project_number, None) ou (None, mensagem_de_erro).
+        """
+        candidate = project_number or project_id
+        if candidate and str(candidate).strip():
+            return str(candidate).strip(), None
+
+        env_num = os.environ.get("GOOGLE_HEALTH_PROJECT_NUMBER")
+        if env_num and env_num.strip():
+            return env_num.strip(), None
+
+        if self.credentials and getattr(self.credentials, "project_number", None) and str(self.credentials.project_number).strip():
+            return str(self.credentials.project_number).strip(), None
+
+        # Fallback legado para GOOGLE_HEALTH_PROJECT_ID se configurado explicitamente no ambiente
         env_proj = os.environ.get("GOOGLE_HEALTH_PROJECT_ID")
-        if env_proj:
-            return env_proj
-        if self.credentials and self.credentials.client_id:
-            prefix = self.credentials.client_id.split("-")[0].strip()
-            if prefix and prefix.isalnum():
-                return prefix
-        return "default-project"
+        if env_proj and env_proj.strip():
+            return env_proj.strip(), None
+
+        return None, (
+            "GOOGLE_HEALTH_PROJECT_NUMBER é obrigatório para operações de subscriber na Google Health API v4. "
+            "Defina a variável de ambiente GOOGLE_HEALTH_PROJECT_NUMBER ou informe project_number explicitamente."
+        )
+
+    def _resolve_project_id(self, project_id: Optional[str] = None) -> str:
+        """Alias de compatibilidade retroativa para resolução de projeto."""
+        proj, _ = self._resolve_project_number(project_id=project_id)
+        return proj or "default-project"
 
     # ── Subscriber Lifecycle (P1.5) ─────────────────────────────────────
     def create_subscriber(
         self,
         endpoint_uri: str,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
-        endpoint_auth: Optional[str] = None,
+        endpoint_auth: Optional[str | Dict[str, Any]] = None,
         subscription_create_policy: str = "AUTOMATIC",
+        data_types: Optional[List[str]] = None,
+        subscriber_configs: Optional[List[Dict[str, Any]]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """Cria um recurso subscriber (projects/{project}/subscribers/{subscriber}) na Google Health API (P1.5)."""
-        proj = self._resolve_project_id(project_id)
-        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers"
-        payload = {
-            "endpointUri": endpoint_uri,
-            "subscriptionCreatePolicy": subscription_create_policy,
+        """
+        Cria um recurso subscriber (projects/{project_number}/subscribers/{subscriber}) na Google Health API v4.
+        
+        Segue o contrato canônico oficial:
+        {
+          "endpointUri": "https://...",
+          "subscriberConfigs": [
+            {
+              "dataTypes": ["steps", "distance", ...],
+              "subscriptionCreatePolicy": "AUTOMATIC"
+            }
+          ],
+          "endpointAuthorization": {
+            "secret": "Bearer ..."
+          }
         }
+        """
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return None, err
+
+        if subscriber_configs is not None:
+            configs = subscriber_configs
+        else:
+            types = data_types or GoogleHealthDataTypeRegistry.get_webhook_supported_types()
+            configs = [
+                {
+                    "dataTypes": list(types),
+                    "subscriptionCreatePolicy": subscription_create_policy,
+                }
+            ]
+
+        payload: Dict[str, Any] = {
+            "endpointUri": endpoint_uri,
+            "subscriberConfigs": configs,
+        }
+
         if endpoint_auth:
-            payload["endpointAuthorization"] = endpoint_auth
+            if isinstance(endpoint_auth, dict):
+                payload["endpointAuthorization"] = endpoint_auth
+            else:
+                payload["endpointAuthorization"] = {"secret": str(endpoint_auth)}
+
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers"
         params = {"subscriberId": subscriber_id}
         full_url = f"{url}?{urlencode(params, quote_via=quote)}"
         return self._post_json(full_url, payload)
@@ -883,19 +947,25 @@ class GoogleHealthClient:
     def get_subscriber(
         self,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """Recupera metadados de um subscriber existente."""
-        proj = self._resolve_project_id(project_id)
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return None, err
         url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
         return self._get_json(url)
 
     def list_subscribers(
         self,
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
     ) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
         """Lista os subscribers do projeto Google Cloud."""
-        proj = self._resolve_project_id(project_id)
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return None, err
         url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers"
         data, err = self._get_json(url)
         if err:
@@ -904,46 +974,111 @@ class GoogleHealthClient:
 
     def update_subscriber(
         self,
-        endpoint_uri: str,
+        endpoint_uri: Optional[str] = None,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
-        endpoint_auth: Optional[str] = None,
+        endpoint_auth: Optional[str | Dict[str, Any]] = None,
         subscription_create_policy: Optional[str] = None,
+        data_types: Optional[List[str]] = None,
+        subscriber_configs: Optional[List[Dict[str, Any]]] = None,
         update_mask: Optional[str] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """Atualiza a configuração de um subscriber existente (PATCH)."""
-        proj = self._resolve_project_id(project_id)
-        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
-        payload: Dict[str, Any] = {"endpointUri": endpoint_uri}
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return None, err
+
+        payload: Dict[str, Any] = {}
+        if endpoint_uri:
+            payload["endpointUri"] = endpoint_uri
+
+        if subscriber_configs is not None:
+            payload["subscriberConfigs"] = subscriber_configs
+        elif data_types is not None or subscription_create_policy is not None:
+            types = data_types or GoogleHealthDataTypeRegistry.get_webhook_supported_types()
+            policy = subscription_create_policy or "AUTOMATIC"
+            payload["subscriberConfigs"] = [
+                {
+                    "dataTypes": list(types),
+                    "subscriptionCreatePolicy": policy,
+                }
+            ]
+
         if endpoint_auth:
-            payload["endpointAuthorization"] = endpoint_auth
-        if subscription_create_policy:
-            payload["subscriptionCreatePolicy"] = subscription_create_policy
+            if isinstance(endpoint_auth, dict):
+                payload["endpointAuthorization"] = endpoint_auth
+            else:
+                payload["endpointAuthorization"] = {"secret": str(endpoint_auth)}
+
+        url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
         params = {"updateMask": update_mask} if update_mask else None
         return self._patch_json(url, payload, params=params)
 
     def delete_subscriber(
         self,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
     ) -> Tuple[bool, Optional[str]]:
         """Remove um subscriber cadastrado."""
-        proj = self._resolve_project_id(project_id)
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return False, err
         url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}"
         return self._delete(url)
 
     # ── Subscription Lifecycle (P1.5) ───────────────────────────────────
     def create_subscription(
         self,
-        data_type: str,
+        data_type: str | List[str],
         subscription_id: str,
+        health_user_id: Optional[str] = None,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """Cria manualmente uma subscription para um data type específico."""
-        proj = self._resolve_project_id(project_id)
+        """
+        Cria manualmente uma subscription para um usuário específico (MANUAL subscriptions).
+        
+        Segue o contrato canônico oficial da Google Health API v4:
+        {
+          "user": "users/{healthUserId}",
+          "dataTypes": [
+            "users/{healthUserId}/dataTypes/{dataType}"
+          ]
+        }
+        """
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return None, err
+
+        h_uid = health_user_id or (self.credentials.health_user_id if self.credentials else None)
+        if not h_uid:
+            return None, (
+                "health_user_id é obrigatório para CreateSubscription na Google Health API v4. "
+                "Informe health_user_id ou certifique-se de que as credenciais do usuário contenham health_user_id."
+            )
+
+        clean_uid = h_uid.replace("users/", "").strip()
+        user_resource = f"users/{clean_uid}"
+
+        if isinstance(data_type, list):
+            dt_list = data_type
+        else:
+            dt_list = [data_type]
+
+        formatted_types = []
+        for dt in dt_list:
+            clean_dt = dt.split("/")[-1].strip()
+            formatted_types.append(f"{user_resource}/dataTypes/{clean_dt}")
+
+        payload = {
+            "user": user_resource,
+            "dataTypes": formatted_types,
+        }
+
         url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}/subscriptions"
-        payload = {"dataType": data_type}
         params = {"subscriptionId": subscription_id}
         full_url = f"{url}?{urlencode(params, quote_via=quote)}"
         return self._post_json(full_url, payload)
@@ -951,10 +1086,13 @@ class GoogleHealthClient:
     def list_subscriptions(
         self,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
     ) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
         """Lista as subscriptions vinculadas a um subscriber."""
-        proj = self._resolve_project_id(project_id)
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return None, err
         url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}/subscriptions"
         data, err = self._get_json(url)
         if err:
@@ -965,10 +1103,13 @@ class GoogleHealthClient:
         self,
         subscription_id: str,
         subscriber_id: str = "longevidade-subscriber",
+        project_number: Optional[str] = None,
         project_id: Optional[str] = None,
     ) -> Tuple[bool, Optional[str]]:
         """Remove uma subscription específica."""
-        proj = self._resolve_project_id(project_id)
+        proj, err = self._resolve_project_number(project_number, project_id)
+        if err:
+            return False, err
         url = f"{GOOGLE_HEALTH_BASE_URL}/projects/{proj}/subscribers/{subscriber_id}/subscriptions/{subscription_id}"
         return self._delete(url)
 

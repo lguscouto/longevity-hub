@@ -353,7 +353,12 @@ def test_webhook_mismatched_health_user_id(client: TestClient, tmp_path: Path):
 # ── P1.5: Subscriber & Subscription Lifecycle ───────────────────────────────
 
 def test_subscriber_lifecycle_methods(tmp_path: Path):
-    creds = GoogleHealthCredentials(access_token="valid_token", client_id="myproj-123.apps.googleusercontent.com")
+    creds = GoogleHealthCredentials(
+        access_token="valid_token",
+        client_id="myproj-123.apps.googleusercontent.com",
+        health_user_id="user-xyz-456",
+        project_number="1234567890",
+    )
     client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
 
     mock_resp = {"subscriber": {"endpointUri": "https://example.com/webhook"}}
@@ -362,23 +367,72 @@ def test_subscriber_lifecycle_methods(tmp_path: Path):
         data, err = client.create_subscriber(
             endpoint_uri="https://example.com/webhook",
             subscriber_id="sub-1",
-            project_id="myproj-123",
+            project_number="1234567890",
+            endpoint_auth="Bearer secret-token-abc",
+            data_types=["steps", "heart-rate"],
         )
         assert err is None
         mock_post.assert_called_once()
-        url_called = mock_post.call_args[0][0]
-        assert "projects/myproj-123/subscribers" in url_called
+        url_called, payload = mock_post.call_args[0]
+        assert "projects/1234567890/subscribers" in url_called
         assert "subscriberId=sub-1" in url_called
+        # Contrato canônico v4: subscriberConfigs e endpointAuthorization.secret
+        assert payload["endpointUri"] == "https://example.com/webhook"
+        assert payload["subscriberConfigs"] == [
+            {
+                "dataTypes": ["steps", "heart-rate"],
+                "subscriptionCreatePolicy": "AUTOMATIC",
+            }
+        ]
+        assert payload["endpointAuthorization"] == {"secret": "Bearer secret-token-abc"}
 
     with patch.object(client, "_get_json", return_value=({"subscribers": [{"name": "sub-1"}]}, None)) as mock_get:
-        subs, err = client.list_subscribers(project_id="myproj-123")
+        subs, err = client.list_subscribers(project_number="1234567890")
         assert err is None
         assert len(subs) == 1
 
     with patch.object(client, "_delete", return_value=(True, None)) as mock_del:
-        ok, err = client.delete_subscriber(subscriber_id="sub-1", project_id="myproj-123")
+        ok, err = client.delete_subscriber(subscriber_id="sub-1", project_number="1234567890")
         assert ok is True
         assert err is None
+
+
+def test_create_subscription_canonical_contract(tmp_path: Path):
+    """P0: Valida contrato canônico do CreateSubscription (MANUAL subscriptions vinculadas a user)."""
+    creds = GoogleHealthCredentials(
+        access_token="valid_token",
+        health_user_id="health-user-999",
+        project_number="9876543210",
+    )
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+
+    mock_resp = {"subscription": {"name": "sub-manual-1"}}
+
+    with patch.object(client, "_post_json", return_value=(mock_resp, None)) as mock_post:
+        sub, err = client.create_subscription(
+            data_type="steps",
+            subscription_id="sub-manual-1",
+            subscriber_id="my-sub",
+        )
+        assert err is None
+        mock_post.assert_called_once()
+        url_called, payload = mock_post.call_args[0]
+        assert "projects/9876543210/subscribers/my-sub/subscriptions" in url_called
+        assert "subscriptionId=sub-manual-1" in url_called
+        assert payload["user"] == "users/health-user-999"
+        assert payload["dataTypes"] == ["users/health-user-999/dataTypes/steps"]
+
+
+def test_subscriber_project_number_mandatory(tmp_path: Path):
+    """P0: Valida que ausência de GOOGLE_HEALTH_PROJECT_NUMBER resulta em erro claro sem fallback cego."""
+    creds = GoogleHealthCredentials(access_token="valid_token", client_id="myproj-123.apps.googleusercontent.com")
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+
+    with patch.dict("os.environ", {}, clear=True):
+        data, err = client.create_subscriber(endpoint_uri="https://example.com/webhook")
+        assert data is None
+        assert "GOOGLE_HEALTH_PROJECT_NUMBER é obrigatório" in str(err)
+
 
 
 # ── P1.6: Sem OOB redirect URI no script CLI ────────────────────────────────

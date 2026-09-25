@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "longevidade"
-version = "1.4.2"
+version = "1.4.3"
 description = "Longevidade Hub: Plataforma local e auditável de inteligência de saúde, biomarcadores e longevidade."
 
 readme = "README.md"
