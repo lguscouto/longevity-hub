@@ -175,6 +175,50 @@ def test_registry_blood_pressure_health_connect_only():
     assert "android.permission" in bp_cfg.scope
 
 
+def test_registry_daily_types_supported_operations():
+    """P0: Valida que tipos Daily e Session suportam list e reconcile, rejeitando dailyRollUp."""
+    daily_types = [
+        "daily-resting-heart-rate",
+        "daily-heart-rate-variability",
+        "daily-heart-rate-zones",
+        "daily-oxygen-saturation",
+        "daily-respiratory-rate",
+        "daily-sleep-temperature-derivations",
+        "daily-vo2-max",
+    ]
+    for dt in daily_types:
+        cfg = GoogleHealthDataTypeRegistry.get(dt)
+        assert cfg is not None, f"Tipo {dt} ausente no registry"
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "list") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "reconcile") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "dailyRollUp") is False
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "rollUp") is False
+
+    session_types = ["sleep", "exercise", "respiratory-rate-sleep-summary"]
+    for dt in session_types:
+        cfg = GoogleHealthDataTypeRegistry.get(dt)
+        assert cfg is not None
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "list") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "reconcile") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "dailyRollUp") is False
+
+    interval_types = [
+        "steps",
+        "heart-rate",
+        "active-energy-burned",
+        "distance",
+        "total-calories",
+        "active-minutes",
+    ]
+    for dt in interval_types:
+        cfg = GoogleHealthDataTypeRegistry.get(dt)
+        assert cfg is not None
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "list") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "reconcile") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "rollUp") is True
+        assert GoogleHealthDataTypeRegistry.supports_operation(dt, "dailyRollUp") is True
+
+
 # ── P1.3: Webhook batches e resiliência ──────────────────────────────────────
 
 def test_normalize_webhook_payloads():
