@@ -24,6 +24,7 @@ const SleepView = lazy(() => import('./components/SleepView').then(m => ({ defau
 const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthModal').then(m => ({ default: m.GoogleHealthAuthModal })))
 const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => ({ default: m.WorkoutsTable })))
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
+const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 
 
 import { DateNavigator } from './components/DateNavigator'
@@ -35,7 +36,7 @@ import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 
-type Tab = 'overview' | 'workouts' | 'labs' | 'supplements' | 'sleep' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
+type Tab = 'overview' | 'timeline' | 'workouts' | 'labs' | 'supplements' | 'sleep' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
 
 type DailyMetric = {
   date_ref: string
@@ -85,7 +86,7 @@ function formatDecimal(value: number | null | undefined): string {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)
 }
 
-const VALID_TABS: Tab[] = ['overview', 'workouts', 'labs', 'supplements', 'sleep', 'ai', 'n-of-1', 'physical-assessments', 'profile']
+const VALID_TABS: Tab[] = ['overview', 'timeline', 'workouts', 'labs', 'supplements', 'sleep', 'ai', 'n-of-1', 'physical-assessments', 'profile']
 
 function getInitialTab(): Tab {
   try {
@@ -603,6 +604,12 @@ export default function App() {
 
                 <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />
               </>
+            )}
+
+            {activeTab === 'timeline' && (
+              <Suspense fallback={<div className="py-12 text-center text-slate-400">Carregando Linha do Tempo...</div>}>
+                <TimelineView />
+              </Suspense>
             )}
 
             {activeTab === 'workouts' && (

@@ -11,7 +11,31 @@ from backend.app.config import get_db_path
 from longevidade import __version__
 from longevidade.db.schema import initialize_db
 
-from backend.app.routers import ai, cgm, checkins, compliance, correlations, daily_guidance, energy_circadian, google_health, interventions, kdm, labs, metrics, n_of_1, phenoage, physical_assessments, pipeline, profile, quality, reports, supplements, workouts
+from backend.app.routers import (
+    ai,
+    cgm,
+    checkins,
+    compliance,
+    context_insights,
+    correlations,
+    daily_guidance,
+    energy_circadian,
+    google_health,
+    interventions,
+    kdm,
+    labs,
+    metrics,
+    n_of_1,
+    phenoage,
+    physical_assessments,
+    pipeline,
+    profile,
+    quality,
+    reports,
+    supplements,
+    timeline,
+    workouts,
+)
 
 
 
@@ -45,7 +69,14 @@ LOCAL_ALLOWED_ORIGINS = _parse_cors_origins()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    initialize_db(get_db_path())
+    db_path = get_db_path()
+    initialize_db(db_path)
+    try:
+        from longevidade.context.service import get_timeline_service
+        service = get_timeline_service(db_path)
+        service.reconcile()
+    except Exception:
+        pass
     yield
 
 
@@ -64,6 +95,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(timeline.router)
+app.include_router(context_insights.router)
 app.include_router(metrics.router)
 app.include_router(labs.router)
 app.include_router(phenoage.router)

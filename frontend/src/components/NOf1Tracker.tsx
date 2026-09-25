@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2 } from 'lucide-react';
+import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2, Scale } from 'lucide-react';
+import { ConfounderBalanceModal } from './contextInsights/ConfounderBalanceModal';
 
 interface NOf1Experiment {
   id?: number;
@@ -26,6 +27,7 @@ interface NOf1TrackerProps {
 
 export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateExperiment }) => {
   const [showModal, setShowModal] = useState(false);
+  const [selectedExperimentForBalance, setSelectedExperimentForBalance] = useState<NOf1Experiment | null>(null);
   const todayStr = new Date().toISOString().slice(0, 10);
   const [formData, setFormData] = useState({
     title: '',
@@ -108,6 +110,21 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
                     <span className="font-bold text-amber-700 dark:text-amber-400">{exp.p_value ?? '--'}</span>
                   </div>
                 </div>
+
+                <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {exp.control_start} → {exp.treatment_end}
+                  </span>
+                  {exp.id && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExperimentForBalance(exp)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 border border-violet-500/20 transition"
+                    >
+                      <Scale className="h-3.5 w-3.5" /> Balanço de Confundidores
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })
@@ -171,6 +188,16 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           </div>
         </div>
       , document.body)}
+
+      {selectedExperimentForBalance && (
+        <ConfounderBalanceModal
+          isOpen={true}
+          onClose={() => setSelectedExperimentForBalance(null)}
+          experimentId={selectedExperimentForBalance.id}
+          experimentTitle={selectedExperimentForBalance.title}
+        />
+      )}
     </div>
   );
 };
+

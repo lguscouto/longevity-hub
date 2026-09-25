@@ -1,5 +1,6 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
+import { ExplainChangeButton } from './contextInsights/ExplainChangeButton';
 
 interface MetricCardProps {
   title: string;
@@ -9,6 +10,7 @@ interface MetricCardProps {
   icon: LucideIcon;
   color?: 'emerald' | 'cyan' | 'violet' | 'rose' | 'amber';
   trend?: string;
+  onExplainChange?: () => void;
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -18,7 +20,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   icon: Icon,
   color = 'emerald',
-  trend
+  trend,
+  onExplainChange,
 }) => {
   const colorMap = {
     emerald: 'from-emerald-500/10 via-emerald-500/5 to-transparent text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30',
@@ -48,10 +51,15 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{value}</span>
         {unit && <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{unit}</span>}
       </div>
-      {(subtitle || trend) && (
+      {(subtitle || trend || onExplainChange) && (
         <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
-          {subtitle && <span>{subtitle}</span>}
-          {trend && <span className="font-medium text-emerald-600 dark:text-emerald-400">{trend}</span>}
+          <div className="flex items-center gap-2">
+            {subtitle && <span>{subtitle}</span>}
+            {trend && <span className="font-medium text-emerald-600 dark:text-emerald-400">{trend}</span>}
+          </div>
+          {onExplainChange && (
+            <ExplainChangeButton onClick={onExplainChange} size="sm" />
+          )}
         </div>
       )}
     </div>

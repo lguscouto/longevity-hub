@@ -538,6 +538,114 @@ MIGRATIONS: Sequence[Migration] = (
             "CREATE INDEX IF NOT EXISTS idx_daily_metrics_weight ON daily_metrics(weight_kg);",
         ),
     ),
+    Migration(
+        version=11,
+        name="timeline_and_context_engine_schema",
+        statements=(
+            "ALTER TABLE user_profile ADD COLUMN timezone TEXT DEFAULT 'America/Sao_Paulo';",
+            """
+            CREATE TABLE IF NOT EXISTS health_events (
+                id TEXT PRIMARY KEY,
+                timestamp TEXT NOT NULL,
+                date_ref TEXT NOT NULL,
+                time_ref TEXT,
+                event_type TEXT NOT NULL,
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                source TEXT NOT NULL,
+                source_type TEXT NOT NULL,
+                source_id TEXT,
+                source_key TEXT UNIQUE,
+                confidence TEXT DEFAULT 'high',
+                significance TEXT DEFAULT 'normal',
+                metadata_json TEXT,
+                is_pinned INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_he_date_ref ON health_events(date_ref DESC, timestamp DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_he_category ON health_events(category);",
+            "CREATE INDEX IF NOT EXISTS idx_he_event_type ON health_events(event_type);",
+            "CREATE INDEX IF NOT EXISTS idx_he_source_key ON health_events(source_key);",
+            "CREATE INDEX IF NOT EXISTS idx_he_significance ON health_events(significance);",
+            """
+            CREATE TABLE IF NOT EXISTS health_events_backfill_state (
+                source_type TEXT PRIMARY KEY,
+                last_processed_id TEXT,
+                last_processed_timestamp TEXT,
+                total_records_processed INTEGER DEFAULT 0,
+                status TEXT NOT NULL,
+                last_error TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS personal_associations (
+                id TEXT PRIMARY KEY,
+                target_metric TEXT NOT NULL,
+                factor TEXT NOT NULL,
+                window_hours INTEGER NOT NULL,
+                sample_size INTEGER NOT NULL,
+                effect_size REAL,
+                correlation REAL,
+                shrinkage_factor REAL,
+                confidence TEXT NOT NULL,
+                data_coverage_pct REAL,
+                first_observation_at TEXT,
+                last_observation_at TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT uq_personal_assoc UNIQUE (target_metric, factor, window_hours)
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_pa_target_metric ON personal_associations(target_metric);",
+            """
+            CREATE TABLE IF NOT EXISTS metric_change_points (
+                id TEXT PRIMARY KEY,
+                metric TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                date_ref TEXT NOT NULL,
+                baseline_value REAL NOT NULL,
+                observed_value REAL NOT NULL,
+                delta_absolute REAL NOT NULL,
+                delta_percent REAL NOT NULL,
+                robust_z_score REAL,
+                significance TEXT NOT NULL,
+                detection_method TEXT NOT NULL,
+                persisted_days INTEGER DEFAULT 1,
+                metadata_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT uq_change_points UNIQUE (metric, date_ref, detection_method)
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_mcp_date ON metric_change_points(date_ref DESC);",
+            """
+            CREATE TABLE IF NOT EXISTS insight_feedback (
+                id TEXT PRIMARY KEY,
+                insight_id TEXT,
+                target_metric TEXT NOT NULL,
+                date_ref TEXT NOT NULL,
+                factor_key TEXT,
+                is_helpful INTEGER NOT NULL,
+                user_rating TEXT,
+                user_notes TEXT,
+                additional_context TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_fb_metric_date ON insight_feedback(target_metric, date_ref);",
+        ),
+    ),
+    Migration(
+        version=12,
+        name="personal_associations_metadata",
+        statements=(
+            "ALTER TABLE personal_associations ADD COLUMN mean_delta_pct REAL;",
+            "ALTER TABLE personal_associations ADD COLUMN metadata_json TEXT;",
+        ),
+    ),
 )
 
 
@@ -546,6 +654,13 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
     """Executa migrações pendentes com base em PRAGMA user_version."""
     cursor = conn.execute("PRAGMA user_version;")
     current_version = cursor.fetchone()[0]
+
+    # Diagnóstico de integridade: se o banco possui user_version >= 11 mas tabelas essenciais da Timeline estão ausentes
+    tables_cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    existing_tables = {row[0] for row in tables_cursor.fetchall()}
+    if ("health_events" not in existing_tables or "health_events_backfill_state" not in existing_tables) and current_version >= 11:
+        current_version = 10
+        conn.execute("PRAGMA user_version = 10;")
 
     for migration in MIGRATIONS:
         if migration.version > current_version:
@@ -556,13 +671,20 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
                     except sqlite3.OperationalError as exc:
                         # Permite colunas já existentes se banco baseline for legado ou tabelas ausentes em fixtures sintéticas
                         err_msg = str(exc).lower()
-                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg)):
+                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg or "user_profile" in err_msg)):
                             continue
                         raise exc
                 conn.execute(f"PRAGMA user_version = {migration.version};")
             current_version = migration.version
 
+    # Garante que user_version não ultrapassa a versão máxima suportada pelas migrações conhecidas
+    max_supported = max(m.version for m in MIGRATIONS)
+    if current_version > max_supported:
+        conn.execute(f"PRAGMA user_version = {max_supported};")
+        current_version = max_supported
+
     return current_version
+
 
 
 def seed_exercise_catalog(conn: sqlite3.Connection) -> int:

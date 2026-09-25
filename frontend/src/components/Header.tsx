@@ -1,5 +1,4 @@
-import React from 'react';
-import { Activity, ShieldCheck, RefreshCw, FileText, PlusCircle, Dna, FlaskConical, Stethoscope, User, Sparkles, Settings, Pill, Camera, Moon, Dumbbell } from 'lucide-react';
+import { Activity, ShieldCheck, RefreshCw, FileText, PlusCircle, Dna, FlaskConical, Stethoscope, User, Sparkles, Settings, Pill, Camera, Moon, Dumbbell, History } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -104,6 +103,16 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab('timeline')}
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap ${
+              activeTab === 'timeline'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md font-bold'
+                : inactiveBtnClass
+            }`}
+          >
+            <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Linha do Tempo
           </button>
           <button
             onClick={() => setActiveTab('workouts')}
