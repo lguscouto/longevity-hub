@@ -50,6 +50,7 @@ router = APIRouter(prefix="/api/google-health", tags=["GoogleHealth"])
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 DEFAULT_REDIRECT_URI = "http://127.0.0.1:8887/api/google-health/callback"
+ACTIVE_GOOGLE_HEALTH_SOURCES: Tuple[str, ...] = ("GoogleHealthAPI", "GoogleHealth")
 
 
 class OAuthStateManager:
@@ -121,9 +122,9 @@ def get_google_health_status() -> Dict[str, Any]:
         try:
             repo = LongevityRepository(db_path)
             runs = repo.get_pipeline_runs(limit=10)
-            gh_run = next((r for r in runs if r.get("source") in ("GoogleHealthAPI", "GoogleHealth", "GoogleFit")), None)
+            gh_run = next((r for r in runs if r.get("source") in ACTIVE_GOOGLE_HEALTH_SOURCES), None)
             if gh_run:
-                last_sync = gh_run.get("run_time") or gh_run.get("created_at")
+                last_sync = gh_run.get("run_time") or gh_run.get("run_at") or gh_run.get("created_at")
         except Exception:
             pass
 
@@ -631,6 +632,15 @@ def _process_webhook_sync(
         "sedentary-period": ["sedentary-period"],
         "time-in-heart-rate-zone": ["time-in-heart-rate-zone"],
         "respiratory-rate-sleep-summary": ["respiratory-rate-sleep-summary"],
+        "activity-level": ["activity-level"],
+        "altitude": ["altitude"],
+        "floors": ["floors"],
+        "blood-glucose": ["blood-glucose"],
+        "height": ["height"],
+        "hydration-log": ["hydration-log"],
+        "nutrition-log": ["nutrition-log"],
+        "hydration": ["hydration-log"],
+        "nutrition": ["nutrition-log"],
     }
 
     types_to_sync: Optional[List[str]] = None

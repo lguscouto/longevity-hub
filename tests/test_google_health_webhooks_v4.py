@@ -295,6 +295,13 @@ def test_webhook_idempotency(client: TestClient, tmp_path: Path):
     ("body-fat", "body-fat"),
     ("run-vo2-max", "run-vo2-max"),
     ("sleep", "sleep"),
+    ("activity-level", "activity-level"),
+    ("altitude", "altitude"),
+    ("blood-glucose", "blood-glucose"),
+    ("floors", "floors"),
+    ("height", "height"),
+    ("hydration-log", "hydration-log"),
+    ("nutrition-log", "nutrition-log"),
 ])
 def test_webhook_mandatory_data_types_coverage_p0(client: TestClient, tmp_path: Path, data_type: str, expected_sync_type: str):
     """P0.2: Cobre recebimento e despacho de webhook para data types oficiais obrigatórios."""

@@ -281,6 +281,14 @@ def test_registry_official_webhook_matrix_p0():
         "calories-in-heart-rate-zone",
         "time-in-heart-rate-zone",
         "sedentary-period",
+        # Novos tipos oficiais da 1.9.5:
+        "activity-level",
+        "altitude",
+        "blood-glucose",
+        "floors",
+        "height",
+        "hydration-log",
+        "nutrition-log",
     ]
     for dt in supported_types:
         cfg = GoogleHealthDataTypeRegistry.get(dt)
@@ -288,13 +296,23 @@ def test_registry_official_webhook_matrix_p0():
         assert cfg.webhook_supported is True, f"Tipo {dt} deveria ter webhook_supported=True"
         assert GoogleHealthDataTypeRegistry.is_webhook_supported(dt) is True
 
-    # 2. daily-vo2-max NÃO possui suporte oficial a webhook
-    daily_vo2_cfg = GoogleHealthDataTypeRegistry.get("daily-vo2-max")
-    assert daily_vo2_cfg is not None
-    assert daily_vo2_cfg.webhook_supported is False
-    assert GoogleHealthDataTypeRegistry.is_webhook_supported("daily-vo2-max") is False
+    # 2. Tipos que NÃO possuem suporte oficial a webhook
+    unsupported_types = [
+        "daily-vo2-max",
+        "food",
+        "food-measurement-unit",
+        "electrocardiogram",
+        "irregular-rhythm-notification",
+        "basal-metabolic-rate",
+        "skin-temperature",
+    ]
+    for dt in unsupported_types:
+        cfg = GoogleHealthDataTypeRegistry.get(dt)
+        assert cfg is not None, f"Tipo {dt} ausente no registry"
+        assert cfg.webhook_supported is False, f"Tipo {dt} deveria ter webhook_supported=False"
+        assert GoogleHealthDataTypeRegistry.is_webhook_supported(dt) is False
 
-    # 3. P0.3: Basal Metabolic Rate mantido estritamente como roadmap (Q4 2026)
+    # 3. P0.3/P0.4: Basal Metabolic Rate mantido estritamente como roadmap (Q4 2026)
     bmr_cfg = GoogleHealthDataTypeRegistry.get("basal-metabolic-rate")
     assert bmr_cfg is not None
     assert bmr_cfg.is_roadmap is True
@@ -310,3 +328,92 @@ def test_registry_official_webhook_matrix_p0():
     assert GoogleHealthDataTypeRegistry.is_system_event("user-deleted") is True
     assert GoogleHealthDataTypeRegistry.is_system_event("user-revoked-access") is True
     assert GoogleHealthDataTypeRegistry.is_system_event("steps") is False
+
+
+def test_registry_new_data_types_1_9_5_spec():
+    """Valida individualmente os 9 novos data types adicionados na 1.9.5 conforme P0.1."""
+    from longevidade.ingestion.google_health_registry import (
+        GoogleHealthDataTypeRegistry,
+        SCOPE_ACTIVITY,
+        SCOPE_HEALTH_METRICS,
+        SCOPE_NUTRITION,
+    )
+
+    specs = {
+        "activity-level": {
+            "filter_name": "activity_level",
+            "scope": SCOPE_ACTIVITY,
+            "operations": ["list", "reconcile"],
+            "webhook_supported": True,
+        },
+        "altitude": {
+            "filter_name": "altitude",
+            "scope": SCOPE_ACTIVITY,
+            "operations": ["list", "reconcile", "rollUp", "dailyRollUp"],
+            "webhook_supported": True,
+        },
+        "blood-glucose": {
+            "filter_name": "blood_glucose",
+            "scope": SCOPE_HEALTH_METRICS,
+            "operations": ["list", "get", "reconcile", "rollUp", "dailyRollUp"],
+            "webhook_supported": True,
+        },
+        "floors": {
+            "filter_name": "floors",
+            "scope": SCOPE_ACTIVITY,
+            "operations": ["reconcile", "rollUp", "dailyRollUp"],
+            "webhook_supported": True,
+        },
+        "height": {
+            "filter_name": "height",
+            "scope": SCOPE_HEALTH_METRICS,
+            "operations": ["list", "get", "reconcile", "create", "update", "batchDelete"],
+            "webhook_supported": True,
+        },
+        "food": {
+            "filter_name": "food",
+            "scope": SCOPE_NUTRITION,
+            "operations": ["list", "get"],
+            "webhook_supported": False,
+        },
+        "food-measurement-unit": {
+            "filter_name": "food_measurement_unit",
+            "scope": SCOPE_NUTRITION,
+            "operations": ["list", "get"],
+            "webhook_supported": False,
+        },
+        "hydration-log": {
+            "filter_name": "hydration_log",
+            "scope": SCOPE_NUTRITION,
+            "operations": ["list", "get", "reconcile", "rollUp", "dailyRollUp", "create", "update", "batchDelete"],
+            "webhook_supported": True,
+        },
+        "nutrition-log": {
+            "filter_name": "nutrition_log",
+            "scope": SCOPE_NUTRITION,
+            "operations": ["list", "get", "reconcile", "rollUp", "dailyRollUp", "create", "update", "batchDelete"],
+            "webhook_supported": True,
+        },
+    }
+
+    for dt, expected in specs.items():
+        cfg = GoogleHealthDataTypeRegistry.get(dt)
+        assert cfg is not None, f"Tipo {dt} ausente no registry"
+        assert cfg.data_type == dt
+        assert cfg.filter_name == expected["filter_name"]
+        assert cfg.scope == expected["scope"]
+        assert cfg.webhook_supported is expected["webhook_supported"]
+        assert cfg.is_active is True
+        assert cfg.is_roadmap is False
+        assert cfg.provider == "google_health"
+        for op in expected["operations"]:
+            assert GoogleHealthDataTypeRegistry.supports_operation(dt, op) is True
+
+
+def test_legacy_production_sources_exclude_google_fit():
+    """Valida que o código de produção não reconhece GoogleFit como fonte ativa (P0.3)."""
+    from backend.app.routers.google_health import ACTIVE_GOOGLE_HEALTH_SOURCES
+
+    assert "GoogleFit" not in ACTIVE_GOOGLE_HEALTH_SOURCES
+    assert "GoogleHealthAPI" in ACTIVE_GOOGLE_HEALTH_SOURCES
+    assert "GoogleHealth" in ACTIVE_GOOGLE_HEALTH_SOURCES

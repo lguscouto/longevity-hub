@@ -218,3 +218,44 @@ def test_google_health_sync_response_naming(client: TestClient, tmp_path: Path):
             assert data["google_health_records_imported"] == 2
             assert "google_fit_records_imported" not in data
 
+
+def test_google_health_status_ignores_legacy_google_fit_run(client: TestClient, tmp_path: Path):
+    """P0.3: Valida que runs legados com source GoogleFit não são considerados como última sincronização ativa."""
+    from backend.app.routers.google_health import ACTIVE_GOOGLE_HEALTH_SOURCES
+    from longevidade.db.repository import LongevityRepository
+    from longevidade.db.schema import initialize_db
+
+    db_path = tmp_path / "test.db"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+
+    # Registra run histórico com source legado
+    repo.log_pipeline_run(
+        source="GoogleFit",
+        records_inserted=5,
+        status="SUCESSO",
+    )
+
+    with patch("backend.app.routers.google_health.get_db_path", return_value=db_path):
+        with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "nonexistent.json"):
+            resp = client.get("/api/google-health/status")
+            assert resp.status_code == 200
+            data = resp.json()
+            # GoogleFit não é fonte ativa, então last_sync deve permanecer None
+            assert data["last_sync"] is None
+
+    # Registra run legítimo do GoogleHealthAPI
+    repo.log_pipeline_run(
+        source="GoogleHealthAPI",
+        records_inserted=10,
+        status="SUCESSO",
+    )
+
+    with patch("backend.app.routers.google_health.get_db_path", return_value=db_path):
+        with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "nonexistent.json"):
+            resp = client.get("/api/google-health/status")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["last_sync"] is not None
+            assert "GoogleFit" not in ACTIVE_GOOGLE_HEALTH_SOURCES
+
