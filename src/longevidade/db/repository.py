@@ -577,7 +577,7 @@ class LongevityRepository:
         settings = {
             "id": raw.get("id", 1),
             "active_provider": raw.get("active_provider", "openrouter"),
-            "selected_model": raw.get("selected_model", "deepseek/deepseek-v4-pro"),
+            "selected_model": raw.get("selected_model", "deepseek/deepseek-v4-flash-0731"),
             "privacy_mode": raw.get("privacy_mode") or "minimal",
             "system_prompt_custom": raw.get("system_prompt_custom"),
         }
@@ -623,7 +623,7 @@ class LongevityRepository:
         """
         values = (
             data.get("provider_used", "openrouter"),
-            data.get("model_used", "deepseek/deepseek-v4-pro"),
+            data.get("model_used", "deepseek/deepseek-v4-flash-0731"),
             data.get("category", "geral"),
             data.get("headline", "Insight de Longevidade"),
             data.get("insight_text", ""),
@@ -641,6 +641,65 @@ class LongevityRepository:
         with self._get_connection() as conn:
             rows = conn.execute(sql, (limit,)).fetchall()
             return [dict(row) for row in rows]
+
+    def save_ai_report(self, data: Dict[str, Any]) -> int:
+        sql = """
+        INSERT INTO ai_reports (
+            provider, model, privacy_mode, time_window, summary, report_json, guardrail_applied, safety_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        report_json = data.get("report_json")
+        if isinstance(report_json, dict):
+            report_json_str = json.dumps(report_json)
+        else:
+            report_json_str = str(report_json or "{}")
+
+        values = (
+            data.get("provider", "openrouter"),
+            data.get("model", "deepseek/deepseek-v4-flash-0731"),
+            data.get("privacy_mode", "minimal"),
+            data.get("time_window", "30d"),
+            data.get("summary", ""),
+            report_json_str,
+            1 if data.get("guardrail_applied") else 0,
+            data.get("safety_reason"),
+        )
+        with self._get_connection() as conn:
+            cursor = conn.execute(sql, values)
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_latest_ai_report(self) -> Optional[Dict[str, Any]]:
+        sql = "SELECT * FROM ai_reports ORDER BY id DESC LIMIT 1;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql).fetchone()
+            if not row:
+                return None
+            res = dict(row)
+            try:
+                res["result"] = json.loads(res.get("report_json") or "{}")
+            except Exception:
+                res["result"] = None
+            return res
+
+    def get_ai_reports(self, limit: int = 20) -> List[Dict[str, Any]]:
+        sql = "SELECT id, created_at, provider, model, privacy_mode, time_window, summary, guardrail_applied, safety_reason FROM ai_reports ORDER BY id DESC LIMIT ?;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+            return [dict(row) for row in rows]
+
+    def get_ai_report_by_id(self, report_id: int) -> Optional[Dict[str, Any]]:
+        sql = "SELECT * FROM ai_reports WHERE id = ?;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql, (report_id,)).fetchone()
+            if not row:
+                return None
+            res = dict(row)
+            try:
+                res["result"] = json.loads(res.get("report_json") or "{}")
+            except Exception:
+                res["result"] = None
+            return res
 
     # --- PIPELINE RUN ---
     def log_pipeline_run(self, source: str, records_inserted: int, status: str, logs: str = "") -> None:

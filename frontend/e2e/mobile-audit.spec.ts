@@ -131,7 +131,7 @@ const mockApi = async (page: Page) => {
       contentType: 'application/json',
       body: JSON.stringify({
         active_provider: 'openrouter',
-        selected_model: 'deepseek/deepseek-v4-pro',
+        selected_model: 'deepseek/deepseek-v4-flash-0731',
         privacy_mode: 'minimal',
         has_openai_key: false,
         has_anthropic_key: false,

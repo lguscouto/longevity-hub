@@ -29,7 +29,7 @@ graph TD
     B --> E[Multi-Provider LLM Client Manager]
     E -->|OpenAI SDK / HTTP| F[OpenAI API — GPT-4o / GPT-4o-mini]
     E -->|Anthropic SDK / HTTP| G[Anthropic API — Claude 3.5 Sonnet]
-    E -->|OpenRouter API| H[OpenRouter API — DeepSeek v4 Pro / Gemini 2.5 Flash]
+    E -->|OpenRouter API| H[OpenRouter API — DeepSeek v4 Flash / Gemini 2.5 Flash]
     B --> I[AI Insights Storage & History]
     I --> D
 ```
@@ -44,13 +44,13 @@ O sistema suportará 3 provedores principais por meio de uma interface abstrata 
 | :--- | :--- | :--- | :--- |
 | **OpenAI** | `gpt-4o`, `gpt-4o-mini`, `o3-mini` | `Bearer <OPENAI_API_KEY>` | `https://api.openai.com/v1` |
 | **Anthropic** | `claude-3-5-sonnet-20241022`, `claude-3-5-haiku-20241022` | `x-api-key: <ANTHROPIC_API_KEY>` | `https://api.anthropic.com/v1` |
-| **OpenRouter** | `deepseek/deepseek-v4-pro`, `google/gemini-2.5-flash`, `deepseek/deepseek-r1`, `anthropic/claude-3.5-sonnet`, `openai/gpt-4o` | `Bearer <OPENROUTER_API_KEY>` | `https://openrouter.ai/api/v1` |
+| **OpenRouter** | `deepseek/deepseek-v4-flash-0731`, `google/gemini-2.5-flash`, `deepseek/deepseek-r1`, `anthropic/claude-3.5-sonnet`, `openai/gpt-4o` | `Bearer <OPENROUTER_API_KEY>` | `https://openrouter.ai/api/v1` |
 
 ### Armazenamento de Chaves de API (Segurança)
 - Tabela SQLite: `ai_settings`
   - `id`: INTEGER PRIMARY KEY (1)
   - `active_provider`: TEXT (`openai`, `anthropic`, `openrouter`)
-  - `selected_model`: TEXT (ex: `deepseek/deepseek-v4-pro`)
+  - `selected_model`: TEXT (ex: `deepseek/deepseek-v4-flash-0731`)
   - `openai_api_key`: TEXT (criptografado / obfuscated)
   - `anthropic_api_key`: TEXT (criptografado / obfuscated)
   - `openrouter_api_key`: TEXT (criptografado / obfuscated)
@@ -106,7 +106,7 @@ O **AI Context Builder** é a peça central responsável por varrer o banco de d
 CREATE TABLE IF NOT EXISTS ai_settings (
     id INTEGER PRIMARY KEY DEFAULT 1,
     active_provider TEXT DEFAULT 'openrouter',
-    selected_model TEXT DEFAULT 'deepseek/deepseek-v4-pro',
+    selected_model TEXT DEFAULT 'deepseek/deepseek-v4-flash-0731',
     openai_api_key TEXT,
     anthropic_api_key TEXT,
     openrouter_api_key TEXT,

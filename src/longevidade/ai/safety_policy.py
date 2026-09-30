@@ -20,6 +20,41 @@ class TrainingSafetyDecision:
     energy: Mapping[str, Any]
 
 
+def resolve_today_metric_with_rhr_fallback(
+    today_metric: Mapping[str, Any] | None,
+    history_metrics: list[Mapping[str, Any]],
+) -> tuple[dict[str, Any] | None, bool]:
+    """Se a noite foi monitorada (VFC e Sono presentes) mas o RHR ainda não consolidou na nuvem,
+
+    utiliza como projeção transitória o RHR mais recente verificado no histórico.
+    Retorna uma tupla (métrica_resolvida, foi_projetado).
+    """
+    if not today_metric:
+        return None, False
+
+    if today_metric.get("rhr_bpm") is not None:
+        return dict(today_metric), False
+
+    has_night_monitoring = (
+        today_metric.get("hrv_ms") is not None
+        and today_metric.get("sleep_minutes") is not None
+    )
+    if not has_night_monitoring:
+        return dict(today_metric), False
+
+    recent_rhr = next(
+        (m.get("rhr_bpm") for m in history_metrics if m.get("rhr_bpm") is not None),
+        None,
+    )
+    if recent_rhr is not None:
+        cloned = dict(today_metric)
+        cloned["rhr_bpm"] = float(recent_rhr)
+        cloned["rhr_is_projected"] = True
+        return cloned, True
+
+    return dict(today_metric), False
+
+
 def evaluate_training_safety(
     guidance: Mapping[str, Any], energy: Mapping[str, Any]
 ) -> TrainingSafetyDecision:

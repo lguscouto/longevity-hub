@@ -46,6 +46,8 @@ function mockAISettings(settings: Record<string, unknown> = {}) {
       }
     }
     if (path === '/api/ai/history') return []
+    if (path === '/api/ai/reports/latest') return { status: 'empty', result: null }
+    if (path === '/api/ai/reports') return []
     if (path === '/api/ai/generate-insights' && init?.method === 'POST') {
       return { result: { summary: 'Resumo fake de teste', insights: [] } }
     }
@@ -84,7 +86,7 @@ describe('AICopilotView external AI privacy consent', () => {
     renderCopilot()
     await screen.findByRole('status', { name: /envio para ia externa/i })
 
-    await user.click(screen.getByRole('button', { name: /analisar saúde 30 dias/i }))
+    await user.click(screen.getByRole('button', { name: /mês \(30d\)/i }))
 
     expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('OPENAI'))
     expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('gpt-4o-mini'))
@@ -127,5 +129,166 @@ describe('AICopilotView external AI privacy consent', () => {
     expect(confirmSpy).toHaveBeenCalled()
     const chatCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/chat' && init?.method === 'POST')
     expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({ prompt: 'Pergunta fake sem dados reais' })
+  })
+
+  it('sends prompt when clicking contextual quick prompt button like Padrões Aprendidos', async () => {
+    const user = userEvent.setup()
+    mockAISettings()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    renderCopilot()
+    const btn = await screen.findByRole('button', { name: /🎯 padrões aprendidos/i })
+    await user.click(btn)
+
+    await waitFor(() => {
+      expect(postedTo('/api/ai/chat')).toBe(true)
+    })
+    expect(confirmSpy).toHaveBeenCalled()
+    const chatCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/chat' && init?.method === 'POST')
+    expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({
+      prompt: 'Quais padrões e correlações pessoais foram detectados no meu histórico?',
+    })
+  })
+
+  it('renders dynamic progress feedback and allows canceling insight generation', async () => {
+    const user = userEvent.setup()
+    let resolveInsightsPromise: (val: any) => void = () => {}
+    const insightsPromise = new Promise(resolve => {
+      resolveInsightsPromise = resolve
+    })
+
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') {
+        return {
+          active_provider: 'openrouter',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          has_openrouter_key: true,
+        }
+      }
+      if (path === '/api/ai/history') return []
+      if (path === '/api/ai/reports/latest') return { status: 'empty', result: null }
+      if (path === '/api/ai/reports') return []
+      if (path === '/api/ai/generate-insights' && init?.method === 'POST') {
+        return await insightsPromise
+      }
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    renderCopilot()
+    await screen.findByRole('status', { name: /envio para ia externa/i })
+
+    const generateBtn = screen.getByRole('button', { name: /mês \(30d\)/i })
+    await user.click(generateBtn)
+
+    // Progress feedback and timer should be visible
+    expect(await screen.findByText(/tempo decorrido:/i)).toBeInTheDocument()
+    expect(screen.getByText(/etapa 1 de 4/i)).toBeInTheDocument()
+
+    const cancelBtn = screen.getByRole('button', { name: /cancelar análise/i })
+    expect(cancelBtn).toBeInTheDocument()
+
+    await user.click(cancelBtn)
+
+    expect(await screen.findByText(/análise interrompida pelo usuário/i)).toBeInTheDocument()
+    resolveInsightsPromise({ result: { summary: 'Ignorado', insights: [] } })
+  })
+
+  it('posts weekly 7-day insights with time_window="7d" when clicking Semana (7d)', async () => {
+    const user = userEvent.setup()
+    mockAISettings()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    renderCopilot()
+    await screen.findByRole('status', { name: /envio para ia externa/i })
+
+    const weeklyBtn = screen.getByRole('button', { name: /semana \(7d\)/i })
+    await user.click(weeklyBtn)
+
+    await waitFor(() => {
+      expect(postedTo('/api/ai/generate-insights')).toBe(true)
+    })
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('média semanal (últimos 7 dias)'))
+    const postCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/generate-insights' && init?.method === 'POST')
+    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: '7d' })
+  })
+
+  it('posts today 24h insights with time_window="today" when clicking Hoje (24h)', async () => {
+    const user = userEvent.setup()
+    mockAISettings()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    renderCopilot()
+    await screen.findByRole('status', { name: /envio para ia externa/i })
+
+    const todayBtn = screen.getByRole('button', { name: /hoje \(24h\)/i })
+    await user.click(todayBtn)
+
+    await waitFor(() => {
+      expect(postedTo('/api/ai/generate-insights')).toBe(true)
+    })
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('prontidão de hoje'))
+    const postCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/generate-insights' && init?.method === 'POST')
+    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: 'today' })
+  })
+
+  it('loads and renders the saved latest report on mount with metadata badge', async () => {
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') {
+        return {
+          active_provider: 'openrouter',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          has_openrouter_key: true,
+        }
+      }
+      if (path === '/api/ai/history') return []
+      if (path === '/api/ai/reports/latest') {
+        return {
+          id: 42,
+          created_at: '2026-09-28T16:00:00Z',
+          provider: 'openrouter',
+          model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          summary: 'Paciente com excelente recuperação autonômica',
+          result: {
+            summary: 'Paciente com excelente recuperação autonômica',
+            insights: [
+              {
+                category: 'sono_hrv',
+                headline: 'HRV Noturna Elevada',
+                insight_text: 'Média de HRV de 78ms nos últimos 30 dias.',
+                actionable_steps: 'Manter a consistência de horário.',
+              },
+            ],
+          },
+        }
+      }
+      if (path === '/api/ai/reports') {
+        return [
+          {
+            id: 42,
+            created_at: '2026-09-28T16:00:00Z',
+            provider: 'openrouter',
+            model: 'deepseek/deepseek-v4-flash-0731',
+            privacy_mode: 'minimal',
+            summary: 'Paciente com excelente recuperação autonômica',
+          },
+        ]
+      }
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    renderCopilot()
+
+    expect(await screen.findByText('HRV Noturna Elevada')).toBeInTheDocument()
+    expect(screen.getByText(/Média de HRV de 78ms/)).toBeInTheDocument()
+    expect(screen.getAllByText(/deepseek-v4-flash-0731/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/Histórico de Relatórios \(1\)/i)).toBeInTheDocument()
+    expect(screen.queryByText(/nenhuma análise ativa na tela/i)).not.toBeInTheDocument()
   })
 })

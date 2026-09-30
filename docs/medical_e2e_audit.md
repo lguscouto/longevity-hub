@@ -15,7 +15,7 @@
 | **Metabolismo & CGM** | Sensor de Glicemia Contínua (Glicemia Média 24h, Time-in-Range 70-140, CV% de variabilidade) | ⭐⭐⭐⭐⭐ (Completo) |
 | **Exames de Sangue** | Catálogo com 35+ biomarcadores categorizados nas 8 áreas médicas vitais | ⭐⭐⭐⭐ (Excelente) |
 | **Metodologia Científica** | Testes N-of-1 controlados (Cálculo de d de Cohen, valor p e significância estatística) | ⭐⭐⭐⭐⭐ (Diferencial Único) |
-| **Copiloto de IA** | Análise integrativa multi-provedor (OpenAI, Anthropic, OpenRouter com DeepSeek v4 Pro) com contexto diário de 14 dias | ⭐⭐⭐⭐⭐ (Estado da Arte) |
+| **Copiloto de IA** | Análise integrativa multi-provedor (OpenAI, Anthropic, OpenRouter com DeepSeek v4 Flash) com contexto diário de 14 dias | ⭐⭐⭐⭐⭐ (Estado da Arte) |
 
 ---
 

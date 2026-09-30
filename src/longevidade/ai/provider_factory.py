@@ -11,7 +11,7 @@ import urllib.error
 from typing import Any, Dict, Optional, Tuple
 
 
-def _http_post(url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: int = 45) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+def _http_post(url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: int = 180) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """Helper genérico para requisições HTTP POST codificadas em JSON."""
     try:
         data_bytes = json.dumps(payload).encode("utf-8")
@@ -90,14 +90,19 @@ class OpenRouterProvider:
             "HTTP-Referer": "http://127.0.0.1:8887",
             "X-Title": "Longevidade Hub"
         }
-        payload = {
-            "model": model or "deepseek/deepseek-v4-pro",
+        chosen_model = model or "deepseek/deepseek-v4-flash-0731"
+        payload: Dict[str, Any] = {
+            "model": chosen_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "temperature": 0.3
+            "temperature": 0.3,
+            "max_tokens": 3000
         }
+        if "deepseek" in chosen_model.lower():
+            payload["reasoning"] = {"effort": "medium"}
+
         res, err = _http_post(url, headers, payload)
         if err:
             return None, err

@@ -41,7 +41,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
       if (path === '/api/ai/settings') {
         return {
           active_provider: 'openrouter',
-          selected_model: 'deepseek/deepseek-v4-pro',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
           privacy_mode: 'full',
           has_openrouter_key: true,
           openrouter_api_key_masked: 'FAKE_MASKED_OPENROUTER_KEY_FOR_TESTS',
@@ -71,7 +71,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     const body = JSON.parse(String(postCall?.[1]?.body))
     expect(body).toMatchObject({
       active_provider: 'openrouter',
-      selected_model: 'deepseek/deepseek-v4-pro',
+      selected_model: 'deepseek/deepseek-v4-flash-0731',
       privacy_mode: 'minimal',
       openrouter_api_key: 'FAKE_MASKED_OPENROUTER_KEY_FOR_TESTS',
     })
@@ -110,7 +110,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
       const path = String(input)
       if (path === '/api/ai/settings') {
-        return { active_provider: 'openrouter', selected_model: 'deepseek/deepseek-v4-pro' }
+        return { active_provider: 'openrouter', selected_model: 'deepseek/deepseek-v4-flash-0731' }
       }
       throw new Error(`Unexpected request in test: ${path}`)
     })
@@ -143,7 +143,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
       if (path === '/api/ai/settings') {
         return {
           active_provider: 'openrouter',
-          selected_model: 'deepseek/deepseek-v4-pro',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
           privacy_mode: 'minimal',
           has_openrouter_key: true,
           openrouter_api_key_masked: 'sk-or-v1-fake-openrouter-key',
@@ -157,7 +157,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     // Initially OpenRouter is active
     expect(await screen.findByText('Ativo: OpenRouter')).toBeInTheDocument()
     const modelSelect = screen.getByRole('combobox', { name: /modelo de ia selecionado/i })
-    expect(modelSelect).toHaveValue('deepseek/deepseek-v4-pro')
+    expect(modelSelect).toHaveValue('deepseek/deepseek-v4-flash-0731')
 
     // Click OpenAI provider button
     const openaiBtn = screen.getByRole('button', { name: /openai/i })

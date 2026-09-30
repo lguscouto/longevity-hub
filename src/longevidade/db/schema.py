@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS pipeline_run (
 CREATE TABLE IF NOT EXISTS ai_settings (
     id INTEGER PRIMARY KEY DEFAULT 1,
     active_provider TEXT DEFAULT 'openrouter',
-    selected_model TEXT DEFAULT 'deepseek/deepseek-v4-pro',
+    selected_model TEXT DEFAULT 'deepseek/deepseek-v4-flash-0731',
     openai_api_key TEXT,
     anthropic_api_key TEXT,
     openrouter_api_key TEXT,
@@ -245,6 +245,21 @@ CREATE TABLE IF NOT EXISTS ai_insights_history (
     user_prompt TEXT,
     tokens_used INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS ai_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    privacy_mode TEXT NOT NULL,
+    time_window TEXT DEFAULT '30d',
+    summary TEXT NOT NULL,
+    report_json TEXT NOT NULL,
+    guardrail_applied INTEGER DEFAULT 0,
+    safety_reason TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_reports_created ON ai_reports(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS physical_assessments (
     id TEXT PRIMARY KEY,
@@ -550,7 +565,7 @@ def initialize_db(db_path: str | Path) -> None:
         # Garante linha inicial no user_profile se vazia
         conn.execute("INSERT OR IGNORE INTO user_profile (id, name) VALUES (1, 'Paciente');")
         # Garante linha inicial nas configurações de IA se vazia
-        conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-pro');")
+        conn.execute("INSERT OR IGNORE INTO ai_settings (id, active_provider, selected_model) VALUES (1, 'openrouter', 'deepseek/deepseek-v4-flash-0731');")
 
         # Garante inserção de suplementos básicos de longevidade se a tabela estiver vazia
         count_supps = conn.execute("SELECT COUNT(*) FROM supplement_stack;").fetchone()[0]

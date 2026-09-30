@@ -247,7 +247,7 @@ MIGRATIONS: Sequence[Migration] = (
             CREATE TABLE IF NOT EXISTS ai_settings (
                 id INTEGER PRIMARY KEY DEFAULT 1,
                 active_provider TEXT DEFAULT 'openrouter',
-                selected_model TEXT DEFAULT 'deepseek/deepseek-v4-pro',
+                selected_model TEXT DEFAULT 'deepseek/deepseek-v4-flash-0731',
                 openai_api_key TEXT,
                 anthropic_api_key TEXT,
                 openrouter_api_key TEXT,
@@ -646,6 +646,40 @@ MIGRATIONS: Sequence[Migration] = (
             "ALTER TABLE personal_associations ADD COLUMN metadata_json TEXT;",
         ),
     ),
+    Migration(
+        version=13,
+        name="update_openrouter_deepseek_model_v4_flash",
+        statements=(
+            "UPDATE ai_settings SET selected_model = 'deepseek/deepseek-v4-flash-0731' WHERE selected_model = 'deepseek/deepseek-v4-pro';",
+        ),
+    ),
+    Migration(
+        version=14,
+        name="create_ai_reports_table",
+        statements=(
+            """
+            CREATE TABLE IF NOT EXISTS ai_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                provider TEXT NOT NULL,
+                model TEXT NOT NULL,
+                privacy_mode TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                report_json TEXT NOT NULL,
+                guardrail_applied INTEGER DEFAULT 0,
+                safety_reason TEXT
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_ai_reports_created ON ai_reports(created_at DESC);",
+        ),
+    ),
+    Migration(
+        version=15,
+        name="add_time_window_to_ai_reports",
+        statements=(
+            "ALTER TABLE ai_reports ADD COLUMN time_window TEXT DEFAULT '30d';",
+        ),
+    ),
 )
 
 
@@ -671,7 +705,7 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
                     except sqlite3.OperationalError as exc:
                         # Permite colunas já existentes se banco baseline for legado ou tabelas ausentes em fixtures sintéticas
                         err_msg = str(exc).lower()
-                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg or "user_profile" in err_msg)):
+                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg or "user_profile" in err_msg or "ai_settings" in err_msg)):
                             continue
                         raise exc
                 conn.execute(f"PRAGMA user_version = {migration.version};")

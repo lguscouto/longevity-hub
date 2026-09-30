@@ -8,10 +8,13 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from longevidade.ai.provider_factory import generate_llm_response
+from longevidade.ai.secrets_store import AISecretsStore
 from longevidade.context.associations import ContextExplanation
+from longevidade.db.repository import LongevityRepository
 
 
 def format_deterministic_explanation(exp: ContextExplanation) -> str:
@@ -41,6 +44,8 @@ def format_deterministic_explanation(exp: ContextExplanation) -> str:
 def synthesize_explanation_with_ai(
     exp: ContextExplanation,
     conn: sqlite3.Connection,
+    db_path: Optional[str | Path] = None,
+    secrets_store: Optional[AISecretsStore] = None,
 ) -> Dict[str, Any]:
     """Sintetiza a explicação contextual utilizando o provedor de IA configurado.
 
@@ -69,12 +74,28 @@ def synthesize_explanation_with_ai(
         }
 
     provider = str(row[0] or "openrouter").lower()
-    model = str(row[1] or "deepseek/deepseek-v4-pro")
-    openai_key = row[2] or ""
-    anthropic_key = row[3] or ""
-    openrouter_key = row[4] or ""
+    model = str(row[1] or "deepseek/deepseek-v4-flash-0731")
 
-    api_key = openrouter_key if provider == "openrouter" else (openai_key if provider == "openai" else anthropic_key)
+    # Recupera a chave real do cofre via LongevityRepository
+    api_key = ""
+    try:
+        resolved_db_path = db_path
+        if not resolved_db_path:
+            db_row = conn.execute("PRAGMA database_list;").fetchone()
+            if db_row and db_row[2]:
+                resolved_db_path = db_row[2]
+        if resolved_db_path:
+            repo = LongevityRepository(resolved_db_path, secrets_store=secrets_store)
+            api_key = repo.get_ai_secret(provider) or ""
+    except Exception:
+        api_key = ""
+
+    # Fallback em colunas legadas do SQLite se não encontrada no cofre
+    if not api_key:
+        openai_key = row[2] or ""
+        anthropic_key = row[3] or ""
+        openrouter_key = row[4] or ""
+        api_key = openrouter_key if provider == "openrouter" else (openai_key if provider == "openai" else anthropic_key)
 
     if not api_key.strip():
         return {

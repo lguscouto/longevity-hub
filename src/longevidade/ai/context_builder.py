@@ -19,18 +19,32 @@ from longevidade.calculators.cardio_ratios import calculate_cardiovascular_ratio
 from longevidade.algorithms.daily_guidance import generate_daily_guidance
 from longevidade.calculators.energy_and_stress import calculate_energy_bank
 from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
+from longevidade.ai.safety_policy import resolve_today_metric_with_rhr_fallback
 
 
-def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "minimal") -> str:
+def build_patient_clinical_context(
+    db_path: str | Path,
+    privacy_mode: str = "minimal",
+    time_window: str = "30d",
+) -> str:
     """Busca o estado clínico no SQLite e formata contexto para IA.
 
     `privacy_mode="minimal"` é o padrão seguro: remove identificadores diretos
     e reduz janelas detalhadas antes de enviar dados a provedores externos.
     `privacy_mode="full"` mantém o contexto histórico amplo para uso local/opt-in.
+    `time_window` define o horizonte analítico prioritário ("today", "7d", "30d").
     """
     normalized_privacy_mode = "full" if privacy_mode == "full" else "minimal"
     minimal_mode = normalized_privacy_mode == "minimal"
-    detail_daily_limit = 3 if minimal_mode else 14
+    norm_window = time_window if time_window in ("today", "7d", "30d") else "30d"
+
+    if norm_window == "today":
+        detail_daily_limit = 2
+    elif norm_window == "7d":
+        detail_daily_limit = 7
+    else:
+        detail_daily_limit = 3 if minimal_mode else 14
+
     compliance_detail_limit = 3 if minimal_mode else 7
     include_audit_history = not minimal_mode
 
@@ -55,8 +69,9 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
     today_metric = repo.get_daily_metric_by_date(today_str)
     all_60_metrics = repo.get_daily_metrics(days=60)
     history_metrics = [m for m in all_60_metrics if m.get("date_ref") and m["date_ref"] < today_str]
-    guidance_res = generate_daily_guidance(today_metric, history_metrics)
-    energy_res = calculate_energy_bank(today_metric)
+    resolved_today, rhr_projected = resolve_today_metric_with_rhr_fallback(today_metric, history_metrics)
+    guidance_res = generate_daily_guidance(resolved_today, history_metrics)
+    energy_res = calculate_energy_bank(resolved_today)
 
     # 1. Perfil Básico
     lines = ["=== PERFIL DO PACIENTE ==="]
@@ -83,6 +98,8 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
 
     # 1.1 Algoritmos Determinísticos & Trava de Segurança (Hoje)
     lines.append("\n=== ALGORITMOS DETERMINÍSTICOS E TRAVAS DE SEGURANÇA (HOJE) ===")
+    if rhr_projected and resolved_today and resolved_today.get("rhr_bpm") is not None:
+        lines.append(f"- Observação de RHR: O RHR de hoje ({resolved_today['rhr_bpm']:.0f} bpm) é uma projeção do dia anterior (D-1) enquanto aguarda consolidação do wearable.")
     lines.append(f"- Orientação Diária (Daily Guidance): estado='{guidance_res.get('state')}', score={guidance_res.get('score')}, confiança='{guidance_res.get('confidence')}'")
     lines.append(f"  Ação Recomendada: {guidance_res.get('primary_action')}")
     if guidance_res.get("limitations"):
@@ -110,6 +127,8 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
                 kdm_input[k] = float(v["value"])
     if daily_list and daily_list[0].get("rhr_bpm"):
         kdm_input["rhr_bpm"] = float(daily_list[0]["rhr_bpm"])
+    elif rhr_projected and resolved_today and resolved_today.get("rhr_bpm"):
+        kdm_input["rhr_bpm"] = float(resolved_today["rhr_bpm"])
 
     chrono_age_val = profile.get("chronological_age")
     if chrono_age_val is not None:
@@ -129,8 +148,8 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
         missing_text = ", ".join(missing[:6]) if missing else "indisponível"
         lines.append(f"- Klemera-Doubal (KDM) Age: indisponível ({kdm_res.get('reason', 'dados insuficientes')}) | Biomarcadores presentes: {kdm_res.get('biomarkers_count', 0)} | Faltando: {missing_text}")
 
-    # 3. Métricas Médias de Wearables (Últimos 30 dias)
-    lines.append("\n=== RESUMO DE WEARABLES (MÉDIAS DE 30 DIAS) ===")
+    # 3. Métricas Médias de Wearables (Janela Analítica: {norm_window.upper()})
+    lines.append(f"\n=== RESUMO DE WEARABLES (JANELA ANALÍTICA: {norm_window.upper()}) ===")
     if daily_list:
         valid_steps = [m['steps'] for m in daily_list if m.get('steps')]
         valid_hrv = [m['hrv_ms'] for m in daily_list if m.get('hrv_ms')]
@@ -140,6 +159,8 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
         valid_spo2 = [m['spo2_avg_pct'] for m in daily_list if m.get('spo2_avg_pct')]
         valid_resp = [m['respiratory_rate_rpm'] for m in daily_list if m.get('respiratory_rate_rpm')]
         valid_pai = [m['pai_score'] for m in daily_list if m.get('pai_score')]
+        valid_load = [m['training_load_daily'] for m in daily_list if m.get('training_load_daily')]
+        valid_rolling_load = [m['training_load_rolling'] for m in daily_list if m.get('training_load_rolling')]
 
         avg_steps = round(sum(valid_steps) / len(valid_steps)) if valid_steps else "Sem dados"
         avg_hrv = round(sum(valid_hrv) / len(valid_hrv), 1) if valid_hrv else "Sem dados"
@@ -149,13 +170,60 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
         avg_resp = f"{round(sum(valid_resp) / len(valid_resp), 1)} rpm" if valid_resp else "Sem dados"
         latest_pai = round(valid_pai[0], 1) if valid_pai else "Sem dados"
 
-        lines.append(f"Passos Médios: {avg_steps} passos/dia")
-        lines.append(f"HRV Noturna Média: {avg_hrv} ms")
-        lines.append(f"Frequência Cardíaca de Repouso (RHR): {avg_rhr} bpm")
-        lines.append(f"Sono Médio: {avg_sleep_h} horas/noite")
+        # Médias do microciclo semanal (7 dias) vs baseline de 30 dias
+        daily_7 = daily_list[:7]
+        v_steps_7 = [m['steps'] for m in daily_7 if m.get('steps')]
+        v_hrv_7 = [m['hrv_ms'] for m in daily_7 if m.get('hrv_ms')]
+        v_rhr_7 = [m['rhr_bpm'] for m in daily_7 if m.get('rhr_bpm')]
+        v_sleep_7 = [m['sleep_minutes'] for m in daily_7 if m.get('sleep_minutes')]
+        v_load_7 = [m['training_load_daily'] for m in daily_7 if m.get('training_load_daily')]
+
+        avg_steps_7 = round(sum(v_steps_7) / len(v_steps_7)) if v_steps_7 else None
+        avg_hrv_7 = round(sum(v_hrv_7) / len(v_hrv_7), 1) if v_hrv_7 else None
+        avg_rhr_7 = round(sum(v_rhr_7) / len(v_rhr_7), 1) if v_rhr_7 else None
+        avg_sleep_7_h = round(sum(v_sleep_7) / len(v_sleep_7) / 60, 1) if v_sleep_7 else None
+        avg_load_7 = round(sum(v_load_7) / len(v_load_7), 1) if v_load_7 else None
+
+        if norm_window == "7d":
+            lines.append("--- MÉDIAS DO MICROCICLO SEMANAL (7 DIAS) VS LINHA DE BASE (30 DIAS) ---")
+            if avg_hrv_7 is not None and isinstance(avg_hrv, (int, float)):
+                d_hrv = round(avg_hrv_7 - avg_hrv, 1)
+                lines.append(f"HRV Noturna Média (7d): {avg_hrv_7} ms (Linha de base 30d: {avg_hrv} ms | Delta: {'+' if d_hrv > 0 else ''}{d_hrv} ms)")
+            elif avg_hrv_7 is not None:
+                lines.append(f"HRV Noturna Média (7d): {avg_hrv_7} ms")
+
+            if avg_rhr_7 is not None and isinstance(avg_rhr, (int, float)):
+                d_rhr = round(avg_rhr_7 - avg_rhr, 1)
+                lines.append(f"Frequência Cardíaca de Repouso (7d): {avg_rhr_7} bpm (Linha de base 30d: {avg_rhr} bpm | Delta: {'+' if d_rhr > 0 else ''}{d_rhr} bpm)")
+            elif avg_rhr_7 is not None:
+                lines.append(f"Frequência Cardíaca de Repouso (7d): {avg_rhr_7} bpm")
+
+            if avg_sleep_7_h is not None and isinstance(avg_sleep_h, (int, float)):
+                d_slp = round(avg_sleep_7_h - avg_sleep_h, 1)
+                lines.append(f"Sono Médio (7d): {avg_sleep_7_h} h/noite (Linha de base 30d: {avg_sleep_h} h/noite | Delta: {'+' if d_slp > 0 else ''}{d_slp} h)")
+            elif avg_sleep_7_h is not None:
+                lines.append(f"Sono Médio (7d): {avg_sleep_7_h} h/noite")
+
+            if avg_steps_7 is not None:
+                lines.append(f"Passos Médios (7d): {avg_steps_7} passos/dia (Linha de base 30d: {avg_steps})")
+
+            if avg_load_7 is not None:
+                lines.append(f"Carga de Treino Média (7d - Carga Aguda): {avg_load_7}")
+        else:
+            lines.append(f"Passos Médios: {avg_steps} passos/dia")
+            lines.append(f"HRV Noturna Média: {avg_hrv} ms")
+            lines.append(f"Frequência Cardíaca de Repouso (RHR): {avg_rhr} bpm")
+            lines.append(f"Sono Médio: {avg_sleep_h} horas/noite")
+
         lines.append(f"SpO2 Oxigenação Média: {avg_spo2}")
         lines.append(f"Frequência Respiratória Média: {avg_resp}")
         lines.append(f"PAI Score Recente: {latest_pai}")
+
+        if valid_load and norm_window != "7d":
+            avg_ld = round(sum(valid_load) / len(valid_load), 1)
+            recent_ld = round(valid_load[0], 1)
+            roll_ld = round(valid_rolling_load[0], 1) if valid_rolling_load else "Sem dados"
+            lines.append(f"Carga de Treino: Aguda recente={recent_ld} | Média 30d={avg_ld} | Crônica (Rolling)={roll_ld}")
 
         if valid_bp:
             latest_bp = valid_bp[0]
@@ -174,6 +242,7 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
             bp_dia = m.get("diastolic_bp")
             bp_str = f"{bp_sys}/{bp_dia}" if (bp_sys and bp_dia) else "-"
             spo2 = f"{m.get('spo2_avg_pct')}%" if m.get("spo2_avg_pct") is not None else "-"
+            tl_part = f" | Carga: {round(m['training_load_daily'], 1)}" if m.get("training_load_daily") is not None else ""
 
             deep = m.get("sleep_deep_min") or "-"
             rem = m.get("sleep_rem_min") or "-"
@@ -181,10 +250,128 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
 
             lines.append(
                 f"- Data: {d_ref} | Sono Total: {slp_str} (Profundo: {deep}m, REM: {rem}m, Leve: {light}m) | "
-                f"HRV: {hrv} ms | RHR: {rhr} bpm | SpO2: {spo2} | Passos: {st} | PA: {bp_str}"
+                f"HRV: {hrv} ms | RHR: {rhr} bpm | SpO2: {spo2} | Passos: {st} | PA: {bp_str}{tl_part}"
             )
     else:
         lines.append("Nenhuma métrica diária sincronizada recente.")
+
+    # 3.1 Síntese de Treinos Recentes
+    workout_limit = 3 if minimal_mode else 10
+    try:
+        recent_workouts = repo.get_workouts(limit=workout_limit)
+    except Exception:
+        recent_workouts = []
+
+    if recent_workouts:
+        lines.append(f"\n=== HISTÓRICO DE TREINOS RECENTES (ÚLTIMOS {workout_limit} REGISTROS) ===")
+        for w in recent_workouts:
+            w_date = w.get("workout_date") or "N/A"
+            w_title = w.get("title")
+            w_act = w.get("activity_type")
+            if w_title and w_act and w_title != w_act:
+                w_name = f"{w_title} - {w_act}"
+            else:
+                w_name = w_title or w_act or "Treino"
+            details = []
+            if w.get("duration_min"):
+                details.append(f"{round(w['duration_min'])}m")
+            if w.get("calories"):
+                details.append(f"{round(w['calories'])} kcal")
+            if w.get("volume_kg") and w["volume_kg"] > 0:
+                vol_str = f"Volume: {round(w['volume_kg'])} kg"
+                if w.get("sets_count"):
+                    vol_str += f" ({w['sets_count']} séries"
+                    if w.get("reps_count"):
+                        vol_str += f", {w['reps_count']} reps"
+                    vol_str += ")"
+                details.append(vol_str)
+            if w.get("avg_hr"):
+                details.append(f"FC Média: {round(w['avg_hr'])} bpm")
+            src = w.get("source") or "App"
+            details.append(f"Origem: {src}")
+            lines.append(f"- Data: {w_date} | {w_name} ({' • '.join(details)})")
+
+    # 3.2 Linha do Tempo & Eventos de Contexto (Health Events)
+    event_limit = 3 if minimal_mode else 12
+    timeline_events = []
+    try:
+        with repo._get_connection() as conn:
+            cur = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='health_events';"
+            )
+            if cur.fetchone():
+                cur = conn.execute(
+                    """
+                    SELECT date_ref, time_ref, category, event_type, title, description, significance, source
+                    FROM health_events
+                    ORDER BY date_ref DESC, time_ref DESC
+                    LIMIT ?;
+                    """,
+                    (event_limit,),
+                )
+                timeline_events = [dict(row) for row in cur.fetchall()]
+    except Exception:
+        timeline_events = []
+
+    lines.append(f"\n=== EVENTOS DE CONTEXTO E LINHA DO TEMPO (ÚLTIMOS {event_limit} EVENTOS) ===")
+    if timeline_events:
+        for ev in timeline_events:
+            d = ev.get("date_ref") or "N/A"
+            cat = ev.get("category") or "evento"
+            tit = ev.get("title") or "Evento"
+            sig = ev.get("significance") or "normal"
+            if minimal_mode:
+                lines.append(f"- Data: {d} | [{cat.upper()}] {tit} (Significância: {sig})")
+            else:
+                desc = f": {ev['description']}" if ev.get("description") else ""
+                lines.append(f"- Data: {d} | [{cat.upper()}] {tit}{desc} (Significância: {sig})")
+    else:
+        lines.append("Nenhum evento registrado na Linha do Tempo recente.")
+
+    # 3.3 Padrões Fisiológicos Pessoais Aprendidos (Bayesian Engine)
+    learned_associations = []
+    try:
+        from longevidade.context.personal_associations import load_personal_associations
+
+        with repo._get_connection() as conn:
+            cur = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='personal_associations';"
+            )
+            if cur.fetchone():
+                learned_associations = load_personal_associations(
+                    conn, min_confidence="moderate", min_samples=3
+                )
+    except Exception:
+        learned_associations = []
+
+    lines.append("\n=== PADRÕES PESSOAIS E ASSOCIAÇÕES APRENDIDAS (HISTÓRICO DO PACIENTE) ===")
+    if learned_associations:
+        for a in learned_associations[:3 if minimal_mode else 7]:
+            lines.append(f"- [{a.confidence.upper()}] {a.evidence_text} [Amostras: n={a.sample_size}]")
+    else:
+        lines.append("Nenhum padrão pessoal com confiança moderada/alta consolidado até o momento.")
+
+    # 3.4 Quebras de Patamar Detectadas (Change Points)
+    change_points = []
+    try:
+        from longevidade.context.change_detection import load_change_points
+
+        with repo._get_connection() as conn:
+            cur = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='metric_change_points';"
+            )
+            if cur.fetchone():
+                change_points = load_change_points(conn, limit=5)
+    except Exception:
+        change_points = []
+
+    if change_points:
+        lines.append("\n=== QUEBRAS ESTRUTURAIS DE PATAMAR DETECTADAS (CHANGE POINTS) ===")
+        for cp in change_points:
+            lines.append(
+                f"- Data: {cp.date_ref} | Métrica: {cp.metric} | {cp.headline} "
+                f"(Delta: {cp.delta_percent:+.1f}%, Persistência: {cp.persisted_days} dias)"
+            )
 
     # 4. Exames Laboratoriais & Razões Cardiovasculares
     lines.append("\n=== EXAMES LABORATORIAIS & RAZÕES CARDIOVASCULARES ===")
@@ -248,6 +435,27 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
     else:
         lines.append("Nenhum registro recente de conformidade diária.")
 
+    # 6.1 Avaliações Físicas Recentes (Composição Corporal)
+    try:
+        assessments = repo.list_physical_assessments(limit=2)
+    except Exception:
+        assessments = []
+
+    if assessments:
+        lines.append("\n=== AVALIAÇÕES FÍSICAS RECENTES (COMPOSIÇÃO CORPORAL) ===")
+        for pa in assessments:
+            d_pa = pa.get("assessment_date") or "N/A"
+            parts = []
+            if pa.get("weight_kg"):
+                parts.append(f"Peso: {pa['weight_kg']} kg")
+            if pa.get("body_fat_percentage"):
+                parts.append(f"Gordura: {pa['body_fat_percentage']}%")
+            if pa.get("waist_cm"):
+                parts.append(f"Cintura: {pa['waist_cm']} cm")
+            if pa.get("abdomen_cm"):
+                parts.append(f"Abdômen: {pa['abdomen_cm']} cm")
+            lines.append(f"- Data: {d_pa} | {' | '.join(parts)}")
+
     # 7. Glicemia Contínua (CGM)
     lines.append("\n=== GLICEMIA CONTÍNUA (CGM) ===")
     if cgm_list:
@@ -263,5 +471,7 @@ def build_patient_clinical_context(db_path: str | Path, privacy_mode: str = "min
         lines.append("\n=== EXPERIMENTOS N-OF-1 ATIVOS ===")
         for exp in experiments[:1 if minimal_mode else 3]:
             lines.append(f"- Expresso: {exp.get('title')} | Métrica: {exp.get('metric_key')} | Status: {exp.get('status')}")
+            if not minimal_mode and exp.get("intervention_name"):
+                lines.append(f"  Intervenção testada: {exp.get('intervention_name')} (Monitorar balanço de covariáveis)")
 
     return "\n".join(lines)

@@ -1,4 +1,5 @@
 import gc
+import json
 import os
 import sqlite3
 import tempfile
@@ -28,7 +29,7 @@ def test_ai_db_settings_and_history():
         # 1. Configurações de IA Padrão sem segredos em texto claro
         settings = repo.get_ai_settings()
         assert settings["active_provider"] == "openrouter"
-        assert settings["selected_model"] == "deepseek/deepseek-v4-pro"
+        assert settings["selected_model"] == "deepseek/deepseek-v4-flash-0731"
         assert settings["has_openai_key"] is False
         assert "openai_api_key" not in settings
 
@@ -154,7 +155,7 @@ def test_mock_llm_generation(mock_post):
     res, err = generate_llm_response(
         provider="openrouter",
         api_key="sk-or-v1-mockkey",
-        model="deepseek/deepseek-v4-pro",
+        model="deepseek/deepseek-v4-flash-0731",
         system_prompt="Prompt do sistema",
         user_prompt="Prompt do usuário"
     )
@@ -187,4 +188,106 @@ def test_test_connection_falls_back_to_secret_store(client, monkeypatch):
             api_key="stored-secret-key",
             model="gpt-4o",
         )
+
+
+def test_ai_reports_endpoints(client, monkeypatch):
+    from backend.app.config import get_db_path
+
+    repo = LongevityRepository(get_db_path())
+
+    # 1. Quando vazio
+    res = client.get("/api/ai/reports/latest")
+    assert res.status_code == 200
+    assert res.json() == {"status": "empty", "result": None}
+
+    # 2. Salva um relatório
+    report_id = repo.save_ai_report({
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731",
+        "privacy_mode": "minimal",
+        "summary": "Excelente recuperação autonômica.",
+        "report_json": {
+            "summary": "Excelente recuperação autonômica.",
+            "insights": [
+                {
+                    "category": "sono_hrv",
+                    "headline": "HRV Alta",
+                    "insight_text": "HRV de 75ms.",
+                    "actionable_steps": "Mantenha o horário de sono."
+                }
+            ]
+        }
+    })
+    assert report_id > 0
+
+    # 3. Consulta latest
+    res_latest = client.get("/api/ai/reports/latest")
+    assert res_latest.status_code == 200
+    payload = res_latest.json()
+    assert payload["id"] == report_id
+    assert payload["summary"] == "Excelente recuperação autonômica."
+    assert payload["result"]["insights"][0]["headline"] == "HRV Alta"
+
+    # 4. Lista relatórios
+    res_list = client.get("/api/ai/reports")
+    assert res_list.status_code == 200
+    assert len(res_list.json()) == 1
+
+    # 5. Consulta por id
+    res_single = client.get(f"/api/ai/reports/{report_id}")
+    assert res_single.status_code == 200
+    assert res_single.json()["id"] == report_id
+
+
+def test_generate_insights_with_time_windows(client, monkeypatch):
+    from backend.app.config import get_db_path
+    from backend.app.routers import ai as ai_router
+    from longevidade.ai.safety_policy import TrainingSafetyDecision
+
+    secret_store = MemorySecretsStore()
+    secret_store.set("openrouter", "mock-openrouter-key")
+    monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
+    monkeypatch.setattr(
+        ai_router,
+        "_current_training_safety",
+        lambda repo: TrainingSafetyDecision(
+            restricted=False,
+            reason_code=None,
+            guidance={"state": "green", "confidence": "high"},
+            energy={"status": "optimal"},
+        ),
+    )
+
+    mock_llm_response = (
+        json.dumps({
+            "summary": "Análise semanal positiva.",
+            "insights": [
+                {
+                    "category": "sono_hrv",
+                    "headline": "Semana com bom sono",
+                    "insight_text": "Média de 7.8h de sono.",
+                    "actionable_steps": "Continue a rotina.",
+                }
+            ],
+        }),
+        None,
+    )
+
+    with patch("backend.app.routers.ai.generate_llm_response", return_value=mock_llm_response) as mock_llm:
+        res = client.post("/api/ai/generate-insights", json={"time_window": "7d"})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["time_window"] == "7d"
+        assert data["id"] > 0
+        assert data["result"]["summary"] == "Análise semanal positiva."
+
+        call_kwargs = mock_llm.call_args[1]
+        assert "MÉDIA SEMANAL" in call_kwargs["user_prompt"]
+
+        repo = LongevityRepository(get_db_path())
+        saved_report = repo.get_ai_report_by_id(data["id"])
+        assert saved_report["time_window"] == "7d"
+
+
 

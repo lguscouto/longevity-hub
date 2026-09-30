@@ -45,11 +45,15 @@ from longevidade.context.timeline import (
 )
 
 
+from longevidade.ai.secrets_store import AISecretsStore
+
+
 class TimelineContextService:
     """Orquestrador do motor de Linha do Tempo e Contexto."""
 
-    def __init__(self, db_path: str | Path):
+    def __init__(self, db_path: str | Path, secrets_store: Optional[AISecretsStore] = None):
         self.db_path = Path(db_path)
+        self.secrets_store = secrets_store
         from longevidade.db.schema import initialize_db
         initialize_db(self.db_path)
 
@@ -256,7 +260,9 @@ class TimelineContextService:
 
         explanation = self.explain_change(metric, target_date)
         with self._get_connection() as conn:
-            return synthesize_explanation_with_ai(explanation, conn)
+            return synthesize_explanation_with_ai(
+                explanation, conn, db_path=self.db_path, secrets_store=self.secrets_store
+            )
 
     def record_insight_feedback(
         self,
@@ -431,11 +437,16 @@ class TimelineContextService:
 _SERVICE_INSTANCE: Optional[TimelineContextService] = None
 
 
-def get_timeline_service(db_path: Optional[str | Path] = None) -> TimelineContextService:
+def get_timeline_service(
+    db_path: Optional[str | Path] = None,
+    secrets_store: Optional[AISecretsStore] = None,
+) -> TimelineContextService:
     """Factory singleton para o serviço da Timeline."""
     global _SERVICE_INSTANCE
-    if db_path is not None:
-        _SERVICE_INSTANCE = TimelineContextService(db_path)
+    if db_path is not None or secrets_store is not None:
+        from backend.app.config import get_db_path
+        resolved_path = db_path if db_path is not None else get_db_path()
+        _SERVICE_INSTANCE = TimelineContextService(resolved_path, secrets_store=secrets_store)
     elif _SERVICE_INSTANCE is None:
         from backend.app.config import get_db_path
         _SERVICE_INSTANCE = TimelineContextService(get_db_path())

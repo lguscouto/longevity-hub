@@ -44,7 +44,7 @@ describe('App', () => {
       if (path === '/api/supplements') return []
       if (path.startsWith('/api/supplements/logs/')) return []
       if (path === '/api/supplements/audit-logs') return []
-      if (path === '/api/ai/settings') return { active_provider: 'openrouter', selected_model: 'deepseek/deepseek-v4-pro', privacy_mode: 'minimal' }
+      if (path === '/api/ai/settings') return { active_provider: 'openrouter', selected_model: 'deepseek/deepseek-v4-flash-0731', privacy_mode: 'minimal' }
       if (path === '/api/ai/history') return []
       if (path === '/api/phenoage/history') return []
       if (path === '/api/kdm/latest') return { status: 'incomplete', missing_biomarkers: ['rhr_bpm'] }

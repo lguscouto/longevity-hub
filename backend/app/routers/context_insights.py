@@ -24,11 +24,13 @@ from longevidade.context.models import (
 from longevidade.context.service import TimelineContextService, get_timeline_service
 
 
+from backend.app.routers.ai import get_ai_secrets_store
+
 router = APIRouter(prefix="/api/context", tags=["Context Insights"])
 
 
 def _get_service() -> TimelineContextService:
-    return get_timeline_service(get_db_path())
+    return get_timeline_service(get_db_path(), secrets_store=get_ai_secrets_store())
 
 
 class InsightFeedbackPayload(BaseModel):

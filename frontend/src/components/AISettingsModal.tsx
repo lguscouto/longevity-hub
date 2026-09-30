@@ -56,7 +56,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
 
   // Estado de IA
   const [activeProvider, setActiveProvider] = useState<Provider>('openrouter')
-  const [selectedModel, setSelectedModel] = useState('deepseek/deepseek-v4-pro')
+  const [selectedModel, setSelectedModel] = useState('deepseek/deepseek-v4-flash-0731')
   const [privacyMode, setPrivacyMode] = useState<PrivacyMode>('minimal')
   const [openaiKey, setOpenaiKey] = useState('')
   const [anthropicKey, setAnthropicKey] = useState('')
@@ -87,7 +87,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
     void requestJson<SettingsPayload>('/api/ai/settings')
       .then((res) => {
         setActiveProvider(res.active_provider || 'openrouter')
-        setSelectedModel(res.selected_model || 'deepseek/deepseek-v4-pro')
+        setSelectedModel(res.selected_model || 'deepseek/deepseek-v4-flash-0731')
         setPrivacyMode(normalizePrivacyMode(res.privacy_mode))
 
         setHasOpenaiKey(Boolean(res.has_openai_key))
@@ -135,7 +135,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
       setKeyVal: setOpenrouterKey,
       hasKey: hasOpenrouterKey,
       placeholder: 'sk-or-v1-... ou mantenha mascarada',
-      description: 'Acesso a múltiplos modelos como DeepSeek v4 Pro, Gemini e Claude via roteador.',
+      description: 'Acesso a múltiplos modelos como DeepSeek v4 Flash, Gemini e Claude via roteador.',
       keyLabel: 'Chave API OpenRouter',
     },
     openai: {
@@ -383,7 +383,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                       type="button"
                       onClick={() => {
                         setActiveProvider(prov)
-                        if (prov === 'openrouter') setSelectedModel('deepseek/deepseek-v4-pro')
+                        if (prov === 'openrouter') setSelectedModel('deepseek/deepseek-v4-flash-0731')
                         if (prov === 'openai') setSelectedModel('gpt-4o')
                         if (prov === 'anthropic') setSelectedModel('claude-3-5-sonnet-20241022')
                       }}
@@ -424,7 +424,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
               >
                 {activeProvider === 'openrouter' && (
                   <>
-                    <option value="deepseek/deepseek-v4-pro">DeepSeek v4 Pro (Recomendado - Raciocínio Clínico)</option>
+                    <option value="deepseek/deepseek-v4-flash-0731">DeepSeek v4 Flash (Recomendado - Raciocínio Clínico)</option>
                     <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash (Ultra Rápido)</option>
                     <option value="deepseek/deepseek-r1">DeepSeek R1 (Raciocínio Profundo)</option>
                     <option value="anthropic/claude-3.5-sonnet">Anthropic Claude 3.5 Sonnet (via OpenRouter)</option>
