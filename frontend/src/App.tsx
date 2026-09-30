@@ -299,13 +299,14 @@ export default function App() {
     }
   }, [activeTab])
 
-  const handleSyncZepp = async () => {
+  const handleSyncZepp = async (full: boolean = false) => {
     setIsSyncing(true)
     setSyncResult(null)
     setIsSyncModalOpen(true)
 
     try {
-      const result = await requestJson<SyncResult>('/api/metrics/sync/zepp', { method: 'POST' })
+      const endpoint = full ? '/api/metrics/sync/zepp?full=true' : '/api/metrics/sync/zepp'
+      const result = await requestJson<SyncResult>(endpoint, { method: 'POST' })
       setSyncResult(result)
       if (result.status === 'ok') {
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
@@ -636,7 +637,16 @@ export default function App() {
             )}
           </main>
 
-          <AISettingsModal isOpen={showAISettings} onClose={() => setShowAISettings(false)} onRefreshSettings={fetchDashboardData} />
+          <AISettingsModal
+            isOpen={showAISettings}
+            onClose={() => setShowAISettings(false)}
+            onRefreshSettings={fetchDashboardData}
+            onSyncZeppFull={() => {
+              setShowAISettings(false)
+              void handleSyncZepp(true)
+            }}
+            isSyncingZepp={isSyncing}
+          />
           <GoogleHealthAuthModal
             isOpen={showGoogleHealthModal}
             onClose={() => setShowGoogleHealthModal(false)}

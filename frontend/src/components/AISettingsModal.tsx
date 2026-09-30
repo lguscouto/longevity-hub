@@ -23,6 +23,8 @@ interface AISettingsModalProps {
   isOpen: boolean
   onClose: () => void
   onRefreshSettings?: () => void
+  onSyncZeppFull?: () => void
+  isSyncingZepp?: boolean
 }
 
 type Provider = 'openai' | 'anthropic' | 'openrouter'
@@ -50,7 +52,13 @@ function normalizePrivacyMode(mode?: string): PrivacyMode {
   return mode === 'full' ? 'full' : 'minimal'
 }
 
-export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClose, onRefreshSettings }) => {
+export const AISettingsModal: React.FC<AISettingsModalProps> = ({
+  isOpen,
+  onClose,
+  onRefreshSettings,
+  onSyncZeppFull,
+  isSyncingZepp = false,
+}) => {
   const { theme, setTheme } = useTheme()
   const [modalTab, setModalTab] = useState<ModalTab>('ai')
 
@@ -703,7 +711,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Outras Integrações */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-emerald-500" />
@@ -716,6 +724,28 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
               <p className="text-[11px] text-slate-500">
                 Os dados de corrida, cardio e métricas diárias são importados diretamente dos snapshots do Zepp Life / Amazfit.
               </p>
+
+              {onSyncZeppFull && (
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-200/80 dark:border-slate-800/80">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Reimportação Histórica Total
+                    </span>
+                    <p className="text-[10px] text-slate-500">
+                      Baixa e reconcilia todo o histórico de atividades e métricas desde o início (2022).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onSyncZeppFull}
+                    disabled={isSyncingZepp}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition disabled:opacity-50 shrink-0"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${isSyncingZepp ? 'animate-spin' : ''}`} />
+                    {isSyncingZepp ? 'Sincronizando...' : 'Full Sync Zepp'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

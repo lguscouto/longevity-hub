@@ -191,5 +191,78 @@ describe('AISettingsModal privacy and key-vault settings', () => {
       openrouter_api_key: 'sk-or-v1-fake-openrouter-key',
     })
   })
+
+  it('renders Full Sync Zepp button in integrations tab and triggers onSyncZeppFull', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const onSyncZeppFull = vi.fn()
+
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') {
+        return {
+          active_provider: 'openrouter',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+        }
+      }
+      if (path === '/api/workouts/hevy/status') {
+        return { is_configured: false }
+      }
+      throw new Error(`Unexpected request in test: ${path}`)
+    })
+
+    renderModal({
+      isOpen: true,
+      onClose,
+      onSyncZeppFull,
+      isSyncingZepp: false,
+    })
+
+    // Navigate to Integrações tab
+    const integrationsTabBtn = screen.getByRole('button', { name: /integrações/i })
+    await user.click(integrationsTabBtn)
+
+    // Check Zepp section and Full Sync button
+    expect(screen.getByText('Zepp / Amazfit')).toBeInTheDocument()
+    expect(screen.getByText(/Reimportação Histórica Total/i)).toBeInTheDocument()
+
+    const fullSyncBtn = screen.getByRole('button', { name: /full sync zepp/i })
+    expect(fullSyncBtn).toBeEnabled()
+
+    await user.click(fullSyncBtn)
+    expect(onSyncZeppFull).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables Full Sync Zepp button when isSyncingZepp is true', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const onSyncZeppFull = vi.fn()
+
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') {
+        return { active_provider: 'openrouter' }
+      }
+      if (path === '/api/workouts/hevy/status') {
+        return { is_configured: false }
+      }
+      throw new Error(`Unexpected request in test: ${path}`)
+    })
+
+    renderModal({
+      isOpen: true,
+      onClose,
+      onSyncZeppFull,
+      isSyncingZepp: true,
+    })
+
+    // Navigate to Integrações tab
+    const integrationsTabBtn = screen.getByRole('button', { name: /integrações/i })
+    await user.click(integrationsTabBtn)
+
+    const fullSyncBtn = screen.getByRole('button', { name: /sincronizando\.\.\./i })
+    expect(fullSyncBtn).toBeDisabled()
+  })
 })
 

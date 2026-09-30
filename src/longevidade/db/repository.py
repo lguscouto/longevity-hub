@@ -229,6 +229,18 @@ class LongevityRepository:
             row = conn.execute(sql, (date_ref,)).fetchone()
             return dict(row) if row else None
 
+    def get_latest_daily_metric_date(self, source: Optional[str] = None) -> Optional[str]:
+        """Retorna a data (date_ref) mais recente registrada em daily_metrics."""
+        if source:
+            sql = "SELECT MAX(date_ref) FROM daily_metrics WHERE source = ?;"
+            params: tuple[Any, ...] = (source,)
+        else:
+            sql = "SELECT MAX(date_ref) FROM daily_metrics;"
+            params = ()
+        with self._get_connection() as conn:
+            row = conn.execute(sql, params).fetchone()
+            return str(row[0]) if row and row[0] is not None else None
+
     # --- DAILY METRIC QUALITY ---
     def save_daily_metric_quality(self, items: List[Dict[str, Any]]) -> None:
         import json
@@ -1160,6 +1172,30 @@ class LongevityRepository:
         with self._get_connection() as conn:
             row = conn.execute(sql).fetchone()
             return row[0] if row else 0
+
+    def get_latest_workout_date(self, source: Optional[str] = None) -> Optional[str]:
+        """Retorna a data (workout_date) mais recente registrada em workouts."""
+        if source:
+            sql = "SELECT MAX(workout_date) FROM workouts WHERE source = ?;"
+            params: tuple[Any, ...] = (source,)
+        else:
+            sql = "SELECT MAX(workout_date) FROM workouts;"
+            params = ()
+        with self._get_connection() as conn:
+            row = conn.execute(sql, params).fetchone()
+            return str(row[0]) if row and row[0] is not None else None
+
+    def get_latest_workout_track_id(self, source: Optional[str] = "Zepp") -> Optional[int]:
+        """Retorna o maior trackid numérico de treino registrado."""
+        if source:
+            sql = "SELECT MAX(CAST(id AS INTEGER)) FROM workouts WHERE source = ? AND CAST(id AS INTEGER) > 0;"
+            params: tuple[Any, ...] = (source,)
+        else:
+            sql = "SELECT MAX(CAST(id AS INTEGER)) FROM workouts WHERE CAST(id AS INTEGER) > 0;"
+            params = ()
+        with self._get_connection() as conn:
+            row = conn.execute(sql, params).fetchone()
+            return int(row[0]) if row and row[0] is not None else None
 
     def upsert_workouts(self, workouts: List[Dict[str, Any]]) -> int:
         if not workouts:

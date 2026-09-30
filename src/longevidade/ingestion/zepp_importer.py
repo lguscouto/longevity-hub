@@ -198,7 +198,7 @@ def _map_workout_category(activity_type: int) -> str:
     return "Outros"
 
 
-def parse_zepp_workouts(data_dir: Path | str) -> list[dict[str, Any]]:
+def parse_zepp_workouts(data_dir: Path | str, since_date: str | date | None = None) -> list[dict[str, Any]]:
     """Extrai e normaliza treinos individuais de workout_history.json."""
     data_path = Path(data_dir)
     history_path = data_path / "workout_history.json"
@@ -220,6 +220,7 @@ def parse_zepp_workouts(data_dir: Path | str) -> list[dict[str, Any]]:
 
     workouts: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+    since_date_str = str(since_date)[:10] if since_date is not None else None
 
     for item in summaries:
         if not isinstance(item, dict):
@@ -259,6 +260,9 @@ def parse_zepp_workouts(data_dir: Path | str) -> list[dict[str, Any]]:
             workout_date = local_dt.date().isoformat()
             workout_time = local_dt.strftime("%H:%M")
         except (TypeError, ValueError, OSError):
+            continue
+
+        if since_date_str and workout_date < since_date_str:
             continue
 
         try:
@@ -368,8 +372,27 @@ def import_zepp_data(
 
     Retorna um dicionário ImportResult com diagnóstico completo.
     """
+    today = date.today()
     if days is None:
-        days = max(365, (date.today() - date(2026, 1, 1)).days + 1)
+        if full:
+            days = max(365, (today - date(2026, 1, 1)).days + 1)
+        else:
+            latest_metric_date = None
+            if hasattr(repo, "get_latest_daily_metric_date"):
+                try:
+                    latest_metric_date = repo.get_latest_daily_metric_date(source="Zepp")
+                except Exception:
+                    latest_metric_date = None
+
+            if latest_metric_date:
+                try:
+                    last_d = date.fromisoformat(latest_metric_date[:10])
+                    delta = (today - last_d).days
+                    days = max(2, delta + 2)
+                except Exception:
+                    days = 7
+            else:
+                days = max(365, (today - date(2026, 1, 1)).days + 1)
 
     data_dir = Path(zepp_data_dir)
     if not data_dir.exists():
@@ -557,7 +580,18 @@ def import_zepp_data(
                 records_rejected += 1
 
         # Ingestão e persistência de treinos individuais
-        parsed_workouts = parse_zepp_workouts(data_dir)
+        since_date = None
+        has_existing_workouts = False
+        if hasattr(repo, "count_workouts"):
+            try:
+                has_existing_workouts = repo.count_workouts() > 0
+            except Exception:
+                has_existing_workouts = False
+
+        if not full and has_existing_workouts and days is not None:
+            since_date = (today - timedelta(days=days + 1)).isoformat()
+
+        parsed_workouts = parse_zepp_workouts(data_dir, since_date=since_date)
         workouts_inserted = repo.upsert_workouts(parsed_workouts)
 
         result = _make_result(

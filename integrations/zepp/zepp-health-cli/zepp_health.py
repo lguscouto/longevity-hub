@@ -608,6 +608,11 @@ def cmd_run_history(args: argparse.Namespace) -> None:
     # all workouts. The API paginates internally via startTrackId/stopTrackId.
     stop_track_id = int(datetime.now(timezone.utc).timestamp())
     start_track_id = 0
+    if getattr(args, "start_track_id", None) is not None:
+        start_track_id = int(args.start_track_id)
+    elif getattr(args, "days", None) is not None and args.days > 0:
+        start_track_id = max(0, int((datetime.now(timezone.utc) - timedelta(days=args.days)).timestamp()))
+
     sport = getattr(args, "sport", "run") or "run"
     data = c.sport_history(sport, start_track_id, stop_track_id)
     _emit_json(data, args)
@@ -974,6 +979,18 @@ def main() -> None:
         "--sport",
         default="run",
         help="URL segment: run, walking, ride, swimming, … (default run)",
+    )
+    sp.add_argument(
+        "--start-track-id",
+        type=int,
+        default=None,
+        help="Start track ID (epoch timestamp in seconds) for incremental query",
+    )
+    sp.add_argument(
+        "--days",
+        type=int,
+        default=None,
+        help="Number of days back from now to fetch workouts",
     )
     sp.set_defaults(func=cmd_run_history)
 

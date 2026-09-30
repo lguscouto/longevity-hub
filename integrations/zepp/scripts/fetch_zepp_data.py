@@ -297,6 +297,35 @@ def calculate_incremental_days(
         return default_full
 
 
+def get_latest_workout_track_id(data_dir: Path | str | None = None) -> int | None:
+    """Retorna o trackid mais recente (em segundos) encontrado no workout_history.json existente."""
+    dir_path = Path(data_dir) if data_dir else DATA_DIR
+    history_file = dir_path / "workout_history.json"
+    if not history_file.is_file():
+        return None
+    data = safe_load_json(history_file)
+    if not isinstance(data, dict):
+        return None
+    summary = data.get("data", {}).get("summary") if isinstance(data.get("data"), dict) else None
+    if not isinstance(summary, list):
+        return None
+    max_track_id: int | None = None
+    for item in summary:
+        if not isinstance(item, dict):
+            continue
+        raw_id = item.get("trackid") or item.get("trackId")
+        if raw_id is not None:
+            try:
+                val = int(float(raw_id))
+                ts = int(val / 1000) if val > 1e11 else val
+                if ts > 0:
+                    if max_track_id is None or ts > max_track_id:
+                        max_track_id = ts
+            except (TypeError, ValueError):
+                continue
+    return max_track_id
+
+
 def fetch_all_data(days: int | None = None, mode: str = "custom") -> dict:
     """Fetch all available data types and save to disk."""
     previous_manifest = _read_previous_manifest()
@@ -304,7 +333,7 @@ def fetch_all_data(days: int | None = None, mode: str = "custom") -> dict:
     start_time = time.time()
 
     if mode == "incremental":
-        fetch_days = calculate_incremental_days(DATA_DIR / "metadata.json")
+        fetch_days = days if days is not None else calculate_incremental_days(DATA_DIR / "metadata.json")
     elif mode == "full":
         fetch_days = days if days is not None else 365
     else:
@@ -339,7 +368,20 @@ def fetch_all_data(days: int | None = None, mode: str = "custom") -> dict:
     # ALL workout types (running, strength, cycling, walking, etc.)
     # distinguished by the "type" field in each summary entry.
     print("  🏃 Workout history...", end=" ", flush=True)
-    workouts = run_zepp_cmd("run-history")
+    if mode == "full":
+        workouts = run_zepp_cmd("run-history")
+    elif mode == "incremental":
+        latest_track_id = get_latest_workout_track_id(DATA_DIR)
+        if latest_track_id:
+            # Buffer de sobreposição de 2 dias (172800 s) para garantir captura de treinos
+            # sincronizados tardiamente ou consolidados com delay
+            start_track_id = max(0, latest_track_id - (2 * 86400))
+            workouts = run_zepp_cmd("run-history", "--start-track-id", str(start_track_id))
+        else:
+            workouts = run_zepp_cmd("run-history", "--days", str(fetch_days))
+    else:
+        workouts = run_zepp_cmd("run-history", "--days", str(fetch_days))
+
     save_json(workouts, "workout_history.json")
     w_count = len((workouts.get("data") or {}).get("summary") or [])
     print(f"{w_count} workouts")
