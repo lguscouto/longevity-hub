@@ -499,10 +499,6 @@ def merge_google_health_metrics(zepp_record: dict[str, Any], google_metrics: Any
     return record
 
 
-# Legacy alias mantido exclusivamente para retrocompatibilidade histórica externa (descontinuado)
-merge_google_fit_metrics = merge_google_health_metrics
-
-
 
 def _temperature_values(payload: dict[str, Any], reference: date) -> tuple[float | None, int | None]:
     for item in _items(payload):

@@ -216,7 +216,6 @@ def test_registry_daily_types_supported_operations():
         "heart-rate",
         "active-energy-burned",
         "distance",
-        "total-calories",
         "active-minutes",
     ]
     for dt in interval_types:
@@ -226,6 +225,12 @@ def test_registry_daily_types_supported_operations():
         assert GoogleHealthDataTypeRegistry.supports_operation(dt, "reconcile") is True
         assert GoogleHealthDataTypeRegistry.supports_operation(dt, "rollUp") is True
         assert GoogleHealthDataTypeRegistry.supports_operation(dt, "dailyRollUp") is True
+
+    # total-calories oficialmente suporta exclusivamente rollUp e dailyRollUp
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "list") is False
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "reconcile") is False
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "rollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "dailyRollUp") is True
 
 
 # ── P1.3: Webhook batches e resiliência ──────────────────────────────────────

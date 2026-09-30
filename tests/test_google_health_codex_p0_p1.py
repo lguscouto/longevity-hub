@@ -417,3 +417,53 @@ def test_legacy_production_sources_exclude_google_fit():
     assert "GoogleFit" not in ACTIVE_GOOGLE_HEALTH_SOURCES
     assert "GoogleHealthAPI" in ACTIVE_GOOGLE_HEALTH_SOURCES
     assert "GoogleHealth" in ACTIVE_GOOGLE_HEALTH_SOURCES
+
+
+def test_registry_operations_divergences_1_9_6():
+    """P0 Codex 1.9.6: Valida conformidade estrita das operações oficiais para os 4 data types auditados."""
+    from longevidade.ingestion.google_health_registry import GoogleHealthDataTypeRegistry
+
+    cal_zone = GoogleHealthDataTypeRegistry.get("calories-in-heart-rate-zone")
+    assert cal_zone is not None
+    assert cal_zone.operations == ["rollUp", "dailyRollUp"]
+    assert GoogleHealthDataTypeRegistry.supports_operation("calories-in-heart-rate-zone", "rollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("calories-in-heart-rate-zone", "dailyRollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("calories-in-heart-rate-zone", "list") is False
+    assert GoogleHealthDataTypeRegistry.supports_operation("calories-in-heart-rate-zone", "reconcile") is False
+
+    total_cal = GoogleHealthDataTypeRegistry.get("total-calories")
+    assert total_cal is not None
+    assert total_cal.operations == ["rollUp", "dailyRollUp"]
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "rollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "dailyRollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "list") is False
+    assert GoogleHealthDataTypeRegistry.supports_operation("total-calories", "reconcile") is False
+
+    run_vo2 = GoogleHealthDataTypeRegistry.get("run-vo2-max")
+    assert run_vo2 is not None
+    assert run_vo2.operations == ["list", "reconcile", "rollUp", "dailyRollUp"]
+    assert GoogleHealthDataTypeRegistry.supports_operation("run-vo2-max", "list") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("run-vo2-max", "reconcile") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("run-vo2-max", "rollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("run-vo2-max", "dailyRollUp") is True
+
+    swim = GoogleHealthDataTypeRegistry.get("swim-lengths-data")
+    assert swim is not None
+    assert swim.operations == ["list", "reconcile", "rollUp", "dailyRollUp"]
+    assert GoogleHealthDataTypeRegistry.supports_operation("swim-lengths-data", "list") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("swim-lengths-data", "reconcile") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("swim-lengths-data", "rollUp") is True
+    assert GoogleHealthDataTypeRegistry.supports_operation("swim-lengths-data", "dailyRollUp") is True
+
+
+def test_residual_google_fit_metrics_alias_removed():
+    """P0 Codex 1.9.6: Valida remoção completa do alias merge_google_fit_metrics no código de produção."""
+    import integrations.zepp.scripts.health_metrics as hm
+
+    assert not hasattr(hm, "merge_google_fit_metrics"), (
+        "merge_google_fit_metrics ainda está exportado em integrations.zepp.scripts.health_metrics"
+    )
+    assert hasattr(hm, "merge_google_health_metrics"), (
+        "merge_google_health_metrics deve continuar existindo e funcional"
+    )
+
