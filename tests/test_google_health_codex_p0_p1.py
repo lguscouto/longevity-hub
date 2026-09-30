@@ -252,3 +252,61 @@ def test_registry_queries_by_status_and_operation():
     reconcile_types = GoogleHealthDataTypeRegistry.get_by_operation("reconcile")
     assert any(c.data_type == "steps" for c in reconcile_types)
     assert any(c.data_type == "heart-rate" for c in reconcile_types)
+
+
+def test_registry_official_webhook_matrix_p0():
+    """Valida a matriz oficial de webhooks e status de roadmap conforme P0.1, P0.2 e P0.3."""
+    from longevidade.ingestion.google_health_registry import GoogleHealthDataTypeRegistry, SYSTEM_EVENTS
+
+    # 1. Tipos com suporte oficial a webhook confirmado
+    supported_types = [
+        "steps",
+        "distance",
+        "heart-rate",
+        "daily-resting-heart-rate",
+        "daily-heart-rate-variability",
+        "heart-rate-variability",
+        "daily-oxygen-saturation",
+        "daily-respiratory-rate",
+        "daily-heart-rate-zones",
+        "daily-sleep-temperature-derivations",
+        "respiratory-rate-sleep-summary",
+        "sleep",
+        "weight",
+        "body-fat",
+        "exercise",
+        "run-vo2-max",
+        "active-minutes",
+        "active-zone-minutes",
+        "calories-in-heart-rate-zone",
+        "time-in-heart-rate-zone",
+        "sedentary-period",
+    ]
+    for dt in supported_types:
+        cfg = GoogleHealthDataTypeRegistry.get(dt)
+        assert cfg is not None, f"Tipo {dt} ausente no registry"
+        assert cfg.webhook_supported is True, f"Tipo {dt} deveria ter webhook_supported=True"
+        assert GoogleHealthDataTypeRegistry.is_webhook_supported(dt) is True
+
+    # 2. daily-vo2-max NÃO possui suporte oficial a webhook
+    daily_vo2_cfg = GoogleHealthDataTypeRegistry.get("daily-vo2-max")
+    assert daily_vo2_cfg is not None
+    assert daily_vo2_cfg.webhook_supported is False
+    assert GoogleHealthDataTypeRegistry.is_webhook_supported("daily-vo2-max") is False
+
+    # 3. P0.3: Basal Metabolic Rate mantido estritamente como roadmap (Q4 2026)
+    bmr_cfg = GoogleHealthDataTypeRegistry.get("basal-metabolic-rate")
+    assert bmr_cfg is not None
+    assert bmr_cfg.is_roadmap is True
+    assert bmr_cfg.status == "roadmap"
+    assert bmr_cfg.enabled is False
+    assert bmr_cfg.is_active is False
+    assert bmr_cfg.webhook_supported is False
+    assert "basal-metabolic-rate" not in GoogleHealthDataTypeRegistry.get_active_google_health_types()
+
+    # 4. Eventos oficiais de sistema/ciclo de vida
+    assert "user-deleted" in SYSTEM_EVENTS
+    assert "user-revoked-access" in SYSTEM_EVENTS
+    assert GoogleHealthDataTypeRegistry.is_system_event("user-deleted") is True
+    assert GoogleHealthDataTypeRegistry.is_system_event("user-revoked-access") is True
+    assert GoogleHealthDataTypeRegistry.is_system_event("steps") is False

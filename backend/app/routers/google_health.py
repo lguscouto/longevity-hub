@@ -4,7 +4,7 @@ import logging
 import os
 import secrets
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -38,6 +38,7 @@ from longevidade.ingestion.google_health_client import (
     get_default_token_path,
 )
 from longevidade.ingestion.google_importer import sync_google_health_api
+from longevidade.integrations.google_health.registry import GoogleHealthDataTypeRegistry
 from longevidade.integrations.google_health.webhooks import (
     extract_notification_events,
     normalize_webhook_payloads,
@@ -604,24 +605,32 @@ def _process_webhook_sync(
             logger.info("healthUserId '%s' associado à credencial local.", health_user_id)
 
     COLLECTION_MAP: Dict[str, List[str]] = {
-        "activity": ["steps", "active-energy-burned", "distance"],
+        "activity": ["steps", "distance"],
         "steps": ["steps"],
+        "distance": ["distance"],
         "body": ["weight", "body-fat"],
         "weight": ["weight"],
+        "body-fat": ["body-fat"],
         "sleep": ["sleep"],
         "heart_rate": ["heart-rate", "daily-resting-heart-rate"],
         "heart-rate": ["heart-rate", "daily-resting-heart-rate"],
         "daily-resting-heart-rate": ["daily-resting-heart-rate"],
-        "oxygen_saturation": ["oxygen-saturation"],
+        "oxygen_saturation": ["daily-oxygen-saturation", "oxygen-saturation"],
         "oxygen-saturation": ["oxygen-saturation"],
         "daily-oxygen-saturation": ["daily-oxygen-saturation"],
-        "heart_rate_variability": ["heart-rate-variability"],
+        "heart_rate_variability": ["daily-heart-rate-variability", "heart-rate-variability"],
         "heart-rate-variability": ["heart-rate-variability"],
         "daily-heart-rate-variability": ["daily-heart-rate-variability"],
         "respiratory-rate": ["respiratory-rate"],
         "daily-respiratory-rate": ["daily-respiratory-rate"],
         "daily-heart-rate-zones": ["daily-heart-rate-zones"],
-        "daily-vo2-max": ["daily-vo2-max"],
+        "run-vo2-max": ["run-vo2-max"],
+        "active-minutes": ["active-minutes"],
+        "active-zone-minutes": ["active-zone-minutes"],
+        "calories-in-heart-rate-zone": ["calories-in-heart-rate-zone"],
+        "sedentary-period": ["sedentary-period"],
+        "time-in-heart-rate-zone": ["time-in-heart-rate-zone"],
+        "respiratory-rate-sleep-summary": ["respiratory-rate-sleep-summary"],
     }
 
     types_to_sync: Optional[List[str]] = None
@@ -705,17 +714,25 @@ async def google_health_webhook(
     for ev in events:
         try:
             op = (ev.operation or "UPSERT").lower()
-            if op in ("user-deleted", "user-revoked-access", "revoked"):
+            dt = (ev.dataType or "").lower()
+            is_system = (
+                op in ("user-deleted", "user-revoked-access", "revoked")
+                or GoogleHealthDataTypeRegistry.is_system_event(op)
+                or dt in ("user-deleted", "user-revoked-access")
+                or GoogleHealthDataTypeRegistry.is_system_event(dt)
+            )
+            if is_system:
+                sys_event_name = ev.operation if (op in ("user-deleted", "user-revoked-access", "revoked") or GoogleHealthDataTypeRegistry.is_system_event(op)) else ev.dataType
                 logger.warning(
                     "Google Health webhook: evento de ciclo de vida '%s' recebido para healthUserId=%s.",
-                    ev.operation,
+                    sys_event_name,
                     ev.healthUserId,
                 )
                 cl = GoogleHealthClient(token_path=token_path)
                 if cl.credentials:
                     if not ev.healthUserId or cl.credentials.health_user_id == ev.healthUserId:
                         cl.credentials.reauthentication_required = True
-                        cl.credentials.last_error = f"Acesso revogado/deletado (evento webhook: {ev.operation})."
+                        cl.credentials.last_error = f"Acesso revogado/deletado (evento webhook: {sys_event_name})."
                         cl.credentials.save_to_file(token_path)
                 continue
 

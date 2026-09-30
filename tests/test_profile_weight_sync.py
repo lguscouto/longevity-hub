@@ -37,6 +37,7 @@ def repo(client):
 
 def test_build_raw_point_extracts_sample_time():
     """Valida que _build_raw_point extrai sampleTime.physicalTime para start_time e recorded_at."""
+    # Fixture histórica legada simulando ponto antigo para validação de compatibilidade
     pt = {
         "name": "users/123/dataTypes/weight/dataPoints/456",
         "dataSource": {"platform": "FITBIT_WEB_API"},
@@ -118,13 +119,13 @@ def test_profile_weight_sync_from_latest_data(client: TestClient, repo: Longevit
         "target_weight_kg": 75.0,
     })
 
-    # Insere ponto de pesagem bruta mais recente (87.0 kg em 2026-09-20)
+    # Insere ponto de pesagem bruta mais recente (fixture histórica legada de migração)
     repo.insert_health_data_points([
         {
             "id": "point_weight_1",
             "provider": "google_health",
             "data_type": "weight",
-            "source": "FITBIT_WEB_API",
+            "source": "FITBIT_WEB_API",  # Legado mantido para teste de compatibilidade de leitura
             "start_time": "2026-09-20T15:26:34+00:00",
             "recorded_at": "2026-09-20T15:26:34+00:00",
             "value": 87.0,

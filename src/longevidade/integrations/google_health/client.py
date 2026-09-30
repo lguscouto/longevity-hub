@@ -736,7 +736,7 @@ class GoogleHealthClient:
 
                 err_body = err.read().decode("utf-8", errors="ignore")
                 if "ACCOUNT_NOT_LINKED" in err_body:
-                    return None, "Conta Google não vinculada ao ecossistema Google Health. Ative seu perfil em: https://fitbit.google.com/auth/signup"
+                    return None, "Conta Google não vinculada ao ecossistema Google Health. Certifique-se de que sua conta e dispositivos compatíveis estejam configurados no aplicativo Google Health."
                 return None, f"HTTP {err.code}: {err_body}"
             except Exception as exc:
                 if attempt < max_retries:
@@ -793,7 +793,7 @@ class GoogleHealthClient:
 
                 err_body = err.read().decode("utf-8", errors="ignore")
                 if "ACCOUNT_NOT_LINKED" in err_body:
-                    return None, "Conta Google não vinculada ao ecossistema Google Health. Ative seu perfil em: https://fitbit.google.com/auth/signup"
+                    return None, "Conta Google não vinculada ao ecossistema Google Health. Certifique-se de que sua conta e dispositivos compatíveis estejam configurados no aplicativo Google Health."
                 return None, f"HTTP {err.code}: {err_body}"
             except Exception as exc:
                 if attempt < max_retries:

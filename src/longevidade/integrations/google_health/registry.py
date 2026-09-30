@@ -31,6 +31,11 @@ SCOPE_CATEGORY_MAP: Dict[str, str] = {
     "irregular_rhythm_notification": SCOPE_IRN,
 }
 
+SYSTEM_EVENTS: Set[str] = {
+    "user-deleted",
+    "user-revoked-access",
+}
+
 
 
 @dataclass(frozen=True)
@@ -98,7 +103,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="distance",
         scope=SCOPE_ACTIVITY,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="meters",
         metric_fields=[],
@@ -120,7 +125,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="active_zone_minutes",
         scope=SCOPE_ACTIVITY,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="minutes",
         metric_fields=["active_zone_minutes"],
@@ -131,7 +136,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="calories_in_heart_rate_zone",
         scope=SCOPE_ACTIVITY,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="kilocalories",
         metric_fields=[],
@@ -142,7 +147,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="daily_vo2_max",
         scope=SCOPE_ACTIVITY,
         operations=["list", "reconcile"],
-        webhook_supported=True,
+        webhook_supported=False,
         is_active=True,
         unit="ml/kg/min",
         metric_fields=["vo2_max"],
@@ -153,7 +158,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="run_vo2_max",
         scope=SCOPE_ACTIVITY,
         operations=["list"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="ml/kg/min",
         metric_fields=["run_vo2_max"],
@@ -175,7 +180,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="sedentary_period",
         scope=SCOPE_ACTIVITY,
         operations=["list"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="minutes",
         metric_fields=["sedentary_minutes"],
@@ -186,7 +191,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="time_in_heart_rate_zone",
         scope=SCOPE_ACTIVITY,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="minutes",
         metric_fields=["zone_name", "minutes"],
@@ -197,7 +202,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="active_minutes",
         scope=SCOPE_ACTIVITY,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="minutes",
         metric_fields=["active_minutes"],
@@ -386,7 +391,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="respiratory_rate_sleep_summary",
         scope=SCOPE_HEALTH_METRICS,
         operations=["list", "reconcile"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="rpm",
         metric_fields=["respiratory_rate_rpm"],
@@ -412,7 +417,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="weight",
         scope=SCOPE_HEALTH_METRICS,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="grams_or_kg",
         metric_fields=["weight_kg", "bmi"],
@@ -423,7 +428,7 @@ DATA_TYPES: Dict[str, DataTypeConfig] = {
         filter_name="body_fat",
         scope=SCOPE_HEALTH_METRICS,
         operations=["list", "reconcile", "rollUp", "dailyRollUp"],
-        webhook_supported=False,
+        webhook_supported=True,
         is_active=True,
         unit="percentage",
         metric_fields=["body_fat_pct"],
@@ -580,4 +585,14 @@ class GoogleHealthDataTypeRegistry:
     def get_webhook_supported_types() -> List[str]:
         """Retorna a lista de data types que suportam notificações via webhook."""
         return [dt for dt, cfg in DATA_TYPES.items() if cfg.webhook_supported]
+
+    @staticmethod
+    def is_system_event(event_name: str) -> bool:
+        """Verifica se o identificador de evento é um evento oficial de ciclo de vida/sistema."""
+        return event_name in SYSTEM_EVENTS
+
+    @staticmethod
+    def get_system_events() -> Set[str]:
+        """Retorna o conjunto de eventos oficiais de sistema/ciclo de vida."""
+        return set(SYSTEM_EVENTS)
 

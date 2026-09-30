@@ -14,6 +14,7 @@ from longevidade.integrations.google_health.registry import (
     SCOPE_IRN,
     SCOPE_NUTRITION,
     SCOPE_SLEEP,
+    SYSTEM_EVENTS,
 )
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "SCOPE_ECG",
     "SCOPE_IRN",
     "SCOPE_CATEGORY_MAP",
+    "SYSTEM_EVENTS",
 ]
 

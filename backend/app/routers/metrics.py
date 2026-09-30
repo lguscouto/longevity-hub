@@ -101,7 +101,7 @@ def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False
             _zepp_sync_state["last_error"] = detail
             raise HTTPException(status_code=502, detail=detail)
 
-        # 2. Importa/Reconcilia dados do Google Fit / Health Connect (Passos, PA, Frequência Cardíaca, Peso, Gordura)
+        # 2. Importa/Reconcilia dados da Google Health API / Health Connect (Passos, PA, Frequência Cardíaca, Peso, Gordura)
         try:
             from longevidade.ingestion.google_health_client import GoogleHealthClient
             from longevidade.ingestion.google_importer import sync_google_health_api

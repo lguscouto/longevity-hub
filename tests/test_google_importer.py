@@ -1,5 +1,5 @@
 """
-Testes determinísticos para o importador Google Fit (google_importer).
+Testes determinísticos para o importador de arquivos legados/locais (google_importer).
 
 Usa fixtures sintéticas — arquivos JSON escritos em diretórios temporários.
 Nunca chama APIs externas nem lê sistema de arquivos real do usuário.

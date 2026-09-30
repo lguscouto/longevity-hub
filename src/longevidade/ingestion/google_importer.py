@@ -1,5 +1,5 @@
 """
-Importador de dados do projeto Google Health Hub (Google Fit / Google Health API v4 / Health Connect)
+Importador de dados do projeto Google Health Hub (Google Health API v4 / Health Connect)
 para o repositório Longevidade.
 
 Retorna um dicionário estruturado (ImportResult) com diagnóstico completo:

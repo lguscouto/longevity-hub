@@ -284,3 +284,90 @@ def test_webhook_idempotency(client: TestClient, tmp_path: Path):
             assert resp1.status_code == 204
             assert resp2.status_code == 204
             assert mock_sync.call_count == 2
+
+
+@pytest.mark.parametrize("data_type,expected_sync_type", [
+    ("steps", "steps"),
+    ("heart-rate", "heart-rate"),
+    ("distance", "distance"),
+    ("active-minutes", "active-minutes"),
+    ("weight", "weight"),
+    ("body-fat", "body-fat"),
+    ("run-vo2-max", "run-vo2-max"),
+    ("sleep", "sleep"),
+])
+def test_webhook_mandatory_data_types_coverage_p0(client: TestClient, tmp_path: Path, data_type: str, expected_sync_type: str):
+    """P0.2: Cobre recebimento e despacho de webhook para data types oficiais obrigatórios."""
+    token_file = tmp_path / "token.json"
+    creds = GoogleHealthCredentials(access_token="valid_access_token")
+    creds.save_to_file(token_file)
+
+    payload = {
+        "type": "notification",
+        "data": {
+            "healthUserId": "user_12345",
+            "operation": "UPSERT",
+            "dataType": data_type,
+            "intervals": [{"startTime": "2026-09-30T10:00:00Z"}],
+        },
+    }
+
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
+        with patch("backend.app.routers.google_health.sync_google_health_api") as mock_sync:
+            resp = client.post("/api/google-health/webhook", json=payload)
+            assert resp.status_code == 204
+            mock_sync.assert_called_once()
+            call_kwargs = mock_sync.call_args[1]
+            assert expected_sync_type in call_kwargs["selected_types"]
+
+
+def test_webhook_system_event_user_deleted(client: TestClient, tmp_path: Path):
+    """P0.2: Valida tratamento do evento de sistema user-deleted revogando credenciais."""
+    token_file = tmp_path / "token.json"
+    creds = GoogleHealthCredentials(access_token="valid_access_token", health_user_id="user_target_99")
+    creds.save_to_file(token_file)
+
+    payload = {
+        "type": "notification",
+        "data": {
+            "healthUserId": "user_target_99",
+            "operation": "user-deleted",
+        },
+    }
+
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
+        with patch("backend.app.routers.google_health.sync_google_health_api") as mock_sync:
+            resp = client.post("/api/google-health/webhook", json=payload)
+            assert resp.status_code == 204
+            mock_sync.assert_not_called()
+
+            updated_creds = GoogleHealthCredentials.from_file(token_file)
+            assert updated_creds is not None
+            assert updated_creds.reauthentication_required is True
+            assert "user-deleted" in (updated_creds.last_error or "")
+
+
+def test_webhook_system_event_user_revoked_access(client: TestClient, tmp_path: Path):
+    """P0.2: Valida tratamento do evento de sistema user-revoked-access revogando credenciais."""
+    token_file = tmp_path / "token.json"
+    creds = GoogleHealthCredentials(access_token="valid_access_token", health_user_id="user_target_88")
+    creds.save_to_file(token_file)
+
+    payload = {
+        "type": "notification",
+        "data": {
+            "healthUserId": "user_target_88",
+            "operation": "user-revoked-access",
+        },
+    }
+
+    with patch("backend.app.routers.google_health.get_default_token_path", return_value=token_file):
+        with patch("backend.app.routers.google_health.sync_google_health_api") as mock_sync:
+            resp = client.post("/api/google-health/webhook", json=payload)
+            assert resp.status_code == 204
+            mock_sync.assert_not_called()
+
+            updated_creds = GoogleHealthCredentials.from_file(token_file)
+            assert updated_creds is not None
+            assert updated_creds.reauthentication_required is True
+            assert "user-revoked-access" in (updated_creds.last_error or "")

@@ -101,7 +101,7 @@ class LongevityRepository:
         """
         candidates: List[Dict[str, Any]] = []
 
-        # 1. Busca em health_data_points (Google Health, Fitbit, etc.)
+        # 1. Busca em health_data_points (Google Health, provedores compatíveis, etc.)
         sql_raw = """
         SELECT value AS weight_kg, COALESCE(start_time, recorded_at) AS measured_at, source, provider, raw_json
         FROM health_data_points
