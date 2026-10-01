@@ -183,7 +183,7 @@ class LongevityRepository:
 
         fields = [
             "date_ref", "steps", "calories", "sleep_minutes", "sleep_deep_min", "sleep_light_min",
-            "sleep_rem_min", "sleep_awake_min", "rhr_bpm", "avg_hr_bpm", "hrv_ms",
+            "sleep_rem_min", "sleep_awake_min", "sleep_start", "sleep_end", "rhr_bpm", "avg_hr_bpm", "hrv_ms",
             "readiness_score", "weight_kg", "bmi", "waist_cm", "body_fat_pct",
             "vo2_max", "skin_temp_c", "stress_samples", "systolic_bp", "diastolic_bp",
             "grip_strength_kg", "spo2_avg_pct", "spo2_min_pct", "respiratory_rate_rpm",

@@ -680,6 +680,14 @@ MIGRATIONS: Sequence[Migration] = (
             "ALTER TABLE ai_reports ADD COLUMN time_window TEXT DEFAULT '30d';",
         ),
     ),
+    Migration(
+        version=16,
+        name="add_sleep_start_and_end_to_daily_metrics",
+        statements=(
+            "ALTER TABLE daily_metrics ADD COLUMN sleep_start TEXT;",
+            "ALTER TABLE daily_metrics ADD COLUMN sleep_end TEXT;",
+        ),
+    ),
 )
 
 

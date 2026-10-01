@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS daily_metrics (
     sleep_light_min INTEGER,
     sleep_rem_min INTEGER,
     sleep_awake_min INTEGER,
+    sleep_start TEXT,
+    sleep_end TEXT,
     rhr_bpm REAL,
     avg_hr_bpm REAL,
     hrv_ms REAL,

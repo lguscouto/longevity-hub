@@ -30,6 +30,9 @@ class DailyMetricInput(BaseModel):
     sleep_deep_min: Optional[int] = None
     sleep_light_min: Optional[int] = None
     sleep_rem_min: Optional[int] = None
+    sleep_awake_min: Optional[int] = None
+    sleep_start: Optional[str] = None
+    sleep_end: Optional[str] = None
     rhr_bpm: Optional[float] = None
     avg_hr_bpm: Optional[float] = None
     hrv_ms: Optional[float] = None

@@ -236,4 +236,94 @@ describe('SleepView', () => {
 
     expect(btn30d).toHaveClass('bg-indigo-600');
   });
+
+  it('renders sleep start, wake time, efficiency and respiratory rate across cards, monthly table and historical table', async () => {
+    const metricsWithCircadian = [
+      {
+        date_ref: '2026-10-01',
+        sleep_minutes: 404,
+        sleep_deep_min: 64,
+        sleep_rem_min: 106,
+        sleep_light_min: 234,
+        sleep_awake_min: 40,
+        sleep_start: '2026-09-30T22:38:00-03:00',
+        sleep_end: '2026-10-01T06:02:00-03:00',
+        respiratory_rate_rpm: 16.2,
+        hrv_ms: 55.0,
+        rhr_bpm: 50.0,
+        source: 'Zepp',
+      },
+    ];
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify(metricsWithCircadian),
+    });
+
+    render(<SleepView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+    });
+
+    // Circadian KPI cards
+    expect(screen.getByText('Média Dormir')).toBeInTheDocument();
+    expect(screen.getByText('Média Acordar')).toBeInTheDocument();
+    expect(screen.getByText('Regularidade')).toBeInTheDocument();
+    expect(screen.getByText('Taxa Respiratória')).toBeInTheDocument();
+
+    // Table columns & cards
+    expect(screen.getByText('Dormiu')).toBeInTheDocument();
+    expect(screen.getByText('Acordou')).toBeInTheDocument();
+    expect(screen.getAllByText('Eficiência').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Taxa Resp.').length).toBeGreaterThanOrEqual(1);
+
+    // Table row values
+    expect(screen.getAllByText('22:38').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('30/09/2026').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('06:02').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('01/10/2026').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('16.2 rpm').length).toBeGreaterThanOrEqual(1);
+    // 404 / (404 + 40) = 404 / 444 = 91%
+    expect(screen.getAllByText('91%').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('applies combined efficiency badge rule: flags high efficiency with short sleep (< 6h) as Sono Curto in amber', async () => {
+    const metricsWithShortSleep = [
+      {
+        date_ref: '2026-09-28',
+        sleep_minutes: 267, // 4h 27m (< 6h)
+        sleep_deep_min: 51,
+        sleep_rem_min: 75,
+        sleep_light_min: 141,
+        sleep_awake_min: 33, // 267 / 300 = 89%
+        sleep_start: '2026-09-27T23:56:00-03:00',
+        sleep_end: '2026-09-28T04:56:00-03:00',
+        respiratory_rate_rpm: 16.6,
+        source: 'Zepp',
+      },
+    ];
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify(metricsWithShortSleep),
+    });
+
+    render(<SleepView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+    });
+
+    // 89% should be displayed with "Sono Curto" tag in KPI Card, Monthly Table, and Daily Table
+    expect(screen.getAllByText('89%').length).toBeGreaterThanOrEqual(1);
+    const shortBadges = screen.getAllByText('Sono Curto');
+    expect(shortBadges.length).toBeGreaterThanOrEqual(3);
+
+    // Should have amber badge class and informative tooltip for short sleep
+    const tableBadge = shortBadges[shortBadges.length - 1].closest('span[title]');
+    expect(tableBadge).toHaveClass('text-amber-700');
+    expect(tableBadge?.getAttribute('title')).toContain('sono curto (< 6h');
+  });
 });
+

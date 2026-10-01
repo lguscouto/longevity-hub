@@ -150,10 +150,12 @@ class ZeppNormalizationTests(unittest.TestCase):
         b64 = base64.b64encode(json.dumps(summary).encode()).decode()
         payload = {"data": [{"date_time": "2026-08-01", "summary": b64}]}
 
-        steps, cals, sleep_min, dp, lt, dt, wk = _select_band_values(payload, ref)
+        steps, cals, sleep_min, dp, lt, dt, wk, s_start, s_end = _select_band_values(payload, ref)
         self.assertEqual(steps, 10500)
         self.assertEqual(cals, 650)
         self.assertEqual(sleep_min, 320)
+        self.assertIsNone(s_start)
+        self.assertIsNone(s_end)
 
 
 if __name__ == "__main__":

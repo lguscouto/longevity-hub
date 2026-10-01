@@ -502,6 +502,8 @@ def import_zepp_data(
                         "sleep_light_min": rec.get("sono_leve_min"),
                         "sleep_rem_min": rec.get("sono_rem_min"),
                         "sleep_awake_min": rec.get("tempo_acordado_min"),
+                        "sleep_start": rec.get("sono_inicio"),
+                        "sleep_end": rec.get("sono_fim"),
                         "rhr_bpm": rhr_val,
                         "avg_hr_bpm": rec.get("fc_media_bpm"),
                         "hrv_ms": rec.get("hrv_rmssd_media_ms") if rec.get("hrv_rmssd_media_ms") is not None else rec.get("hrv_sono_ms"),
