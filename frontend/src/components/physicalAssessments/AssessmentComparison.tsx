@@ -185,8 +185,8 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Previous Photo */}
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col items-center">
-                        <span className="text-xs font-semibold text-slate-400 mb-2">
+                      <div className="bg-slate-100/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
                           Anterior ({new Date(comparisonManifest.previous_assessment.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')})
                         </span>
                         {match.previous_photo ? (
@@ -194,18 +194,18 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                             src={match.previous_photo.content_url}
                             alt="Anterior"
                             onClick={() => onOpenLightbox(match.previous_photo!)}
-                            className="w-full h-80 object-cover rounded-lg border border-slate-800 cursor-pointer hover:scale-102 transition-transform"
+                            className="w-full h-80 object-cover rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer hover:scale-102 transition-transform"
                           />
                         ) : (
-                          <div className="w-full h-80 flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 bg-slate-100/40 dark:bg-slate-900/40 rounded-lg text-xs">
+                          <div className="w-full h-80 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-900/40 rounded-lg text-xs">
                             <Camera className="h-8 w-8 mb-2" /> Foto não disponível nesta avaliação
                           </div>
                         )}
                       </div>
 
                       {/* Current Photo */}
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col items-center">
-                        <span className="text-xs font-semibold text-slate-400 mb-2">
+                      <div className="bg-slate-100/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
                           Atual ({new Date(comparisonManifest.current_assessment.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')})
                         </span>
                         {match.current_photo ? (
@@ -213,10 +213,10 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                             src={match.current_photo.content_url}
                             alt="Atual"
                             onClick={() => onOpenLightbox(match.current_photo!)}
-                            className="w-full h-80 object-cover rounded-lg border border-slate-800 cursor-pointer hover:scale-102 transition-transform"
+                            className="w-full h-80 object-cover rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer hover:scale-102 transition-transform"
                           />
                         ) : (
-                          <div className="w-full h-80 flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 bg-slate-100/40 dark:bg-slate-900/40 rounded-lg text-xs">
+                          <div className="w-full h-80 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-200/50 dark:bg-slate-900/40 rounded-lg text-xs">
                             <Camera className="h-8 w-8 mb-2" /> Foto não disponível nesta avaliação
                           </div>
                         )}

@@ -118,7 +118,7 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                 Comparativo consolidado da arquitetura do sono e métricas autonômicas mês a mês.
               </p>
             </div>
-            <span className="text-xs text-slate-400">Clique na linha para filtrar o painel</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Clique na linha para filtrar o painel</span>
           </div>
 
           <div className="overflow-x-auto max-w-full">
@@ -166,19 +166,19 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                         {m.count}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-indigo-600 dark:text-indigo-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">Dormir:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Dormir:</span>
                         {m.avgBedtime || '—'}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">Acordar:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Acordar:</span>
                         {m.avgWakeTime || '—'}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 font-bold text-slate-800 dark:text-slate-200 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">Total:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">Total:</span>
                         {formatMinutesToText(m.avgTotal)}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3">
-                        <span className="md:hidden text-xs text-slate-400 mr-1">Eficiência:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Eficiência:</span>
                         {(() => {
                           const badge = getEfficiencyBadge(m.efficiencyPct, m.avgTotal);
                           if (!badge) return <span className="text-slate-400">—</span>;
@@ -202,34 +202,34 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                         })()}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-purple-600 dark:text-purple-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">Profundo:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Profundo:</span>
                         {formatMinutesToText(m.avgDeep)}{' '}
                         <span className="text-xs text-purple-400/80">({m.deepPct}%)</span>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-cyan-600 dark:text-cyan-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">REM:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">REM:</span>
                         {formatMinutesToText(m.avgRem)}{' '}
                         <span className="text-xs text-cyan-400/80">({m.remPct}%)</span>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-600 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">Leve:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Leve:</span>
                         {formatMinutesToText(m.avgLight)}{' '}
-                        <span className="text-xs text-slate-400">({m.lightPct}%)</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">({m.lightPct}%)</span>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">Acordado:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Acordado:</span>
                         {formatMinutesToText(m.avgAwake)}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-cyan-600 dark:text-cyan-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">Resp:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Resp:</span>
                         {m.avgRespRate != null ? `${m.avgRespRate} rpm` : '—'}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">VFC:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">VFC:</span>
                         {m.avgHrv != null ? `${m.avgHrv} ms` : '—'}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans mr-1">FC Repouso:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">FC Repouso:</span>
                         {m.avgRhr != null ? `${m.avgRhr} bpm` : '—'}
                       </td>
                       <td className="block md:table-cell py-2 md:py-3 md:px-3 text-left md:text-right">
@@ -364,19 +364,19 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                       <td className="block md:table-cell py-1 md:py-3.5 md:px-4 font-bold text-slate-900 dark:text-white font-mono text-sm md:text-xs">
                         <div className="flex items-center justify-between md:block">
                           <span>{formatDatePtBr(m.date_ref)}</span>
-                          <span className="md:hidden text-slate-400 font-sans text-xs">
+                          <span className="md:hidden text-slate-500 dark:text-slate-400 font-sans text-xs">
                             {m.source || 'Zepp'}
                           </span>
                         </div>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
-                        <span className="md:hidden text-xs text-slate-400 mr-1">Dormiu:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Dormiu:</span>
                         {stDetails.time !== '—' ? (
                           <div className="inline-flex flex-col md:flex">
                             <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono text-xs">
                               {stDetails.time}
                             </span>
-                            <span className="text-xs text-slate-400 font-mono">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                               {stDetails.date}
                             </span>
                           </div>
@@ -385,13 +385,13 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                         )}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
-                        <span className="md:hidden text-xs text-slate-400 mr-1">Acordou:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Acordou:</span>
                         {edDetails.time !== '—' ? (
                           <div className="inline-flex flex-col md:flex">
                             <span className="font-bold text-amber-600 dark:text-amber-400 font-mono text-xs">
                               {edDetails.time}
                             </span>
-                            <span className="text-xs text-slate-400 font-mono">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                               {edDetails.date}
                             </span>
                           </div>
@@ -400,13 +400,13 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                         )}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 font-bold text-slate-800 dark:text-slate-200 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           Total:
                         </span>
                         {formatMinutesToText(total)}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
-                        <span className="md:hidden text-xs text-slate-400 mr-1">Eficiência:</span>
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Eficiência:</span>
                         {(() => {
                           const effBadge = getEfficiencyBadge(eff, total);
                           if (!effBadge) return <span className="text-slate-400">—</span>;
@@ -430,34 +430,34 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                         })()}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-purple-600 dark:text-purple-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           Profundo:
                         </span>
                         {formatMinutesToText(deep)}{' '}
                         <span className="text-xs text-purple-400/80">({deepPct}%)</span>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-cyan-600 dark:text-cyan-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           REM:
                         </span>
                         {formatMinutesToText(rem)}{' '}
                         <span className="text-xs text-cyan-400/80">({remPct}%)</span>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-600 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           Leve:
                         </span>
                         {formatMinutesToText(light)}{' '}
-                        <span className="text-xs text-slate-400">({lightPct}%)</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">({lightPct}%)</span>
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           Acordado:
                         </span>
                         {formatMinutesToText(awake)}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-cyan-600 dark:text-cyan-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           Taxa Resp:
                         </span>
                         {m.respiratory_rate_rpm != null
@@ -465,18 +465,18 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                           : '—'}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           VFC:
                         </span>
                         {m.hrv_ms != null ? `${m.hrv_ms} ms` : '—'}
                       </td>
                       <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-400 font-sans font-normal mr-1">
+                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
                           FC Repouso:
                         </span>
                         {m.rhr_bpm != null ? `${m.rhr_bpm} bpm` : '—'}
                       </td>
-                      <td className="hidden md:table-cell py-3.5 px-4 text-right text-slate-400 text-xs">
+                      <td className="hidden md:table-cell py-3.5 px-4 text-right text-slate-500 dark:text-slate-400 text-xs">
                         {m.source || 'Zepp'}
                       </td>
                     </tr>

@@ -54,7 +54,7 @@ export const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({
                 className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
               >
                 {/* Thumbnail Header */}
-                <div className="relative h-48 bg-slate-950 flex items-center justify-center overflow-hidden">
+                <div className="relative h-48 bg-slate-100 dark:bg-slate-950 flex items-center justify-center overflow-hidden">
                   {frontPhoto ? (
                     <img
                       src={frontPhoto.content_url}
@@ -62,7 +62,7 @@ export const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="flex flex-col items-center text-slate-600 gap-2">
+                    <div className="flex flex-col items-center text-slate-400 dark:text-slate-600 gap-2">
                       <Camera className="h-10 w-10" />
                       <span className="text-xs">Sem fotos</span>
                     </div>
