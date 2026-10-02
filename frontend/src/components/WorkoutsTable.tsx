@@ -180,8 +180,8 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
         />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">
+          <table className="w-full text-left text-xs block md:table">
+            <thead className="hidden md:table-header-group bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="py-3 px-4">Data / Hora</th>
                 <th className="py-3 px-4">Modalidade</th>
@@ -192,23 +192,25 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
                 <th className="py-3 px-4">TE Carga</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <tbody className="block md:table-row-group divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredWorkouts.map((w) => (
                 <tr
                   key={w.id}
-                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                  className="block md:table-row p-4 md:py-3 md:px-4 space-y-2 md:space-y-0 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                 >
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="font-semibold text-slate-900 dark:text-white block">
-                      {formatDate(w.workout_date)}
-                    </span>
-                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <Clock className="h-3 w-3 inline" /> {w.workout_time}
-                    </span>
+                  <td className="block md:table-cell py-1 md:py-3 md:px-4 md:whitespace-nowrap">
+                    <div className="flex items-center justify-between md:block">
+                      <span className="font-semibold text-slate-900 dark:text-white block">
+                        {formatDate(w.workout_date)}
+                      </span>
+                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                        <Clock className="h-3 w-3 inline" /> {w.workout_time}
+                      </span>
+                    </div>
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
+                  <td className="block md:table-cell py-1 md:py-3 md:px-4 md:whitespace-nowrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${getCategoryBadgeClass(
                           w.category
@@ -219,19 +221,21 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
                       <span className="font-medium text-slate-700 dark:text-slate-200">
                         {w.activity_type}
                       </span>
+                      {w.city && (
+                        <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                          <MapPin className="h-2.5 w-2.5 inline" /> {w.city}
+                        </span>
+                      )}
                     </div>
-                    {w.city && (
-                      <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
-                        <MapPin className="h-2.5 w-2.5 inline" /> {w.city}
-                      </span>
-                    )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap font-semibold text-slate-800 dark:text-slate-200">
+                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap font-semibold text-slate-800 dark:text-slate-200">
+                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">Duração:</span>
                     {w.duration_min} min
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap text-slate-700 dark:text-slate-300">
+                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">Dist:</span>
                     {w.distance_km > 0 ? (
                       <span className="font-semibold">{w.distance_km} km</span>
                     ) : (
@@ -239,7 +243,8 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
                     )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap text-slate-700 dark:text-slate-300">
+                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">Calorias:</span>
                     {w.calories > 0 ? (
                       <span className="inline-flex items-center gap-1 font-semibold">
                         <Flame className="h-3.5 w-3.5 text-amber-500 inline" />
@@ -250,7 +255,8 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
                     )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap text-slate-700 dark:text-slate-300">
+                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">FC:</span>
                     {w.avg_hr != null || w.max_hr != null ? (
                       <span className="inline-flex items-center gap-1">
                         <Heart className="h-3.5 w-3.5 text-rose-500 inline" />
@@ -266,14 +272,14 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
                     )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="block md:table-cell py-1 md:py-3 md:px-4 md:whitespace-nowrap">
                     {w.training_effect != null ? (
                       <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg text-[11px] border border-amber-500/20">
                         <TrendingUp className="h-3 w-3 inline" />
                         TE {w.training_effect}
                       </span>
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-slate-400 hidden md:inline">—</span>
                     )}
                   </td>
                 </tr>

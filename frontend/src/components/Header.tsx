@@ -101,14 +101,14 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Linha Superior: Marca e Ações (Separadas entre Clínicas e Infraestrutura) */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Marca / Identidade */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white glow-emerald shrink-0">
               <Activity className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
             </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-emerald-600 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent flex items-center gap-1.5">
-                LONGEVIDADE <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">HUB</span>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-emerald-600 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent flex items-center gap-1.5 truncate">
+                LONGEVIDADE <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">HUB</span>
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
                 Gestão e acompanhamento pessoal de saúde e longevidade
