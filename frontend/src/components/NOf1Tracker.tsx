@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2, Scale } from 'lucide-react';
 import { ConfounderBalanceModal } from './contextInsights/ConfounderBalanceModal';
-import { EmptyState } from './ui';
+import { EmptyState, Modal } from './ui';
 
 interface NOf1Experiment {
   id?: number;
@@ -141,63 +140,74 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
         )}
       </div>
 
-      {showModal && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" /> Criar Experimento N-of-1
-              </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">✕</button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Título do Experimento</label>
-                <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Hipótese</label>
-                <input type="text" value={formData.hypothesis} onChange={e => setFormData({...formData, hypothesis: e.target.value})} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Métrica Testada</label>
-                <select value={formData.metric_key} onChange={e => setFormData({...formData, metric_key: e.target.value})} className={inputClass}>
-                  <option value="hrv_ms">HRV (Variabilidade da Frequência Cardíaca)</option>
-                  <option value="sleep_deep_min">Sono Profundo (minutos)</option>
-                  <option value="sleep_rem_min">Sono REM (minutos)</option>
-                  <option value="rhr_bpm">Frequência Cardíaca de Repouso (RHR)</option>
-                  <option value="readiness_score">Readiness Score</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Início Controle (14d)</label>
-                  <input type="date" value={formData.control_start} onChange={e => setFormData({...formData, control_start: e.target.value})} className={inputClass} />
-                </div>
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Fim Controle</label>
-                  <input type="date" value={formData.control_end} onChange={e => setFormData({...formData, control_end: e.target.value})} className={inputClass} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Início Intervenção (14d)</label>
-                  <input type="date" value={formData.treatment_start} onChange={e => setFormData({...formData, treatment_start: e.target.value})} className={inputClass} />
-                </div>
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Fim Intervenção</label>
-                  <input type="date" value={formData.treatment_end} onChange={e => setFormData({...formData, treatment_end: e.target.value})} className={inputClass} />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition">Cancelar</button>
-                <button type="submit" className="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 font-bold glow-violet transition shadow-md">Criar & Analisar</button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Criar Experimento N-of-1"
+        size="lg"
+        icon={
+          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
+            <FlaskConical className="h-5 w-5" />
           </div>
-        </div>
-      , document.body)}
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+          <div>
+            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Título do Experimento</label>
+            <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Hipótese</label>
+            <input type="text" value={formData.hypothesis} onChange={e => setFormData({...formData, hypothesis: e.target.value})} className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Métrica Testada</label>
+            <select value={formData.metric_key} onChange={e => setFormData({...formData, metric_key: e.target.value})} className={inputClass}>
+              <option value="hrv_ms">HRV (Variabilidade da Frequência Cardíaca)</option>
+              <option value="sleep_deep_min">Sono Profundo (minutos)</option>
+              <option value="sleep_rem_min">Sono REM (minutos)</option>
+              <option value="rhr_bpm">Frequência Cardíaca de Repouso (RHR)</option>
+              <option value="readiness_score">Readiness Score</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Início Controle (14d)</label>
+              <input type="date" value={formData.control_start} onChange={e => setFormData({...formData, control_start: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Fim Controle</label>
+              <input type="date" value={formData.control_end} onChange={e => setFormData({...formData, control_end: e.target.value})} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Início Intervenção (14d)</label>
+              <input type="date" value={formData.treatment_start} onChange={e => setFormData({...formData, treatment_start: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Fim Intervenção</label>
+              <input type="date" value={formData.treatment_end} onChange={e => setFormData({...formData, treatment_end: e.target.value})} className={inputClass} />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 font-bold transition shadow-subtle"
+            >
+              Criar &amp; Analisar
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {selectedExperimentForBalance && (
         <ConfounderBalanceModal

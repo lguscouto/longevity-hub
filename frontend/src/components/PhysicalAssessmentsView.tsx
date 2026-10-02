@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   Camera,
   Calendar,
@@ -27,7 +26,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { BodyCompositionChart } from './BodyCompositionChart';
-import { ConfirmDialog, EmptyState } from './ui';
+import { ConfirmDialog, EmptyState, Modal } from './ui';
 
 export interface Photo {
   id: string;
@@ -1645,261 +1644,255 @@ export const PhysicalAssessmentsView: React.FC = () => {
       )}
 
       {/* LIGHTBOX MODAL */}
-      {lightboxPhoto && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
-            <button
-              onClick={() => setLightboxPhoto(null)}
-              className="absolute -top-12 right-0 p-2 text-white hover:text-cyan-400 transition-colors"
-              aria-label="Fechar ampliação"
-            >
-              <X className="h-8 w-8" />
-            </button>
+      <Modal
+        isOpen={Boolean(lightboxPhoto)}
+        onClose={() => setLightboxPhoto(null)}
+        title={lightboxPhoto ? `${ANGLE_LABELS[lightboxPhoto.angle]} — ${BODY_STATE_LABELS[lightboxPhoto.body_state || 'unspecified']}` : undefined}
+        size="4xl"
+        contentClassName="flex flex-col items-center justify-center p-2 sm:p-4 bg-black/40"
+      >
+        {lightboxPhoto && (
+          <div className="flex flex-col items-center justify-center w-full">
             <img
               src={lightboxPhoto.content_url}
               alt={lightboxPhoto.description || lightboxPhoto.angle}
-              className="max-h-[80vh] w-auto object-contain rounded-xl border border-slate-800"
+              className="max-h-[75vh] w-auto object-contain rounded-xl border border-slate-800"
             />
-            <div className="mt-3 text-center text-slate-300 text-sm">
-              <strong>{ANGLE_LABELS[lightboxPhoto.angle]}</strong> — {BODY_STATE_LABELS[lightboxPhoto.body_state || 'unspecified']}
-            </div>
+            {lightboxPhoto.description && (
+              <p className="mt-2 text-center text-slate-400 text-xs">
+                {lightboxPhoto.description}
+              </p>
+            )}
           </div>
-        </div>
-      , document.body)}
+        )}
+      </Modal>
 
       {/* ADD PHOTOS MODAL (In Details Mode) */}
-      {showAddPhotosModal && selectedAssessmentId && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Adicionar Fotos a esta Avaliação</h3>
-              <button onClick={() => setShowAddPhotosModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white" aria-label="Fechar modal">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => handleDrop(e, true)}
-              className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl p-6 text-center cursor-pointer"
+      <Modal
+        isOpen={Boolean(showAddPhotosModal && selectedAssessmentId)}
+        onClose={() => setShowAddPhotosModal(false)}
+        title="Adicionar Fotos a esta Avaliação"
+        icon={<Camera className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />}
+        size="2xl"
+        footer={
+          <div className="flex justify-end gap-2 w-full">
+            <button
+              onClick={() => setShowAddPhotosModal(false)}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium"
             >
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp"
-                onChange={e => handleFileSelect(e, true)}
-                className="hidden"
-                id="details-photo-upload"
-              />
-              <label htmlFor="details-photo-upload" className="cursor-pointer block">
-                <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Clique para selecionar novas fotos</p>
-              </label>
+              Cancelar
+            </button>
+            <button
+              onClick={handleUploadDetailsPhotos}
+              disabled={submitting || detailsPhotoDrafts.length === 0}
+              className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50"
+            >
+              Enviar {detailsPhotoDrafts.length} {detailsPhotoDrafts.length === 1 ? 'Foto' : 'Fotos'}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div
+            onDragOver={e => e.preventDefault()}
+            onDrop={e => handleDrop(e, true)}
+            className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl p-6 text-center cursor-pointer"
+          >
+            <input
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp"
+              onChange={e => handleFileSelect(e, true)}
+              className="hidden"
+              id="details-photo-upload"
+            />
+            <label htmlFor="details-photo-upload" className="cursor-pointer block">
+              <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Clique para selecionar novas fotos</p>
+            </label>
+          </div>
+
+          {detailsPhotoDrafts.length > 0 && (
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+              {detailsPhotoDrafts.map((d, idx) => (
+                <div key={idx} className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl text-xs border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <img src={d.previewUrl} alt="Preview" className="w-12 h-14 object-cover rounded" />
+                  <select
+                    value={d.angle}
+                    onChange={e => {
+                      const val = e.target.value as any;
+                      setDetailsPhotoDrafts(prev => {
+                        const copy = [...prev];
+                        copy[idx].angle = val;
+                        return copy;
+                      });
+                    }}
+                    className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded p-1 text-slate-800 dark:text-slate-200"
+                  >
+                    <option value="front">Frente</option>
+                    <option value="back">Costas</option>
+                    <option value="left_side">Lado Esquerdo</option>
+                    <option value="right_side">Lado Direito</option>
+                    <option value="other">Outro</option>
+                  </select>
+                  <button onClick={() => removeDraft(idx, true)} className="text-rose-500 ml-auto p-1" aria-label="Remover rascunho de foto">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* EDIT ASSESSMENT MODAL */}
+      <Modal
+        isOpen={Boolean(editingAssessment)}
+        onClose={() => setEditingAssessment(null)}
+        title="Editar Avaliação Física"
+        icon={<Pencil className="h-5 w-5 text-amber-500" />}
+        size="2xl"
+      >
+        <div className="space-y-4">
+          {editError && (
+            <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{editError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveEditAssessment} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Data da Avaliação <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={editDate}
+                  onChange={e => setEditDate(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Título (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Medição pós-treino"
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Peso (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  inputMode="decimal"
+                  placeholder="Ex: 78.5"
+                  value={editWeight}
+                  onChange={e => setEditWeight(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
             </div>
 
-            {detailsPhotoDrafts.length > 0 && (
-              <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                {detailsPhotoDrafts.map((d, idx) => (
-                  <div key={idx} className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl text-xs border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <img src={d.previewUrl} alt="Preview" className="w-12 h-14 object-cover rounded" />
-                    <select
-                      value={d.angle}
-                      onChange={e => {
-                        const val = e.target.value as any;
-                        setDetailsPhotoDrafts(prev => {
-                          const copy = [...prev];
-                          copy[idx].angle = val;
-                          return copy;
-                        });
-                      }}
-                      className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded p-1 text-slate-800 dark:text-slate-200"
-                    >
-                      <option value="front">Frente</option>
-                      <option value="back">Costas</option>
-                      <option value="left_side">Lado Esquerdo</option>
-                      <option value="right_side">Lado Direito</option>
-                      <option value="other">Outro</option>
-                    </select>
-                    <button onClick={() => removeDraft(idx, true)} className="text-rose-500 ml-auto p-1" aria-label="Remover rascunho de foto">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Gordura Corporal (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  inputMode="decimal"
+                  placeholder="Ex: 15.2"
+                  value={editBodyFat}
+                  onChange={e => setEditBodyFat(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
               </div>
-            )}
 
-            <div className="flex justify-end gap-2 pt-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Cintura (cm)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  inputMode="decimal"
+                  placeholder="Ex: 82.0"
+                  value={editWaist}
+                  onChange={e => setEditWaist(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Abdômen (cm)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  inputMode="decimal"
+                  placeholder="Ex: 85.0"
+                  value={editAbdomen}
+                  onChange={e => setEditAbdomen(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Quadril (cm)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  inputMode="decimal"
+                  placeholder="Ex: 96.0"
+                  value={editHip}
+                  onChange={e => setEditHip(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Observações Pessoais</label>
+              <textarea
+                rows={3}
+                placeholder="Ex: Atualizado peso e cintura após retorno das férias..."
+                value={editNotes}
+                onChange={e => setEditNotes(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500 resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
               <button
-                onClick={() => setShowAddPhotosModal(false)}
-                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium"
+                type="button"
+                onClick={() => setEditingAssessment(null)}
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-medium transition-all"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleUploadDetailsPhotos}
-                disabled={submitting || detailsPhotoDrafts.length === 0}
-                className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50"
+                type="submit"
+                disabled={editSubmitting}
+                className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-xs font-semibold shadow-lg hover:shadow-emerald-500/20 disabled:opacity-50 transition-all flex items-center gap-1.5"
               >
-                Enviar {detailsPhotoDrafts.length} {detailsPhotoDrafts.length === 1 ? 'Foto' : 'Fotos'}
+                {editSubmitting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Salvando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" /> Salvar Alterações
+                  </>
+                )}
               </button>
             </div>
-          </div>
+          </form>
         </div>
-      , document.body)}
-
-      {/* EDIT ASSESSMENT MODAL */}
-      {editingAssessment && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-amber-500" /> Editar Avaliação Física
-              </h3>
-              <button onClick={() => setEditingAssessment(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white" aria-label="Fechar edição">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {editError && (
-              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{editError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveEditAssessment} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Data da Avaliação <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={editDate}
-                    onChange={e => setEditDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Título (Opcional)</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Medição pós-treino"
-                    value={editTitle}
-                    onChange={e => setEditTitle(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Peso (kg)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    inputMode="decimal"
-                    placeholder="Ex: 78.5"
-                    value={editWeight}
-                    onChange={e => setEditWeight(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Gordura Corporal (%)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    inputMode="decimal"
-                    placeholder="Ex: 15.2"
-                    value={editBodyFat}
-                    onChange={e => setEditBodyFat(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Cintura (cm)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    inputMode="decimal"
-                    placeholder="Ex: 82.0"
-                    value={editWaist}
-                    onChange={e => setEditWaist(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Abdômen (cm)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    inputMode="decimal"
-                    placeholder="Ex: 85.0"
-                    value={editAbdomen}
-                    onChange={e => setEditAbdomen(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Quadril (cm)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    inputMode="decimal"
-                    placeholder="Ex: 96.0"
-                    value={editHip}
-                    onChange={e => setEditHip(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Observações Pessoais</label>
-                <textarea
-                  rows={3}
-                  placeholder="Ex: Atualizado peso e cintura após retorno das férias..."
-                  value={editNotes}
-                  onChange={e => setEditNotes(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500 resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setEditingAssessment(null)}
-                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-medium transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={editSubmitting}
-                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-xs font-semibold shadow-lg hover:shadow-emerald-500/20 disabled:opacity-50 transition-all flex items-center gap-1.5"
-                >
-                  {editSubmitting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" /> Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" /> Salvar Alterações
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      , document.body)}
+      </Modal>
 
       {/* CONFIRM DIALOG: EXCLUIR AVALIAÇÃO */}
       <ConfirmDialog

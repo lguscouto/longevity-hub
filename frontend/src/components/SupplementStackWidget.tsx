@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Pill, CheckCircle2, Circle, Plus, Sparkles, Clock, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
+import { Modal, ConfirmDialog } from './ui';
 
 interface Supplement {
   id: number;
@@ -366,127 +366,111 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       </div>
 
       {/* Modal Adicionar */}
-      {showAddModal && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Pill className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Novo Suplemento
-              </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">✕</button>
-            </div>
-
-            <form onSubmit={handleAddSupplement} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Nome do Composto</label>
-                <input
-                  type="text"
-                  placeholder="Ex: NMN, Creatina, Ômega-3"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Dosagem</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 500mg, 5g"
-                    value={formData.dosage}
-                    onChange={e => setFormData({ ...formData, dosage: e.target.value })}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Frequência</label>
-                  <select
-                    value={formData.frequency}
-                    onChange={e => setFormData({ ...formData, frequency: e.target.value })}
-                    className={inputClass}
-                  >
-                    <option value="Diário">Diário</option>
-                    <option value="Semanal">Semanal</option>
-                    <option value="Dias Alternados">Dias Alternados</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Horário / Cronobiologia</label>
-                <select
-                  value={formData.timing}
-                  onChange={e => setFormData({ ...formData, timing: e.target.value })}
-                  className={inputClass}
-                >
-                  <option value="Manhã">Manhã (Jejum)</option>
-                  <option value="Almoço">Almoço</option>
-                  <option value="Tarde">Tarde</option>
-                  <option value="Jantar">Jantar</option>
-                  <option value="Antes de Dormir">Antes de Dormir</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Notas / Objetivo (Opcional)</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Para otimização de NAD+"
-                  value={formData.notes}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold shadow-md"
-                >
-                  Salvar Suplemento
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Novo Suplemento"
+        icon={<Pill className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />}
+        size="md"
+      >
+        <form onSubmit={handleAddSupplement} className="space-y-3 text-xs">
+          <div>
+            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Nome do Composto</label>
+            <input
+              type="text"
+              placeholder="Ex: NMN, Creatina, Ômega-3"
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              className={inputClass}
+            />
           </div>
-        </div>
-      , document.body)}
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Dosagem</label>
+              <input
+                type="text"
+                placeholder="Ex: 500mg, 5g"
+                value={formData.dosage}
+                onChange={e => setFormData({ ...formData, dosage: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Frequência</label>
+              <select
+                value={formData.frequency}
+                onChange={e => setFormData({ ...formData, frequency: e.target.value })}
+                className={inputClass}
+              >
+                <option value="Diário">Diário</option>
+                <option value="Semanal">Semanal</option>
+                <option value="Dias Alternados">Dias Alternados</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Horário / Cronobiologia</label>
+            <select
+              value={formData.timing}
+              onChange={e => setFormData({ ...formData, timing: e.target.value })}
+              className={inputClass}
+            >
+              <option value="Manhã">Manhã (Jejum)</option>
+              <option value="Almoço">Almoço</option>
+              <option value="Tarde">Tarde</option>
+              <option value="Jantar">Jantar</option>
+              <option value="Antes de Dormir">Antes de Dormir</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Notas / Objetivo (Opcional)</label>
+            <input
+              type="text"
+              placeholder="Ex: Para otimização de NAD+"
+              value={formData.notes}
+              onChange={e => setFormData({ ...formData, notes: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold shadow-md"
+            >
+              Salvar Suplemento
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal Confirmar Exclusão */}
-      {deleteConfirmSupp && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Confirmar Exclusão</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
+      <ConfirmDialog
+        isOpen={Boolean(deleteConfirmSupp)}
+        title="Confirmar Exclusão"
+        description={
+          deleteConfirmSupp ? (
+            <span>
               Tem certeza que deseja remover <strong className="text-slate-900 dark:text-white">{deleteConfirmSupp.name}</strong> da sua pilha?
-            </p>
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <button
-                onClick={() => setDeleteConfirmSupp(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteSupplement}
-                className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition shadow-md"
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      , document.body)}
+            </span>
+          ) : null
+        }
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        isDestructive
+        onConfirm={handleDeleteSupplement}
+        onClose={() => setDeleteConfirmSupp(null)}
+      />
     </div>
   );
 };

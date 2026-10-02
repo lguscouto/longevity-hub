@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
-import { ConfirmDialog, EmptyState, InlineError } from './ui';
+import { ConfirmDialog, EmptyState, InlineError, Modal } from './ui';
 
 interface LabResult {
   id?: number;
@@ -486,85 +485,81 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       </div>
 
       {/* Modal de Detalhes do Laudo */}
-      {selectedPanelDate && groupedLabs[selectedPanelDate] && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-6 w-6 text-cyan-600 dark:text-cyan-400" /> Laudo Médico — {selectedPanelDate}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Total de {groupedLabs[selectedPanelDate].length} biomarcadores registrados nesta data</p>
-              </div>
-              <button onClick={() => setSelectedPanelDate(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg">✕</button>
-            </div>
+      <Modal
+        isOpen={Boolean(selectedPanelDate && groupedLabs[selectedPanelDate])}
+        onClose={() => setSelectedPanelDate(null)}
+        title={selectedPanelDate ? `Laudo Médico — ${selectedPanelDate}` : ''}
+        description={selectedPanelDate && groupedLabs[selectedPanelDate] ? `Total de ${groupedLabs[selectedPanelDate].length} biomarcadores registrados nesta data` : undefined}
+        icon={<FileText className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />}
+        size="4xl"
+        footer={
+          <div className="flex justify-end w-full">
+            <button
+              onClick={() => setSelectedPanelDate(null)}
+              className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
+            >
+              Fechar Laudo
+            </button>
+          </div>
+        }
+      >
+        {selectedPanelDate && groupedLabs[selectedPanelDate] && (
+          <div className="space-y-6 pr-2">
+            {LAB_MARKERS_GROUPS.map((group, idx) => {
+              const groupKeys = group.items.map(i => i.key);
+              const matchingResults = groupedLabs[selectedPanelDate].filter(r => groupKeys.includes(normalizeLabMetricKey(r.metric_key)));
 
-            <div className="flex-1 overflow-y-auto space-y-6 pr-2">
-              {LAB_MARKERS_GROUPS.map((group, idx) => {
-                const groupKeys = group.items.map(i => i.key);
-                const matchingResults = groupedLabs[selectedPanelDate].filter(r => groupKeys.includes(normalizeLabMetricKey(r.metric_key)));
+              if (matchingResults.length === 0) return null;
 
-                if (matchingResults.length === 0) return null;
+              return (
+                <div key={idx} className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                    <span>{group.icon}</span> {group.groupName} ({matchingResults.length})
+                  </h4>
 
-                return (
-                  <div key={idx} className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
-                      <span>{group.icon}</span> {group.groupName} ({matchingResults.length})
-                    </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                      {matchingResults.map((item, i) => {
-                        const isEligible = isClinicallyEligibleLab(item);
-                        const isOpt = isEligible && isMarkerOptimal(item);
-                        return (
-                          <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate" title={getMetricDisplayName(item)}>
-                                  {getMetricDisplayName(item)}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {matchingResults.map((item, i) => {
+                      const isEligible = isClinicallyEligibleLab(item);
+                      const isOpt = isEligible && isMarkerOptimal(item);
+                      return (
+                        <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white truncate" title={getMetricDisplayName(item)}>
+                                {getMetricDisplayName(item)}
+                              </span>
+                              {isOpt ? (
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                                  <CheckCircle2 className="h-3 w-3" /> Ótimo
                                 </span>
-                                {isOpt ? (
-                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
-                                    <CheckCircle2 className="h-3 w-3" /> Ótimo
-                                  </span>
-                                ) : !isEligible ? (
-                                  <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">Não clínico</span>
-                                ) : (
-                                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
-                                    <AlertCircle className="h-3 w-3" /> Atenção
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="text-xl font-extrabold text-cyan-700 dark:text-cyan-300">
-                                {item.value} <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{item.unit}</span>
-                              </div>
+                              ) : !isEligible ? (
+                                <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">Não clínico</span>
+                              ) : (
+                                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
+                                  <AlertCircle className="h-3 w-3" /> Atenção
+                                </span>
+                              )}
                             </div>
 
-                            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-[10px] text-slate-500 flex justify-between">
-                              <span>{recordOriginLabel(item.record_origin)}</span>
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
+                            <div className="text-xl font-extrabold text-cyan-700 dark:text-cyan-300">
+                              {item.value} <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{item.unit}</span>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
 
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-              <button
-                onClick={() => setSelectedPanelDate(null)}
-                className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
-              >
-                Fechar Laudo
-              </button>
-            </div>
+                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-[10px] text-slate-500 flex justify-between">
+                            <span>{recordOriginLabel(item.record_origin)}</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      , document.body)}
+        )}
+      </Modal>
 
       {/* Modal de Confirmação de Exclusão */}
       <ConfirmDialog
@@ -593,103 +588,100 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       />
 
       {/* Modal de Inclusão em Lote */}
-      {showBatchModal && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl space-y-4 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" /> Registrar Painel Completo de Exames de Sangue
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Preencha apenas os marcadores realizados no seu laudo médico</p>
-              </div>
-              <button onClick={() => setShowBatchModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg">✕</button>
+      <Modal
+        isOpen={showBatchModal}
+        onClose={() => setShowBatchModal(false)}
+        title="Registrar Painel Completo de Exames de Sangue"
+        description="Preencha apenas os marcadores realizados no seu laudo médico"
+        icon={<Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />}
+        size="4xl"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+              {filledCount} marcador(es) pronto(s) para salvar
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowBatchModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                form="batch-lab-form"
+                disabled={filledCount === 0}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs glow-cyan transition"
+              >
+                Salvar Painel Completo ({filledCount})
+              </button>
             </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
-              <div className="flex items-center gap-2">
-                <label htmlFor="lab-collected-at" className="text-slate-600 dark:text-slate-400 font-semibold">Data da Coleta:</label>
-                <input
-                  id="lab-collected-at"
-                  type="date"
-                  value={collectedAt}
-                  onChange={e => setCollectedAt(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleClearForm}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition border border-slate-200 dark:border-slate-700"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Limpar Tudo
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleBatchSubmit} className="flex-1 overflow-y-auto space-y-6 pr-2">
-              {LAB_MARKERS_GROUPS.map((group, idx) => (
-                <div key={idx} className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
-                    <span>{group.icon}</span> {group.groupName}
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {group.items.map((item) => (
-                      <div key={item.key} className="bg-slate-50 dark:bg-slate-950/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
-                        <label htmlFor={`lab-marker-${item.key}`} className="block text-xs font-bold text-slate-900 dark:text-white mb-1 truncate" title={item.name}>
-                          {item.name}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            id={`lab-marker-${item.key}`}
-                            type="number"
-                            step="0.01"
-                            placeholder="Vazio"
-                            value={formValues[item.key] || ''}
-                            onChange={e => handleInputChange(item.key, e.target.value)}
-                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus:outline-none"
-                          />
-                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
-                        </div>
-                        <span className="text-[9px] text-slate-500 mt-1 block">
-                          Alvo: {item.optimal} {item.unit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              <div className="sticky bottom-0 bg-white dark:bg-slate-900 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
-                  {filledCount} marcador(es) pronto(s) para salvar
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowBatchModal(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition"
-                  >
-                    Cancelar
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={filledCount === 0}
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs glow-cyan transition"
-                  >
-                    Salvar Painel Completo ({filledCount})
-                  </button>
-                </div>
-              </div>
-            </form>
           </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+            <div className="flex items-center gap-2">
+              <label htmlFor="lab-collected-at" className="text-slate-600 dark:text-slate-400 font-semibold">Data da Coleta:</label>
+              <input
+                id="lab-collected-at"
+                type="date"
+                value={collectedAt}
+                onChange={e => setCollectedAt(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleClearForm}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition border border-slate-200 dark:border-slate-700"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Limpar Tudo
+              </button>
+            </div>
+          </div>
+
+          <form id="batch-lab-form" onSubmit={handleBatchSubmit} className="space-y-6 pr-2">
+            {LAB_MARKERS_GROUPS.map((group, idx) => (
+              <div key={idx} className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                  <span>{group.icon}</span> {group.groupName}
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {group.items.map((item) => (
+                    <div key={item.key} className="bg-slate-50 dark:bg-slate-950/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
+                      <label htmlFor={`lab-marker-${item.key}`} className="block text-xs font-bold text-slate-900 dark:text-white mb-1 truncate" title={item.name}>
+                        {item.name}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={`lab-marker-${item.key}`}
+                          type="number"
+                          step="0.01"
+                          placeholder="Vazio"
+                          value={formValues[item.key] || ''}
+                          onChange={e => handleInputChange(item.key, e.target.value)}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus:outline-none"
+                        />
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
+                      </div>
+                      <span className="text-[9px] text-slate-500 mt-1 block">
+                        Alvo: {item.optimal} {item.unit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </form>
         </div>
-      , document.body)}
+      </Modal>
     </div>
   );
 };
