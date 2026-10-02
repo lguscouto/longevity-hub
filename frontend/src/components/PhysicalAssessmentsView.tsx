@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Calendar, Scale, Activity, Plus, Trash2, ArrowLeftRight, Eye, ShieldCheck, Upload, AlertCircle, X, ChevronRight, CheckCircle2, ChevronLeft, RefreshCw, Pencil, FileText, Download } from 'lucide-react';
+import {
+  Camera,
+  Calendar,
+  Scale,
+  Activity,
+  Plus,
+  Trash2,
+  ArrowLeftRight,
+  Eye,
+  ShieldCheck,
+  Upload,
+  AlertCircle,
+  X,
+  ChevronRight,
+  CheckCircle2,
+  ChevronLeft,
+  RefreshCw,
+  Pencil,
+  FileText,
+  Download,
+  Ruler,
+  Percent,
+  Check,
+  Save,
+  RotateCcw
+} from 'lucide-react';
 import { BodyCompositionChart } from './BodyCompositionChart';
+import { ConfirmDialog, EmptyState } from './ui';
 
 export interface Photo {
   id: string;
@@ -63,6 +89,8 @@ interface NewPhotoDraft {
   description: string;
 }
 
+const DRAFT_STORAGE_KEY = 'longevidade_physical_assessment_draft';
+
 const ANGLE_LABELS: Record<string, string> = {
   front: 'Frente',
   back: 'Costas',
@@ -76,6 +104,14 @@ const BODY_STATE_LABELS: Record<string, string> = {
   flexed: 'Contraído',
   unspecified: 'Não informado',
 };
+
+const WIZARD_STEPS = [
+  { id: 1, label: 'Dados Básicos', icon: Calendar, description: 'Data, título e peso' },
+  { id: 2, label: 'Medidas', icon: Ruler, description: 'Cintura, abdômen e quadril' },
+  { id: 3, label: 'Composição', icon: Percent, description: '% Gordura corporal' },
+  { id: 4, label: 'Fotos', icon: Camera, description: 'Registro fotográfico' },
+  { id: 5, label: 'Revisão', icon: CheckCircle2, description: 'Notas e conferência final' },
+];
 
 export const PhysicalAssessmentsView: React.FC = () => {
   const [assessments, setAssessments] = useState<PhysicalAssessment[]>([]);
@@ -91,6 +127,12 @@ export const PhysicalAssessmentsView: React.FC = () => {
   const [comparePrevId, setComparePrevId] = useState<string>('');
   const [compareCurrId, setCompareCurrId] = useState<string>('');
   const [compareLoading, setCompareLoading] = useState<boolean>(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+
+  // Wizard Stepper State
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [hasDraftLoaded, setHasDraftLoaded] = useState<boolean>(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   // Form State
   const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -124,6 +166,72 @@ export const PhysicalAssessmentsView: React.FC = () => {
   const [editSubmitting, setEditSubmitting] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [chartRefreshKey, setChartRefreshKey] = useState<number>(0);
+
+  // ConfirmDialog States (replacing window.confirm)
+  const [deleteAssessmentConfirm, setDeleteAssessmentConfirm] = useState<{ id: string; title?: string; date: string } | null>(null);
+  const [deletePhotoConfirm, setDeletePhotoConfirm] = useState<{ assessmentId: string; photoId: string } | null>(null);
+
+  // Restore Draft on Mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.formDate) setFormDate(parsed.formDate);
+        if (parsed.formTitle !== undefined) setFormTitle(parsed.formTitle);
+        if (parsed.formWeight !== undefined) setFormWeight(parsed.formWeight);
+        if (parsed.formBodyFat !== undefined) setFormBodyFat(parsed.formBodyFat);
+        if (parsed.formWaist !== undefined) setFormWaist(parsed.formWaist);
+        if (parsed.formAbdomen !== undefined) setFormAbdomen(parsed.formAbdomen);
+        if (parsed.formHip !== undefined) setFormHip(parsed.formHip);
+        if (parsed.formNotes !== undefined) setFormNotes(parsed.formNotes);
+        setHasDraftLoaded(true);
+      }
+    } catch {
+      // Ignorar erros de JSON corrupto no localStorage
+    }
+  }, []);
+
+  // Save Draft on Change
+  useEffect(() => {
+    // Apenas persistir rascunho se houver algum dado digitado além da data padrão
+    if (formTitle || formWeight || formBodyFat || formWaist || formAbdomen || formHip || formNotes) {
+      try {
+        const draft = {
+          formDate,
+          formTitle,
+          formWeight,
+          formBodyFat,
+          formWaist,
+          formAbdomen,
+          formHip,
+          formNotes
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch {
+        // Ignorar falhas de cota no localStorage
+      }
+    }
+  }, [formDate, formTitle, formWeight, formBodyFat, formWaist, formAbdomen, formHip, formNotes]);
+
+  const handleClearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // noop
+    }
+    setFormDate(new Date().toISOString().split('T')[0]);
+    setFormTitle('');
+    setFormWeight('');
+    setFormBodyFat('');
+    setFormWaist('');
+    setFormAbdomen('');
+    setFormHip('');
+    setFormNotes('');
+    setPhotoDrafts([]);
+    setCurrentStep(1);
+    setHasDraftLoaded(false);
+  };
 
   const fetchAssessments = async () => {
     setLoading(true);
@@ -170,14 +278,15 @@ export const PhysicalAssessmentsView: React.FC = () => {
   const addFilesToDrafts = (files: File[], isDetails: boolean) => {
     const validExtensions = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     const newDrafts: NewPhotoDraft[] = [];
+    let fileError = '';
 
     files.forEach((file, idx) => {
       if (!validExtensions.includes(file.type)) {
-        alert(`O arquivo ${file.name} não é uma imagem suportada (JPEG, PNG, WebP).`);
+        fileError = `O arquivo ${file.name} não é uma imagem suportada (JPEG, PNG, WebP).`;
         return;
       }
       if (file.size > 15 * 1024 * 1024) {
-        alert(`O arquivo ${file.name} excede o limite de 15 MB.`);
+        fileError = `O arquivo ${file.name} excede o limite de 15 MB.`;
         return;
       }
 
@@ -196,6 +305,12 @@ export const PhysicalAssessmentsView: React.FC = () => {
         description: '',
       });
     });
+
+    if (fileError) {
+      setCreateError(fileError);
+    } else {
+      setCreateError(null);
+    }
 
     if (isDetails) {
       setDetailsPhotoDrafts(prev => [...prev, ...newDrafts]);
@@ -218,14 +333,17 @@ export const PhysicalAssessmentsView: React.FC = () => {
     }
   };
 
-  const handleCreateAssessment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateAssessment = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!formDate) {
-      alert('A data da avaliação é obrigatória.');
+      setCreateError('A data da avaliação é obrigatória.');
+      setCurrentStep(1);
       return;
     }
 
     setSubmitting(true);
+    setCreateError(null);
+
     try {
       // 1. Create Assessment Record
       const payload = {
@@ -246,7 +364,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
       });
 
       if (!res.ok) {
-        const errJson = await res.json();
+        const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.detail || 'Erro ao criar avaliação');
       }
 
@@ -267,13 +385,19 @@ export const PhysicalAssessmentsView: React.FC = () => {
           });
 
           if (!photoRes.ok) {
-            const errJson = await photoRes.json();
+            const errJson = await photoRes.json().catch(() => ({}));
             console.error('Erro ao enviar foto:', errJson);
           }
         }
       }
 
-      // Reset form & reload
+      // Reset form, clear localStorage draft & reload
+      try {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        // noop
+      }
+
       setPhotoDrafts([]);
       setFormTitle('');
       setFormWeight('');
@@ -282,10 +406,13 @@ export const PhysicalAssessmentsView: React.FC = () => {
       setFormAbdomen('');
       setFormHip('');
       setFormNotes('');
+      setCurrentStep(1);
+      setHasDraftLoaded(false);
+
       await fetchAssessments();
       setActiveMode('history');
     } catch (err: any) {
-      alert(err.message || 'Erro ao salvar avaliação física');
+      setCreateError(err.message || 'Erro ao salvar avaliação física');
     } finally {
       setSubmitting(false);
     }
@@ -308,7 +435,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
         });
 
         if (!photoRes.ok) {
-          const errJson = await photoRes.json();
+          const errJson = await photoRes.json().catch(() => ({}));
           throw new Error(errJson.detail || 'Erro ao enviar foto');
         }
       }
@@ -317,63 +444,66 @@ export const PhysicalAssessmentsView: React.FC = () => {
       setShowAddPhotosModal(false);
       await fetchAssessments();
     } catch (err: any) {
-      alert(err.message || 'Erro ao enviar fotos adicionais');
+      setError(err.message || 'Erro ao enviar fotos adicionais');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteAssessment = async (id: string) => {
-    if (!confirm('Tem certeza de que deseja excluir esta avaliação física e todas as suas fotos permanentemente?')) {
-      return;
-    }
+  const executeDeleteAssessment = async () => {
+    if (!deleteAssessmentConfirm) return;
+    const { id } = deleteAssessmentConfirm;
     try {
       const res = await fetch(`/api/physical-assessments/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao excluir avaliação');
+      setDeleteAssessmentConfirm(null);
       await fetchAssessments();
       if (selectedAssessmentId === id) {
         setSelectedAssessmentId(null);
         setActiveMode('history');
       }
     } catch (err: any) {
-      alert(err.message || 'Erro ao excluir');
+      setError(err.message || 'Erro ao excluir');
     }
   };
 
-  const handleDeleteSinglePhoto = async (assessmentId: string, photoId: string) => {
-    if (!confirm('Deseja remover esta foto permanentemente?')) return;
+  const executeDeleteSinglePhoto = async () => {
+    if (!deletePhotoConfirm) return;
+    const { assessmentId, photoId } = deletePhotoConfirm;
     try {
       const res = await fetch(`/api/physical-assessments/${assessmentId}/photos/${photoId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Falha ao remover foto');
+      setDeletePhotoConfirm(null);
       await fetchAssessments();
     } catch (err: any) {
-      alert(err.message || 'Erro ao remover foto');
+      setError(err.message || 'Erro ao remover foto');
     }
   };
 
   const handleRunComparison = async () => {
     if (!comparePrevId || !compareCurrId) {
-      alert('Selecione a avaliação anterior e a avaliação atual.');
+      setCompareError('Selecione a avaliação anterior e a avaliação atual.');
       return;
     }
     if (comparePrevId === compareCurrId) {
-      alert('Selecione duas avaliações diferentes para comparar.');
+      setCompareError('Selecione duas avaliações diferentes para comparar.');
       return;
     }
 
     setCompareLoading(true);
+    setCompareError(null);
     try {
       const res = await fetch(`/api/physical-assessments/compare?previous_id=${comparePrevId}&current_id=${compareCurrId}`);
       if (!res.ok) {
-        const errJson = await res.json();
+        const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.detail || 'Erro ao gerar comparação');
       }
       const manifest = await res.json();
       setComparisonManifest(manifest);
     } catch (err: any) {
-      alert(err.message || 'Erro ao comparar períodos');
+      setCompareError(err.message || 'Erro ao comparar períodos');
     } finally {
       setCompareLoading(false);
     }
@@ -529,19 +659,14 @@ export const PhysicalAssessmentsView: React.FC = () => {
           />
 
           {assessments.length === 0 ? (
-            <div className="glass-panel p-12 text-center rounded-2xl border border-slate-800">
-              <Camera className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-300 mb-1">Nenhuma avaliação cadastrada</h3>
-              <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
-                Registre sua primeira avaliação física para acompanhar fotos de frente, costas e lados, peso e percentual de gordura.
-              </p>
-              <button
-                onClick={() => setActiveMode('create')}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium shadow-lg hover:shadow-emerald-500/20 transition-all inline-flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" /> Registrar Primeira Avaliação
-              </button>
-            </div>
+            <EmptyState
+              title="Nenhuma avaliação física cadastrada"
+              description="Registre sua primeira avaliação física para acompanhar fotos de frente, costas e lados, peso e percentual de gordura."
+              action={{
+                label: 'Registrar Primeira Avaliação',
+                onClick: () => setActiveMode('create'),
+              }}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {assessments.map(ass => {
@@ -549,7 +674,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 return (
                   <div
                     key={ass.id}
-                    className="glass-panel rounded-2xl border border-slate-800 overflow-hidden hover:border-slate-700 transition-all flex flex-col justify-between group"
+                    className="glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
                   >
                     {/* Thumbnail Header */}
                     <div className="relative h-48 bg-slate-950 flex items-center justify-center overflow-hidden">
@@ -575,12 +700,12 @@ export const PhysicalAssessmentsView: React.FC = () => {
                     <div className="p-5 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+                          <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 text-xs font-semibold uppercase tracking-wider">
                             <Calendar className="h-3.5 w-3.5" />
                             {new Date(ass.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
                           </div>
                           {ass.weight_kg && (
-                            <div className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                               {ass.weight_kg} kg
                             </div>
                           )}
@@ -591,19 +716,19 @@ export const PhysicalAssessmentsView: React.FC = () => {
                         </h3>
 
                         {/* Badges for metrics */}
-                        <div className="flex flex-wrap gap-2 text-xs text-slate-400 mb-3">
+                        <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
                           {ass.body_fat_percentage && (
-                            <span className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded">
-                              Gordura: <strong className="text-slate-200">{ass.body_fat_percentage}%</strong>
+                            <span className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded">
+                              Gordura: <strong className="text-slate-800 dark:text-slate-200">{ass.body_fat_percentage}%</strong>
                             </span>
                           )}
                           {ass.waist_cm && (
-                            <span className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded">
-                              Cintura: <strong className="text-slate-200">{ass.waist_cm} cm</strong>
+                            <span className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded">
+                              Cintura: <strong className="text-slate-800 dark:text-slate-200">{ass.waist_cm} cm</strong>
                             </span>
                           )}
                           {ass.notes && (
-                            <p className="text-xs text-slate-400 line-clamp-2 mt-1 italic w-full break-words">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 italic w-full break-words">
                               "{ass.notes}"
                             </p>
                           )}
@@ -611,7 +736,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                       </div>
 
                       {/* Card Action Buttons */}
-                      <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-4">
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-4">
                         <button
                           onClick={() => {
                             setSelectedAssessmentId(ass.id);
@@ -620,13 +745,13 @@ export const PhysicalAssessmentsView: React.FC = () => {
                           }}
                           className="flex-1 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5"
                         >
-                          <Eye className="h-3.5 w-3.5 text-cyan-400" /> Ver Detalhes
+                          <Eye className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Ver Detalhes
                         </button>
                         {ass.photos.length > 0 && (
                           <a
                             href={`/api/physical-assessments/${ass.id}/photos/download`}
                             download
-                            className="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-cyan-500/10 dark:hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/30 transition-all flex items-center justify-center"
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-cyan-500/10 dark:hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/30 transition-all flex items-center justify-center"
                             title={`Baixar todas as fotos (${ass.photos.length} fotos)`}
                           >
                             <Download className="h-4 w-4" />
@@ -640,8 +765,8 @@ export const PhysicalAssessmentsView: React.FC = () => {
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteAssessment(ass.id)}
-                          className="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-200 dark:border-slate-800 hover:border-rose-500/30 transition-all"
+                          onClick={() => setDeleteAssessmentConfirm({ id: ass.id, title: ass.title, date: ass.assessment_date })}
+                          className="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-slate-800 hover:border-rose-500/30 transition-all"
                           title="Excluir avaliação"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -656,244 +781,485 @@ export const PhysicalAssessmentsView: React.FC = () => {
         </div>
       )}
 
-      {/* MODE 2: NOVA AVALIAÇÃO */}
+      {/* MODE 2: NOVA AVALIAÇÃO (WIZARD STEPPER UX-P1-20) */}
       {!loading && !error && activeMode === 'create' && (
         <form onSubmit={handleCreateAssessment} className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <Calendar className="h-5 w-5 text-emerald-400" /> Dados Principais da Avaliação
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  Data da Avaliação <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formDate}
-                  onChange={e => setFormDate(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Título (Opcional)</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Início do cutting / Medição mensal"
-                  value={formTitle}
-                  onChange={e => setFormTitle(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Peso (kg)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Ex: 78.5"
-                  value={formWeight}
-                  onChange={e => setFormWeight(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
+          {/* Draft Notification Badge */}
+          {hasDraftLoaded && (
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs">
+              <span className="flex items-center gap-2">
+                <RotateCcw className="h-4 w-4 shrink-0" />
+                Rascunho de avaliação anterior recuperado automaticamente deste navegador.
+              </span>
+              <button
+                type="button"
+                onClick={handleClearDraft}
+                className="font-bold underline hover:no-underline ml-2 cursor-pointer"
+              >
+                Descartar rascunho
+              </button>
             </div>
+          )}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Gordura Corporal (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Ex: 15.2"
-                  value={formBodyFat}
-                  onChange={e => setFormBodyFat(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
+          {/* Stepper Navigation Bar */}
+          <div className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <nav aria-label="Etapas da Avaliação Física">
+              <ol className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {WIZARD_STEPS.map((step) => {
+                  const Icon = step.icon;
+                  const isCurrent = currentStep === step.id;
+                  const isCompleted = currentStep > step.id;
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Cintura (cm)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  placeholder="Ex: 82.0"
-                  value={formWaist}
-                  onChange={e => setFormWaist(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Abdômen (cm)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  placeholder="Ex: 85.0"
-                  value={formAbdomen}
-                  onChange={e => setFormAbdomen(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Quadril (cm)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  placeholder="Ex: 96.0"
-                  value={formHip}
-                  onChange={e => setFormHip(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Observações Pessoais</label>
-              <textarea
-                rows={3}
-                placeholder="Ex: Medição realizada em jejum pela manhã..."
-                value={formNotes}
-                onChange={e => setFormNotes(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500 resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Photo Dropzone & Preview */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-              <Camera className="h-5 w-5 text-cyan-400" /> Fotografias Corporais
-            </h3>
-
-            <div
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => handleDrop(e, false)}
-              className="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 bg-slate-950/50 rounded-2xl p-8 text-center transition-all cursor-pointer group"
-            >
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp"
-                onChange={e => handleFileSelect(e, false)}
-                className="hidden"
-                id="photo-upload-input"
-              />
-              <label htmlFor="photo-upload-input" className="cursor-pointer block">
-                <Upload className="h-10 w-10 text-slate-500 group-hover:text-cyan-400 mx-auto mb-3 transition-colors" />
-                <p className="text-sm font-medium text-slate-200 mb-1">
-                  Clique ou arraste e solte fotos corporais aqui
-                </p>
-                <p className="text-xs text-slate-400">
-                  Formatos aceitos: JPEG, PNG, WebP (máx. 15 MB por imagem, até 20 fotos)
-                </p>
-              </label>
-            </div>
-
-            {/* Photo Drafts List */}
-            {photoDrafts.length > 0 && (
-              <div className="space-y-4 pt-2">
-                <h4 className="text-sm font-semibold text-slate-300">
-                  Fotos Selecionadas ({photoDrafts.length}) — Classifique os ângulos:
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {photoDrafts.map((draft, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex gap-4 items-center shadow-sm"
-                    >
-                      <img
-                        src={draft.previewUrl}
-                        alt="Draft"
-                        className="w-20 h-24 object-cover rounded-lg border border-slate-700 shrink-0"
-                      />
-                      <div className="flex-1 space-y-2 text-xs">
-                        <div>
-                          <label className="block text-slate-400 mb-1">Ângulo Corporal</label>
-                          <select
-                            value={draft.angle}
-                            onChange={e => {
-                              const val = e.target.value as any;
-                              setPhotoDrafts(prev => {
-                                const copy = [...prev];
-                                copy[idx].angle = val;
-                                return copy;
-                              });
-                            }}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200"
-                          >
-                            <option value="front">Frente</option>
-                            <option value="back">Costas</option>
-                            <option value="left_side">Lado Esquerdo</option>
-                            <option value="right_side">Lado Direito</option>
-                            <option value="other">Outro</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-slate-400 mb-1">Estado Corporal</label>
-                          <select
-                            value={draft.body_state}
-                            onChange={e => {
-                              const val = e.target.value as any;
-                              setPhotoDrafts(prev => {
-                                const copy = [...prev];
-                                copy[idx].body_state = val;
-                                return copy;
-                              });
-                            }}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200"
-                          >
-                            <option value="relaxed">Relaxado</option>
-                            <option value="flexed">Contraído</option>
-                            <option value="unspecified">Não informado</option>
-                          </select>
-                        </div>
-                      </div>
-
+                  return (
+                    <li key={step.id}>
                       <button
                         type="button"
-                        onClick={() => removeDraft(idx, false)}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg"
-                        title="Remover foto"
+                        onClick={() => setCurrentStep(step.id)}
+                        aria-current={isCurrent ? 'step' : undefined}
+                        className={`w-full p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                          isCurrent
+                            ? 'bg-emerald-500/10 border-emerald-500/30 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                            : isCompleted
+                            ? 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                            : 'bg-white dark:bg-slate-950/40 border-slate-200/60 dark:border-slate-800/60 text-slate-400 dark:text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
                       >
-                        <X className="h-4 w-4" />
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
+                            isCurrent
+                              ? 'bg-emerald-500 text-slate-950'
+                              : isCompleted
+                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                          }`}
+                        >
+                          {isCompleted ? <Check className="h-4 w-4" /> : step.id}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block text-xs font-bold truncate">{step.label}</span>
+                          <span className="block text-[10px] text-slate-400 dark:text-slate-500 truncate hidden sm:block">
+                            {step.description}
+                          </span>
+                        </div>
                       </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
           </div>
 
-          {/* Form Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setActiveMode('history')}
-              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
-            >
-              {submitting ? (
+          {createError && (
+            <div role="alert" className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{createError}</span>
+            </div>
+          )}
+
+          {/* STEP 1: DADOS BÁSICOS */}
+          {currentStep === 1 && (
+            <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+              <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-emerald-500" /> Dados Principais da Avaliação
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Defina o momento do registro e as informações cadastrais iniciais da avaliação.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="assessment-date-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Data da Avaliação <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    id="assessment-date-input"
+                    type="date"
+                    required
+                    value={formDate}
+                    onChange={e => setFormDate(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="assessment-title-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Título (Opcional)
+                  </label>
+                  <input
+                    id="assessment-title-input"
+                    type="text"
+                    placeholder="Ex: Início do cutting / Medição mensal"
+                    value={formTitle}
+                    onChange={e => setFormTitle(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="assessment-weight-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Peso (kg)
+                  </label>
+                  <input
+                    id="assessment-weight-input"
+                    type="number"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Ex: 78.5"
+                    value={formWeight}
+                    onChange={e => setFormWeight(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: MEDIDAS & CIRCUNFERÊNCIAS */}
+          {currentStep === 2 && (
+            <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+              <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Ruler className="h-5 w-5 text-cyan-500" /> Medidas Antropométricas & Circunferências
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Registre as circunferências em centímetros utilizando fita métrica flexível.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="assessment-waist-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Cintura (cm)
+                  </label>
+                  <input
+                    id="assessment-waist-input"
+                    type="number"
+                    step="0.5"
+                    inputMode="decimal"
+                    placeholder="Ex: 82.0"
+                    value={formWaist}
+                    onChange={e => setFormWaist(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-1 block">Ponto mais estreito do tronco</span>
+                </div>
+
+                <div>
+                  <label htmlFor="assessment-abdomen-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Abdômen (cm)
+                  </label>
+                  <input
+                    id="assessment-abdomen-input"
+                    type="number"
+                    step="0.5"
+                    inputMode="decimal"
+                    placeholder="Ex: 85.0"
+                    value={formAbdomen}
+                    onChange={e => setFormAbdomen(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-1 block">Na altura da cicatriz umbilical</span>
+                </div>
+
+                <div>
+                  <label htmlFor="assessment-hip-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Quadril (cm)
+                  </label>
+                  <input
+                    id="assessment-hip-input"
+                    type="number"
+                    step="0.5"
+                    inputMode="decimal"
+                    placeholder="Ex: 96.0"
+                    value={formHip}
+                    onChange={e => setFormHip(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-1 block">Ponto de maior proeminência glútea</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: COMPOSIÇÃO CORPORAL */}
+          {currentStep === 3 && (
+            <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+              <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Percent className="h-5 w-5 text-indigo-500" /> Composição Corporal & Percentual de Gordura
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Obtido por bioimpedância médica, adipômetro ou DXA.
+                </p>
+              </div>
+
+              <div className="max-w-md">
+                <label htmlFor="assessment-bodyfat-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Gordura Corporal (%)
+                </label>
+                <div className="relative">
+                  <input
+                    id="assessment-bodyfat-input"
+                    type="number"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Ex: 15.2"
+                    value={formBodyFat}
+                    onChange={e => setFormBodyFat(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-3.5 pr-8 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-slate-400 font-semibold text-sm">%</span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  Este valor será utilizado no gráfico histórico e no acompanhamento longitudinal da massa magra.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: REGISTRO FOTOGRÁFICO */}
+          {currentStep === 4 && (
+            <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+              <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Camera className="h-5 w-5 text-cyan-500" /> Fotografias Corporais
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Envie fotos nos 4 ângulos clássicos (frente, costas, lados) para viabilizar comparações futuras.
+                </p>
+              </div>
+
+              <div
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleDrop(e, false)}
+                className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl p-8 text-center transition-all cursor-pointer group"
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={e => handleFileSelect(e, false)}
+                  className="hidden"
+                  id="photo-upload-input"
+                />
+                <label htmlFor="photo-upload-input" className="cursor-pointer block">
+                  <Upload className="h-10 w-10 text-slate-400 group-hover:text-cyan-500 mx-auto mb-3 transition-colors" />
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-1">
+                    Clique ou arraste e solte fotos corporais aqui
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Formatos aceitos: JPEG, PNG, WebP (máx. 15 MB por imagem, até 20 fotos)
+                  </p>
+                </label>
+              </div>
+
+              {/* Photo Drafts List */}
+              {photoDrafts.length > 0 && (
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-300">
+                    Fotos Selecionadas ({photoDrafts.length}) — Classifique os ângulos:
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {photoDrafts.map((draft, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex gap-4 items-center shadow-sm"
+                      >
+                        <img
+                          src={draft.previewUrl}
+                          alt="Draft"
+                          className="w-20 h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0"
+                        />
+                        <div className="flex-1 space-y-2 text-xs">
+                          <div>
+                            <label className="block text-slate-500 dark:text-slate-400 mb-1 font-semibold">Ângulo Corporal</label>
+                            <select
+                              value={draft.angle}
+                              onChange={e => {
+                                const val = e.target.value as any;
+                                setPhotoDrafts(prev => {
+                                  const copy = [...prev];
+                                  copy[idx].angle = val;
+                                  return copy;
+                                });
+                              }}
+                              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-medium"
+                            >
+                              <option value="front">Frente</option>
+                              <option value="back">Costas</option>
+                              <option value="left_side">Lado Esquerdo</option>
+                              <option value="right_side">Lado Direito</option>
+                              <option value="other">Outro</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-500 dark:text-slate-400 mb-1 font-semibold">Estado Corporal</label>
+                            <select
+                              value={draft.body_state}
+                              onChange={e => {
+                                const val = e.target.value as any;
+                                setPhotoDrafts(prev => {
+                                  const copy = [...prev];
+                                  copy[idx].body_state = val;
+                                  return copy;
+                                });
+                              }}
+                              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-medium"
+                            >
+                              <option value="relaxed">Relaxado</option>
+                              <option value="flexed">Contraído</option>
+                              <option value="unspecified">Não informado</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeDraft(idx, false)}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                          title="Remover foto"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 5: OBSERVAÇÕES & REVISÃO */}
+          {currentStep === 5 && (
+            <div className="space-y-6">
+              <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-cyan-500" /> Observações Pessoais & Protocolo
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Adicione anotações sobre horário de pesagem, refeições prévias ou dados de bioimpedância.
+                  </p>
+                </div>
+
+                <div>
+                  <textarea
+                    rows={3}
+                    placeholder="Ex: Medição realizada em jejum pela manhã logo após acordar..."
+                    value={formNotes}
+                    onChange={e => setFormNotes(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Review Card */}
+              <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wider">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Resumo para Conferência
+                </h4>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-slate-400 block font-semibold">Data da Avaliação</span>
+                    <strong className="text-slate-900 dark:text-white text-sm">
+                      {new Date(formDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </strong>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-slate-400 block font-semibold">Peso</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-sm">
+                      {formWeight ? `${formWeight} kg` : 'Não informado'}
+                    </strong>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-slate-400 block font-semibold">% Gordura</span>
+                    <strong className="text-cyan-600 dark:text-cyan-400 text-sm">
+                      {formBodyFat ? `${formBodyFat}%` : 'Não informado'}
+                    </strong>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-slate-400 block font-semibold">Circunferências</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-medium">
+                      Cintura: {formWaist ? `${formWaist}cm` : '—'} | Abd: {formAbdomen ? `${formAbdomen}cm` : '—'} | Quad: {formHip ? `${formHip}cm` : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+                  <span>Fotos anexadas: <strong className="text-slate-800 dark:text-slate-200">{photoDrafts.length}</strong></span>
+                  <span>Título: <strong className="text-slate-800 dark:text-slate-200">{formTitle || 'Não especificado'}</strong></span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stepper Navigation Actions */}
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setActiveMode('history')}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all"
+              >
+                Cancelar
+              </button>
+
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Etapa Anterior
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              {currentStep < 5 ? (
                 <>
-                  <RefreshCw className="h-4 w-4 animate-spin" /> Salvando...
+                  {/* Atalho para salvar antes de passar por todas as etapas se o usuário tiver dados parciais */}
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Salvar Avaliação Física
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(prev => prev + 1)}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    Próxima Etapa <ChevronRight className="h-4 w-4" />
+                  </button>
                 </>
               ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" /> Salvar Avaliação Física
-                </>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" /> Salvando Avaliação...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" /> Salvar Avaliação Física
+                    </>
+                  )}
+                </button>
               )}
-            </button>
+            </div>
           </div>
         </form>
       )}
@@ -904,7 +1270,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
           <div className="flex items-center justify-between">
             <button
               onClick={() => setActiveMode('history')}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-all inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition-all inline-flex items-center gap-1.5"
             >
               <ChevronLeft className="h-4 w-4" /> Voltar ao Histórico
             </button>
@@ -914,7 +1280,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 <a
                   href={`/api/physical-assessments/${selectedAssessment.id}/photos/download`}
                   download
-                  className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-medium transition-all inline-flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 text-xs font-medium transition-all inline-flex items-center gap-1.5"
                   title="Baixar arquivo ZIP com todas as fotografias"
                 >
                   <Download className="h-4 w-4" /> Baixar Todas as Fotos ({selectedAssessment.photos.length})
@@ -933,8 +1299,8 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 <Plus className="h-4 w-4" /> Adicionar Fotos
               </button>
               <button
-                onClick={() => handleDeleteAssessment(selectedAssessment.id)}
-                className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition-all inline-flex items-center gap-1.5"
+                onClick={() => setDeleteAssessmentConfirm({ id: selectedAssessment.id, title: selectedAssessment.title, date: selectedAssessment.assessment_date })}
+                className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30 text-xs font-medium transition-all inline-flex items-center gap-1.5"
               >
                 <Trash2 className="h-4 w-4" /> Excluir Registro
               </button>
@@ -942,10 +1308,10 @@ export const PhysicalAssessmentsView: React.FC = () => {
           </div>
 
           {/* Details Overview Card */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6 pb-6 border-b border-slate-800">
+          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
               <div className="min-w-0 flex-1">
-                <div className="text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-1 flex items-center gap-2">
+                <div className="text-cyan-600 dark:text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-1 flex items-center gap-2">
                   <Calendar className="h-4 w-4 flex-shrink-0" />
                   {new Date(selectedAssessment.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')}
                 </div>
@@ -959,25 +1325,25 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 {selectedAssessment.weight_kg && (
                   <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-center shadow-sm min-w-[95px]">
                     <span className="text-slate-400 text-xs block">Peso</span>
-                    <strong className="text-emerald-400 text-lg font-bold">{selectedAssessment.weight_kg} kg</strong>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg font-bold">{selectedAssessment.weight_kg} kg</strong>
                   </div>
                 )}
                 {selectedAssessment.body_fat_percentage && (
                   <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-center shadow-sm min-w-[95px]">
                     <span className="text-slate-400 text-xs block">% Gordura</span>
-                    <strong className="text-cyan-400 text-lg font-bold">{selectedAssessment.body_fat_percentage}%</strong>
+                    <strong className="text-cyan-600 dark:text-cyan-400 text-lg font-bold">{selectedAssessment.body_fat_percentage}%</strong>
                   </div>
                 )}
                 {selectedAssessment.waist_cm && (
                   <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-center shadow-sm min-w-[95px]">
                     <span className="text-slate-400 text-xs block">Cintura</span>
-                    <strong className="text-slate-200 text-lg font-bold">{selectedAssessment.waist_cm} cm</strong>
+                    <strong className="text-slate-800 dark:text-slate-200 text-lg font-bold">{selectedAssessment.waist_cm} cm</strong>
                   </div>
                 )}
                 {selectedAssessment.abdomen_cm && (
                   <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-center shadow-sm min-w-[95px]">
                     <span className="text-slate-400 text-xs block">Abdômen</span>
-                    <strong className="text-slate-200 text-lg font-bold">{selectedAssessment.abdomen_cm} cm</strong>
+                    <strong className="text-slate-800 dark:text-slate-200 text-lg font-bold">{selectedAssessment.abdomen_cm} cm</strong>
                   </div>
                 )}
               </div>
@@ -985,24 +1351,24 @@ export const PhysicalAssessmentsView: React.FC = () => {
 
             {/* Dedicated Notes & Bioimpedance Section */}
             {selectedAssessment.notes && (
-              <div className="mb-6 p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+              <div className="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80">
                 <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-cyan-400 flex-shrink-0" />
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                     Anotações Clínicas & Bioimpedância
                   </span>
                   {selectedAssessment.notes.length > 180 && (
                     <button
                       type="button"
                       onClick={() => setIsNotesExpanded(!isNotesExpanded)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors cursor-pointer"
+                      className="text-xs text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 font-medium transition-colors cursor-pointer"
                     >
                       {isNotesExpanded ? 'Recolher' : 'Ver tudo'}
                     </button>
                   )}
                 </div>
                 <div
-                  className={`text-slate-300 text-sm leading-relaxed whitespace-pre-line ${
+                  className={`text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-line ${
                     !isNotesExpanded && selectedAssessment.notes.length > 180 ? 'line-clamp-4' : ''
                   }`}
                 >
@@ -1014,13 +1380,13 @@ export const PhysicalAssessmentsView: React.FC = () => {
             {/* Photo Gallery Grid */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Camera className="h-4 w-4 text-cyan-400" /> Galeria de Fotografias ({selectedAssessment.photos.length})
+                <Camera className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Galeria de Fotografias ({selectedAssessment.photos.length})
               </h3>
               {selectedAssessment.photos.length > 0 && (
                 <a
                   href={`/api/physical-assessments/${selectedAssessment.id}/photos/download`}
                   download
-                  className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1 font-medium"
+                  className="text-xs text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 transition-colors inline-flex items-center gap-1 font-medium"
                   title="Baixar todas as fotos em formato ZIP"
                 >
                   <Download className="h-3.5 w-3.5" /> Baixar todas em ZIP
@@ -1029,7 +1395,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
             </div>
 
             {selectedAssessment.photos.length === 0 ? (
-              <div className="p-8 text-center bg-slate-950/50 rounded-xl border border-slate-800 text-slate-400 text-sm">
+              <div className="p-8 text-center bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 text-sm">
                 Nenhuma foto anexada a esta avaliação.
               </div>
             ) : (
@@ -1037,7 +1403,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 {selectedAssessment.photos.map(photo => (
                   <div
                     key={photo.id}
-                    className="relative group rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex flex-col"
+                    className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col"
                   >
                     <img
                       src={photo.content_url}
@@ -1052,8 +1418,8 @@ export const PhysicalAssessmentsView: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => handleDeleteSinglePhoto(selectedAssessment.id, photo.id)}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/80 dark:bg-slate-900/80 text-slate-400 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity border border-slate-200 dark:border-slate-700"
+                      onClick={() => setDeletePhotoConfirm({ assessmentId: selectedAssessment.id, photoId: photo.id })}
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/80 dark:bg-slate-900/80 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity border border-slate-200 dark:border-slate-700"
                       title="Excluir foto"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1074,14 +1440,21 @@ export const PhysicalAssessmentsView: React.FC = () => {
       {/* MODE 4: COMPARAR PERÍODOS LADO A LADO */}
       {!loading && !error && activeMode === 'compare' && (
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <ArrowLeftRight className="h-5 w-5 text-violet-400" /> Seleção de Períodos para Comparação
+              <ArrowLeftRight className="h-5 w-5 text-violet-500" /> Seleção de Períodos para Comparação
             </h3>
+
+            {compareError && (
+              <div role="alert" className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{compareError}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Avaliação Anterior (Baseline)</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Avaliação Anterior (Baseline)</label>
                 <select
                   value={comparePrevId}
                   onChange={e => setComparePrevId(e.target.value)}
@@ -1097,7 +1470,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Avaliação Atual (Evolução)</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Avaliação Atual (Evolução)</label>
                 <select
                   value={compareCurrId}
                   onChange={e => setCompareCurrId(e.target.value)}
@@ -1129,16 +1502,16 @@ export const PhysicalAssessmentsView: React.FC = () => {
           {comparisonManifest && (
             <div className="space-y-6">
               {/* Summary Cards */}
-              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
                   <div>
-                    <span className="text-xs font-semibold text-violet-400 uppercase tracking-wider">Intervalo Decorrido</span>
+                    <span className="text-xs font-semibold text-violet-500 uppercase tracking-wider">Intervalo Decorrido</span>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                       {comparisonManifest.days_between} dias entre as avaliações
                     </h3>
                   </div>
 
-                  <div className="flex gap-4 text-sm text-slate-300">
+                  <div className="flex gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-sm">
                       <span className="text-xs text-slate-400 block">Baseline</span>
                       <strong>{new Date(comparisonManifest.previous_assessment.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')}</strong>
@@ -1155,7 +1528,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span className="text-xs text-slate-400 block">Variação de Peso</span>
                     {comparisonManifest.deltas.weight_kg !== null ? (
-                      <strong className={`text-lg font-bold ${comparisonManifest.deltas.weight_kg! <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <strong className={`text-lg font-bold ${comparisonManifest.deltas.weight_kg! <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {comparisonManifest.deltas.weight_kg! > 0 ? `+${comparisonManifest.deltas.weight_kg}` : comparisonManifest.deltas.weight_kg} kg
                       </strong>
                     ) : (
@@ -1166,7 +1539,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span className="text-xs text-slate-400 block">Variação % Gordura</span>
                     {comparisonManifest.deltas.body_fat_percentage !== null ? (
-                      <strong className={`text-lg font-bold ${comparisonManifest.deltas.body_fat_percentage! <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <strong className={`text-lg font-bold ${comparisonManifest.deltas.body_fat_percentage! <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {comparisonManifest.deltas.body_fat_percentage! > 0 ? `+${comparisonManifest.deltas.body_fat_percentage}` : comparisonManifest.deltas.body_fat_percentage}%
                       </strong>
                     ) : (
@@ -1177,7 +1550,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span className="text-xs text-slate-400 block">Variação Cintura</span>
                     {comparisonManifest.deltas.waist_cm !== null ? (
-                      <strong className="text-lg font-bold text-slate-200">
+                      <strong className="text-lg font-bold text-slate-800 dark:text-slate-200">
                         {comparisonManifest.deltas.waist_cm! > 0 ? `+${comparisonManifest.deltas.waist_cm}` : comparisonManifest.deltas.waist_cm} cm
                       </strong>
                     ) : (
@@ -1188,7 +1561,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <div className="bg-white/60 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span className="text-xs text-slate-400 block">Variação Abdômen</span>
                     {comparisonManifest.deltas.abdomen_cm !== null ? (
-                      <strong className="text-lg font-bold text-slate-200">
+                      <strong className="text-lg font-bold text-slate-800 dark:text-slate-200">
                         {comparisonManifest.deltas.abdomen_cm! > 0 ? `+${comparisonManifest.deltas.abdomen_cm}` : comparisonManifest.deltas.abdomen_cm} cm
                       </strong>
                     ) : (
@@ -1201,7 +1574,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
               {/* Side-by-side Matched Photos */}
               <div className="space-y-6">
                 <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Camera className="h-5 w-5 text-cyan-400" /> Comparativo Fotográfico Lado a Lado Por Ângulo
+                  <Camera className="h-5 w-5 text-cyan-500" /> Comparativo Fotográfico Lado a Lado Por Ângulo
                 </h4>
 
                 {comparisonManifest.matched_photos.length === 0 ? (
@@ -1211,9 +1584,9 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 ) : (
                   <div className="space-y-6">
                     {comparisonManifest.matched_photos.map((match, idx) => (
-                      <div key={idx} className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                          <span className="text-sm font-bold text-cyan-400 uppercase tracking-wider">
+                      <div key={idx} className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                          <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">
                             Ângulo: {ANGLE_LABELS[match.angle] || match.angle}
                           </span>
                         </div>
@@ -1273,7 +1646,8 @@ export const PhysicalAssessmentsView: React.FC = () => {
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
             <button
               onClick={() => setLightboxPhoto(null)}
-              className="absolute -top-12 right-0 p-2 text-slate-700 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+              className="absolute -top-12 right-0 p-2 text-white hover:text-cyan-400 transition-colors"
+              aria-label="Fechar ampliação"
             >
               <X className="h-8 w-8" />
             </button>
@@ -1292,10 +1666,10 @@ export const PhysicalAssessmentsView: React.FC = () => {
       {/* ADD PHOTOS MODAL (In Details Mode) */}
       {showAddPhotosModal && selectedAssessmentId && createPortal(
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 max-w-2xl w-full space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Adicionar Fotos a esta Avaliação</h3>
-              <button onClick={() => setShowAddPhotosModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
+              <button onClick={() => setShowAddPhotosModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white" aria-label="Fechar modal">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1303,7 +1677,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
             <div
               onDragOver={e => e.preventDefault()}
               onDrop={e => handleDrop(e, true)}
-              className="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 bg-slate-950/50 rounded-2xl p-6 text-center cursor-pointer"
+              className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl p-6 text-center cursor-pointer"
             >
               <input
                 type="file"
@@ -1314,8 +1688,8 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 id="details-photo-upload"
               />
               <label htmlFor="details-photo-upload" className="cursor-pointer block">
-                <Upload className="h-8 w-8 text-slate-500 mx-auto mb-2" />
-                <p className="text-sm font-medium text-slate-200">Clique para selecionar novas fotos</p>
+                <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Clique para selecionar novas fotos</p>
               </label>
             </div>
 
@@ -1334,7 +1708,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                           return copy;
                         });
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded p-1 text-slate-200"
+                      className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded p-1 text-slate-800 dark:text-slate-200"
                     >
                       <option value="front">Frente</option>
                       <option value="back">Costas</option>
@@ -1342,7 +1716,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                       <option value="right_side">Lado Direito</option>
                       <option value="other">Outro</option>
                     </select>
-                    <button onClick={() => removeDraft(idx, true)} className="text-rose-400 ml-auto p-1">
+                    <button onClick={() => removeDraft(idx, true)} className="text-rose-500 ml-auto p-1" aria-label="Remover rascunho de foto">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
@@ -1353,7 +1727,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowAddPhotosModal(false)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-medium"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium"
               >
                 Cancelar
               </button>
@@ -1377,13 +1751,13 @@ export const PhysicalAssessmentsView: React.FC = () => {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Pencil className="h-5 w-5 text-amber-500" /> Editar Avaliação Física
               </h3>
-              <button onClick={() => setEditingAssessment(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
+              <button onClick={() => setEditingAssessment(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white" aria-label="Fechar edição">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {editError && (
-              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{editError}</span>
               </div>
@@ -1420,6 +1794,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="decimal"
                     placeholder="Ex: 78.5"
                     value={editWeight}
                     onChange={e => setEditWeight(e.target.value)}
@@ -1434,6 +1809,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="decimal"
                     placeholder="Ex: 15.2"
                     value={editBodyFat}
                     onChange={e => setEditBodyFat(e.target.value)}
@@ -1446,6 +1822,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <input
                     type="number"
                     step="0.5"
+                    inputMode="decimal"
                     placeholder="Ex: 82.0"
                     value={editWaist}
                     onChange={e => setEditWaist(e.target.value)}
@@ -1458,6 +1835,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <input
                     type="number"
                     step="0.5"
+                    inputMode="decimal"
                     placeholder="Ex: 85.0"
                     value={editAbdomen}
                     onChange={e => setEditAbdomen(e.target.value)}
@@ -1470,6 +1848,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                   <input
                     type="number"
                     step="0.5"
+                    inputMode="decimal"
                     placeholder="Ex: 96.0"
                     value={editHip}
                     onChange={e => setEditHip(e.target.value)}
@@ -1493,7 +1872,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingAssessment(null)}
-                  className="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl text-xs font-medium transition-all"
+                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-medium transition-all"
                 >
                   Cancelar
                 </button>
@@ -1517,6 +1896,32 @@ export const PhysicalAssessmentsView: React.FC = () => {
           </div>
         </div>
       , document.body)}
+
+      {/* CONFIRM DIALOG: EXCLUIR AVALIAÇÃO */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteAssessmentConfirm)}
+        title="Excluir Avaliação Física"
+        description={`Tem certeza de que deseja excluir permanentemente a avaliação de ${
+          deleteAssessmentConfirm ? new Date(deleteAssessmentConfirm.date + 'T00:00:00').toLocaleDateString('pt-BR') : ''
+        } e todas as fotografias associadas? Esta ação é irreversível.`}
+        confirmLabel="Excluir Definitivamente"
+        cancelLabel="Cancelar"
+        isDestructive
+        onConfirm={executeDeleteAssessment}
+        onClose={() => setDeleteAssessmentConfirm(null)}
+      />
+
+      {/* CONFIRM DIALOG: EXCLUIR FOTO AVULSA */}
+      <ConfirmDialog
+        isOpen={Boolean(deletePhotoConfirm)}
+        title="Remover Fotografia"
+        description="Deseja remover esta fotografia corporal permanentemente? O arquivo será deletado do armazenamento local."
+        confirmLabel="Remover Foto"
+        cancelLabel="Cancelar"
+        isDestructive
+        onConfirm={executeDeleteSinglePhoto}
+        onClose={() => setDeletePhotoConfirm(null)}
+      />
     </div>
   );
 };

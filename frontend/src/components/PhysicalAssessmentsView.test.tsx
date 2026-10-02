@@ -212,5 +212,130 @@ describe('PhysicalAssessmentsView', () => {
     fireEvent.click(expandBtn);
     expect(screen.getByRole('button', { name: /Recolher/i })).toBeInTheDocument();
   });
+
+  it('navigates through 5 wizard steps forward and backward, verifying review summary', async () => {
+    render(<PhysicalAssessmentsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação Inicial')).toBeInTheDocument();
+    });
+
+    // Enter create mode
+    fireEvent.click(screen.getByRole('button', { name: /Nova Avaliação/i }));
+
+    // Step 1: Dados Básicos
+    expect(screen.getByText(/Dados Principais da Avaliação/i)).toBeInTheDocument();
+    const weightInput = screen.getByLabelText(/Peso \(kg\)/i);
+    fireEvent.change(weightInput, { target: { value: '82.5' } });
+
+    // Advance to Step 2: Medidas
+    fireEvent.click(screen.getByRole('button', { name: /Próxima Etapa/i }));
+    expect(screen.getByText(/Medidas Antropométricas & Circunferências/i)).toBeInTheDocument();
+    const waistInput = screen.getByLabelText(/Cintura \(cm\)/i);
+    fireEvent.change(waistInput, { target: { value: '84.0' } });
+
+    // Advance to Step 3: Composição
+    fireEvent.click(screen.getByRole('button', { name: /Próxima Etapa/i }));
+    expect(screen.getByText(/Composição Corporal & Percentual de Gordura/i)).toBeInTheDocument();
+    const bodyFatInput = screen.getByLabelText(/Gordura Corporal \(%\)/i);
+    fireEvent.change(bodyFatInput, { target: { value: '17.2' } });
+
+    // Advance to Step 4: Fotos
+    fireEvent.click(screen.getByRole('button', { name: /Próxima Etapa/i }));
+    expect(screen.getByText(/Fotografias Corporais/i)).toBeInTheDocument();
+
+    // Advance to Step 5: Revisão
+    fireEvent.click(screen.getByRole('button', { name: /Próxima Etapa/i }));
+    expect(screen.getByText(/Resumo para Conferência/i)).toBeInTheDocument();
+    expect(screen.getByText('82.5 kg')).toBeInTheDocument();
+    expect(screen.getByText(/Cintura: 84/i)).toBeInTheDocument();
+
+    // Step back to Step 4
+    fireEvent.click(screen.getByRole('button', { name: /Etapa Anterior/i }));
+    expect(screen.getByText(/Fotografias Corporais/i)).toBeInTheDocument();
+  });
+
+  it('restores draft from localStorage and allows discarding it', async () => {
+    localStorage.setItem(
+      'longevidade_physical_assessment_draft',
+      JSON.stringify({
+        formDate: '2026-10-01',
+        formTitle: 'Rascunho de Teste',
+        formWeight: '80.0',
+        formBodyFat: '15.0',
+        formWaist: '81.0',
+        formAbdomen: '',
+        formHip: '',
+        formNotes: 'Notas salvas no rascunho',
+      })
+    );
+
+    render(<PhysicalAssessmentsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação Inicial')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Nova Avaliação/i }));
+
+    // Draft notification should appear
+    expect(screen.getByText(/Rascunho de avaliação anterior recuperado automaticamente/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Rascunho de Teste')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('80.0')).toBeInTheDocument();
+
+    // Discard draft
+    const discardBtn = screen.getByRole('button', { name: /Descartar rascunho/i });
+    fireEvent.click(discardBtn);
+
+    expect(screen.queryByText(/Rascunho de avaliação anterior recuperado automaticamente/i)).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Rascunho de Teste')).not.toBeInTheDocument();
+  });
+
+  it('confirms assessment deletion via accessible ConfirmDialog', async () => {
+    mockFetch.mockImplementation(async (url: string, opts?: any) => {
+      if (typeof url === 'string' && url.includes('/timeline')) {
+        return {
+          ok: true,
+          json: async () => ({ target_weight_kg: null, points: [], summary: {} }),
+        };
+      }
+      if (opts?.method === 'DELETE') {
+        return {
+          ok: true,
+          json: async () => ({ status: 'deleted' }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => mockAssessments,
+      };
+    });
+
+    render(<PhysicalAssessmentsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação Inicial')).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByTitle('Excluir avaliação');
+    fireEvent.click(deleteBtn);
+
+    // Confirm dialog should open
+    await waitFor(() => {
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+      expect(screen.getByText('Excluir Avaliação Física')).toBeInTheDocument();
+    });
+
+    const confirmBtn = screen.getByRole('button', { name: 'Excluir Definitivamente' });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/physical-assessments/ass-1',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+  });
 });
+
 
