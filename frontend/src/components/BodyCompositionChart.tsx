@@ -26,6 +26,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { TimeRangeControl, TimeRangeOption, LoadingIndicator, ErrorState } from './ui';
+import { formatMetricValueString } from '../lib/formatters';
 
 export interface TimelinePoint {
   date: string;
@@ -361,7 +362,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400/90 font-medium">Peso:</span>
             <strong className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
-              {activeSummary?.latest_weight_kg ? `${activeSummary.latest_weight_kg} kg` : '--'}
+              {formatMetricValueString(activeSummary?.latest_weight_kg, 'kg')}
             </strong>
             {activeSummary?.weight_delta !== null && activeSummary?.weight_delta !== undefined && (
               <span
@@ -385,7 +386,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
             <span className="text-[11px] text-amber-600 dark:text-amber-400/90 font-medium">Gordura:</span>
             <strong className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">
-              {activeSummary?.latest_body_fat_pct ? `${activeSummary.latest_body_fat_pct}%` : '--'}
+              {formatMetricValueString(activeSummary?.latest_body_fat_pct, '%')}
             </strong>
             {activeSummary?.body_fat_delta !== null && activeSummary?.body_fat_delta !== undefined && (
               <span
@@ -409,7 +410,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           <div className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2">
             <span className="text-[11px] text-cyan-600 dark:text-cyan-400/90 font-medium">Massa Magra:</span>
             <strong className="text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400">
-              {activeSummary?.latest_lean_mass_kg ? `${activeSummary.latest_lean_mass_kg} kg` : '--'}
+              {formatMetricValueString(activeSummary?.latest_lean_mass_kg, 'kg')}
             </strong>
             {activeSummary?.lean_mass_delta !== null && activeSummary?.lean_mass_delta !== undefined && (
               <span

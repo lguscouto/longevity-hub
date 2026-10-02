@@ -1,10 +1,11 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { ExplainChangeButton } from './contextInsights/ExplainChangeButton';
+import { formatMetricValue } from '../lib/formatters';
 
 export interface MetricCardProps {
   title: string;
-  value: string | number;
+  value: string | number | null | undefined;
   unit?: string;
   subtitle?: string;
   icon: LucideIcon;
@@ -31,6 +32,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   trend,
   onExplainChange,
 }) => {
+  const formatted = formatMetricValue(value, unit);
+
   return (
     <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
       <div className="flex items-center justify-between mb-3">
@@ -40,8 +43,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         </div>
       </div>
       <div className="flex items-baseline gap-1.5 mb-1">
-        <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</span>
-        {unit && <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{unit}</span>}
+        <span
+          className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+          aria-label={formatted.accessibleText}
+        >
+          {formatted.displayValue}
+        </span>
+        {formatted.displayUnit && (
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            {formatted.displayUnit}
+          </span>
+        )}
       </div>
       {(subtitle || trend || onExplainChange) && (
         <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
