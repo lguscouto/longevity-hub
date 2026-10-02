@@ -160,7 +160,7 @@ describe('App', () => {
 
     // Click 'IA & Copiloto' tab
     await user.click(screen.getByRole('button', { name: /ia & copiloto/i }))
-    expect(await screen.findByText(/inteligência médica de precisão/i)).toBeInTheDocument()
+    expect(await screen.findByText(/copiloto de longevidade/i)).toBeInTheDocument()
 
     // Click 'N-of-1 Tests' sub-tab under Intervenções
     await user.click(screen.getByRole('button', { name: /^intervenções$/i }))

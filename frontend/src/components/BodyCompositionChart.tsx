@@ -25,6 +25,7 @@ import {
   Target,
   RefreshCw,
 } from 'lucide-react';
+import { TimeRangeControl, TimeRangeOption } from './ui';
 
 export interface TimelinePoint {
   date: string;
@@ -66,6 +67,14 @@ export interface BodyCompositionChartProps {
 
 type TimeRange = '1M' | '3M' | '6M' | '1A' | 'ALL';
 type ViewMode = 'weight_fat' | 'body_comp' | 'measurements';
+
+const BODY_COMPOSITION_TIME_RANGES: TimeRangeOption<TimeRange>[] = [
+  { value: '1M', label: '30 dias', shortLabel: '1M', ariaLabel: 'Últimos 30 dias (1M)' },
+  { value: '3M', label: '90 dias', shortLabel: '3M', ariaLabel: 'Últimos 90 dias (3M)' },
+  { value: '6M', label: '6 meses', shortLabel: '6M', ariaLabel: 'Últimos 6 meses (6M)' },
+  { value: '1A', label: '1 ano', shortLabel: '1A', ariaLabel: 'Último 1 ano (1A)' },
+  { value: 'ALL', label: 'Tudo', shortLabel: 'Tudo', ariaLabel: 'Todo o histórico' },
+];
 
 export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
   onSelectAssessment,
@@ -470,21 +479,14 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
         </div>
 
         {/* Time Range Selector */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-800 self-end sm:self-auto">
-          {(['1M', '3M', '6M', '1A', 'ALL'] as TimeRange[]).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                timeRange === range
-                  ? 'bg-slate-800 text-white dark:bg-slate-700 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              {range === 'ALL' ? 'Tudo' : range}
-            </button>
-          ))}
-        </div>
+        <TimeRangeControl<TimeRange>
+          value={timeRange}
+          onChange={setTimeRange}
+          options={BODY_COMPOSITION_TIME_RANGES}
+          activeColor="slate"
+          size="sm"
+          className="self-end sm:self-auto"
+        />
       </div>
 
       {/* Main Chart Section */}

@@ -231,7 +231,7 @@ describe('SleepView', () => {
       expect(screen.getByText('Distribuição de Fases do Sono')).toBeInTheDocument();
     });
 
-    const btn30d = screen.getByRole('button', { name: '30d' });
+    const btn30d = screen.getByRole('radio', { name: /30d/i });
     fireEvent.click(btn30d);
 
     expect(btn30d).toHaveClass('bg-indigo-600');

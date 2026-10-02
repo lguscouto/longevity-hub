@@ -335,7 +335,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
             </div>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Pilha de Suplementação & Hormônios</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-              Gerencie seus compostos ativos, ajuste dosagens e cronobiologia de tomadas com registro de <strong>histórico auditável imutável</strong> sincronizado ao Copiloto de IA.
+              Gerencie seus compostos ativos, ajuste dosagens e horários de tomada com registro de <strong>histórico de alterações auditado</strong> e integrado ao Copiloto de IA.
             </p>
           </div>
 
@@ -542,7 +542,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <History className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Linha do Tempo de Auditoria
             </h3>
-            <span className="text-[10px] text-slate-500 font-mono">SQLite Audit Log</span>
+            <span className="text-[10px] text-slate-500 font-medium">Histórico local</span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">

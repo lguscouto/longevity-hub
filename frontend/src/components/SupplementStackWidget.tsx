@@ -260,7 +260,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
                 {completionPct}% Cumprido
               </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Rastreamento diário e cronobiologia de tomadas</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Rastreamento diário e horários de tomada</p>
           </div>
         </div>
 

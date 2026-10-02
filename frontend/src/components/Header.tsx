@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
                 LONGEVIDADE <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">HUB</span>
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
-                Hub de Inteligência de Saúde & Epigenética Local
+                Gestão e acompanhamento pessoal de saúde e longevidade
               </p>
             </div>
           </div>

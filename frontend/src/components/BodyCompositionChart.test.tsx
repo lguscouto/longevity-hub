@@ -137,11 +137,11 @@ describe('BodyCompositionChart', () => {
       expect(screen.getByText('Evolução da Composição Corporal')).toBeInTheDocument();
     });
 
-    const range1M = screen.getByRole('button', { name: '1M' });
+    const range1M = screen.getByRole('radio', { name: /1M/i });
     fireEvent.click(range1M);
     expect(range1M.className).toContain('bg-slate-800');
 
-    const rangeAll = screen.getByRole('button', { name: 'Tudo' });
+    const rangeAll = screen.getByRole('radio', { name: /todo o histórico|tudo/i });
     fireEvent.click(rangeAll);
     expect(rangeAll.className).toContain('bg-slate-800');
   });

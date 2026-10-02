@@ -1,5 +1,12 @@
 import React from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, RotateCcw } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { TimeRangeControl, TimeRangeOption } from './ui';
+
+const DAYS_RANGE_OPTIONS: TimeRangeOption<number>[] = [
+  { value: 7, label: '7 dias', shortLabel: '7d', ariaLabel: 'Últimos 7 dias' },
+  { value: 30, label: '30 dias', shortLabel: '30d', ariaLabel: 'Últimos 30 dias' },
+  { value: 90, label: '90 dias', shortLabel: '90d', ariaLabel: 'Últimos 90 dias' },
+];
 
 interface DateNavigatorProps {
   selectedDate: string; // ISO format 'YYYY-MM-DD'
@@ -99,22 +106,12 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
       </div>
 
       {/* Direita: Intervalo de Gráficos (7, 30, 90 dias) */}
-      <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
-        <span className="px-2 text-[10px] text-slate-500 uppercase tracking-wider hidden sm:inline">Período:</span>
-        {[7, 30, 90].map(days => (
-          <button
-            key={days}
-            onClick={() => onDaysRangeChange(days)}
-            className={`px-3 py-1.5 rounded-xl transition ${
-              daysRange === days
-                ? 'bg-emerald-500 text-slate-950 font-black shadow-md glow-emerald'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-slate-900'
-            }`}
-          >
-            {days}d
-          </button>
-        ))}
-      </div>
+      <TimeRangeControl<number>
+        value={daysRange}
+        onChange={onDaysRangeChange}
+        options={DAYS_RANGE_OPTIONS}
+        label="Período"
+      />
     </div>
   );
 };

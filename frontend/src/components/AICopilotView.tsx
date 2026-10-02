@@ -270,7 +270,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
     if (sec < 18) {
       return {
         step: 2,
-        title: `Enviando contexto ao motor de IA (${selectedModel})...`,
+        title: `Analisando seus dados com ${selectedModel}...`,
         detail: 'Estabelecendo conexão segura via OpenRouter e preparando análise de longevidade.'
       };
     }
@@ -501,7 +501,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
                 <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" /> Modelo: <strong className="text-slate-900 dark:text-white break-all">{selectedModel}</strong> ({activeProvider.toUpperCase()})
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Inteligência Médica de Precisão</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Copiloto de Longevidade</h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
               Análise integrativa de biomarcadores de sangue, idade biológica PhenoAge, HRV autonômica, curva glicêmica, Linha do Tempo de Saúde e padrões fisiológicos aprendidos.
             </p>
@@ -757,7 +757,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               {item.actionable_steps && (
                 <div className="p-3 rounded-2xl bg-cyan-500/5 border border-cyan-500/15 text-xs space-y-1">
                   <span className="font-bold text-cyan-700 dark:text-cyan-300 text-[11px] uppercase tracking-wide flex items-center gap-1">
-                    <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Insight de Otimização Biológica:
+                    <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Padrão identificado nos seus dados:
                   </span>
                   <p className="text-slate-700 dark:text-slate-300 font-medium">{item.actionable_steps}</p>
                 </div>

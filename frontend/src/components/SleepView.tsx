@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Moon, Sun, Calendar, Clock, Activity, Download, Search, RefreshCw, Zap, Shield, ChevronDown, ChevronUp, Sparkles, Filter, Award, Wind } from 'lucide-react';
 import { requestJson } from '../lib/api';
+import { TimeRangeControl, TimeRangeOption } from './ui';
 
 export interface DailyMetric {
   date_ref: string;
@@ -339,6 +340,15 @@ export function getEfficiencyBadge(
     };
   }
 }
+
+export type SleepChartRange = 'last20' | '30d' | '60d' | 'all';
+
+const SLEEP_CHART_RANGE_OPTIONS: TimeRangeOption<SleepChartRange>[] = [
+  { value: 'last20', label: '20 registros', shortLabel: '20 reg', ariaLabel: 'Últimos 20 registros' },
+  { value: '30d', label: '30 dias', shortLabel: '30d', ariaLabel: 'Últimos 30 dias (30d)' },
+  { value: '60d', label: '60 dias', shortLabel: '60d', ariaLabel: 'Últimos 60 dias (60d)' },
+  { value: 'all', label: 'Tudo', shortLabel: 'Tudo', ariaLabel: 'Todo o histórico' },
+];
 
 export const SleepView: React.FC = () => {
   const [metrics, setMetrics] = useState<DailyMetric[]>([]);
@@ -1158,39 +1168,14 @@ export const SleepView: React.FC = () => {
 
               {/* Range Selector Controls */}
               {selectedMonth === 'all' ? (
-                <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
-                  <button
-                    onClick={() => setChartRange('last20')}
-                    className={`px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap ${
-                      chartRange === 'last20' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    20 Registros
-                  </button>
-                  <button
-                    onClick={() => setChartRange('30d')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      chartRange === '30d' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    30d
-                  </button>
-                  <button
-                    onClick={() => setChartRange('60d')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      chartRange === '60d' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    60d
-                  </button>
-                  <button
-                    onClick={() => setChartRange('all')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      chartRange === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Tudo ({sleepRecords.length})
-                  </button>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-full">
+                  <TimeRangeControl<SleepChartRange>
+                    value={chartRange}
+                    onChange={setChartRange}
+                    options={SLEEP_CHART_RANGE_OPTIONS}
+                    activeColor="indigo"
+                    size="sm"
+                  />
                   <div className="ml-2 pl-2 border-l border-slate-800 hidden lg:block">
                     <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs">
                       Monitoramento
@@ -1433,7 +1418,7 @@ export const SleepView: React.FC = () => {
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {selectedMonth !== 'all'
                     ? `Exibindo apenas os registros de sono de ${monthlySummaries.find((m) => m.monthKey === selectedMonth)?.label}.`
-                    : 'Todos os registros consolidados no banco de dados SQLite sem limitação.'}
+                    : 'Todos os registros salvos localmente no dispositivo sem limitação.'}
                 </p>
               </div>
 
