@@ -36,6 +36,9 @@ export function resolvePrimaryTab(tab: string): PrimaryTab {
     case 'ai':
       return 'ai';
     case 'profile':
+    case 'integrations':
+    case 'system':
+    case 'diagnostics':
       return 'profile';
     case 'overview':
     case 'today':
@@ -120,10 +123,12 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenManualEntry}
+              title="Registrar métricas manuais (pressão arterial, peso, dinamometria, VO2 max)"
+              aria-label="Registrar Métrica Manual"
               className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
             >
               <PlusCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Registrar</span>
+              <span>Registrar Métrica</span>
             </button>
 
             <button
@@ -138,32 +143,34 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5" />
 
           {/* Cluster Técnico / Infraestrutura */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80">
+            <button
+              onClick={() => onSyncZepp()}
+              disabled={isSyncing}
+              title="Atualizar dados de wearables (Zepp OS)"
+              aria-label="Sync Zepp"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-400 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Atualizar dados'}</span>
+            </button>
+
             {onSyncGoogleHealth && (
               <button
                 onClick={onSyncGoogleHealth}
                 disabled={isSyncingGoogle}
-                title="Sincronizar Google Health API v4 / Pixel Watch / Health Connect"
-                className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                title="Sincronizar Google Health API v4"
+                aria-label="Sync Google"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-blue-700 dark:text-blue-400 transition disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isSyncingGoogle ? 'animate-spin' : ''}`} />
-                <span>{isSyncingGoogle ? 'Sync Google...' : 'Sync Google'}</span>
+                <span className="hidden sm:inline">{isSyncingGoogle ? 'Google...' : 'Google'}</span>
               </button>
             )}
 
             <button
-              onClick={() => onSyncZepp()}
-              disabled={isSyncing}
-              title="Sincronizar dados do Zepp OS"
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Sincronizando...' : 'Sync Zepp'}</span>
-            </button>
-
-            <button
               onClick={onOpenAISettings}
-              className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+              className="p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
               title="Configurações de IA e Chaves de API"
               aria-label="Configurações de IA e Chaves de API"
             >
@@ -238,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* 6. Perfil */}
           <button
-            onClick={() => handleTabClick('profile')}
+            onClick={() => handleTabClick(primaryTab === 'profile' ? activeTab : 'profile')}
             aria-current={primaryTab === 'profile' ? 'page' : undefined}
             className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
               primaryTab === 'profile' ? activePrimaryClass : inactivePrimaryClass
@@ -324,6 +331,45 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <FlaskConical className="h-3.5 w-3.5" />
               <span>N-of-1 Tests</span>
+            </button>
+          </nav>
+        </div>
+      )}
+
+      {primaryTab === 'profile' && (
+        <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
+          <nav aria-label="Sub-navegação de Perfil" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => handleTabClick('profile')}
+              aria-current={(activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab)) ? 'page' : undefined}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                (activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab)) ? activeSubClass : inactiveSubClass
+              }`}
+            >
+              <User className="h-3.5 w-3.5" />
+              <span>Meu Perfil</span>
+            </button>
+
+            <button
+              onClick={() => handleTabClick('integrations')}
+              aria-current={activeTab === 'integrations' ? 'page' : undefined}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                activeTab === 'integrations' ? activeSubClass : inactiveSubClass
+              }`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Integrações</span>
+            </button>
+
+            <button
+              onClick={() => handleTabClick('system')}
+              aria-current={(activeTab === 'system' || activeTab === 'diagnostics') ? 'page' : undefined}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                (activeTab === 'system' || activeTab === 'diagnostics') ? activeSubClass : inactiveSubClass
+              }`}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>Diagnóstico & Sistema</span>
             </button>
           </nav>
         </div>

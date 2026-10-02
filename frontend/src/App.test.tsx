@@ -200,4 +200,40 @@ describe('App', () => {
 
     expect(await screen.findByText(/módulo de longevidade médica/i, {}, { timeout: 5000 })).toBeInTheDocument()
   })
+
+  it('navigates to Perfil sub-tabs (Integrações and Diagnóstico & Sistema) seamlessly', async () => {
+    const user = userEvent.setup()
+    renderApp()
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalled()
+    })
+
+    // Navega para Perfil
+    await user.click(screen.getByRole('button', { name: /^perfil$/i }))
+    expect(await screen.findByText(/perfil do longevidade hub/i)).toBeInTheDocument()
+
+    // Clica na sub-aba Integrações (presente na sub-barra e no seletor interno)
+    const integracoesBtns = screen.getAllByRole('button', { name: /^integrações$/i })
+    await user.click(integracoesBtns[0])
+    expect(await screen.findByText(/fontes de dados & wearables conectados/i)).toBeInTheDocument()
+    expect(screen.getByText(/zepp os \(amazfit\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/google health api v4/i)).toBeInTheDocument()
+
+    // Clica na sub-aba Diagnóstico & Sistema
+    const sistemaBtns = screen.getAllByRole('button', { name: /diagnóstico & sistema/i })
+    await user.click(sistemaBtns[0])
+    expect(await screen.findByText(/base de dados sqlite local/i)).toBeInTheDocument()
+  })
+
+  it('supports direct deep link for #integrations and #system', async () => {
+    window.location.hash = '#integrations'
+    renderApp()
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalled()
+    })
+
+    expect(await screen.findByText(/fontes de dados & wearables conectados/i)).toBeInTheDocument()
+  })
 })

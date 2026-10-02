@@ -51,6 +51,9 @@ type Tab =
   | 'n-of-1'
   | 'physical-assessments'
   | 'profile'
+  | 'integrations'
+  | 'system'
+  | 'diagnostics'
 
 type DailyMetric = {
   date_ref: string
@@ -114,6 +117,9 @@ const VALID_TABS: Tab[] = [
   'n-of-1',
   'physical-assessments',
   'profile',
+  'integrations',
+  'system',
+  'diagnostics',
 ]
 
 function normalizeTab(rawTab: string | null | undefined): Tab {
@@ -122,6 +128,7 @@ function normalizeTab(rawTab: string | null | undefined): Tab {
   if (clean === 'today') return 'overview'
   if (clean === 'health') return 'labs'
   if (clean === 'interventions') return 'supplements'
+  if (clean === 'diagnostics') return 'system'
   if (VALID_TABS.includes(clean as Tab)) {
     return clean as Tab
   }
@@ -420,7 +427,7 @@ export default function App() {
   }
 
   const handleViewPipelineHistory = () => {
-    setActiveTab('profile')
+    setActiveTab('system')
     void fetchPipelineRuns()
     if (historySectionRef.current) {
       setTimeout(() => {
@@ -721,7 +728,7 @@ export default function App() {
             {activeTab === 'ai' && <AICopilotView onOpenSettings={() => setShowAISettings(true)} chatMessages={aiChatMessages} setChatMessages={setAiChatMessages} />}
             {activeTab === 'n-of-1' && <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />}
             {activeTab === 'physical-assessments' && <PhysicalAssessmentsView />}
-            {activeTab === 'profile' && (
+            {['profile', 'integrations', 'system'].includes(activeTab) && (
               <ProfileView
                 profile={profile}
                 onUpdateProfile={handleUpdateProfile}
@@ -730,6 +737,12 @@ export default function App() {
                 onRefreshPipeline={fetchPipelineRuns}
                 historySectionRef={historySectionRef}
                 onOpenGoogleHealthModal={() => setShowGoogleHealthModal(true)}
+                activeSubTab={activeTab === 'integrations' ? 'integrations' : activeTab === 'system' ? 'system' : 'profile'}
+                onSelectSubTab={(subTab) => setActiveTab(subTab as Tab)}
+                onSyncZepp={handleSyncZepp}
+                isSyncingZepp={isSyncing}
+                onSyncGoogleHealth={handleSyncGoogleHealth}
+                isSyncingGoogle={isSyncingGoogle}
               />
             )}
           </main>
