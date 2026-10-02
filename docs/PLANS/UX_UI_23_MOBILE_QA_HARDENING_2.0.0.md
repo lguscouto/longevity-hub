@@ -86,12 +86,16 @@ Reversão do arquivo de teste via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Playwright Mobile Task Flows (8 fluxos) | `npx playwright test -c e2e/playwright.config.ts e2e/task-flows.spec.ts` | 02/10/2026 16:02:38 | Windows 11 / Chromium & Mobile Safari | PASS | 32 passed across iPhone SE (375x667) e iPhone 14 (390x844) em 29.2s |
+| Vite Production Build | `npm run build` | 02/10/2026 16:03:30 | Windows 11 | PASS | ✓ built in 5.02s (9.65s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 16:03:40 | Windows 11 | PASS | 181 passed across 38 test files |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 16:03:51 | Windows 11 | PASS | 8 passed (16.2s) |
+| Backend Pytest Suite | `C:\Python314\python.exe -m pytest -q` | 02/10/2026 16:04:08 | Windows 11 | PASS | 357 passed, 3 warnings in 245.12s |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída

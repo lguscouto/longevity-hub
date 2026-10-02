@@ -7,6 +7,7 @@ export const THEME_STORAGE_KEY = 'longevity-hub-theme';
 export interface ThemeContextValue {
   theme: ThemePreference;
   setTheme: (theme: ThemePreference) => void;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -52,8 +53,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

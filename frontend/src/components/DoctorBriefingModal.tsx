@@ -35,7 +35,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
       size="3xl"
       closeButtonAriaLabel="Fechar"
       headerAction={
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div className="hidden sm:flex items-center gap-2">
           <a
             href="/api/reports/doctor-briefing/pdf"
             target="_blank"
@@ -58,7 +58,28 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
         </div>
       }
       footer={
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full">
+          <div className="flex sm:hidden items-center gap-2">
+            <a
+              href="/api/reports/doctor-briefing/pdf"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 transition"
+            >
+              <Download className="h-4 w-4" /> PDF
+            </a>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Copy className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+              )}
+              {copied ? 'Copiado!' : 'Copiar'}
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition"

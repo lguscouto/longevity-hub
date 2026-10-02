@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Dna,
   Moon,
+  Sun,
   History,
   Camera,
   Dumbbell,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   User,
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 export type PrimaryTab = 'today' | 'health' | 'workouts' | 'interventions' | 'ai' | 'profile';
 
@@ -72,6 +74,8 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing,
   isSyncingGoogle = false,
 }) => {
+  const { theme, toggleTheme } = useTheme();
+
   const handleTabClick = (tabId: string) => {
     if (onSelectTab) {
       onSelectTab(tabId);
@@ -170,11 +174,20 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onOpenAISettings}
-              className="relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] md:after:hidden rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none flex items-center justify-center"
+              className="relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] md:after:hidden rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none flex items-center justify-center cursor-pointer"
               title="Configurações de IA e Chaves de API"
               aria-label="Configurações de IA e Chaves de API"
             >
               <Settings className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={toggleTheme}
+              className="relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] md:after:hidden rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none flex items-center justify-center cursor-pointer"
+              title={theme === 'dark' ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+              aria-label={theme === 'dark' ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-slate-600 dark:text-slate-300" />}
             </button>
           </div>
         </div>
