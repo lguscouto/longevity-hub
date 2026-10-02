@@ -679,6 +679,9 @@ export default function App() {
                   title="Análises Avançadas"
                   subtitle="Idade epigenética (PhenoAge/KDM), CGM e histórico de treinos"
                   icon={Dna}
+                  collapsible={true}
+                  defaultCollapsed={true}
+                  storageKey="longevidade_overview_advanced_collapsed"
                 >
                   <div className="grid gap-6 lg:grid-cols-2">
                     <PhenoAgeWidget

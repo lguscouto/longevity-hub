@@ -236,4 +236,21 @@ describe('App', () => {
 
     expect(await screen.findByText(/fontes de dados & wearables conectados/i)).toBeInTheDocument()
   })
+
+  it('allows expanding and collapsing Análises Avançadas in Overview', async () => {
+    const user = userEvent.setup()
+    renderApp()
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalled()
+    })
+
+    const toggleBtn = screen.getByRole('button', { name: /exibir detalhes de análises avançadas/i })
+    expect(toggleBtn).toBeInTheDocument()
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(toggleBtn)
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /ocultar detalhes de análises avançadas/i })).toBeInTheDocument()
+  })
 })
