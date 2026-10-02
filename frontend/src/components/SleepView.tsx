@@ -1024,9 +1024,9 @@ export const SleepView: React.FC = () => {
               </div>
 
               <div className="overflow-x-auto max-w-full">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">
+                <table className="w-full text-left text-xs block md:table">
+                  <thead className="hidden md:table-header-group">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider text-[11px]">
                       <th className="py-2.5 px-3">Mês</th>
                       <th className="py-2.5 px-3">Noites</th>
                       <th className="py-2.5 px-3 text-indigo-600 dark:text-indigo-400">Dormir Médio</th>
@@ -1043,44 +1043,53 @@ export const SleepView: React.FC = () => {
                       <th className="py-2.5 px-3 text-right">Ação</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
+                  <tbody className="block md:table-row-group divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
                     {monthlySummaries.map((m) => {
                       const isSelected = selectedMonth === m.monthKey;
                       return (
                         <tr
                           key={m.monthKey}
                           onClick={() => setSelectedMonth(isSelected ? 'all' : m.monthKey)}
-                          className={`cursor-pointer transition-colors ${
+                          className={`block md:table-row p-3.5 md:p-0 cursor-pointer transition-colors space-y-2 md:space-y-0 ${
                             isSelected
                               ? 'bg-cyan-500/10 dark:bg-cyan-500/15 font-semibold'
                               : 'hover:bg-slate-50 dark:hover:bg-slate-900/50'
                           }`}
                         >
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 dark:text-white">{m.label}</span>
-                              {isSelected && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-500 text-white font-bold">
-                                  Filtrado
-                                </span>
-                              )}
+                          <td className="block md:table-cell py-1 md:py-3 md:px-3">
+                            <div className="flex items-center justify-between md:justify-start gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 dark:text-white text-sm md:text-xs">{m.label}</span>
+                                {isSelected && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-500 text-white font-bold">
+                                    Filtrado
+                                  </span>
+                                )}
+                              </div>
+                              <span className="md:hidden text-xs text-slate-500 dark:text-slate-400">
+                                {m.count} {m.count === 1 ? 'noite' : 'noites'}
+                              </span>
                             </div>
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
+                          <td className="hidden md:table-cell py-3 px-3 text-slate-600 dark:text-slate-300">
                             {m.count} {m.count === 1 ? 'noite' : 'noites'}
                           </td>
-                          <td className="py-3 px-3 text-indigo-600 dark:text-indigo-400 font-mono font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-indigo-600 dark:text-indigo-400 font-mono font-semibold">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">Dormir:</span>
                             {m.avgBedtime || '—'}
                           </td>
-                          <td className="py-3 px-3 text-amber-600 dark:text-amber-400 font-mono font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-amber-600 dark:text-amber-400 font-mono font-semibold">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">Acordar:</span>
                             {m.avgWakeTime || '—'}
                           </td>
-                          <td className="py-3 px-3">
-                            <span className="font-bold text-slate-900 dark:text-white">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3">
+                            <span className="md:hidden text-[10px] text-slate-400 mr-1">Total:</span>
+                            <span className="font-bold text-slate-900 dark:text-white font-mono">
                               {formatMinutesToText(m.avgTotal)}
                             </span>
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3">
+                            <span className="md:hidden text-[10px] text-slate-400 mr-1">Eficiência:</span>
                             {(() => {
                               const badge = getEfficiencyBadge(m.efficiencyPct, m.avgTotal);
                               if (!badge) return <span className="text-slate-400">—</span>;
@@ -1099,38 +1108,45 @@ export const SleepView: React.FC = () => {
                               );
                             })()}
                           </td>
-                          <td className="py-3 px-3 text-purple-600 dark:text-purple-300 font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-purple-600 dark:text-purple-300 font-semibold font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">Profundo:</span>
                             {formatMinutesToText(m.avgDeep)}{' '}
                             <span className="text-[10px] text-purple-400/80">({m.deepPct}%)</span>
                           </td>
-                          <td className="py-3 px-3 text-cyan-600 dark:text-cyan-300 font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-cyan-600 dark:text-cyan-300 font-semibold font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">REM:</span>
                             {formatMinutesToText(m.avgRem)}{' '}
                             <span className="text-[10px] text-cyan-400/80">({m.remPct}%)</span>
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-600 dark:text-slate-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">Leve:</span>
                             {formatMinutesToText(m.avgLight)}{' '}
                             <span className="text-[10px] text-slate-400">({m.lightPct}%)</span>
                           </td>
-                          <td className="py-3 px-3 text-amber-600 dark:text-amber-400 font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-amber-600 dark:text-amber-400 font-semibold font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">Acordado:</span>
                             {formatMinutesToText(m.avgAwake)}
                           </td>
-                          <td className="py-3 px-3 text-cyan-600 dark:text-cyan-300 font-mono">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-cyan-600 dark:text-cyan-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">Resp:</span>
                             {m.avgRespRate != null ? `${m.avgRespRate} rpm` : '—'}
                           </td>
-                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-700 dark:text-slate-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">VFC:</span>
                             {m.avgHrv != null ? `${m.avgHrv} ms` : '—'}
                           </td>
-                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-700 dark:text-slate-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans mr-1">FC Repouso:</span>
                             {m.avgRhr != null ? `${m.avgRhr} bpm` : '—'}
                           </td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="block md:table-cell py-2 md:py-3 md:px-3 text-left md:text-right">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedMonth(isSelected ? 'all' : m.monthKey);
                               }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                              className={`w-full md:w-auto px-2.5 py-1.5 md:py-1 rounded-lg text-xs font-semibold transition-all ${
                                 isSelected
                                   ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
                                   : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20'
@@ -1469,9 +1485,9 @@ export const SleepView: React.FC = () => {
               </div>
             ) : (
               <div className="overflow-x-auto max-w-full min-w-0">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">
+                <table className="w-full text-left text-xs block md:table">
+                  <thead className="hidden md:table-header-group">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider text-[11px]">
                       <th className="py-3 px-4">Data</th>
                       <th className="py-3 px-4 text-indigo-600 dark:text-indigo-400">Dormiu</th>
                       <th className="py-3 px-4 text-amber-600 dark:text-amber-400">Acordou</th>
@@ -1487,7 +1503,7 @@ export const SleepView: React.FC = () => {
                       <th className="py-3 px-4 text-right">Fonte</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
+                  <tbody className="block md:table-row-group divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
                     {tableData.map(m => {
                       const total = m.sleep_minutes || 0;
                       const deep = m.sleep_deep_min || 0;
@@ -1504,13 +1520,17 @@ export const SleepView: React.FC = () => {
                       const eff = calculateNightEfficiency(total, awake);
 
                       return (
-                        <tr key={m.date_ref} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
-                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white font-mono">
-                            {formatDatePtBr(m.date_ref)}
+                        <tr key={m.date_ref} className="block md:table-row p-3.5 md:p-0 space-y-2 md:space-y-0 hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
+                          <td className="block md:table-cell py-1 md:py-3.5 md:px-4 font-bold text-slate-900 dark:text-white font-mono text-sm md:text-xs">
+                            <div className="flex items-center justify-between md:block">
+                              <span>{formatDatePtBr(m.date_ref)}</span>
+                              <span className="md:hidden text-slate-400 font-sans text-[11px]">{m.source || 'Zepp'}</span>
+                            </div>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
+                            <span className="md:hidden text-[10px] text-slate-400 mr-1">Dormiu:</span>
                             {stDetails.time !== '—' ? (
-                              <div className="flex flex-col">
+                              <div className="inline-flex flex-col md:flex">
                                 <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono text-xs">
                                   {stDetails.time}
                                 </span>
@@ -1522,9 +1542,10 @@ export const SleepView: React.FC = () => {
                               <span className="text-slate-400 font-mono">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
+                            <span className="md:hidden text-[10px] text-slate-400 mr-1">Acordou:</span>
                             {edDetails.time !== '—' ? (
-                              <div className="flex flex-col">
+                              <div className="inline-flex flex-col md:flex">
                                 <span className="font-bold text-amber-600 dark:text-amber-400 font-mono text-xs">
                                   {edDetails.time}
                                 </span>
@@ -1536,10 +1557,12 @@ export const SleepView: React.FC = () => {
                               <span className="text-slate-400 font-mono">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 font-bold text-slate-800 dark:text-slate-200 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">Total:</span>
                             {formatMinutesToText(total)}
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
+                            <span className="md:hidden text-[10px] text-slate-400 mr-1">Eficiência:</span>
                             {(() => {
                               const effBadge = getEfficiencyBadge(eff, total);
                               if (!effBadge) return <span className="text-slate-400">—</span>;
@@ -1558,31 +1581,38 @@ export const SleepView: React.FC = () => {
                               );
                             })()}
                           </td>
-                          <td className="py-3.5 px-4 text-purple-600 dark:text-purple-300 font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-purple-600 dark:text-purple-300 font-semibold font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">Profundo:</span>
                             {formatMinutesToText(deep)}{' '}
                             <span className="text-[10px] text-purple-400/80">({deepPct}%)</span>
                           </td>
-                          <td className="py-3.5 px-4 text-cyan-600 dark:text-cyan-300 font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-cyan-600 dark:text-cyan-300 font-semibold font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">REM:</span>
                             {formatMinutesToText(rem)}{' '}
                             <span className="text-[10px] text-cyan-400/80">({remPct}%)</span>
                           </td>
-                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-600 dark:text-slate-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">Leve:</span>
                             {formatMinutesToText(light)}{' '}
                             <span className="text-[10px] text-slate-400">({lightPct}%)</span>
                           </td>
-                          <td className="py-3.5 px-4 text-amber-600 dark:text-amber-400 font-semibold">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-amber-600 dark:text-amber-400 font-semibold font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">Acordado:</span>
                             {formatMinutesToText(awake)}
                           </td>
-                          <td className="py-3.5 px-4 text-cyan-600 dark:text-cyan-300 font-mono">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-cyan-600 dark:text-cyan-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">Taxa Resp:</span>
                             {m.respiratory_rate_rpm != null ? `${m.respiratory_rate_rpm.toFixed(1)} rpm` : '—'}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-700 dark:text-slate-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">VFC:</span>
                             {m.hrv_ms != null ? `${m.hrv_ms} ms` : '—'}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                          <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-700 dark:text-slate-300 font-mono">
+                            <span className="md:hidden text-[10px] text-slate-400 font-sans font-normal mr-1">FC Repouso:</span>
                             {m.rhr_bpm != null ? `${m.rhr_bpm} bpm` : '—'}
                           </td>
-                          <td className="py-3.5 px-4 text-right text-slate-400 text-[11px]">
+                          <td className="hidden md:table-cell py-3.5 px-4 text-right text-slate-400 text-[11px]">
                             {m.source || 'Zepp'}
                           </td>
                         </tr>
