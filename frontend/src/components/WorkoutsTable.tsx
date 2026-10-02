@@ -13,6 +13,7 @@ import {
 
 import { requestJson } from '../lib/api'
 import { WorkoutSession } from '../types'
+import { EmptyState, LoadingPanel, InlineError } from './ui'
 
 interface WorkoutsTableProps {
   initialLimit?: number
@@ -153,25 +154,30 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
 
       {/* Table Content */}
       {loading ? (
-        <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-slate-400">
-          <RefreshCw className="h-6 w-6 animate-spin text-emerald-500" />
-          <p className="text-xs font-medium">Carregando histórico de sessões...</p>
-        </div>
+        <LoadingPanel message="Carregando histórico de sessões..." skeletonRows={4} />
       ) : error ? (
-        <div className="py-8 text-center text-xs text-rose-500 font-medium">
-          {error}
-        </div>
+        <InlineError message={error} onRetry={fetchWorkouts} />
       ) : filteredWorkouts.length === 0 ? (
-        <div className="py-12 text-center text-slate-500 dark:text-slate-400 space-y-1">
-          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-            Nenhuma sessão de treino encontrada.
-          </p>
-          <p className="text-[11px]">
-            {searchQuery || selectedCategory !== 'Todas'
-              ? 'Tente ajustar os filtros ou o termo de busca.'
-              : 'Sincronize o Zepp para importar o histórico completo.'}
-          </p>
-        </div>
+        <EmptyState
+          title="Nenhuma sessão de treino encontrada."
+          description={
+            searchQuery || selectedCategory !== 'Todas'
+              ? 'Tente ajustar os filtros ou o termo de busca para localizar suas sessões.'
+              : 'Sincronize o Zepp para importar o histórico completo.'
+          }
+          icon={Activity}
+          secondaryAction={
+            searchQuery || selectedCategory !== 'Todas'
+              ? {
+                  label: 'Limpar filtros',
+                  onClick: () => {
+                    setSearchQuery('')
+                    setSelectedCategory('Todas')
+                  },
+                }
+              : undefined
+          }
+        />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
           <table className="w-full text-left text-xs">

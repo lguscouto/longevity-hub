@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -81,23 +81,24 @@ describe('AICopilotView external AI privacy consent', () => {
   it('does not post 30-day insights when the user cancels the external AI confirmation', async () => {
     const user = userEvent.setup()
     mockAISettings()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
 
     renderCopilot()
     await screen.findByRole('status', { name: /envio para ia externa/i })
 
     await user.click(screen.getByRole('button', { name: /mês \(30d\)/i }))
 
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('OPENAI'))
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('gpt-4o-mini'))
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('privacidade mínima'))
+    const dialog1 = await screen.findByRole('alertdialog')
+    expect(within(dialog1).getByText(/OPENAI/)).toBeInTheDocument()
+    expect(within(dialog1).getByText(/gpt-4o-mini/)).toBeInTheDocument()
+    expect(within(dialog1).getByText(/privacidade mínima/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^cancelar$/i }))
     expect(postedTo('/api/ai/generate-insights')).toBe(false)
   })
 
   it('does not post chat messages when the user cancels the external AI confirmation', async () => {
     const user = userEvent.setup()
     mockAISettings()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
 
     renderCopilot()
     const input = await screen.findByPlaceholderText(/faça uma pergunta/i)
@@ -105,9 +106,12 @@ describe('AICopilotView external AI privacy consent', () => {
     await user.type(input, 'Pergunta fake sem dados reais')
     await user.click(screen.getByRole('button', { name: /enviar mensagem ao copiloto/i }))
 
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('OPENAI'))
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('gpt-4o-mini'))
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('privacidade mínima'))
+    const dialog2 = await screen.findByRole('alertdialog')
+    expect(within(dialog2).getByText(/OPENAI/)).toBeInTheDocument()
+    expect(within(dialog2).getByText(/gpt-4o-mini/)).toBeInTheDocument()
+    expect(within(dialog2).getByText(/privacidade mínima/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^cancelar$/i }))
     expect(postedTo('/api/ai/chat')).toBe(false)
     expect(screen.queryByText('Pergunta fake sem dados reais')).not.toBeInTheDocument()
   })
@@ -115,7 +119,6 @@ describe('AICopilotView external AI privacy consent', () => {
   it('posts chat messages after explicit external AI confirmation', async () => {
     const user = userEvent.setup()
     mockAISettings()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     renderCopilot()
     const input = await screen.findByPlaceholderText(/faça uma pergunta/i)
@@ -123,10 +126,12 @@ describe('AICopilotView external AI privacy consent', () => {
     await user.type(input, 'Pergunta fake sem dados reais')
     await user.click(screen.getByRole('button', { name: /enviar mensagem ao copiloto/i }))
 
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+
     await waitFor(() => {
       expect(postedTo('/api/ai/chat')).toBe(true)
     })
-    expect(confirmSpy).toHaveBeenCalled()
     const chatCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/chat' && init?.method === 'POST')
     expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({ prompt: 'Pergunta fake sem dados reais' })
   })
@@ -134,16 +139,17 @@ describe('AICopilotView external AI privacy consent', () => {
   it('sends prompt when clicking contextual quick prompt button like Padrões Aprendidos', async () => {
     const user = userEvent.setup()
     mockAISettings()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     renderCopilot()
     const btn = await screen.findByRole('button', { name: /🎯 padrões aprendidos/i })
     await user.click(btn)
 
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+
     await waitFor(() => {
       expect(postedTo('/api/ai/chat')).toBe(true)
     })
-    expect(confirmSpy).toHaveBeenCalled()
     const chatCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/chat' && init?.method === 'POST')
     expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({
       prompt: 'Quais padrões e correlações pessoais foram detectados no meu histórico?',
@@ -176,13 +182,14 @@ describe('AICopilotView external AI privacy consent', () => {
       throw new Error(`Unexpected path: ${path}`)
     })
 
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
-
     renderCopilot()
     await screen.findByRole('status', { name: /envio para ia externa/i })
 
     const generateBtn = screen.getByRole('button', { name: /mês \(30d\)/i })
     await user.click(generateBtn)
+
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
 
     // Progress feedback and timer should be visible
     expect(await screen.findByText(/tempo decorrido:/i)).toBeInTheDocument()
@@ -200,7 +207,6 @@ describe('AICopilotView external AI privacy consent', () => {
   it('posts weekly 7-day insights with time_window="7d" when clicking Semana (7d)', async () => {
     const user = userEvent.setup()
     mockAISettings()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     renderCopilot()
     await screen.findByRole('status', { name: /envio para ia externa/i })
@@ -208,10 +214,13 @@ describe('AICopilotView external AI privacy consent', () => {
     const weeklyBtn = screen.getByRole('button', { name: /semana \(7d\)/i })
     await user.click(weeklyBtn)
 
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    expect(screen.getByText(/média semanal \(últimos 7 dias\)/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+
     await waitFor(() => {
       expect(postedTo('/api/ai/generate-insights')).toBe(true)
     })
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('média semanal (últimos 7 dias)'))
     const postCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/generate-insights' && init?.method === 'POST')
     expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: '7d' })
   })
@@ -219,7 +228,6 @@ describe('AICopilotView external AI privacy consent', () => {
   it('posts today 24h insights with time_window="today" when clicking Hoje (24h)', async () => {
     const user = userEvent.setup()
     mockAISettings()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     renderCopilot()
     await screen.findByRole('status', { name: /envio para ia externa/i })
@@ -227,10 +235,13 @@ describe('AICopilotView external AI privacy consent', () => {
     const todayBtn = screen.getByRole('button', { name: /hoje \(24h\)/i })
     await user.click(todayBtn)
 
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    expect(screen.getByText(/prontidão de hoje/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+
     await waitFor(() => {
       expect(postedTo('/api/ai/generate-insights')).toBe(true)
     })
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('prontidão de hoje'))
     const postCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/generate-insights' && init?.method === 'POST')
     expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: 'today' })
   })

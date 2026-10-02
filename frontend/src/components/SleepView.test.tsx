@@ -325,5 +325,21 @@ describe('SleepView', () => {
     expect(tableBadge).toHaveClass('text-amber-700');
     expect(tableBadge?.getAttribute('title')).toContain('sono curto (< 6h');
   });
+
+  it('renders EmptyState when there are no sleep records', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify([]),
+    });
+
+    render(<SleepView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Sem registros de sono no período')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum registro encontrado')).toBeInTheDocument();
+  });
 });
 

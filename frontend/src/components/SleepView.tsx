@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Moon, Sun, Calendar, Clock, Activity, Download, Search, RefreshCw, Zap, Shield, ChevronDown, ChevronUp, Sparkles, Filter, Award, Wind } from 'lucide-react';
 import { requestJson } from '../lib/api';
-import { TimeRangeControl, TimeRangeOption } from './ui';
+import { TimeRangeControl, TimeRangeOption, EmptyState } from './ui';
 
 export interface DailyMetric {
   date_ref: string;
@@ -1200,9 +1200,12 @@ export const SleepView: React.FC = () => {
 
             {/* Interactive Stacked Chart Component */}
             {chartData.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-slate-500 text-sm">
-                <Moon className="h-10 w-10 mb-2 opacity-40" />
-                Nenhum registro de sono disponível para o período selecionado.
+              <div className="py-12">
+                <EmptyState
+                  title="Sem registros de sono no período"
+                  description="Nenhum registro de sono disponível para o período selecionado."
+                  icon={Moon}
+                />
               </div>
             ) : (
               <div className="relative pt-4 pb-2">
@@ -1457,8 +1460,12 @@ export const SleepView: React.FC = () => {
 
             {/* Table */}
             {tableData.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm">
-                Nenhum registro de sono encontrado para os filtros aplicados.
+              <div className="py-8">
+                <EmptyState
+                  title="Nenhum registro encontrado"
+                  description="Nenhum registro de sono encontrado para os filtros aplicados."
+                  icon={Moon}
+                />
               </div>
             ) : (
               <div className="overflow-x-auto max-w-full min-w-0">

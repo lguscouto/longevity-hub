@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Sparkles, RefreshCw, Send, Settings, ShieldCheck, Heart, Activity, Zap, Moon, FileText, ChevronRight, Cpu, Dumbbell, History, Clock, X, Calendar } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
+import { ConfirmDialog } from './ui';
 
 interface InsightItem {
   category: string;
@@ -351,13 +352,16 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
   const privacyModeLabel = PRIVACY_MODE_LABELS[privacyMode];
   const privacyModeDescription = PRIVACY_MODE_DESCRIPTIONS[privacyMode];
 
-  const confirmExternalAIRequest = (actionLabel: string) => window.confirm(
-    `Antes de ${actionLabel}, confirme o envio de contexto para IA externa.\n\n` +
-    `Provedor: ${activeProvider.toUpperCase()}\n` +
-    `Modelo: ${selectedModel}\n` +
-    `Modo: ${privacyModeLabel}\n\n` +
-    `${privacyModeDescription}\n\nDeseja continuar?`
-  );
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    actionLabel: string;
+    resolve: (ok: boolean) => void;
+  } | null>(null);
+
+  const confirmExternalAIRequest = (actionLabel: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setPendingConfirm({ actionLabel, resolve });
+    });
+  };
 
   const handleSelectReport = async (reportId: number) => {
     try {
@@ -382,7 +386,8 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
 
   const handleGenerateAnalysis = async (win: TimeWindow = '30d') => {
     const actionText = TIME_WINDOW_ACTION_TEXTS[win] || 'os insights de saúde';
-    if (!confirmExternalAIRequest(actionText)) return;
+    const confirmed = await confirmExternalAIRequest(actionText);
+    if (!confirmed) return;
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -436,7 +441,8 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
   const handleSendChatMessage = async (promptText?: string) => {
     const textToSend = (promptText ?? chatInput).trim();
     if (!textToSend) return;
-    if (!confirmExternalAIRequest('enviar sua mensagem ao chat do Copiloto')) return;
+    const confirmed = await confirmExternalAIRequest('enviar sua mensagem ao chat do Copiloto');
+    if (!confirmed) return;
 
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setChatMessages(prev => [...prev, { sender: 'user', text: textToSend, time: userTime }]);
@@ -961,6 +967,35 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
           </div>
         </div>
       )}
+
+      {/* Diálogo Acessível de Confirmação de Envio para IA Externa */}
+      <ConfirmDialog
+        isOpen={Boolean(pendingConfirm)}
+        onClose={() => {
+          pendingConfirm?.resolve(false);
+          setPendingConfirm(null);
+        }}
+        onConfirm={() => {
+          pendingConfirm?.resolve(true);
+          setPendingConfirm(null);
+        }}
+        title="Confirmar Envio para IA Externa"
+        description={
+          pendingConfirm ? (
+            <div className="space-y-3 text-xs">
+              <p>Antes de <strong>{pendingConfirm.actionLabel}</strong>, confirme o envio de dados para o provedor de IA:</p>
+              <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 space-y-1 font-mono text-[11px]">
+                <div><strong>Provedor:</strong> {activeProvider.toUpperCase()}</div>
+                <div><strong>Modelo:</strong> {selectedModel}</div>
+                <div><strong>Modo:</strong> {privacyModeLabel}</div>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400">{privacyModeDescription}</p>
+            </div>
+          ) : undefined
+        }
+        confirmLabel="Confirmar Envio"
+        cancelLabel="Cancelar"
+      />
     </div>
   );
 };

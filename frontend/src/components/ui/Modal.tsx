@@ -20,6 +20,7 @@ export interface ModalProps {
   className?: string
   contentClassName?: string
   headerAction?: React.ReactNode
+  role?: 'dialog' | 'alertdialog'
 }
 
 const SIZE_CLASSES: Record<NonNullable<ModalProps['size']>, string> = {
@@ -49,6 +50,7 @@ export const Modal: React.FC<ModalProps> = ({
   className = '',
   contentClassName = '',
   headerAction,
+  role = 'dialog',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -76,7 +78,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         ref={containerRef}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={!ariaLabel && title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}

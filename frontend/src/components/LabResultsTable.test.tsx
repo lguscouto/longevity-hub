@@ -73,4 +73,34 @@ describe('LabResultsTable', () => {
     expect(screen.getByText('(Sem TG/HDL)')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(/excluídos de cálculos/i)
   })
+
+  it('renders EmptyState when no lab reports are available', () => {
+    render(<LabResultsTable labs={[]} onAddBatchLabs={vi.fn()} />)
+    expect(screen.getByRole('heading', { name: /nenhum laudo cadastrado/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cadastrar primeiro laudo/i })).toBeInTheDocument()
+  })
+
+  it('opens accessible ConfirmDialog when deleting a lab date group', async () => {
+    const user = userEvent.setup()
+    render(
+      <LabResultsTable
+        labs={[
+          { collected_at: '2026-07-30', metric_key: 'glucose_mgdl', metric_name: 'Glicemia', value: 85, unit: 'mg/dL', record_origin: 'patient_lab' },
+        ]}
+        onAddBatchLabs={vi.fn()}
+      />,
+    )
+
+    const deleteBtn = screen.getByTitle(/excluir este laudo/i)
+    await user.click(deleteBtn)
+
+    const dialog = screen.getByRole('alertdialog')
+    expect(dialog).toBeInTheDocument()
+    expect(screen.getByText(/confirmar exclusão de laudo/i)).toBeInTheDocument()
+
+    const cancelBtn = screen.getByRole('button', { name: /cancelar/i })
+    await user.click(cancelBtn)
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
 })
+

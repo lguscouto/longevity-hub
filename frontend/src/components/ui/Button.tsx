@@ -8,8 +8,9 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
-  leftIcon?: LucideIcon;
-  rightIcon?: LucideIcon;
+  loadingText?: string;
+  leftIcon?: React.ComponentType<{ className?: string }> | LucideIcon;
+  rightIcon?: React.ComponentType<{ className?: string }> | LucideIcon;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -38,6 +39,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'secondary',
       size = 'md',
       loading = false,
+      loadingText,
       leftIcon: LeftIcon,
       rightIcon: RightIcon,
       disabled,
@@ -64,7 +66,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           LeftIcon && <LeftIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
         )}
-        <span>{children}</span>
+        <span>{loading && loadingText ? loadingText : children}</span>
         {!loading && RightIcon && <RightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />}
       </button>
     );

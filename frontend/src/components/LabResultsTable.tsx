@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
+import { ConfirmDialog, EmptyState, InlineError } from './ui';
 
 interface LabResult {
   id?: number;
@@ -301,9 +302,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       </div>
 
       {deleteError && (
-        <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-800 dark:text-rose-300">
-          {deleteError}
-        </div>
+        <InlineError message={deleteError} />
       )}
 
       {excludedLabsCount > 0 && (
@@ -375,8 +374,16 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {sortedDates.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-slate-500">
-                  Nenhum laudo cadastrado. Clique em "Novo Painel de Exames" para registrar.
+                <td colSpan={5} className="py-8">
+                  <EmptyState
+                    title="Nenhum laudo cadastrado"
+                    description="Clique em 'Cadastrar Primeiro Laudo' para registrar seus biomarcadores de sangue."
+                    icon={FileText}
+                    action={{
+                      label: 'Cadastrar Primeiro Laudo',
+                      onClick: () => setShowBatchModal(true),
+                    }}
+                  />
                 </td>
               </tr>
             ) : (
@@ -560,44 +567,30 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       , document.body)}
 
       {/* Modal de Confirmação de Exclusão */}
-      {deleteConfirmDate && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
-              <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Confirmar Exclusão de Laudo</h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Ação irreversível de banco de dados</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-              Tem certeza que deseja excluir todos os <strong className="text-slate-900 dark:text-white">{groupedLabs[deleteConfirmDate]?.length || 0} exames</strong> registrados no laudo do dia <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>?
-            </p>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmDate(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs glow-rose transition"
-              >
-                <Trash2 className="h-4 w-4" />
-                {isDeleting ? 'Excluindo...' : 'Confirmar Exclusão'}
-              </button>
-            </div>
-          </div>
-        </div>
-      , document.body)}
+      <ConfirmDialog
+        isOpen={Boolean(deleteConfirmDate)}
+        onClose={() => setDeleteConfirmDate(null)}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão de Laudo"
+        description={
+          deleteConfirmDate ? (
+            <span>
+              Tem certeza que deseja excluir todos os{' '}
+              <strong className="text-slate-900 dark:text-white">
+                {groupedLabs[deleteConfirmDate]?.length || 0} exames
+              </strong>{' '}
+              registrados no laudo do dia{' '}
+              <strong className="text-cyan-600 dark:text-cyan-400">
+                {deleteConfirmDate}
+              </strong>? Ação irreversível de banco de dados.
+            </span>
+          ) : null
+        }
+        confirmLabel="Confirmar Exclusão"
+        cancelLabel="Cancelar"
+        isDestructive
+        loading={isDeleting}
+      />
 
       {/* Modal de Inclusão em Lote */}
       {showBatchModal && createPortal(

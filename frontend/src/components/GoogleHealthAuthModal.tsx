@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal } from './ui'
+import { Modal, ConfirmDialog } from './ui'
 import {
   X,
   CheckCircle2,
@@ -59,6 +59,8 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [showConfig, setShowConfig] = useState(false)
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
 
   const [clientId, setClientId] = useState('')
   const [clientSecret, setClientSecret] = useState('')
@@ -173,19 +175,27 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
     }
   }
 
-  const handleDisconnect = async () => {
-    if (!window.confirm('Deseja realmente desconectar sua conta Google Health?')) return
+  const handleDisconnect = () => {
+    setShowDisconnectConfirm(true)
+  }
+
+  const handleDisconnectConfirm = async () => {
+    setDisconnecting(true)
     try {
       await requestJson('/api/google-health/disconnect', { method: 'POST' })
       setSuccessMsg('Conta Google Health desconectada.')
+      setShowDisconnectConfirm(false)
       void fetchStatus()
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Falha ao desconectar.')
+    } finally {
+      setDisconnecting(false)
     }
   }
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Conexão Google Health API v4"
@@ -434,6 +444,19 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
             Fechar
           </button>
         </div>
-    </Modal>
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={showDisconnectConfirm}
+        onClose={() => setShowDisconnectConfirm(false)}
+        onConfirm={handleDisconnectConfirm}
+        title="Desconectar Google Health"
+        description="Deseja realmente desconectar sua conta Google Health? As sincronizações automáticas e dados em tempo real serão interrompidos."
+        confirmLabel="Desconectar"
+        cancelLabel="Cancelar"
+        isDestructive={true}
+        loading={disconnecting}
+      />
+    </>
   )
 }

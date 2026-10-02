@@ -23,6 +23,7 @@ import { TimelineMonthView } from './TimelineMonthView'
 import { TimelineWeekView } from './TimelineWeekView'
 import { InsightDrawer } from '../contextInsights/InsightDrawer'
 import { PersonalAssociationsCard } from '../contextInsights/PersonalAssociationsCard'
+import { ConfirmDialog, InlineError } from '../ui'
 import type {
   TimelineDaySummary,
   TimelineMonthSummary,
@@ -113,13 +114,27 @@ export const TimelineView: React.FC = () => {
     }
   }
 
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!window.confirm('Tem certeza de que deseja remover este evento manual?')) return
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null)
+  const [deletingEvent, setDeletingEvent] = useState<boolean>(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const handleDeleteEvent = (eventId: string) => {
+    setEventToDelete(eventId)
+    setDeleteError(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!eventToDelete) return
+    setDeletingEvent(true)
+    setDeleteError(null)
     try {
-      await deleteHealthEvent(eventId)
+      await deleteHealthEvent(eventToDelete)
+      setEventToDelete(null)
       await loadData()
     } catch (err: any) {
-      alert(err?.message || 'Não foi possível excluir o evento.')
+      setDeleteError(err?.message || 'Não foi possível excluir o evento.')
+    } finally {
+      setDeletingEvent(false)
     }
   }
 
@@ -332,6 +347,31 @@ export const TimelineView: React.FC = () => {
           setDrawerDate(null)
           setIsAddModalOpen(true)
         }}
+      />
+
+      {/* Confirmação de Exclusão de Evento */}
+      <ConfirmDialog
+        isOpen={Boolean(eventToDelete)}
+        onClose={() => {
+          setEventToDelete(null)
+          setDeleteError(null)
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Remover Evento de Saúde"
+        description={
+          deleteError ? (
+            <div className="space-y-2">
+              <p>Tem certeza de que deseja remover este evento manual?</p>
+              <InlineError message={deleteError} />
+            </div>
+          ) : (
+            'Tem certeza de que deseja remover este evento manual? Esta ação não pode ser desfeita.'
+          )
+        }
+        confirmLabel="Remover Evento"
+        cancelLabel="Cancelar"
+        isDestructive={true}
+        loading={deletingEvent}
       />
     </div>
   )
