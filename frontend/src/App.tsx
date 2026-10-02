@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from 'react'
-import { Activity, ChevronDown, Flame, Footprints, Heart, Moon, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
+import { Activity, ChevronDown, Dna, Flame, Footprints, Heart, Moon, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
 
 import { Header } from './components/Header'
 import { MetricCard } from './components/MetricCard'
+import { OverviewSection } from './components/OverviewSection'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Lazy-loaded heavy components
@@ -36,7 +37,20 @@ import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 
-type Tab = 'overview' | 'timeline' | 'workouts' | 'labs' | 'supplements' | 'sleep' | 'ai' | 'n-of-1' | 'physical-assessments' | 'profile'
+type Tab =
+  | 'overview'
+  | 'today'
+  | 'timeline'
+  | 'workouts'
+  | 'labs'
+  | 'health'
+  | 'supplements'
+  | 'interventions'
+  | 'sleep'
+  | 'ai'
+  | 'n-of-1'
+  | 'physical-assessments'
+  | 'profile'
 
 type DailyMetric = {
   date_ref: string
@@ -86,17 +100,45 @@ function formatDecimal(value: number | null | undefined): string {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)
 }
 
-const VALID_TABS: Tab[] = ['overview', 'timeline', 'workouts', 'labs', 'supplements', 'sleep', 'ai', 'n-of-1', 'physical-assessments', 'profile']
+const VALID_TABS: Tab[] = [
+  'overview',
+  'today',
+  'timeline',
+  'workouts',
+  'labs',
+  'health',
+  'supplements',
+  'interventions',
+  'sleep',
+  'ai',
+  'n-of-1',
+  'physical-assessments',
+  'profile',
+]
+
+function normalizeTab(rawTab: string | null | undefined): Tab {
+  if (!rawTab) return 'overview'
+  const clean = rawTab.replace('#', '').trim()
+  if (clean === 'today') return 'overview'
+  if (clean === 'health') return 'labs'
+  if (clean === 'interventions') return 'supplements'
+  if (VALID_TABS.includes(clean as Tab)) {
+    return clean as Tab
+  }
+  return 'overview'
+}
 
 function getInitialTab(): Tab {
   try {
-    const hash = window.location.hash.replace('#', '').trim() as Tab
-    if (hash && VALID_TABS.includes(hash)) {
-      return hash
+    const hash = window.location.hash
+    if (hash) {
+      const normalized = normalizeTab(hash)
+      if (normalized) return normalized
     }
-    const saved = localStorage.getItem('longevidade_active_tab') as Tab | null
-    if (saved && VALID_TABS.includes(saved)) {
-      return saved
+    const saved = localStorage.getItem('longevidade_active_tab')
+    if (saved) {
+      const normalized = normalizeTab(saved)
+      if (normalized) return normalized
     }
   } catch {
     // fallback
@@ -122,10 +164,8 @@ export default function App() {
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '').trim() as Tab
-      if (hash && VALID_TABS.includes(hash)) {
-        setActiveTab(hash)
-      }
+      const normalized = normalizeTab(window.location.hash)
+      setActiveTab(normalized)
     }
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
@@ -178,7 +218,7 @@ export default function App() {
   const activeMetric = metrics.find((metric) => metric.date_ref === selectedDate) ?? null
   const hasMetric = Boolean(activeMetric)
 
-  const metricCards = [
+  const primaryMetricCards = [
     {
       title: 'PASSOS 24H',
       value: hasMetric && activeMetric?.steps != null ? activeMetric.steps.toLocaleString('pt-BR') : '—',
@@ -211,19 +251,22 @@ export default function App() {
       color: 'emerald' as const,
     },
     {
-      title: 'CALORIAS ATIVAS',
-      value: hasMetric && activeMetric?.calories != null ? `${Math.round(activeMetric.calories)} kcal` : '—',
-      unit: hasMetric && activeMetric?.calories != null ? 'kcal' : undefined,
-      subtitle: hasMetric ? 'Estimativa 24h' : NO_DATA_LABEL,
-      icon: Flame,
-      color: 'emerald' as const,
-    },
-    {
       title: 'VO₂ MÁXIMO',
       value: hasMetric && activeMetric?.vo2_max != null ? `${activeMetric.vo2_max.toFixed(1)}` : '—',
       unit: hasMetric && activeMetric?.vo2_max != null ? 'ml/kg/min' : undefined,
       subtitle: hasMetric ? 'Meta: > 45' : NO_DATA_LABEL,
       icon: Wind,
+      color: 'emerald' as const,
+    },
+  ]
+
+  const secondaryMetricCards = [
+    {
+      title: 'CALORIAS ATIVAS',
+      value: hasMetric && activeMetric?.calories != null ? `${Math.round(activeMetric.calories)} kcal` : '—',
+      unit: hasMetric && activeMetric?.calories != null ? 'kcal' : undefined,
+      subtitle: hasMetric ? 'Estimativa 24h' : NO_DATA_LABEL,
+      icon: Flame,
       color: 'emerald' as const,
     },
     {
@@ -243,6 +286,8 @@ export default function App() {
       color: 'emerald' as const,
     },
   ]
+
+  const metricCards = [...primaryMetricCards, ...secondaryMetricCards]
 
   const fetchDashboardData = async () => {
     const sequence = ++refreshSequence.current
@@ -305,7 +350,8 @@ export default function App() {
     setIsSyncModalOpen(true)
 
     try {
-      const endpoint = full ? '/api/metrics/sync/zepp?full=true' : '/api/metrics/sync/zepp'
+      const isFull = full === true
+      const endpoint = isFull ? '/api/metrics/sync/zepp?full=true' : '/api/metrics/sync/zepp'
       const result = await requestJson<SyncResult>(endpoint, { method: 'POST' })
       setSyncResult(result)
       if (result.status === 'ok') {
@@ -483,7 +529,8 @@ export default function App() {
     <div className="min-h-screen bg-[#f4f7fb] dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
       <Header
         activeTab={activeTab}
-        setActiveTab={(tab) => setActiveTab(tab as Tab)}
+        setActiveTab={(tab) => setActiveTab(normalizeTab(tab))}
+        onSelectTab={(tab) => setActiveTab(normalizeTab(tab))}
         onSyncZepp={handleSyncZepp}
         onSyncGoogleHealth={handleSyncGoogleHealth}
         onOpenManualEntry={() => setShowManualModal(true)}
@@ -527,17 +574,68 @@ export default function App() {
                   onDaysRangeChange={setDaysRange}
                 />
 
-                <section className="flex items-center justify-between gap-4">
+                <section aria-label="Cabeçalho do Dia" className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Visão Geral</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Visão Geral</h2>
                     <DataConfidenceBadge selectedDate={selectedDate} />
                   </div>
-                  <button aria-label="Atualizar dados" onClick={() => void fetchDashboardData()} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition">
+                  <button
+                    aria-label="Atualizar dados"
+                    onClick={() => void fetchDashboardData()}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                  >
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   </button>
                 </section>
 
                 <DailyGuidanceCard selectedDate={selectedDate} refreshKey={guidanceRevision} />
+
+                {/* Camada 1: Métricas Vitais de Hoje */}
+                <section aria-label="Métricas do Dia" className="space-y-4">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5">
+                      Indicadores Principais
+                    </h3>
+                    <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-5">
+                      {primaryMetricCards.map((card) => (
+                        <MetricCard
+                          key={card.title}
+                          title={card.title}
+                          value={card.value}
+                          unit={card.unit}
+                          subtitle={card.subtitle}
+                          icon={card.icon}
+                          color={card.color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+                      Indicadores Complementares
+                    </h3>
+                    <div className="grid gap-3.5 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+                      {secondaryMetricCards.map((card) => (
+                        <MetricCard
+                          key={card.title}
+                          title={card.title}
+                          value={card.value}
+                          unit={card.unit}
+                          subtitle={card.subtitle}
+                          icon={card.icon}
+                          color={card.color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {!loading && !hasMetric && (
+                    <p className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 text-slate-700 dark:text-slate-300">
+                      Sem dados disponíveis para a data selecionada.
+                    </p>
+                  )}
+                </section>
               </>
             )}
 
@@ -547,63 +645,62 @@ export default function App() {
 
             {activeTab === 'overview' && (
               <>
-                <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {metricCards.map((card) => (
-                    <MetricCard
-                      key={card.title}
-                      title={card.title}
-                      value={card.value}
-                      unit={card.unit}
-                      subtitle={card.subtitle}
-                      icon={card.icon}
-                      color={card.color}
-                    />
-                  ))}
-                </section>
-
-                {!loading && !hasMetric && <p className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 text-slate-700 dark:text-slate-300">Sem dados disponíveis para a data selecionada.</p>}
-
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="lg:col-span-1">
-                    <PhenoAgeWidget latestRecord={phenoHistory[0]} latestKdmRecord={latestKdmRecord} onRecalculate={handleRecalculatePheno} />
-                  </div>
-                  <div className="lg:col-span-1">
+                {/* Camada 2: Contexto Operacional & Recuperação */}
+                <OverviewSection
+                  id="overview-context"
+                  title="Contexto & Recuperação"
+                  subtitle="Carga acumulada, prontidão circadiana e adesão a protocolos"
+                  icon={Heart}
+                >
+                  <div className="grid gap-6 lg:grid-cols-2">
                     <DailyComplianceWidget selectedDate={selectedDate} />
+                    <TrainingLoadWidget
+                      dailyLoad={activeMetric?.training_load_daily}
+                      rollingLoad={activeMetric?.training_load_rolling}
+                      optimalMin={activeMetric?.training_load_optimal_min}
+                      optimalMax={activeMetric?.training_load_optimal_max}
+                      workoutCount={activeMetric?.workout_count}
+                      workoutDurationMin={activeMetric?.workout_duration_min}
+                    />
                   </div>
-                </div>
+                  <EnergyCircadianWidget selectedDate={selectedDate} />
+                </OverviewSection>
 
-                <TrainingLoadWidget
-                  dailyLoad={activeMetric?.training_load_daily}
-                  rollingLoad={activeMetric?.training_load_rolling}
-                  optimalMin={activeMetric?.training_load_optimal_min}
-                  optimalMax={activeMetric?.training_load_optimal_max}
-                  workoutCount={activeMetric?.workout_count}
-                  workoutDurationMin={activeMetric?.workout_duration_min}
-                />
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setShowWorkoutsTable((prev) => !prev)}
-                      className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors py-1.5 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
-                    >
-                      <Activity className="w-4 h-4 text-emerald-500" />
-                      <span>{showWorkoutsTable ? 'Ocultar Histórico de Treinos' : 'Ver Histórico Detalhado de Treinos'}</span>
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showWorkoutsTable ? 'rotate-180' : ''}`} />
-                    </button>
+                {/* Camada 3: Análises Avançadas & Biomarcadores */}
+                <OverviewSection
+                  id="overview-advanced"
+                  title="Análises Avançadas"
+                  subtitle="Idade epigenética (PhenoAge/KDM), CGM e histórico de treinos"
+                  icon={Dna}
+                >
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <PhenoAgeWidget
+                      latestRecord={phenoHistory[0]}
+                      latestKdmRecord={latestKdmRecord}
+                      onRecalculate={handleRecalculatePheno}
+                    />
+                    <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />
                   </div>
-                  {showWorkoutsTable && (
-                    <Suspense fallback={<div className="py-6 text-center text-xs text-slate-400 animate-pulse">Carregando treinos...</div>}>
-                      <WorkoutsTable />
-                    </Suspense>
-                  )}
-                </div>
 
-
-                <EnergyCircadianWidget selectedDate={selectedDate} />
-
-                <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setShowWorkoutsTable((prev) => !prev)}
+                        className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors py-1.5 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                      >
+                        <Activity className="w-4 h-4 text-emerald-500" />
+                        <span>{showWorkoutsTable ? 'Ocultar Histórico de Treinos' : 'Ver Histórico Detalhado de Treinos'}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showWorkoutsTable ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                    {showWorkoutsTable && (
+                      <Suspense fallback={<div className="py-6 text-center text-xs text-slate-400 animate-pulse">Carregando treinos...</div>}>
+                        <WorkoutsTable />
+                      </Suspense>
+                    )}
+                  </div>
+                </OverviewSection>
               </>
             )}
 

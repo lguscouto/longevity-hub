@@ -150,19 +150,20 @@ describe('App', () => {
       expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    // Click 'Exames & PhenoAge' tab
-    await user.click(screen.getByRole('button', { name: /exames & phenoage/i }))
+    // Click 'Saúde' tab (which activates labs / Exames & PhenoAge)
+    await user.click(screen.getByRole('button', { name: /^saúde$/i }))
     expect(await screen.findByText(/exames laboratoriais & alvos de longevidade/i)).toBeInTheDocument()
 
-    // Click 'Suplementos & Hormônios' tab
-    await user.click(screen.getByRole('button', { name: /suplementos & hormônios/i }))
+    // Click 'Intervenções' tab (which activates supplements)
+    await user.click(screen.getByRole('button', { name: /^intervenções$/i }))
     expect(await screen.findByText(/módulo de longevidade médica/i)).toBeInTheDocument()
 
     // Click 'IA & Copiloto' tab
     await user.click(screen.getByRole('button', { name: /ia & copiloto/i }))
     expect(await screen.findByText(/inteligência médica de precisão/i)).toBeInTheDocument()
 
-    // Click 'N-of-1 Tests' tab
+    // Click 'N-of-1 Tests' sub-tab under Intervenções
+    await user.click(screen.getByRole('button', { name: /^intervenções$/i }))
     await user.click(screen.getByRole('button', { name: /n-of-1 tests/i }))
     expect(await screen.findByText(/experimentos n-of-1/i)).toBeInTheDocument()
 
@@ -179,7 +180,7 @@ describe('App', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Energia nível 3' }))
-    fireEvent.click(screen.getByRole('button', { name: /exames & phenoage/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^saúde$/i }))
 
     await waitFor(() => {
       expect(requestJsonMock).toHaveBeenCalledWith(

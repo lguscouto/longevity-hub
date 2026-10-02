@@ -261,23 +261,49 @@ test.describe('Smoke – Longevidade Dashboard', () => {
   test('navegação por abas atualiza o deep link e preserva a aba após reload', async ({ page }) => {
     await page.goto('/')
 
-    const tabs = [
-      { label: /Exames & PhenoAge/i, hash: '#labs' },
-      { label: /Suplementos & Hormônios/i, hash: '#supplements' },
-      { label: /IA & Copiloto/i, hash: '#ai' },
-      { label: /N-of-1 Tests/i, hash: '#n-of-1' },
-      { label: /Avaliações Físicas/i, hash: '#physical-assessments' },
-      { label: /Perfil/i, hash: '#profile' },
-    ]
+    // 1. Navegar para Saúde (ativa Exames & PhenoAge por padrão)
+    const saudeBtn = page.getByRole('button', { name: /^saúde$/i })
+    await expect(saudeBtn).toBeVisible()
+    await saudeBtn.click()
+    await expect(page).toHaveURL(/#labs$/)
+    await expect(page.locator('main')).not.toBeEmpty()
 
-    for (const tab of tabs) {
-      const button = page.getByRole('button', { name: tab.label })
-      await expect(button).toHaveCount(1)
-      await expect(button).toBeVisible()
-      await button.click()
-      await expect(page).toHaveURL(new RegExp(`${tab.hash.replace('#', '#')}$`))
-      await expect(page.locator('main')).not.toBeEmpty()
-    }
+    // 2. Navegar para Intervenções (ativa Suplementos por padrão)
+    const intervencoesBtn = page.getByRole('button', { name: /^intervenções$/i })
+    await expect(intervencoesBtn).toBeVisible()
+    await intervencoesBtn.click()
+    await expect(page).toHaveURL(/#supplements$/)
+    await expect(page.locator('main')).not.toBeEmpty()
+
+    // 3. Navegar para IA & Copiloto
+    const aiBtn = page.getByRole('button', { name: /ia & copiloto/i })
+    await expect(aiBtn).toBeVisible()
+    await aiBtn.click()
+    await expect(page).toHaveURL(/#ai$/)
+    await expect(page.locator('main')).not.toBeEmpty()
+
+    // 4. Navegar para sub-aba N-of-1 Tests dentro de Intervenções
+    await intervencoesBtn.click()
+    const nof1SubTab = page.getByRole('button', { name: /n-of-1 tests/i })
+    await expect(nof1SubTab).toBeVisible()
+    await nof1SubTab.click()
+    await expect(page).toHaveURL(/#n-of-1$/)
+    await expect(page.locator('main')).not.toBeEmpty()
+
+    // 5. Navegar para sub-aba Avaliações Físicas dentro de Saúde
+    await saudeBtn.click()
+    const physicalSubTab = page.getByRole('button', { name: /avaliações físicas/i })
+    await expect(physicalSubTab).toBeVisible()
+    await physicalSubTab.click()
+    await expect(page).toHaveURL(/#physical-assessments$/)
+    await expect(page.locator('main')).not.toBeEmpty()
+
+    // 6. Navegar para Perfil
+    const profileBtn = page.getByRole('button', { name: /^perfil$/i })
+    await expect(profileBtn).toBeVisible()
+    await profileBtn.click()
+    await expect(page).toHaveURL(/#profile$/)
+    await expect(page.locator('main')).not.toBeEmpty()
 
     await page.reload()
     await expect(page).toHaveURL(/#profile$/)
