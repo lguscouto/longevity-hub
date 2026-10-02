@@ -332,7 +332,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
-                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Alvo: &lt; 0.60</span>
+                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 0.60</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Índice primário de risco aterogênico celular (Attia / Longevidade Hub)</p>
             </div>
@@ -341,7 +341,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão Triglicerídeos / HDL</span>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioTgHdl ? ratioTgHdl : '(Sem TG/HDL)'}</span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Alvo: &lt; 1.5</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 1.5</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Indicador direto de sensibilidade à insulina e LDL denso</p>
             </div>
@@ -350,7 +350,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Colesterol Remanescente</span>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{remnantChol ? `${remnantChol} mg/dL` : '(Sem dados)'}</span>
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Alvo: &lt; 15 mg/dL</span>
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 15 mg/dL</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Lipoproteínas altamente inflamatórias (Total - HDL - LDL)</p>
             </div>
@@ -522,6 +522,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                     {matchingResults.map((item, i) => {
                       const isEligible = isClinicallyEligibleLab(item);
                       const isOpt = isEligible && isMarkerOptimal(item);
+                      const markerMeta = getMarkerMeta(item.metric_key);
                       return (
                         <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
                           <div>
@@ -547,9 +548,20 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                             </div>
                           </div>
 
-                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 flex justify-between">
-                            <span>{recordOriginLabel(item.record_origin)}</span>
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
+                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span>Origem: {recordOriginLabel(item.record_origin)}</span>
+                              {markerMeta?.ref_min != null && markerMeta?.ref_max != null && (
+                                <span title="Intervalo populacional padrão de referência clínica">
+                                  Ref: {markerMeta.ref_min} - {markerMeta.ref_max}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex justify-end items-center">
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400" title="Faixa funcional preconizada para longevidade preventiva">
+                                Alvo Ótimo: {item.optimal_target} {item.unit}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
@@ -672,8 +684,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                         />
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-                        Alvo: {item.optimal} {item.unit}
+                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block" title="Alvo funcional preconizado para longevidade preventiva">
+                        Alvo Ótimo: {item.optimal} {item.unit}
                       </span>
                     </div>
                   ))}

@@ -53,4 +53,49 @@ describe('MetricCard (UX_UI_32)', () => {
     expect(screen.getByText('Média em repouso')).toBeInTheDocument();
     expect(screen.getByText('-2 bpm')).toBeInTheDocument();
   });
+
+  it('renders semantic range types with accessible labels and tooltips (UX_UI_19)', () => {
+    const { rerender } = render(
+      <MetricCard
+        title="Passos 24h"
+        value={10420}
+        unit="passos"
+        rangeType="target"
+        rangeValue="10.000"
+        icon={Activity}
+      />
+    );
+
+    // Alvo Pessoal
+    expect(screen.getByLabelText('Alvo Pessoal: 10.000')).toBeInTheDocument();
+    expect(screen.getByText('10.000')).toBeInTheDocument();
+
+    // Referência Clínica
+    rerender(
+      <MetricCard
+        title="Taxa Respiratória"
+        value={14}
+        unit="rpm"
+        rangeType="reference"
+        rangeValue="12-20"
+        icon={Activity}
+      />
+    );
+    expect(screen.getByLabelText('Referência Clínica: 12-20')).toBeInTheDocument();
+    expect(screen.getByText('12-20')).toBeInTheDocument();
+
+    // Alvo Ótimo de Longevidade
+    rerender(
+      <MetricCard
+        title="FC Repouso"
+        value={52}
+        unit="bpm"
+        rangeType="optimal"
+        rangeValue="< 55 bpm"
+        icon={Activity}
+      />
+    );
+    expect(screen.getByLabelText('Alvo Ótimo: < 55 bpm')).toBeInTheDocument();
+    expect(screen.getByText('< 55 bpm')).toBeInTheDocument();
+  });
 });

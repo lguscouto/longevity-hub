@@ -233,7 +233,9 @@ export default function App() {
       title: 'Passos 24h',
       value: hasMetric && activeMetric?.steps != null ? activeMetric.steps.toLocaleString('pt-BR') : '—',
       unit: hasMetric && activeMetric?.steps != null ? 'passos' : undefined,
-      subtitle: hasMetric ? 'Meta: 10.000' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('target' as const) : undefined,
+      rangeValue: hasMetric ? '10.000' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Footprints,
       color: 'emerald' as const,
     },
@@ -241,7 +243,9 @@ export default function App() {
       title: 'FC Repouso',
       value: hasMetric && activeMetric?.rhr_bpm != null ? `${Math.round(activeMetric.rhr_bpm)} bpm` : '—',
       unit: hasMetric && activeMetric?.rhr_bpm != null ? 'bpm' : undefined,
-      subtitle: hasMetric ? 'Meta: < 55 bpm' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('optimal' as const) : undefined,
+      rangeValue: hasMetric ? '< 55 bpm' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Heart,
       color: 'emerald' as const,
     },
@@ -249,14 +253,18 @@ export default function App() {
       title: 'HRV (RMSSD)',
       value: hasMetric && activeMetric?.hrv_ms != null ? `${Math.round(activeMetric.hrv_ms)} ms` : '—',
       unit: hasMetric && activeMetric?.hrv_ms != null ? 'ms' : undefined,
-      subtitle: hasMetric ? 'Meta: > 50 ms' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('optimal' as const) : undefined,
+      rangeValue: hasMetric ? '> 50 ms' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Zap,
       color: 'emerald' as const,
     },
     {
       title: 'Sono Total',
       value: hasMetric && activeMetric?.sleep_minutes != null ? formatSleepMinutes(activeMetric.sleep_minutes) : '—',
-      subtitle: hasMetric ? 'Meta: 8h' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('target' as const) : undefined,
+      rangeValue: hasMetric ? '8h' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Moon,
       color: 'emerald' as const,
     },
@@ -264,7 +272,9 @@ export default function App() {
       title: 'VO₂ Máximo',
       value: hasMetric && activeMetric?.vo2_max != null ? `${activeMetric.vo2_max.toFixed(1)}` : '—',
       unit: hasMetric && activeMetric?.vo2_max != null ? 'ml/kg/min' : undefined,
-      subtitle: hasMetric ? 'Meta: > 45' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('optimal' as const) : undefined,
+      rangeValue: hasMetric ? '> 45' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Wind,
       color: 'emerald' as const,
     },
@@ -283,7 +293,9 @@ export default function App() {
       title: 'Taxa Respiratória',
       value: hasMetric && activeMetric?.respiratory_rate_rpm != null ? `${activeMetric.respiratory_rate_rpm.toFixed(1)} rpm` : '—',
       unit: hasMetric && activeMetric?.respiratory_rate_rpm != null ? 'rpm' : undefined,
-      subtitle: hasMetric ? 'Normal: 12-20' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('reference' as const) : undefined,
+      rangeValue: hasMetric ? '12-20' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Activity,
       color: 'emerald' as const,
     },
@@ -291,7 +303,9 @@ export default function App() {
       title: 'SpO₂ Médio',
       value: hasMetric && activeMetric?.spo2_avg_pct != null ? `${activeMetric.spo2_avg_pct.toFixed(0)}%` : '—',
       unit: hasMetric && activeMetric?.spo2_avg_pct != null ? '%' : undefined,
-      subtitle: hasMetric ? 'Meta: ≥ 95%' : NO_DATA_LABEL,
+      rangeType: hasMetric ? ('reference' as const) : undefined,
+      rangeValue: hasMetric ? '≥ 95%' : undefined,
+      subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Shield,
       color: 'emerald' as const,
     },
@@ -621,6 +635,8 @@ export default function App() {
                           value={card.value}
                           unit={card.unit}
                           subtitle={card.subtitle}
+                          rangeType={card.rangeType}
+                          rangeValue={card.rangeValue}
                           icon={card.icon}
                           color={card.color}
                         />
@@ -640,6 +656,8 @@ export default function App() {
                           value={card.value}
                           unit={card.unit}
                           subtitle={card.subtitle}
+                          rangeType={card.rangeType}
+                          rangeValue={card.rangeValue}
                           icon={card.icon}
                           color={card.color}
                         />
