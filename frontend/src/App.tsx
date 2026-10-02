@@ -28,6 +28,7 @@ const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 
 
+import { LoadingIndicator } from './components/ui'
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
 import { DailyGuidanceCard } from './components/DailyGuidanceCard'
@@ -705,7 +706,7 @@ export default function App() {
                       </button>
                     </div>
                     {showWorkoutsTable && (
-                      <Suspense fallback={<div className="py-6 text-center text-xs text-slate-400 animate-pulse">Carregando treinos...</div>}>
+                      <Suspense fallback={<div className="py-6 flex justify-center"><LoadingIndicator label="Carregando treinos..." /></div>}>
                         <WorkoutsTable />
                       </Suspense>
                     )}
@@ -715,13 +716,13 @@ export default function App() {
             )}
 
             {activeTab === 'timeline' && (
-              <Suspense fallback={<div className="py-12 text-center text-slate-400">Carregando Linha do Tempo...</div>}>
+              <Suspense fallback={<div className="py-12 flex justify-center"><LoadingIndicator label="Carregando Linha do Tempo..." size="md" /></div>}>
                 <TimelineView />
               </Suspense>
             )}
 
             {activeTab === 'workouts' && (
-              <Suspense fallback={<div className="py-12 text-center text-slate-400">Carregando painel de treinos...</div>}>
+              <Suspense fallback={<div className="py-12 flex justify-center"><LoadingIndicator label="Carregando painel de treinos..." size="md" /></div>}>
                 <WorkoutsView onSyncZepp={handleSyncZepp} isSyncingZepp={isSyncing} />
               </Suspense>
             )}

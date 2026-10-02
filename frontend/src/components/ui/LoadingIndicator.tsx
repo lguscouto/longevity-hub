@@ -27,6 +27,18 @@ export const LoadingInline: React.FC<LoadingInlineProps> = ({
   );
 };
 
+export interface LoadingIndicatorProps extends LoadingInlineProps {
+  label?: string;
+}
+
+export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
+  label,
+  message,
+  ...props
+}) => {
+  return <LoadingInline message={label || message || 'Carregando...'} {...props} />;
+};
+
 export interface LoadingPanelProps {
   message?: string;
   skeletonRows?: number;

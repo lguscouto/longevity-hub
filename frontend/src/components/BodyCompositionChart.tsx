@@ -25,7 +25,7 @@ import {
   Target,
   RefreshCw,
 } from 'lucide-react';
-import { TimeRangeControl, TimeRangeOption } from './ui';
+import { TimeRangeControl, TimeRangeOption, LoadingIndicator, ErrorState } from './ui';
 
 export interface TimelinePoint {
   date: string;
@@ -313,18 +313,19 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
 
   if (loading && !data) {
     return (
-      <div className="glass-panel p-8 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-3 text-slate-400">
-        <RefreshCw className="h-5 w-5 animate-spin text-cyan-500" />
-        <span>Carregando evolução da composição corporal...</span>
+      <div className="glass-panel p-8 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+        <LoadingIndicator label="Carregando evolução da composição corporal..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="glass-panel p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs">
-        {error}
-      </div>
+      <ErrorState
+        title="Falha ao carregar composição corporal"
+        message={error}
+        onRetry={fetchTimeline}
+      />
     );
   }
 

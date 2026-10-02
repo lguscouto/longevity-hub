@@ -23,7 +23,7 @@ import { TimelineMonthView } from './TimelineMonthView'
 import { TimelineWeekView } from './TimelineWeekView'
 import { InsightDrawer } from '../contextInsights/InsightDrawer'
 import { PersonalAssociationsCard } from '../contextInsights/PersonalAssociationsCard'
-import { ConfirmDialog, InlineError } from '../ui'
+import { ConfirmDialog, InlineError, ErrorState, LoadingIndicator } from '../ui'
 import type {
   TimelineDaySummary,
   TimelineMonthSummary,
@@ -272,14 +272,15 @@ export const TimelineView: React.FC = () => {
 
       {/* Conteúdo Principal */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-3">
-          <RefreshCw className="h-6 w-6 animate-spin text-emerald-500" />
-          <span>Carregando Linha do Tempo...</span>
+        <div className="p-12 flex justify-center">
+          <LoadingIndicator label="Carregando Linha do Tempo..." size="md" />
         </div>
       ) : error ? (
-        <div className="p-6 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
-          {error}
-        </div>
+        <ErrorState
+          title="Falha ao carregar Linha do Tempo"
+          message={error}
+          onRetry={loadData}
+        />
       ) : (
         <div>
           {zoomLevel === 'day' && (

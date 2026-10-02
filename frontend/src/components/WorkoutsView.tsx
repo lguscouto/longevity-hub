@@ -25,7 +25,7 @@ import { requestJson } from '../lib/api'
 import { WorkoutSession, WorkoutsSummary, WorkoutExercise, ExerciseMedia } from '../types'
 import { ExerciseDetailModal } from './ExerciseDetailModal'
 import { ExerciseCatalogView } from './ExerciseCatalogView'
-import { EmptyState } from './ui'
+import { EmptyState, LoadingIndicator, ErrorState } from './ui'
 
 interface WorkoutsViewProps {
   onSyncZepp?: () => void
@@ -488,15 +488,15 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
 
       {/* Lista de Sessões de Treino */}
       {loading ? (
-        <div className="p-12 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900/20 rounded-2xl border border-slate-200 dark:border-slate-800/50 shadow-xs">
-          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-3 text-emerald-600 dark:text-emerald-500" />
-          <p className="text-sm font-medium">Carregando treinos...</p>
+        <div className="p-12 flex justify-center bg-white dark:bg-slate-900/20 rounded-2xl border border-slate-200 dark:border-slate-800/50 shadow-xs">
+          <LoadingIndicator label="Carregando treinos..." size="md" />
         </div>
       ) : error ? (
-        <div className="p-6 text-center text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-xs">
-          <AlertCircle className="h-6 w-6 mx-auto mb-2 text-rose-600 dark:text-rose-400" />
-          <p className="text-sm font-semibold">{error}</p>
-        </div>
+        <ErrorState
+          title="Falha ao carregar treinos"
+          message={error}
+          onRetry={loadData}
+        />
       ) : workouts.length === 0 ? (
         <EmptyState
           icon={Dumbbell}

@@ -87,12 +87,15 @@ Reversão das substituições via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Adoção de Primitives de Feedback | Inspeção estática em `App.tsx`, `BodyCompositionChart.tsx`, `WorkoutsView.tsx`, `TimelineView.tsx` | 02/10/2026 16:21:46 | Windows 11 | PASS | 100% de adoção de `LoadingIndicator`, `ErrorState` (com `onRetry`), `EmptyState` em fallbacks assíncronos e estados transitórios |
+| Vite Production Build | `npm run build` | 02/10/2026 16:22:51 | Windows 11 | PASS | ✓ built in 5.17s (9.91s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 16:23:01 | Windows 11 | PASS | 181 passed across 38 test files (12.30s) |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 16:23:13 | Windows 11 | PASS | 8 passed across 4 viewports (17.86s) |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída
