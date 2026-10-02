@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { PipelineStatusPanel, PipelineRun } from './PipelineStatusPanel';
 import { DataQualityPanel } from './DataQualityPanel';
+import { StatusBadge } from './ui';
 
 export type ProfileSubTab = 'profile' | 'integrations' | 'system';
 
@@ -188,9 +189,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{profile.name}</h2>
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                    <StatusBadge variant="success" dot>
                       Protocolo Ativo
-                    </span>
+                    </StatusBadge>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                     {profile.email} • Perfil do Longevidade Hub
@@ -214,7 +215,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {/* Idade */}
             <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Idade Cronológica
                 </span>
                 <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
@@ -224,13 +225,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
                 {profile.chronological_age} <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">anos</span>
               </div>
-              <span className="text-[10px] text-slate-500 mt-2 block">Nascimento: {profile.birthdate}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Nascimento: {profile.birthdate}</span>
             </div>
 
             {/* Altura */}
             <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Altura
                 </span>
                 <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -243,13 +244,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   cm ({heightInMeters} m)
                 </span>
               </div>
-              <span className="text-[10px] text-slate-500 mt-2 block">Sexo: {profile.gender || 'Não informado'}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Sexo: {profile.gender || 'Não informado'}</span>
             </div>
 
             {/* Peso Atual */}
             <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Peso Atual
                 </span>
                 <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
@@ -259,7 +260,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div className="text-3xl font-extrabold text-violet-700 dark:text-violet-300">
                 {currentWeight ? `${currentWeight} kg` : '(Sem dados)'}
               </div>
-              <span className="text-[10px] text-slate-500 mt-2 block">
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">
                 {profile.bmi ? `IMC: ${profile.bmi} kg/m²` : 'Sem IMC calculado'}
               </span>
             </div>
@@ -267,7 +268,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {/* Meta de Peso */}
             <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Meta de Peso
                 </span>
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -277,7 +278,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">
                 {profile.target_weight_kg} <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">kg</span>
               </div>
-              <span className="text-[10px] text-slate-500 mt-2 block">Meta Longevidade Protocol</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Meta Longevidade Protocol</span>
             </div>
           </div>
 
@@ -401,14 +402,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Zepp OS (Amazfit)</h4>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
                         ● Coleta de Sensores Ativa
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold">
-                    Conectado
-                  </span>
+                  <StatusBadge variant="success">Conectado</StatusBadge>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
                   Proveniência primária para Frequência Cardíaca de Repouso (RHR), Variabilidade (HRV), estágios de sono e passos.
@@ -450,19 +449,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Google Health API v4</h4>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                         Pixel Watch & Health Connect
                       </span>
                     </div>
                   </div>
                   {profile.google_connected ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold">
-                      Conectado
-                    </span>
+                    <StatusBadge variant="success">Conectado</StatusBadge>
                   ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
-                      Não Conectado
-                    </span>
+                    <StatusBadge variant="neutral">Não Conectado</StatusBadge>
                   )}
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
@@ -514,14 +509,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Hevy (Treinos de Força)</h4>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                         Cargas, séries e volume muscular
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-500/20 font-bold">
-                    API Ativa
-                  </span>
+                  <StatusBadge variant="info">API Ativa</StatusBadge>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
                   Importação contínua de treinos de musculação e hipertrofia para cálculo de carga crônica e manutenção da massa magra.
@@ -554,9 +547,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Base de Dados SQLite Local</h4>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                      Local-First OK
-                    </span>
+                    <StatusBadge variant="success">Local-First OK</StatusBadge>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Banco de dados residente em <code>longevidade.db</code> com criptografia e isolamento local.

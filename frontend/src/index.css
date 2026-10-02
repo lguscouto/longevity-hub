@@ -12,6 +12,7 @@
     --glass-panel-border: #dbe3ee;
     --glass-card-bg: #ffffff;
     --glass-card-border: #e2e8f0;
+    --focus-ring: #10b981;
     color-scheme: light;
   }
 
@@ -20,10 +21,11 @@
     --text-main: #F1F5F9;
     --text-secondary: #CBD5E1;
     --text-muted: #94A3B8;
-    --glass-panel-bg: rgba(19, 27, 41, 0.7);
+    --glass-panel-bg: rgba(19, 27, 41, 0.85);
     --glass-panel-border: rgba(255, 255, 255, 0.08);
-    --glass-card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
-    --glass-card-border: rgba(255, 255, 255, 0.06);
+    --glass-card-bg: #131b29;
+    --glass-card-border: rgba(255, 255, 255, 0.08);
+    --focus-ring: #34d399;
     color-scheme: dark;
   }
 
@@ -32,30 +34,37 @@
     color: var(--text-main);
     transition: background-color 0.15s ease, color 0.15s ease;
   }
+
+  /* Foco visível acessível por teclado */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
 }
 
+/* Moderação de Glassmorphism e Superfícies */
 .glass-panel {
   background: var(--glass-panel-bg);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--glass-panel-border);
 }
 
 .glass-card {
   background: var(--glass-card-bg);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--glass-card-border);
 }
 
+/* Efeitos de Glow discretos (reservados para CTAs primários e marca) */
 .glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.25);
 }
 
 .glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.25);
 }
 
 .glow-violet {
-  box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.25);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -67,3 +76,14 @@
   scrollbar-width: none;
 }
 
+/* Suporte estrito a prefers-reduced-motion (Acessibilidade WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

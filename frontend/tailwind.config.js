@@ -19,6 +19,9 @@ export default {
           amber: "#F59E0B",
         }
       },
+      fontSize: {
+        metric: ['2rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em', fontWeight: '800' }],
+      },
       fontFamily: {
         sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
       }

@@ -227,7 +227,7 @@ export default function App() {
 
   const primaryMetricCards = [
     {
-      title: 'PASSOS 24H',
+      title: 'Passos 24h',
       value: hasMetric && activeMetric?.steps != null ? activeMetric.steps.toLocaleString('pt-BR') : '—',
       unit: hasMetric && activeMetric?.steps != null ? 'passos' : undefined,
       subtitle: hasMetric ? 'Meta: 10.000' : NO_DATA_LABEL,
@@ -235,7 +235,7 @@ export default function App() {
       color: 'emerald' as const,
     },
     {
-      title: 'FC REPOUSO',
+      title: 'FC Repouso',
       value: hasMetric && activeMetric?.rhr_bpm != null ? `${Math.round(activeMetric.rhr_bpm)} bpm` : '—',
       unit: hasMetric && activeMetric?.rhr_bpm != null ? 'bpm' : undefined,
       subtitle: hasMetric ? 'Meta: < 55 bpm' : NO_DATA_LABEL,
@@ -251,14 +251,14 @@ export default function App() {
       color: 'emerald' as const,
     },
     {
-      title: 'SONO TOTAL',
+      title: 'Sono Total',
       value: hasMetric && activeMetric?.sleep_minutes != null ? formatSleepMinutes(activeMetric.sleep_minutes) : '—',
       subtitle: hasMetric ? 'Meta: 8h' : NO_DATA_LABEL,
       icon: Moon,
       color: 'emerald' as const,
     },
     {
-      title: 'VO₂ MÁXIMO',
+      title: 'VO₂ Máximo',
       value: hasMetric && activeMetric?.vo2_max != null ? `${activeMetric.vo2_max.toFixed(1)}` : '—',
       unit: hasMetric && activeMetric?.vo2_max != null ? 'ml/kg/min' : undefined,
       subtitle: hasMetric ? 'Meta: > 45' : NO_DATA_LABEL,
@@ -269,7 +269,7 @@ export default function App() {
 
   const secondaryMetricCards = [
     {
-      title: 'CALORIAS ATIVAS',
+      title: 'Calorias Ativas',
       value: hasMetric && activeMetric?.calories != null ? `${Math.round(activeMetric.calories)} kcal` : '—',
       unit: hasMetric && activeMetric?.calories != null ? 'kcal' : undefined,
       subtitle: hasMetric ? 'Estimativa 24h' : NO_DATA_LABEL,
@@ -277,7 +277,7 @@ export default function App() {
       color: 'emerald' as const,
     },
     {
-      title: 'TAXA RESPIRATÓRIA',
+      title: 'Taxa Respiratória',
       value: hasMetric && activeMetric?.respiratory_rate_rpm != null ? `${activeMetric.respiratory_rate_rpm.toFixed(1)} rpm` : '—',
       unit: hasMetric && activeMetric?.respiratory_rate_rpm != null ? 'rpm' : undefined,
       subtitle: hasMetric ? 'Normal: 12-20' : NO_DATA_LABEL,
@@ -285,7 +285,7 @@ export default function App() {
       color: 'emerald' as const,
     },
     {
-      title: 'SPO₂ MÉDIO',
+      title: 'SpO₂ Médio',
       value: hasMetric && activeMetric?.spo2_avg_pct != null ? `${activeMetric.spo2_avg_pct.toFixed(0)}%` : '—',
       unit: hasMetric && activeMetric?.spo2_avg_pct != null ? '%' : undefined,
       subtitle: hasMetric ? 'Meta: ≥ 95%' : NO_DATA_LABEL,
@@ -600,7 +600,7 @@ export default function App() {
                 {/* Camada 1: Métricas Vitais de Hoje */}
                 <section aria-label="Métricas do Dia" className="space-y-4">
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5">
+                    <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2.5">
                       Indicadores Principais
                     </h3>
                     <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-5">
