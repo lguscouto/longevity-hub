@@ -53,7 +53,9 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     renderModal({ isOpen: true, onClose, onRefreshSettings })
 
     const privacySelect = await screen.findByRole('combobox', { name: /modo de privacidade/i })
-    expect(privacySelect).toHaveValue('full')
+    await waitFor(() => {
+      expect(privacySelect).toHaveValue('full')
+    })
     expect(screen.getByText(/Cofre do Windows/i)).toBeInTheDocument()
     expect(screen.queryByText(/Salva no Banco/i)).not.toBeInTheDocument()
 

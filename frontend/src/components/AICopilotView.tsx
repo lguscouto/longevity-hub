@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Sparkles, RefreshCw, Send, Settings, ShieldCheck, Heart, Activity, Zap, Moon, FileText, ChevronRight, Cpu, Dumbbell, History, Clock, X, Calendar } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
-import { ConfirmDialog } from './ui';
+import { ConfirmDialog, EmptyState } from './ui';
 
 interface InsightItem {
   category: string;
@@ -62,10 +62,13 @@ function normalizePrivacyMode(mode?: string): PrivacyMode {
   return mode === 'full' ? 'full' : 'minimal';
 }
 
+export type AICopilotMode = 'analyze' | 'chat' | 'history';
+
 interface AICopilotViewProps {
   onOpenSettings: () => void;
   chatMessages: Array<{ sender: 'user' | 'ai'; text: string; time: string }>;
   setChatMessages: React.Dispatch<React.SetStateAction<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>>;
+  initialMode?: AICopilotMode;
 }
 
 const FormattedChatMessage: React.FC<{ text: string }> = ({ text }) => {
@@ -211,7 +214,13 @@ const TIME_WINDOW_ACTION_TEXTS: Record<TimeWindow, string> = {
   '30d': 'os insights de saúde dos últimos 30 dias',
 };
 
-export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, chatMessages, setChatMessages }) => {
+export const AICopilotView: React.FC<AICopilotViewProps> = ({
+  onOpenSettings,
+  chatMessages,
+  setChatMessages,
+  initialMode = 'analyze',
+}) => {
+  const [mode, setMode] = useState<AICopilotMode>(initialMode);
   const [activeProvider, setActiveProvider] = useState<string>('openrouter');
   const [selectedModel, setSelectedModel] = useState<string>('deepseek/deepseek-v4-flash-0731');
   const [privacyMode, setPrivacyMode] = useState<PrivacyMode>('minimal');
@@ -223,7 +232,6 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
   const [data, setData] = useState<AIResponseData | null>(null);
   const [reports, setReports] = useState<SavedReportItem[]>([]);
   const [activeReportMeta, setActiveReportMeta] = useState<ActiveReportMeta | null>(null);
-  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [chatInput, setChatInput] = useState<string>('');
@@ -377,7 +385,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
           provider: rep.provider,
           time_window: rep.time_window || '30d',
         });
-        setShowHistoryModal(false);
+        setMode('analyze');
       }
     } catch {
       setErrorMsg('Não foi possível carregar o relatório selecionado.');
@@ -410,6 +418,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
       });
       if (body.result) {
         setData(body.result);
+        setMode('analyze');
         setActiveReportMeta({
           id: body.id,
           created_at: new Date().toISOString(),
@@ -605,15 +614,53 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
         </div>
       )}
 
-      {/* Grid Principal: Insights + Chat Interativo */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Navegação entre as 3 Tarefas Principais (UX-P1-18) */}
+      <div className="flex flex-wrap items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 w-full sm:w-fit">
+        <button
+          type="button"
+          onClick={() => setMode('analyze')}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition flex-1 sm:flex-initial ${
+            mode === 'analyze'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Sparkles className="h-4 w-4 text-cyan-500" />
+          Analisar Tendências
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('chat')}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition flex-1 sm:flex-initial ${
+            mode === 'chat'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Bot className="h-4 w-4 text-cyan-500" />
+          Conversar com Copiloto
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('history')}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition flex-1 sm:flex-initial ${
+            mode === 'history'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <History className="h-4 w-4 text-cyan-500" />
+          Histórico de Relatórios ({reports.length})
+        </button>
+      </div>
 
-        {/* Coluna Esquerda: Análise de Insights (2 Cols) */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* Conteúdo da Tarefa Ativa */}
+      {mode === 'analyze' && (
+        <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex flex-wrap items-center gap-2.5">
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Relatório de Insights Médicos
+                <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Síntese de Tendências & Longevidade
               </h3>
               {activeReportMeta?.created_at && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300">
@@ -639,44 +686,97 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
             <div className="flex items-center gap-2">
               {reports.length > 0 && (
                 <button
-                  onClick={() => setShowHistoryModal(true)}
+                  onClick={() => setMode('history')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 transition"
                   title="Visualizar relatórios anteriores salvos"
                 >
                   <History className="h-3.5 w-3.5 text-cyan-500" />
-                  Histórico de Relatórios ({reports.length})
+                  Ver Histórico ({reports.length})
                 </button>
               )}
             </div>
           </div>
 
+          {/* Quadro de Transparência e Confiança dos Dados Clínicos (UX-P1-14) */}
+          {data && (
+            <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-3.5 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                    Transparência & Origem dos Dados Fisiológicos
+                  </span>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold border border-emerald-500/20">
+                  Alta densidade amostral
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    Dados Observados
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Exames laboratoriais clínicos, HRV noturna, frequência cardíaca, sono e glicose contínua (CGM).
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-cyan-700 dark:text-cyan-400 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
+                    Modelos & Estimativas
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Idade biológica PhenoAge, KDM e índices cardiovasculares (Razão ApoB/A1 e TG/HDL).
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-indigo-700 dark:text-indigo-400 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                    Correlações & Tendências
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Padrões aprendidos N-of-1 e associações com rotinas e eventos da Linha do Tempo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
+                <span className="text-amber-500 font-bold shrink-0">ℹ️</span>
+                <span>
+                  Síntese analítica integrativa para apoio à tomada de decisão clínica compartilhada com seu médico, sem substituir diagnósticos.
+                </span>
+              </div>
+            </div>
+          )}
+
           {data?.summary && (
-            <div className="p-3.5 rounded-2xl bg-cyan-500/5 border border-cyan-500/20 text-xs text-slate-700 dark:text-slate-300 italic font-medium">
+            <div className="p-4 rounded-3xl bg-cyan-500/5 border border-cyan-500/20 text-xs text-slate-700 dark:text-slate-300 italic font-medium leading-relaxed">
               "{data.summary}"
             </div>
           )}
 
           {!data && !isGenerating && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-sm">
-              <Bot className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto" />
-              <div className="space-y-1">
-                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhuma Análise Ativa na Tela</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  Clique em um dos botões acima (<strong>Hoje (24h)</strong>, <strong>Semana (7d)</strong> ou <strong>Mês (30d)</strong>) para sintetizar seus exames de sangue, HRV, sono e curva de glicemia CGM usando a IA.
-                </p>
-              </div>
-              {reports.length > 0 && (
-                <div className="pt-2">
-                  <button
-                    onClick={() => handleSelectReport(reports[0].id)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold transition shadow-sm"
-                  >
-                    <History className="h-4 w-4" />
-                    Carregar Relatório Mais Recente ({new Date(reports[0].created_at).toLocaleDateString([], { day: '2-digit', month: '2-digit' })})
-                  </button>
-                </div>
-              )}
-            </div>
+            <EmptyState
+              title="Nenhuma Análise Ativa na Tela"
+              description="Clique em um dos botões acima (Hoje 24h, Semana 7d ou Mês 30d) para sintetizar seus exames de sangue, HRV, sono e curva de glicemia CGM usando a IA."
+              icon={Bot}
+              action={{
+                label: 'Iniciar Síntese Mensal',
+                onClick: () => handleGenerateAnalysis('30d'),
+              }}
+              secondaryAction={
+                reports.length > 0
+                  ? {
+                      label: `Carregar Relatório Mais Recente (${new Date(reports[0].created_at).toLocaleDateString([], { day: '2-digit', month: '2-digit' })})`,
+                      onClick: () => handleSelectReport(reports[0].id),
+                    }
+                  : undefined
+              }
+            />
           )}
 
           {isGenerating && (() => {
@@ -740,91 +840,114 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
             );
           })()}
 
-          {data?.insights && data.insights.map((item, idx) => (
-            <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition rounded-3xl p-5 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    {categoryIcons[item.category] || <Sparkles className="h-5 w-5 text-cyan-400" />}
+          {data?.insights && data.insights.length > 0 && (
+            <div className="space-y-4">
+              {data.insights.map((item, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition rounded-3xl p-5 space-y-3 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                        {categoryIcons[item.category] || <Sparkles className="h-5 w-5 text-cyan-400" />}
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+                          {categoryTitles[item.category] || item.category}
+                        </span>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">{item.headline}</h4>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
-                      {categoryTitles[item.category] || item.category}
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{item.headline}</h4>
-                  </div>
+
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
+                    {item.insight_text}
+                  </p>
+
+                  {item.actionable_steps && (
+                    <div className="p-3 rounded-2xl bg-cyan-500/5 border border-cyan-500/15 text-xs space-y-1">
+                      <span className="font-bold text-cyan-700 dark:text-cyan-300 text-[11px] uppercase tracking-wide flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Padrão identificado nos seus dados:
+                      </span>
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">{item.actionable_steps}</p>
+                    </div>
+                  )}
                 </div>
+              ))}
+
+              {/* Botão de Transição para o Chat */}
+              <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Deseja aprofundar algum ponto desta síntese ou tirar dúvidas sobre seus biomarcadores?
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMode('chat')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shrink-0"
+                >
+                  <Bot className="h-4 w-4" /> Conversar no Chat com Copiloto
+                </button>
               </div>
-
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
-                {item.insight_text}
-              </p>
-
-              {item.actionable_steps && (
-                <div className="p-3 rounded-2xl bg-cyan-500/5 border border-cyan-500/15 text-xs space-y-1">
-                  <span className="font-bold text-cyan-700 dark:text-cyan-300 text-[11px] uppercase tracking-wide flex items-center gap-1">
-                    <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Padrão identificado nos seus dados:
-                  </span>
-                  <p className="text-slate-700 dark:text-slate-300 font-medium">{item.actionable_steps}</p>
-                </div>
-              )}
             </div>
-          ))}
+          )}
         </div>
+      )}
 
-        {/* Coluna Direita: Chat Interativo com o Copiloto (1 Col) */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex flex-col h-[650px] shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
+      {mode === 'chat' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 flex flex-col min-h-[520px] max-h-[75vh] shadow-xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Chat com Copiloto</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Chat Conversacional com o Copiloto</h3>
             </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{activeProvider.toUpperCase()}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                {activeProvider.toUpperCase()} · {selectedModel}
+              </span>
+            </div>
           </div>
 
           {/* Sugestões Rápidas de Perguntas */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleSendChatMessage('Como foi meu sono e recuperação nos últimos 3 dias?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               🌙 Sono & Recuperação
             </button>
             <button
               onClick={() => handleSendChatMessage('Quais padrões e correlações pessoais foram detectados no meu histórico?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               🎯 Padrões Aprendidos
             </button>
             <button
               onClick={() => handleSendChatMessage('Como minha carga de treino dos últimos 14 dias impactou minha recuperação e sono?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               🏋️ Carga de Treino & HRV
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual o impacto dos eventos recentes da minha Linha do Tempo (como viagens ou álcool) na minha saúde?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               📅 Linha do Tempo & Hábitos
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual a relação do meu ApoB e exames laboratoriais com longevidade?')}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
               🩸 Analisar ApoB & Labs
             </button>
           </div>
 
           {/* Mensagens do Chat */}
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 text-xs">
             {chatMessages.map((msg, idx) => (
               <div
                 key={idx}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`p-3.5 rounded-2xl max-w-[95%] leading-relaxed ${
+                  className={`p-3.5 rounded-2xl max-w-[85%] sm:max-w-[75%] leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-cyan-500 text-slate-950 font-semibold rounded-br-none shadow-md'
                       : 'bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-inner'
@@ -832,7 +955,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
                 >
                   <FormattedChatMessage text={msg.text} />
                 </div>
-                <span className="text-[9px] text-slate-500 mt-1 px-1">{msg.time}</span>
+                <span className="text-[10px] text-slate-500 mt-1 px-1">{msg.time}</span>
               </div>
             ))}
             {isSendingChat && (
@@ -848,7 +971,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               e.preventDefault();
               handleSendChatMessage();
             }}
-            className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2"
+            className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2"
           >
             <input
               type="text"
@@ -856,117 +979,114 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({ onOpenSettings, ch
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               disabled={!hasApiKey || isSendingChat}
-              className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+              className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
             />
             <button
               type="submit"
               aria-label="Enviar mensagem ao copiloto"
               disabled={!hasApiKey || isSendingChat || !chatInput.trim()}
-              className="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-slate-950 font-bold transition shadow-md glow-cyan"
+              className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-slate-950 font-bold transition shadow-md glow-cyan flex items-center gap-1.5 shrink-0 text-xs"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4" /> Enviar
             </button>
           </form>
         </div>
-      </div>
+      )}
 
-      {/* Modal de Histórico de Relatórios */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-cyan-500" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Histórico de Relatórios de Longevidade
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      {mode === 'history' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-cyan-500" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Histórico de Relatórios de Longevidade
+              </h3>
             </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {reports.length} relatório(s) arquivado(s)
+            </span>
+          </div>
 
-            <div className="overflow-y-auto space-y-3 flex-1 pr-1">
-              {reports.length === 0 ? (
-                <div className="text-center py-8 text-sm text-slate-500">
-                  Nenhum relatório salvo no histórico ainda.
-                </div>
-              ) : (
-                reports.map(rep => {
-                  const isCurrent = activeReportMeta?.id === rep.id;
-                  const dateFormatted = new Date(rep.created_at).toLocaleString([], {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  });
-                  return (
-                    <div
-                      key={rep.id}
-                      className={`p-4 rounded-2xl border transition text-left space-y-2 ${
-                        isCurrent
-                          ? 'bg-cyan-500/10 border-cyan-500/40 shadow-sm'
-                          : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Calendar className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
-                          <span className="text-xs font-bold text-slate-900 dark:text-white">
-                            {dateFormatted}
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                            rep.time_window === 'today'
-                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                              : rep.time_window === '7d'
-                              ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'
-                              : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                          }`}>
-                            {TIME_WINDOW_LABELS[rep.time_window || '30d']}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-                            {rep.model?.split('/')[1] || rep.model}
-                          </span>
-                        </div>
+          {reports.length === 0 ? (
+            <EmptyState
+              title="Nenhum relatório salvo no histórico"
+              description="Gere sua primeira síntese de dados na aba 'Analisar Tendências' para arquivá-la aqui."
+              icon={History}
+              action={{
+                label: 'Ir para Analisar Tendências',
+                onClick: () => setMode('analyze'),
+              }}
+            />
+          ) : (
+            <div className="space-y-3">
+              {reports.map(rep => {
+                const isCurrent = activeReportMeta?.id === rep.id;
+                const dateFormatted = new Date(rep.created_at).toLocaleString([], {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                return (
+                  <div
+                    key={rep.id}
+                    className={`p-4 sm:p-5 rounded-3xl border transition text-left space-y-3 shadow-xs ${
+                      isCurrent
+                        ? 'bg-cyan-500/10 border-cyan-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Calendar className="h-4 w-4 text-cyan-500 shrink-0" />
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                          {dateFormatted}
+                        </span>
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                          rep.time_window === 'today'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                            : rep.time_window === '7d'
+                            ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'
+                            : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                        }`}>
+                          {TIME_WINDOW_LABELS[rep.time_window || '30d']}
+                        </span>
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+                          {rep.model?.split('/')[1] || rep.model}
+                        </span>
+                      </div>
+
+                      <div className="shrink-0">
                         {isCurrent ? (
-                          <span className="text-[11px] font-bold text-cyan-600 dark:text-cyan-400">
-                            Ativo na tela
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-500/30">
+                            ✓ Ativo no Painel
                           </span>
                         ) : (
                           <button
                             onClick={() => handleSelectReport(rep.id)}
-                            className="px-3 py-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition shadow-sm"
+                            className="px-4 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition shadow-sm"
                           >
-                            Visualizar
+                            Visualizar no Painel
                           </button>
                         )}
                       </div>
-                      {rep.summary && (
-                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 italic">
-                          "{rep.summary}"
-                        </p>
-                      )}
                     </div>
-                  );
-                })
-              )}
-            </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 transition"
-              >
-                Fechar
-              </button>
+                    {rep.summary && (
+                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 italic leading-relaxed">
+                        "{rep.summary}"
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       )}
+
+
 
       {/* Diálogo Acessível de Confirmação de Envio para IA Externa */}
       <ConfirmDialog

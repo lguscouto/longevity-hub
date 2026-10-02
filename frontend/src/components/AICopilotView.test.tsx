@@ -101,6 +101,7 @@ describe('AICopilotView external AI privacy consent', () => {
     mockAISettings()
 
     renderCopilot()
+    await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
     const input = await screen.findByPlaceholderText(/faça uma pergunta/i)
 
     await user.type(input, 'Pergunta fake sem dados reais')
@@ -121,6 +122,7 @@ describe('AICopilotView external AI privacy consent', () => {
     mockAISettings()
 
     renderCopilot()
+    await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
     const input = await screen.findByPlaceholderText(/faça uma pergunta/i)
 
     await user.type(input, 'Pergunta fake sem dados reais')
@@ -141,6 +143,7 @@ describe('AICopilotView external AI privacy consent', () => {
     mockAISettings()
 
     renderCopilot()
+    await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
     const btn = await screen.findByRole('button', { name: /🎯 padrões aprendidos/i })
     await user.click(btn)
 
@@ -302,4 +305,126 @@ describe('AICopilotView external AI privacy consent', () => {
     expect(screen.getByText(/Histórico de Relatórios \(1\)/i)).toBeInTheDocument()
     expect(screen.queryByText(/nenhuma análise ativa na tela/i)).not.toBeInTheDocument()
   })
+
+  it('switches between Analisar, Conversar, and Histórico tasks seamlessly', async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') {
+        return {
+          active_provider: 'openrouter',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          has_openrouter_key: true,
+        }
+      }
+      if (path === '/api/ai/history') return []
+      if (path === '/api/ai/reports/latest') return { status: 'empty', result: null }
+      if (path === '/api/ai/reports') {
+        return [
+          {
+            id: 99,
+            created_at: '2026-09-30T10:00:00Z',
+            provider: 'openrouter',
+            model: 'deepseek/deepseek-v4-flash-0731',
+            privacy_mode: 'minimal',
+            time_window: '7d',
+            summary: 'Histórico salvo para teste de alternância',
+          },
+        ]
+      }
+      if (path === '/api/ai/reports/99') {
+        return {
+          id: 99,
+          created_at: '2026-09-30T10:00:00Z',
+          provider: 'openrouter',
+          model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          time_window: '7d',
+          result: {
+            summary: 'Histórico salvo para teste de alternância',
+            insights: [
+              {
+                category: 'metabolismo',
+                headline: 'Glicemia Estável',
+                insight_text: 'Excelente controle pós-prandial.',
+                actionable_steps: 'Manter fibras.',
+              },
+            ],
+          },
+        }
+      }
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    renderCopilot()
+
+    // 1. Initial tab is Analisar Tendências with EmptyState
+    expect(await screen.findByRole('heading', { name: /síntese de tendências & longevidade/i })).toBeInTheDocument()
+    expect(screen.getByText(/nenhuma análise ativa na tela/i)).toBeInTheDocument()
+
+    // 2. Switch to Conversar com Copiloto
+    await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
+    expect(await screen.findByRole('heading', { name: /chat conversacional com o copiloto/i })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/faça uma pergunta sobre seus exames/i)).toBeInTheDocument()
+
+    // 3. Switch to Histórico de Relatórios
+    await user.click(screen.getByRole('button', { name: /histórico de relatórios \(1\)/i }))
+    expect(await screen.findByRole('heading', { name: /histórico de relatórios de longevidade/i })).toBeInTheDocument()
+    expect(screen.getByText(/Histórico salvo para teste de alternância/)).toBeInTheDocument()
+
+    // 4. Click "Visualizar no Painel" on the report
+    await user.click(screen.getByRole('button', { name: /visualizar no painel/i }))
+
+    // 5. Switches back to Analisar Tendências and displays the loaded report
+    expect(await screen.findByRole('heading', { name: /síntese de tendências & longevidade/i })).toBeInTheDocument()
+    expect(screen.getByText('Glicemia Estável')).toBeInTheDocument()
+    expect(screen.getByText(/Excelente controle pós-prandial/)).toBeInTheDocument()
+  })
+
+  it('renders the Data Transparency & Confidence panel (UX-P1-14) distinguishing observed data, models, and correlations', async () => {
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') {
+        return {
+          active_provider: 'openrouter',
+          selected_model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          has_openrouter_key: true,
+        }
+      }
+      if (path === '/api/ai/history') return []
+      if (path === '/api/ai/reports/latest') {
+        return {
+          id: 1,
+          created_at: '2026-10-01T12:00:00Z',
+          provider: 'openrouter',
+          model: 'deepseek/deepseek-v4-flash-0731',
+          privacy_mode: 'minimal',
+          result: {
+            summary: 'Síntese de dados com painel de confiança',
+            insights: [
+              {
+                category: 'sono_hrv',
+                headline: 'Recuperação Autonômica',
+                insight_text: 'HRV e sono bem sincronizados.',
+                actionable_steps: 'Dormir cedo.',
+              },
+            ],
+          },
+        }
+      }
+      if (path === '/api/ai/reports') return []
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    renderCopilot()
+
+    expect(await screen.findByText(/Transparência & Origem dos Dados Fisiológicos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Dados Observados/i)).toBeInTheDocument()
+    expect(screen.getByText(/Modelos & Estimativas/i)).toBeInTheDocument()
+    expect(screen.getByText(/Correlações & Tendências/i)).toBeInTheDocument()
+    expect(screen.getByText(/Alta densidade amostral/i)).toBeInTheDocument()
+  })
 })
+
