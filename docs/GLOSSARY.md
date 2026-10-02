@@ -1,5 +1,5 @@
 # Glossário Canônico de Microcopy e Termos Clínicos de Longevidade
-**Longevidade Hub v2.0.0**
+**Longevidade Hub v2.1.0**
 
 Este documento estabelece as definições de microcopy clínica padronizadas para interfaces do Longevidade Hub. Cada termo possui uma explicação acessível ao paciente/usuário leigo, a fundamentação científica para longevidade e a direção clínica ótima recomendada.
 

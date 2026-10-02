@@ -111,7 +111,7 @@ def main():
     commit_hash = get_git_commit()
     env_info = f"{platform.system()} {platform.release()} | Python {platform.python_version()}"
 
-    print(f"=== TELEMETRIA DE EVIDÊNCIAS — LONGEVIDADE HUB v2.0.0 ===", flush=True)
+    print(f"=== TELEMETRIA DE EVIDÊNCIAS — LONGEVIDADE HUB v2.1.0 ===", flush=True)
     print(f"Commit: {commit_hash} | Ambiente: {env_info}", flush=True)
     print("=" * 60, flush=True)
 
