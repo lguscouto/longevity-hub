@@ -462,15 +462,16 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <button
                           onClick={() => setSelectedPanelDate(dt)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
+                          className="relative flex items-center gap-1 px-3 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
                         >
                           <Eye className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Ver Laudo Completo
                         </button>
 
                         <button
                           onClick={() => setDeleteConfirmDate(dt)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition"
+                          className="relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] md:after:hidden rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition flex items-center justify-center"
                           title="Excluir este laudo"
+                          aria-label="Excluir este laudo"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -27,8 +27,8 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs min-h-[36px] rounded-xl gap-1.5',
-  md: 'px-4 py-2 text-xs sm:text-sm min-h-[40px] rounded-xl gap-2',
+  sm: 'px-3 py-1.5 text-xs min-h-[36px] rounded-xl gap-1.5 after:absolute after:-inset-y-1 md:after:hidden',
+  md: 'px-4 py-2 text-xs sm:text-sm min-h-[40px] rounded-xl gap-2 after:absolute after:-inset-y-0.5 md:after:hidden',
   lg: 'px-5 py-2.5 text-sm sm:text-base min-h-[48px] rounded-2xl gap-2.5',
 };
 
@@ -54,7 +54,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
-        className={`inline-flex items-center justify-center transition-colors select-none shrink-0 ${
+        className={`relative inline-flex items-center justify-center transition-colors select-none shrink-0 ${
           variantClasses[variant]
         } ${sizeClasses[size]} ${
           isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'

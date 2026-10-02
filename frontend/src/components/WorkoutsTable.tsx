@@ -112,7 +112,7 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
         <button
           onClick={fetchWorkouts}
           disabled={loading}
-          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+          className="self-start sm:self-auto relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Atualizar</span>
@@ -128,7 +128,7 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 ${
+              className={`relative px-3 py-1 min-h-[36px] sm:min-h-[32px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-full text-xs font-bold transition-all shrink-0 ${
                 selectedCategory === cat
                   ? 'bg-emerald-500 text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -291,7 +291,7 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
               <button
                 type="button"
                 onClick={() => setLimit((prev) => Math.min(prev + 50, 500))}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm"
               >
                 <span>Carregar mais treinos (+50)</span>
               </button>

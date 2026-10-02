@@ -27,4 +27,17 @@ describe('IconButton Primitive', () => {
     expect(btn).toBeDisabled();
     expect(btn.querySelector('.animate-spin')).toBeInTheDocument();
   });
+
+  it('includes pseudo-element hitbox expansion classes to guarantee >=44x44px touch target on mobile', () => {
+    const { rerender } = render(<IconButton icon={Settings} aria-label="Configurações" size="sm" />);
+    let btn = screen.getByRole('button', { name: /configurações/i });
+    expect(btn).toHaveClass('relative');
+    expect(btn).toHaveClass('after:-inset-1.5');
+    expect(btn).toHaveClass('md:after:hidden');
+
+    rerender(<IconButton icon={Settings} aria-label="Configurações" size="md" />);
+    btn = screen.getByRole('button', { name: /configurações/i });
+    expect(btn).toHaveClass('after:-inset-0.5');
+    expect(btn).toHaveClass('md:after:hidden');
+  });
 });

@@ -39,4 +39,17 @@ describe('Button Primitive', () => {
     const btn = screen.getByRole('button', { name: /com ícone/i });
     expect(btn.querySelector('svg')).toBeInTheDocument();
   });
+
+  it('includes pseudo-element hitbox expansion classes to guarantee >=44px vertical target on mobile', () => {
+    const { rerender } = render(<Button size="sm">Pequeno</Button>);
+    let btn = screen.getByRole('button', { name: /pequeno/i });
+    expect(btn).toHaveClass('relative');
+    expect(btn).toHaveClass('after:-inset-y-1');
+    expect(btn).toHaveClass('md:after:hidden');
+
+    rerender(<Button size="md">Médio</Button>);
+    btn = screen.getByRole('button', { name: /médio/i });
+    expect(btn).toHaveClass('after:-inset-y-0.5');
+    expect(btn).toHaveClass('md:after:hidden');
+  });
 });

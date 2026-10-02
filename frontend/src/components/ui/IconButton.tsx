@@ -24,8 +24,8 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses = {
-  sm: 'h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg p-1.5',
-  md: 'h-10 w-10 min-h-[40px] min-w-[40px] rounded-xl p-2.5',
+  sm: 'h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg p-1.5 after:absolute after:-inset-1.5 md:after:hidden',
+  md: 'h-10 w-10 min-h-[40px] min-w-[40px] rounded-xl p-2.5 after:absolute after:-inset-0.5 md:after:hidden',
   lg: 'h-12 w-12 min-h-[48px] min-w-[48px] rounded-2xl p-3',
 };
 
@@ -58,7 +58,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         aria-label={ariaLabel}
         title={props.title || ariaLabel}
         disabled={isDisabled}
-        className={`inline-flex items-center justify-center transition-colors select-none shrink-0 ${
+        className={`relative inline-flex items-center justify-center transition-colors select-none shrink-0 ${
           variantClasses[variant]
         } ${sizeClasses[size]} ${
           isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
