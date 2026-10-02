@@ -4,7 +4,7 @@
 > **Fase:** Fase 3 (P2 Polish)  
 > **Prioridade:** P2  
 > **Referência Master:** `CODEX_LONGEVIDADE_HUB_2.0.0_UX_UI_REAUDIT_MASTER.md`  
-> **Status:** Não Iniciado  
+> **Status:** Concluído  
 
 ---
 
@@ -21,13 +21,15 @@ Alterações pontuais de estilo em uma aba acabam gerando efeitos colaterais em 
 Tamanho de SleepView.tsx (~1600 linhas) e SupplementsView.tsx (~1239 linhas).
 
 ## Estado atual
-Funcionais, mas com alto acoplamento interno.
+Modularizado com sucesso em subcomponentes sob `frontend/src/components/sleep/` e `frontend/src/components/supplements/`. Todas as visões abaixo de 300 linhas de código.
 
 ## O que já foi resolvido
-Suplementos divididos visualmente em Hoje, Protocolo, Auditoria e Análise.
+SleepView e SupplementsView particionadas em módulos dedicados com tipagem isolada e alta coesão:
+- `sleep/types.ts`, `sleep/SleepFilters.tsx`, `sleep/SleepSummaryCards.tsx`, `sleep/SleepStagesChart.tsx`, `sleep/SleepMonthlyTable.tsx`
+- `supplements/types.ts`, `supplements/RoutineTodayView.tsx`, `supplements/ProtocolCatalogView.tsx`, `supplements/AuditHistoryView.tsx`, `supplements/SupplementAnalysisView.tsx`, `supplements/SupplementModals.tsx`
 
 ## O que permanece
-Separação física em arquivos e subcomponentes autônomos.
+Nada pendente neste plano.
 
 ## Escopo
 1. Dividir SleepView em SleepSummaryCards, SleepStagesChart, SleepMonthlyTable e SleepFilters.
@@ -89,12 +91,14 @@ Reversão das pastas extraídas via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Vite Production Build | `npm run build` | 02/10/2026 17:06:45 | Windows 11 | Python 3.14.6 (Commit d1d240c) | PASS | ✓ built in 5.54s (10.70s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 17:06:56 | Windows 11 | Python 3.14.6 (Commit d1d240c) | PASS | 44 arquivos de teste aprovados, 206 testes unitários PASS (12.60s) |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 17:07:09 | Windows 11 | Python 3.14.6 (Commit d1d240c) | PASS | 8 passed (iPhone SE, iPhone 14, iPad, Desktop) (17.26s) |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída
