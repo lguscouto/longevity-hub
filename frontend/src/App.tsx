@@ -245,6 +245,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.rhr_bpm != null ? 'bpm' : undefined,
       rangeType: hasMetric ? ('optimal' as const) : undefined,
       rangeValue: hasMetric ? '< 55 bpm' : undefined,
+      termKey: 'rhr',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Heart,
       color: 'emerald' as const,
@@ -255,6 +256,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.hrv_ms != null ? 'ms' : undefined,
       rangeType: hasMetric ? ('optimal' as const) : undefined,
       rangeValue: hasMetric ? '> 50 ms' : undefined,
+      termKey: 'hrv',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Zap,
       color: 'emerald' as const,
@@ -264,6 +266,7 @@ export default function App() {
       value: hasMetric && activeMetric?.sleep_minutes != null ? formatSleepMinutes(activeMetric.sleep_minutes) : '—',
       rangeType: hasMetric ? ('target' as const) : undefined,
       rangeValue: hasMetric ? '8h' : undefined,
+      termKey: 'sleep_efficiency',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Moon,
       color: 'emerald' as const,
@@ -274,6 +277,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.vo2_max != null ? 'ml/kg/min' : undefined,
       rangeType: hasMetric ? ('optimal' as const) : undefined,
       rangeValue: hasMetric ? '> 45' : undefined,
+      termKey: 'vo2max',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Wind,
       color: 'emerald' as const,
@@ -295,6 +299,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.respiratory_rate_rpm != null ? 'rpm' : undefined,
       rangeType: hasMetric ? ('reference' as const) : undefined,
       rangeValue: hasMetric ? '12-20' : undefined,
+      termKey: 'respiratory_rate',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Activity,
       color: 'emerald' as const,
@@ -637,6 +642,7 @@ export default function App() {
                           subtitle={card.subtitle}
                           rangeType={card.rangeType}
                           rangeValue={card.rangeValue}
+                          termKey={card.termKey}
                           icon={card.icon}
                           color={card.color}
                         />
@@ -646,7 +652,7 @@ export default function App() {
 
                   <div>
                     <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                      Indicadores Complementares
+                       Indicadores Complementares
                     </h3>
                     <div className="grid gap-3.5 sm:gap-4 grid-cols-1 sm:grid-cols-3">
                       {secondaryMetricCards.map((card) => (
@@ -658,6 +664,7 @@ export default function App() {
                           subtitle={card.subtitle}
                           rangeType={card.rangeType}
                           rangeValue={card.rangeValue}
+                          termKey={card.termKey}
                           icon={card.icon}
                           color={card.color}
                         />

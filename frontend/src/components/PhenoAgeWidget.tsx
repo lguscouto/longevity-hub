@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Calculator, Dna, Sparkles } from 'lucide-react'
-import { Modal } from './ui'
+import { Modal, TermHelp } from './ui'
 
 type ModelStatus = 'complete' | 'incomplete'
 
@@ -184,6 +184,7 @@ function formatDelta(delta: number): string {
 
 interface ModelScoreProps {
   title: string
+  termKey?: string
   titleClassName: string
   unavailableLabel: string
   emptyDetail: string
@@ -198,6 +199,7 @@ interface ModelScoreProps {
 
 const ModelScore: React.FC<ModelScoreProps> = ({
   title,
+  termKey,
   titleClassName,
   unavailableLabel,
   emptyDetail,
@@ -210,7 +212,10 @@ const ModelScore: React.FC<ModelScoreProps> = ({
   className = '',
 }) => (
   <div className={`text-center space-y-1 ${className}`}>
-    <span className={`text-[10px] uppercase font-bold block mb-0.5 ${titleClassName}`}>{title}</span>
+    <div className="flex items-center justify-center gap-1 mb-0.5">
+      <span className={`text-[10px] uppercase font-bold ${titleClassName}`}>{title}</span>
+      {termKey && <TermHelp termKey={termKey} />}
+    </div>
     {complete && age !== null ? (
       <>
         <span className="text-xl font-extrabold text-slate-900 dark:text-white block">{formatAge(age)}</span>
@@ -287,6 +292,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
         <div className="grid grid-cols-2 gap-3 bg-slate-100/90 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80">
           <ModelScore
             title="Morgan Levine PhenoAge"
+            termKey="phenoage"
             titleClassName="text-cyan-600 dark:text-cyan-400"
             unavailableLabel="PhenoAge indisponível"
             emptyDetail="Dados insuficientes para publicar idade biológica."
@@ -300,6 +306,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
 
           <ModelScore
             title="KDM Biological Age"
+            termKey="kdm"
             titleClassName="text-indigo-600 dark:text-indigo-400"
             unavailableLabel="KDM indisponível"
             emptyDetail="Sem cálculo KDM completo enviado pelo backend."

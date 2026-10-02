@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { Activity, Zap, FileSpreadsheet, Download } from 'lucide-react'
 
 import { ApiError, requestJson } from '../lib/api'
+import { TermHelp } from './ui/TermHelp'
 
 interface CGMSummary {
   date_ref: string
@@ -72,7 +73,9 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-500 dark:text-amber-400" /> Glicemia Contínua (CGM - Continuous Glucose Monitor)
+            <Zap className="h-5 w-5 text-amber-500 dark:text-amber-400" />
+            <span>Glicemia Contínua (CGM - Continuous Glucose Monitor)</span>
+            <TermHelp termKey="cgm" />
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400">Variabilidade glicêmica, Média de 24h e Tempo no Alvo de Longevidade (70-140 mg/dL)</p>
         </div>
@@ -121,7 +124,10 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-          <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Glicemia Média 24h</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Glicemia Média 24h</span>
+            <TermHelp termKey="mean_glucose" />
+          </div>
           <div className={`text-2xl font-extrabold mt-1 ${metricTone}`}>
             {latest ? `${latest.mean_glucose} mg/dL` : '—'}
           </div>
@@ -129,7 +135,10 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
         </div>
 
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-          <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Time-In-Range (70-140)</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Time-In-Range (70-140)</span>
+            <TermHelp termKey="tir" />
+          </div>
           <div className={`text-2xl font-extrabold mt-1 ${latest ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-300'}`}>
             {latest ? `${latest.time_in_range_pct}%` : '—'}
           </div>

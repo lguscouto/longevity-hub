@@ -2,6 +2,7 @@ import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { ExplainChangeButton } from './contextInsights/ExplainChangeButton';
 import { formatMetricValue } from '../lib/formatters';
+import { TermHelp } from './ui/TermHelp';
 
 export type RangeType = 'target' | 'reference' | 'optimal';
 
@@ -12,6 +13,7 @@ export interface MetricCardProps {
   subtitle?: string;
   rangeType?: RangeType;
   rangeValue?: string;
+  termKey?: string;
   icon: LucideIcon;
   color?: 'emerald' | 'cyan' | 'violet' | 'rose' | 'amber';
   trend?: string;
@@ -62,6 +64,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   rangeType,
   rangeValue,
+  termKey,
   icon: Icon,
   color = 'emerald',
   trend,
@@ -73,7 +76,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{title}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{title}</span>
+          {termKey && <TermHelp termKey={termKey} />}
+        </div>
         <div className={`p-2 rounded-xl border ${iconBgMap[color]} shrink-0`}>
           <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>

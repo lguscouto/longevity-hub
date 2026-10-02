@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
-import { ConfirmDialog, EmptyState, InlineError, Modal } from './ui';
+import { ConfirmDialog, EmptyState, InlineError, Modal, TermHelp, GLOSSARY_TERMS } from './ui';
 
 interface LabResult {
   id?: number;
@@ -329,7 +329,10 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
+                <TermHelp termKey="apob" />
+              </div>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
                 <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 0.60</span>
@@ -527,9 +530,14 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                         <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-bold text-slate-900 dark:text-white truncate" title={getMetricDisplayName(item)}>
-                                {getMetricDisplayName(item)}
-                              </span>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate" title={getMetricDisplayName(item)}>
+                                  {getMetricDisplayName(item)}
+                                </span>
+                                {GLOSSARY_TERMS[item.metric_key.toLowerCase()] && (
+                                  <TermHelp termKey={item.metric_key.toLowerCase()} />
+                                )}
+                              </div>
                               {isOpt ? (
                                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
                                   <CheckCircle2 className="h-3.5 w-3.5" /> Ótimo
