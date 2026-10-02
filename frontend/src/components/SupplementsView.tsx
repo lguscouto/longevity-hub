@@ -477,7 +477,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Compostos Ativos</span>
+            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Compostos Ativos</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-900 dark:text-white">{supplements.length}</span>
               <span className="text-xs text-slate-500 font-medium">({countSuplemento} sup, {countHormonio} horm)</span>
@@ -490,7 +490,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Adesão do Dia ({selectedDate})</span>
+            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Adesão do Dia ({selectedDate})</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{completionPct}%</span>
               <span className="text-xs text-slate-500 font-medium">({takenIds.length}/{supplements.length} doses)</span>
@@ -503,7 +503,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Registros na Auditoria</span>
+            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Registros na Auditoria</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{auditLogs.length}</span>
               <span className="text-xs text-slate-500 font-medium">eventos imutáveis</span>
@@ -810,12 +810,12 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                           <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mt-1">
                             <span className="font-extrabold text-cyan-600 dark:text-cyan-300">{supp.dosage}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-[11px]">
+                            <span className="flex items-center gap-1 text-xs">
                               <Clock className="h-3 w-3 text-slate-400 dark:text-slate-500" />
                               {supp.timing}
                             </span>
                             <span>•</span>
-                            <span className="text-[11px] text-slate-500">{supp.frequency}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{supp.frequency}</span>
                           </div>
                         </div>
                       </div>
@@ -827,8 +827,8 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800/80 text-[11px]">
-                      <span className="text-slate-400">
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800/80 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">
                         Início: {supp.start_date || 'Não informado'}
                       </span>
 
@@ -916,11 +916,11 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                           <span className="font-bold text-xs text-slate-900 dark:text-white">
                             {log.compound_name}
                           </span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
                             ({log.category || 'Suplemento'})
                           </span>
                         </div>
-                        <span className="text-[11px] text-slate-500 font-mono">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                           {String(log.created_at).slice(0, 19).replace('T', ' ')}
                         </span>
                       </div>

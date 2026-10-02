@@ -329,30 +329,30 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
-                <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">Alvo: &lt; 0.60</span>
+                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Alvo: &lt; 0.60</span>
               </div>
-              <p className="text-[10px] text-slate-500">Índice primário de risco aterogênico celular (Attia / Longevidade Hub)</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Índice primário de risco aterogênico celular (Attia / Longevidade Hub)</p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão Triglicerídeos / HDL</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão Triglicerídeos / HDL</span>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioTgHdl ? ratioTgHdl : '(Sem TG/HDL)'}</span>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Alvo: &lt; 1.5</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Alvo: &lt; 1.5</span>
               </div>
-              <p className="text-[10px] text-slate-500">Indicador direto de sensibilidade à insulina e LDL denso</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Indicador direto de sensibilidade à insulina e LDL denso</p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Colesterol Remanescente</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Colesterol Remanescente</span>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-extrabold text-slate-900 dark:text-white">{remnantChol ? `${remnantChol} mg/dL` : '(Sem dados)'}</span>
-                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Alvo: &lt; 15 mg/dL</span>
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Alvo: &lt; 15 mg/dL</span>
               </div>
-              <p className="text-[10px] text-slate-500">Lipoproteínas altamente inflamatórias (Total - HDL - LDL)</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Lipoproteínas altamente inflamatórias (Total - HDL - LDL)</p>
             </div>
           </div>
         );
@@ -362,7 +362,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       <div className="overflow-x-auto max-w-full min-w-0">
         <table className="w-full text-left text-xs block md:table">
           <thead className="hidden md:table-header-group">
-            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold text-[10px]">
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold text-xs">
               <th className="py-3 px-4">Data do Laudo</th>
               <th className="py-3 px-4">Exame / Descrição</th>
               <th className="py-3 px-4">Destaques Principais</th>
@@ -530,14 +530,14 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                                 {getMetricDisplayName(item)}
                               </span>
                               {isOpt ? (
-                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
-                                  <CheckCircle2 className="h-3 w-3" /> Ótimo
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Ótimo
                                 </span>
                               ) : !isEligible ? (
-                                <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">Não clínico</span>
+                                <span className="text-xs text-amber-700 dark:text-amber-300 font-bold">Não clínico</span>
                               ) : (
-                                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
-                                  <AlertCircle className="h-3 w-3" /> Atenção
+                                <span className="text-xs text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
+                                  <AlertCircle className="h-3.5 w-3.5" /> Atenção
                                 </span>
                               )}
                             </div>
@@ -547,7 +547,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                             </div>
                           </div>
 
-                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-[10px] text-slate-500 flex justify-between">
+                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 flex justify-between">
                             <span>{recordOriginLabel(item.record_origin)}</span>
                             <span className="font-semibold text-emerald-600 dark:text-emerald-400">Alvo: {item.optimal_target} {item.unit}</span>
                           </div>
@@ -670,9 +670,9 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                           onChange={e => handleInputChange(item.key, e.target.value)}
                           className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                         />
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
                       </div>
-                      <span className="text-[9px] text-slate-500 mt-1 block">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
                         Alvo: {item.optimal} {item.unit}
                       </span>
                     </div>

@@ -530,7 +530,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
             <div
               role="status"
               aria-label="Aviso de envio para IA externa"
-              className="mt-3 max-w-2xl rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-[11px] text-slate-700 dark:text-slate-300 flex items-start gap-2"
+              className="mt-3 max-w-2xl rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2"
             >
               <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-300" />
               <div className="space-y-1">
@@ -735,7 +735,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                         : '30 dias consolidados'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     {activeReportMeta?.time_window === 'today'
                       ? '1 noite de sono, HRV noturna, frequência cardíaca e curva glicêmica CGM.'
                       : activeReportMeta?.time_window === '7d'
@@ -754,7 +754,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                       PhenoAge + KDM
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     Idade biológica calculada por Morgan Levine (2018), Klemera-Doubal e índices de risco cardiovascular ApoB/A1.
                   </p>
                 </div>
@@ -769,13 +769,13 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                       N-of-1 Bayesiano
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     Padrões aprendidos N-of-1, correlações fisiológicas e associações observadas com rotinas da Linha do Tempo.
                   </p>
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
                 <Info className="h-4 w-4 text-amber-500 shrink-0" />
                 <span>
                   Aviso Clínico: Projeções e sínteses algorítmicas de IA para apoio à tomada de decisão compartilhada com seu médico. Não substituem o diagnóstico ou prescrição médica.
@@ -941,37 +941,37 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
           <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleSendChatMessage('Como foi meu sono e recuperação nos últimos 3 dias?')}
-              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              <Moon className="h-3 w-3 text-indigo-400 shrink-0" />
+              <Moon className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
               <span>Sono & Recuperação</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Quais padrões e correlações pessoais foram detectados no meu histórico?')}
-              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              <Sparkles className="h-3 w-3 text-cyan-400 shrink-0" />
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
               <span>Padrões Aprendidos</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Como minha carga de treino dos últimos 14 dias impactou minha recuperação e sono?')}
-              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              <Dumbbell className="h-3 w-3 text-emerald-400 shrink-0" />
+              <Dumbbell className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <span>Carga de Treino & HRV</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual o impacto dos eventos recentes da minha Linha do Tempo (como viagens ou álcool) na minha saúde?')}
-              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              <Calendar className="h-3 w-3 text-amber-400 shrink-0" />
+              <Calendar className="h-3.5 w-3.5 text-amber-400 shrink-0" />
               <span>Linha do Tempo & Hábitos</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual a relação do meu ApoB e exames laboratoriais com longevidade?')}
-              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              <Activity className="h-3 w-3 text-rose-400 shrink-0" />
+              <Activity className="h-3.5 w-3.5 text-rose-400 shrink-0" />
               <span>Analisar ApoB & Labs</span>
             </button>
           </div>
@@ -992,7 +992,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 >
                   <FormattedChatMessage text={msg.text} />
                 </div>
-                <span className="text-[10px] text-slate-500 mt-1 px-1">{msg.time}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 px-1 font-mono">{msg.time}</span>
               </div>
             ))}
             {isSendingChat && (

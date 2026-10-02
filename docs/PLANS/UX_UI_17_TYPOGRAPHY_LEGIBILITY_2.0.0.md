@@ -4,7 +4,7 @@
 > **Fase:** Fase 3 (P2 Polish)  
 > **Prioridade:** P2  
 > **Referência Master:** `CODEX_LONGEVIDADE_HUB_2.0.0_UX_UI_REAUDIT_MASTER.md`  
-> **Status:** Não Iniciado  
+> **Status:** Concluído  
 
 ---
 
@@ -88,12 +88,14 @@ Reversão das classes tipográficas via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Vite Production Build | `npm run build` | 02/10/2026 16:52:26 | Windows 11 | Python 3.14.6 (Commit 4dcb9c3) | PASS | ✓ built in 4.74s (9.43s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 16:52:36 | Windows 11 | Python 3.14.6 (Commit 4dcb9c3) | PASS | Duration 11.98s (44 suites, 205 tests passed) (12.92s) |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 16:52:49 | Windows 11 | Python 3.14.6 (Commit 4dcb9c3) | PASS | 8 passed (16.4s) (17.62s) |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída

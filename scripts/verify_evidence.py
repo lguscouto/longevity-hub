@@ -11,9 +11,15 @@ import platform
 import subprocess
 import sys
 
+import threading
+
 # Garante flushing imediato em pipes, redirecionamentos e logs de tarefas
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(line_buffering=True)
+
+# Força CI=1 para o Playwright não manter o webServer Vite rodando em segundo plano
+os.environ["CI"] = "1"
+os.environ["PYTHONUNBUFFERED"] = "1"
 
 
 def get_git_commit() -> str:
@@ -24,7 +30,7 @@ def get_git_commit() -> str:
         return "unknown"
 
 
-def run_check(name: str, cmd: list[str], cwd: str | None = None, stream_output: bool = True) -> dict:
+def run_check(name: str, cmd: list[str], cwd: str | None = None, stream_output: bool = True, timeout: int = 240) -> dict:
     timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     start_time = datetime.datetime.now()
     is_windows = platform.system() == "Windows"
@@ -42,18 +48,31 @@ def run_check(name: str, cmd: list[str], cwd: str | None = None, stream_output: 
             text=True,
             shell=is_windows,
             bufsize=1,
+            env=os.environ.copy(),
         )
 
-        if process.stdout:
-            for line in iter(process.stdout.readline, ""):
-                cleaned = line.rstrip()
-                if cleaned:
-                    lines.append(cleaned)
-                    if stream_output:
-                        print(f"  | {cleaned}", flush=True)
-            process.stdout.close()
+        def stream_reader():
+            if process.stdout:
+                for line in iter(process.stdout.readline, ""):
+                    cleaned = line.rstrip()
+                    if cleaned:
+                        lines.append(cleaned)
+                        if stream_output:
+                            print(f"  | {cleaned}", flush=True)
+                process.stdout.close()
 
-        process.wait()
+        t = threading.Thread(target=stream_reader, daemon=True)
+        t.start()
+
+        try:
+            process.wait(timeout=timeout)
+            t.join(timeout=3)
+        except subprocess.TimeoutExpired:
+            print(f"  | [TIMEOUT] Processo excedeu {timeout}s. Encerrando...", flush=True)
+            process.kill()
+            t.join(timeout=2)
+            raise TimeoutError(f"Comando excedeu o limite de {timeout} segundos.")
+
         duration = (datetime.datetime.now() - start_time).total_seconds()
         status = "PASS" if process.returncode == 0 else "FAIL"
         last_line = lines[-1] if lines else f"Exit code {process.returncode}"
