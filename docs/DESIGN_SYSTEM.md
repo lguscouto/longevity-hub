@@ -1,8 +1,8 @@
-# Design System — Longevidade Hub v1.9.8
+# Design System — Longevidade Hub v2.0.0
 
 > **Guia Canônico de Arquitetura Visual, Primitives, Tokens, Acessibilidade e Responsividade**  
 > **Status:** Ativo & Estabilizado  
-> **Última Atualização:** Outubro/2026 (v1.9.8)
+> **Última Atualização:** Outubro/2026 (v2.0.0)
 
 ---
 
