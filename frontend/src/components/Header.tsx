@@ -103,20 +103,20 @@ export const Header: React.FC<HeaderProps> = ({
     'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-bold shadow-xs border border-slate-200 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none';
 
   return (
-    <header className="sticky top-0 z-40 glass-panel border-b border-slate-200/80 dark:border-slate-800 px-3.5 sm:px-6 py-2.5 sm:py-3 mb-4 sm:mb-8 space-y-2.5">
+    <header className="sticky top-0 z-40 glass-panel border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-1.5 sm:py-3 mb-3 sm:mb-8 space-y-1.5 sm:space-y-2.5">
       {/* Linha Superior: Marca e Ações (Separadas entre Clínicas e Infraestrutura) */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3">
         {/* Marca / Identidade */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start min-w-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white glow-emerald shrink-0">
-              <Activity className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white glow-emerald shrink-0">
+              <Activity className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-emerald-600 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent flex items-center gap-1.5 truncate">
-                LONGEVIDADE <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">HUB</span>
+              <h1 className="text-sm sm:text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-emerald-600 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent flex items-center gap-1.5 truncate">
+                LONGEVIDADE <span className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">HUB</span>
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
                 Gestão e acompanhamento pessoal de saúde e longevidade
               </p>
             </div>
@@ -288,120 +288,130 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Linha Contextual: Sub-navegação para Saúde ou Intervenções */}
+      {/* Linha Contextual: Sub-navegação para Saúde ou Intervenções */}
       {primaryTab === 'health' && (
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
-          <nav aria-label="Sub-navegação de Saúde" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => handleTabClick('labs')}
-              aria-current={activeTab === 'labs' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'labs' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <Dna className="h-3.5 w-3.5" />
-              <span>Exames & PhenoAge</span>
-            </button>
+          <div className="relative">
+            <nav aria-label="Sub-navegação de Saúde" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => handleTabClick('labs')}
+                aria-current={activeTab === 'labs' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'labs' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <Dna className="h-3.5 w-3.5" />
+                <span>Exames & PhenoAge</span>
+              </button>
 
-            <button
-              onClick={() => handleTabClick('sleep')}
-              aria-current={activeTab === 'sleep' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'sleep' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <Moon className="h-3.5 w-3.5" />
-              <span>Sono</span>
-            </button>
+              <button
+                onClick={() => handleTabClick('sleep')}
+                aria-current={activeTab === 'sleep' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'sleep' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <Moon className="h-3.5 w-3.5" />
+                <span>Sono</span>
+              </button>
 
-            <button
-              onClick={() => handleTabClick('timeline')}
-              aria-current={activeTab === 'timeline' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'timeline' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <History className="h-3.5 w-3.5" />
-              <span>Linha do Tempo</span>
-            </button>
+              <button
+                onClick={() => handleTabClick('timeline')}
+                aria-current={activeTab === 'timeline' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'timeline' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <History className="h-3.5 w-3.5" />
+                <span>Linha do Tempo</span>
+              </button>
 
-            <button
-              onClick={() => handleTabClick('physical-assessments')}
-              aria-current={activeTab === 'physical-assessments' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'physical-assessments' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <Camera className="h-3.5 w-3.5" />
-              <span>Avaliações Físicas</span>
-            </button>
-          </nav>
+              <button
+                onClick={() => handleTabClick('physical-assessments')}
+                aria-current={activeTab === 'physical-assessments' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'physical-assessments' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <Camera className="h-3.5 w-3.5" />
+                <span>Avaliações Físicas</span>
+              </button>
+            </nav>
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-xl sm:hidden" />
+          </div>
         </div>
       )}
 
       {primaryTab === 'interventions' && (
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
-          <nav aria-label="Sub-navegação de Intervenções" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => handleTabClick('supplements')}
-              aria-current={activeTab === 'supplements' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'supplements' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <Pill className="h-3.5 w-3.5" />
-              <span>Suplementos & Hormônios</span>
-            </button>
+          <div className="relative">
+            <nav aria-label="Sub-navegação de Intervenções" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => handleTabClick('supplements')}
+                aria-current={activeTab === 'supplements' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'supplements' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <Pill className="h-3.5 w-3.5" />
+                <span>Suplementos & Hormônios</span>
+              </button>
 
-            <button
-              onClick={() => handleTabClick('n-of-1')}
-              aria-current={activeTab === 'n-of-1' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'n-of-1' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <FlaskConical className="h-3.5 w-3.5" />
-              <span>N-of-1 Tests</span>
-            </button>
-          </nav>
+              <button
+                onClick={() => handleTabClick('n-of-1')}
+                aria-current={activeTab === 'n-of-1' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'n-of-1' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <FlaskConical className="h-3.5 w-3.5" />
+                <span>N-of-1 Tests</span>
+              </button>
+            </nav>
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-xl sm:hidden" />
+          </div>
         </div>
       )}
 
       {primaryTab === 'profile' && (
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
-          <nav aria-label="Sub-navegação de Perfil" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => handleTabClick('profile')}
-              aria-current={(activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab)) ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                (activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab)) ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <User className="h-3.5 w-3.5" />
-              <span>Meu Perfil</span>
-            </button>
+          <div className="relative">
+            <nav aria-label="Sub-navegação de Perfil" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => handleTabClick('profile')}
+                aria-current={(activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab)) ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  (activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab)) ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>Meu Perfil</span>
+              </button>
 
-            <button
-              onClick={() => handleTabClick('integrations')}
-              aria-current={activeTab === 'integrations' ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                activeTab === 'integrations' ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>Integrações</span>
-            </button>
+              <button
+                onClick={() => handleTabClick('integrations')}
+                aria-current={activeTab === 'integrations' ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  activeTab === 'integrations' ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>Integrações</span>
+              </button>
 
-            <button
-              onClick={() => handleTabClick('system')}
-              aria-current={(activeTab === 'system' || activeTab === 'diagnostics') ? 'page' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
-                (activeTab === 'system' || activeTab === 'diagnostics') ? activeSubClass : inactiveSubClass
-              }`}
-            >
-              <Activity className="h-3.5 w-3.5" />
-              <span>Diagnóstico & Sistema</span>
-            </button>
-          </nav>
+              <button
+                onClick={() => handleTabClick('system')}
+                aria-current={(activeTab === 'system' || activeTab === 'diagnostics') ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+                  (activeTab === 'system' || activeTab === 'diagnostics') ? activeSubClass : inactiveSubClass
+                }`}
+              >
+                <Activity className="h-3.5 w-3.5" />
+                <span>Diagnóstico & Sistema</span>
+              </button>
+            </nav>
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-xl sm:hidden" />
+          </div>
         </div>
       )}
     </header>
