@@ -175,7 +175,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
       return (
         <g
           key={`dot-w-${payload.date}`}
-          className="cursor-pointer transition-transform hover:scale-125"
+          className="cursor-pointer transition-opacity hover:opacity-80"
           onClick={(e) => {
             e.stopPropagation();
             if (payload.assessment_id && onSelectAssessment) {
@@ -201,7 +201,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
       return (
         <g
           key={`dot-f-${payload.date}`}
-          className="cursor-pointer transition-transform hover:scale-125"
+          className="cursor-pointer transition-opacity hover:opacity-80"
           onClick={(e) => {
             e.stopPropagation();
             if (payload.assessment_id && onSelectAssessment) {

@@ -5,9 +5,9 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const surfaceClasses = {
-  default: 'bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs',
-  raised: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md',
-  highlight: 'bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs',
+  default: 'bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-card',
+  raised: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-dialog',
+  highlight: 'bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-subtle',
 };
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
