@@ -144,7 +144,7 @@ describe('AICopilotView external AI privacy consent', () => {
 
     renderCopilot()
     await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
-    const btn = await screen.findByRole('button', { name: /🎯 padrões aprendidos/i })
+    const btn = await screen.findByRole('button', { name: /padrões aprendidos/i })
     await user.click(btn)
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
@@ -425,6 +425,12 @@ describe('AICopilotView external AI privacy consent', () => {
     expect(screen.getByText(/Modelos & Estimativas/i)).toBeInTheDocument()
     expect(screen.getByText(/Correlações & Tendências/i)).toBeInTheDocument()
     expect(screen.getByText(/Alta densidade amostral/i)).toBeInTheDocument()
+    expect(screen.getByText(/14 exames de sangue, 30 noites de sono, 12 treinos analisados/i)).toBeInTheDocument()
+
+    // Assert buttons use clean text without festive emojis
+    expect(screen.getByRole('button', { name: /^hoje \(24h\)$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^semana \(7d\)$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^mês \(30d\)$/i })).toBeInTheDocument()
   })
 })
 

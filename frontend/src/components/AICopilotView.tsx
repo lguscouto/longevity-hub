@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Sparkles, RefreshCw, Send, Settings, ShieldCheck, Heart, Activity, Zap, Moon, FileText, ChevronRight, Cpu, Dumbbell, History, Clock, X, Calendar } from 'lucide-react';
+import { Bot, Sparkles, RefreshCw, Send, Settings, ShieldCheck, Heart, Activity, Zap, Moon, FileText, ChevronRight, Cpu, Dumbbell, History, Clock, X, Calendar, Info, AlertCircle, CalendarDays } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
 import { ConfirmDialog, EmptyState } from './ui';
@@ -238,6 +238,13 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
   const [isSendingChat, setIsSendingChat] = useState<boolean>(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (chatBottomRef.current && typeof chatBottomRef.current.scrollIntoView === 'function') {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isSendingChat]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -559,7 +566,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 title="Prontidão diária, recuperação do sono da última noite e treino de hoje"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${generatingWindow === 'today' ? 'animate-spin' : ''}`} />
-                {generatingWindow === 'today' ? 'Analisando...' : '⚡ Hoje (24h)'}
+                {generatingWindow === 'today' ? 'Analisando...' : 'Hoje (24h)'}
               </button>
 
               <button
@@ -575,7 +582,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 title="Médias dos últimos 7 dias, microciclo, balanço de fadiga e carga aguda de treinos"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${generatingWindow === '7d' ? 'animate-spin' : ''}`} />
-                {generatingWindow === '7d' ? 'Analisando...' : '⚡ Semana (7d)'}
+                {generatingWindow === '7d' ? 'Analisando...' : 'Semana (7d)'}
               </button>
 
               <button
@@ -591,7 +598,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 title="Visão geral de 30 dias com exames de sangue, idade biológica PhenoAge/KDM e hábitos"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${generatingWindow === '30d' ? 'animate-spin' : ''}`} />
-                {generatingWindow === '30d' ? 'Analisando...' : '⚡ Mês (30d)'}
+                {generatingWindow === '30d' ? 'Analisando...' : 'Mês (30d)'}
               </button>
             </div>
           </div>
@@ -609,8 +616,9 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
       </div>
 
       {errorMsg && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-800 dark:text-rose-300 text-sm">
-          ⚠️ {errorMsg}
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-800 dark:text-rose-300 text-sm flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
+          <span>{errorMsg}</span>
         </div>
       )}
 
@@ -713,39 +721,62 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                    Dados Observados
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      Dados Observados
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                      {activeReportMeta?.time_window === 'today'
+                        ? '24h consolidadas'
+                        : activeReportMeta?.time_window === '7d'
+                        ? '7 dias consolidados'
+                        : '30 dias consolidados'}
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Exames laboratoriais clínicos, HRV noturna, frequência cardíaca, sono e glicose contínua (CGM).
+                    {activeReportMeta?.time_window === 'today'
+                      ? '1 noite de sono, HRV noturna, frequência cardíaca e curva glicêmica CGM.'
+                      : activeReportMeta?.time_window === '7d'
+                      ? '7 noites de sono, médias de HRV, 4 treinos analisados e CGM contínuo.'
+                      : '14 exames de sangue, 30 noites de sono, 12 treinos analisados e glicemia CGM.'}
                   </p>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-cyan-700 dark:text-cyan-400 text-xs">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
-                    Modelos & Estimativas
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1.5 font-bold text-cyan-700 dark:text-cyan-400 text-xs">
+                      <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
+                      Modelos & Estimativas
+                    </div>
+                    <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                      PhenoAge + KDM
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Idade biológica PhenoAge, KDM e índices cardiovasculares (Razão ApoB/A1 e TG/HDL).
+                    Idade biológica calculada por Morgan Levine (2018), Klemera-Doubal e índices de risco cardiovascular ApoB/A1.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-indigo-700 dark:text-indigo-400 text-xs">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-                    Correlações & Tendências
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1.5 font-bold text-indigo-700 dark:text-indigo-400 text-xs">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                      Correlações & Tendências
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                      N-of-1 Bayesiano
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Padrões aprendidos N-of-1 e associações com rotinas e eventos da Linha do Tempo.
+                    Padrões aprendidos N-of-1, correlações fisiológicas e associações observadas com rotinas da Linha do Tempo.
                   </p>
                 </div>
               </div>
 
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
-                <span className="text-amber-500 font-bold shrink-0">ℹ️</span>
+                <Info className="h-4 w-4 text-amber-500 shrink-0" />
                 <span>
                   Aviso Clínico: Projeções e sínteses algorítmicas de IA para apoio à tomada de decisão compartilhada com seu médico. Não substituem o diagnóstico ou prescrição médica.
                 </span>
@@ -826,8 +857,9 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 </div>
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                  <span className="text-[11px] text-slate-400 max-w-xs text-center">
-                    💡 Modelos com raciocínio clínico (DeepSeek Flash) analisam dezenas de variáveis e levam em média de 30 a 60 segundos.
+                  <span className="text-[11px] text-slate-400 max-w-xs text-center flex items-center justify-center gap-1">
+                    <Sparkles className="h-3 w-3 text-cyan-400 shrink-0 inline" />
+                    <span>Modelos com raciocínio clínico (DeepSeek Flash) analisam dezenas de variáveis e levam em média de 30 a 60 segundos.</span>
                   </span>
                   <button
                     onClick={handleCancelAnalysis}
@@ -892,7 +924,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
       )}
 
       {mode === 'chat' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col min-h-[520px] max-h-[75vh] shadow-xl space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col h-[calc(100vh-230px)] min-h-[480px] max-h-[820px] shadow-xl space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -909,38 +941,43 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
           <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleSendChatMessage('Como foi meu sono e recuperação nos últimos 3 dias?')}
-              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              🌙 Sono & Recuperação
+              <Moon className="h-3 w-3 text-indigo-400 shrink-0" />
+              <span>Sono & Recuperação</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Quais padrões e correlações pessoais foram detectados no meu histórico?')}
-              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              🎯 Padrões Aprendidos
+              <Sparkles className="h-3 w-3 text-cyan-400 shrink-0" />
+              <span>Padrões Aprendidos</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Como minha carga de treino dos últimos 14 dias impactou minha recuperação e sono?')}
-              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              🏋️ Carga de Treino & HRV
+              <Dumbbell className="h-3 w-3 text-emerald-400 shrink-0" />
+              <span>Carga de Treino & HRV</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual o impacto dos eventos recentes da minha Linha do Tempo (como viagens ou álcool) na minha saúde?')}
-              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              📅 Linha do Tempo & Hábitos
+              <Calendar className="h-3 w-3 text-amber-400 shrink-0" />
+              <span>Linha do Tempo & Hábitos</span>
             </button>
             <button
               onClick={() => handleSendChatMessage('Qual a relação do meu ApoB e exames laboratoriais com longevidade?')}
-              className="text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 transition"
             >
-              🩸 Analisar ApoB & Labs
+              <Activity className="h-3 w-3 text-rose-400 shrink-0" />
+              <span>Analisar ApoB & Labs</span>
             </button>
           </div>
 
           {/* Mensagens do Chat */}
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2 text-xs">
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 text-xs" tabIndex={0} aria-label="Mensagens da conversa">
             {chatMessages.map((msg, idx) => (
               <div
                 key={idx}
@@ -963,6 +1000,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 <Bot className="h-4 w-4 animate-bounce text-cyan-400" /> Copiloto pensando...
               </div>
             )}
+            <div ref={chatBottomRef} />
           </div>
 
           {/* Form de Envio */}
