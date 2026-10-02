@@ -4,7 +4,7 @@
 > **Fase:** Fase 2 (P1 Experiência)  
 > **Prioridade:** P1  
 > **Referência Master:** `CODEX_LONGEVIDADE_HUB_2.0.0_UX_UI_REAUDIT_MASTER.md`  
-> **Status:** Não Iniciado  
+> **Status:** Concluído  
 
 ---
 
@@ -90,12 +90,16 @@ Reversão para a versão consolidada anterior via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Vite Production Build | `npm run build` | 02/10/2026 15:33:38 | Windows 11 | Python 3.14.6 (Commit e95ae5d) | PASS | ✓ built in 5.00s |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 15:33:21 | Windows 11 | Python 3.14.6 (Commit e95ae5d) | PASS | 38 test files passed, 181 tests passed (10.14s) |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 15:36:43 | Windows 11 | Python 3.14.6 (Commit e95ae5d) | PASS | 8 passed (14.1s) |
+| Backend Pytest Suite (Assessments) | `C:\Python314\python.exe -m pytest tests/test_physical_assessments.py -q` | 02/10/2026 15:37:01 | Windows 11 | Python 3.14.6 (Commit e95ae5d) | PASS | 9 passed in 10.85s |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída
+
