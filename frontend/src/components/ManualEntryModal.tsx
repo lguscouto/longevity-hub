@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { PlusCircle } from 'lucide-react'
 
 import { ApiError } from '../lib/api'
-import { Modal } from './ui'
+import { Modal, FormField, Input } from './ui'
 
 interface ManualEntryModalProps {
   isOpen: boolean
@@ -46,9 +46,6 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
     }
   }
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
-  const labelClass = "block text-slate-600 dark:text-slate-400 mb-1 font-semibold"
-
   return (
     <Modal
       isOpen={isOpen}
@@ -59,128 +56,117 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
       size="md"
       closeButtonAriaLabel="Fechar modal"
     >
+      <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+        <FormField id="manual-entry-date" label="Data de Referência">
+          <Input
+            id="manual-entry-date"
+            type="date"
+            value={formData.date_ref}
+            onChange={(event) => setFormData({ ...formData, date_ref: event.target.value })}
+          />
+        </FormField>
 
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          <div>
-            <label htmlFor="manual-entry-date" className={labelClass}>Data de Referência</label>
-            <input
-              id="manual-entry-date"
-              type="date"
-              value={formData.date_ref}
-              onChange={(event) => setFormData({ ...formData, date_ref: event.target.value })}
-              className={inputClass}
+        <div className="grid grid-cols-2 gap-3">
+          <FormField id="manual-entry-systolic" label="Pressão Sistólica (mmHg)">
+            <Input
+              id="manual-entry-systolic"
+              type="number"
+              inputMode="decimal"
+              value={formData.systolic_bp}
+              onChange={(event) => setFormData({ ...formData, systolic_bp: +event.target.value })}
             />
-          </div>
+          </FormField>
+          <FormField id="manual-entry-diastolic" label="Pressão Diastólica (mmHg)">
+            <Input
+              id="manual-entry-diastolic"
+              type="number"
+              inputMode="decimal"
+              value={formData.diastolic_bp}
+              onChange={(event) => setFormData({ ...formData, diastolic_bp: +event.target.value })}
+            />
+          </FormField>
+        </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="manual-entry-systolic" className={labelClass}>Pressão Sistólica (mmHg)</label>
-              <input
-                id="manual-entry-systolic"
-                type="number"
-                value={formData.systolic_bp}
-                onChange={(event) => setFormData({ ...formData, systolic_bp: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label htmlFor="manual-entry-diastolic" className={labelClass}>Pressão Diastólica (mmHg)</label>
-              <input
-                id="manual-entry-diastolic"
-                type="number"
-                value={formData.diastolic_bp}
-                onChange={(event) => setFormData({ ...formData, diastolic_bp: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField id="manual-entry-waist" label="Circunferência da Cintura (cm)">
+            <Input
+              id="manual-entry-waist"
+              type="number"
+              step="0.5"
+              inputMode="decimal"
+              value={formData.waist_cm}
+              onChange={(event) => setFormData({ ...formData, waist_cm: +event.target.value })}
+            />
+          </FormField>
+          <FormField id="manual-entry-grip" label="Dinamometria / Grip (kg)">
+            <Input
+              id="manual-entry-grip"
+              type="number"
+              step="0.5"
+              inputMode="decimal"
+              value={formData.grip_strength_kg}
+              onChange={(event) => setFormData({ ...formData, grip_strength_kg: +event.target.value })}
+            />
+          </FormField>
+        </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="manual-entry-waist" className={labelClass}>Circunferência da Cintura (cm)</label>
-              <input
-                id="manual-entry-waist"
-                type="number"
-                step="0.5"
-                value={formData.waist_cm}
-                onChange={(event) => setFormData({ ...formData, waist_cm: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label htmlFor="manual-entry-grip" className={labelClass}>Dinamometria / Grip (kg)</label>
-              <input
-                id="manual-entry-grip"
-                type="number"
-                step="0.5"
-                value={formData.grip_strength_kg}
-                onChange={(event) => setFormData({ ...formData, grip_strength_kg: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField id="manual-entry-weight" label="Peso (kg)">
+            <Input
+              id="manual-entry-weight"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              value={formData.weight_kg}
+              onChange={(event) => setFormData({ ...formData, weight_kg: +event.target.value })}
+            />
+          </FormField>
+          <FormField id="manual-entry-vo2" label="VO2 Max Estimado">
+            <Input
+              id="manual-entry-vo2"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              value={formData.vo2_max}
+              onChange={(event) => setFormData({ ...formData, vo2_max: +event.target.value })}
+            />
+          </FormField>
+        </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="manual-entry-weight" className={labelClass}>Peso (kg)</label>
-              <input
-                id="manual-entry-weight"
-                type="number"
-                step="0.1"
-                value={formData.weight_kg}
-                onChange={(event) => setFormData({ ...formData, weight_kg: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label htmlFor="manual-entry-vo2" className={labelClass}>VO2 Max Estimado</label>
-              <input
-                id="manual-entry-vo2"
-                type="number"
-                step="0.1"
-                value={formData.vo2_max}
-                onChange={(event) => setFormData({ ...formData, vo2_max: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField id="manual-entry-spo2" label="SpO2 Oxigenação (%)">
+            <Input
+              id="manual-entry-spo2"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              placeholder="Ex: 98.5"
+              onChange={(event) => setFormData({ ...formData, spo2_avg_pct: +event.target.value })}
+            />
+          </FormField>
+          <FormField id="manual-entry-resp" label="Freq. Respiratória (rpm)">
+            <Input
+              id="manual-entry-resp"
+              type="number"
+              step="0.5"
+              inputMode="decimal"
+              placeholder="Ex: 14"
+              onChange={(event) => setFormData({ ...formData, respiratory_rate_rpm: +event.target.value })}
+            />
+          </FormField>
+        </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="manual-entry-spo2" className={labelClass}>SpO2 Oxigenação (%)</label>
-              <input
-                id="manual-entry-spo2"
-                type="number"
-                step="0.1"
-                placeholder="Ex: 98.5"
-                onChange={(event) => setFormData({ ...formData, spo2_avg_pct: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label htmlFor="manual-entry-resp" className={labelClass}>Freq. Respiratória (rpm)</label>
-              <input
-                id="manual-entry-resp"
-                type="number"
-                step="0.5"
-                placeholder="Ex: 14"
-                onChange={(event) => setFormData({ ...formData, respiratory_rate_rpm: +event.target.value })}
-                className={inputClass}
-              />
-            </div>
-          </div>
+        {error && <p role="alert" className="text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
 
-          {error && <p role="alert" className="text-xs text-rose-600 dark:text-rose-300 font-medium">{error}</p>}
-
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
-            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition text-center">
-              Cancelar
-            </button>
-            <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold glow-emerald transition shadow-md text-center" disabled={isSaving}>
-              {isSaving ? 'Salvando…' : 'Salvar Registro'}
-            </button>
-          </div>
-        </form>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-4 mt-4">
+          <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition text-center min-h-[44px]">
+            Cancelar
+          </button>
+          <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold glow-emerald transition shadow-md text-center min-h-[44px]" disabled={isSaving}>
+            {isSaving ? 'Salvando…' : 'Salvar Registro'}
+          </button>
+        </div>
+      </form>
     </Modal>
   )
 }
