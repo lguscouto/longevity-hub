@@ -77,7 +77,7 @@ function getRunMessage(run: PipelineRun): string {
 
 export const PipelineStatusPanel: React.FC<PipelineStatusPanelProps> = ({ runs, loading, onRefresh }) => {
   return (
-    <div className="glass-panel rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
+    <div className="glass-panel rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">

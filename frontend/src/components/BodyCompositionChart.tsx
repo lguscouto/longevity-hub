@@ -228,7 +228,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
     const pt: TimelinePoint = payload[0].payload;
 
     return (
-      <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-xl border border-slate-700 shadow-2xl text-xs space-y-2 max-w-xs z-50">
+      <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-xl border border-slate-700 shadow-dialog text-xs space-y-2 max-w-xs z-50">
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
           <div className="flex items-center gap-1.5 font-bold text-slate-200">
             <Calendar className="h-3.5 w-3.5 text-cyan-400" />

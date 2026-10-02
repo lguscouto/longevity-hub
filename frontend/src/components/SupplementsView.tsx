@@ -425,7 +425,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
   return (
     <div className="space-y-6">
       {/* Banner Principal */}
-      <div className="bg-gradient-to-r from-slate-100 via-slate-100 to-cyan-500/10 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-100 via-slate-100 to-cyan-500/10 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
@@ -571,7 +571,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       {activeTab === 'today' && (
         <div className="space-y-6">
           {/* Card de Progresso Geral da Adesão */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -786,7 +786,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                 return (
                   <div
                     key={supp.id}
-                    className="p-4 rounded-3xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition"
+                    className="p-4 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition"
                   >
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
@@ -855,7 +855,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       {/* 3. ABA HISTÓRICO & AUDITORIA: RASTREABILIDADE IMUTÁVEL COMPLETA */}
       {activeTab === 'audit' && (
         <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -965,7 +965,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       {/* 4. ABA ANÁLISE & INTERAÇÕES (IA) */}
       {activeTab === 'analysis' && (
         <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">

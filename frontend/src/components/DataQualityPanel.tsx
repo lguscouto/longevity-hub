@@ -46,7 +46,7 @@ export const DataQualityPanel: React.FC = () => {
   }, [selectedDate])
 
   return (
-    <div className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+    <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400">

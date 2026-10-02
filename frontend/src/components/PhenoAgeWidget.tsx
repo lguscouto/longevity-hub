@@ -260,7 +260,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
 
   return (
     <>
-      <div className="p-6 rounded-3xl glass-panel border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950 flex flex-col justify-between space-y-5 h-full">
+      <div className="p-6 rounded-2xl glass-panel border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950 flex flex-col justify-between space-y-5 h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">

@@ -501,7 +501,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Banner de Topo */}
-      <div className="bg-gradient-to-r from-slate-100 dark:from-slate-900 via-slate-100 dark:via-slate-900 to-cyan-50/40 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-100 dark:from-slate-900 via-slate-100 dark:via-slate-900 to-cyan-50/40 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
           <Bot className="h-64 w-64 text-cyan-400" />
         </div>
@@ -699,7 +699,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
 
           {/* Quadro de Transparência e Confiança dos Dados Clínicos (UX-P1-14) */}
           {data && (
-            <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-3.5 shadow-xs">
+            <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3.5 shadow-xs">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -754,7 +754,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
           )}
 
           {data?.summary && (
-            <div className="p-4 rounded-3xl bg-cyan-500/5 border border-cyan-500/20 text-xs text-slate-700 dark:text-slate-300 italic font-medium leading-relaxed">
+            <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-xs text-slate-700 dark:text-slate-300 italic font-medium leading-relaxed">
               "{data.summary}"
             </div>
           )}
@@ -782,7 +782,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
           {isGenerating && (() => {
             const stage = getGeneratingStage(elapsedSeconds, generatingWindow || '30d');
             return (
-              <div className="bg-white dark:bg-slate-900 border border-cyan-500/30 rounded-3xl p-8 sm:p-10 text-center space-y-6 shadow-xl relative overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 border border-cyan-500/30 rounded-2xl p-8 sm:p-10 text-center space-y-6 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 transition-all duration-1000 ease-out"
@@ -843,7 +843,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
           {data?.insights && data.insights.length > 0 && (
             <div className="space-y-4">
               {data.insights.map((item, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition rounded-3xl p-5 space-y-3 shadow-lg">
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition rounded-2xl p-5 space-y-3 shadow-lg">
                   <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2.5">
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
@@ -874,7 +874,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
               ))}
 
               {/* Botão de Transição para o Chat */}
-              <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
                 <div className="text-xs text-slate-600 dark:text-slate-400">
                   Deseja aprofundar algum ponto desta síntese ou tirar dúvidas sobre seus biomarcadores?
                 </div>
@@ -892,7 +892,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
       )}
 
       {mode === 'chat' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 flex flex-col min-h-[520px] max-h-[75vh] shadow-xl space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col min-h-[520px] max-h-[75vh] shadow-xl space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1031,7 +1031,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
                 return (
                   <div
                     key={rep.id}
-                    className={`p-4 sm:p-5 rounded-3xl border transition text-left space-y-3 shadow-xs ${
+                    className={`p-4 sm:p-5 rounded-2xl border transition text-left space-y-3 shadow-xs ${
                       isCurrent
                         ? 'bg-cyan-500/10 border-cyan-500/40 shadow-sm'
                         : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'

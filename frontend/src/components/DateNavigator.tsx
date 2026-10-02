@@ -58,7 +58,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
   });
 
   return (
-    <div className="glass-card border border-slate-200 dark:border-slate-800 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+    <div className="glass-card border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
       {/* Esquerda: Seletor de Data & Navegação Dia-a-Dia */}
       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
         <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">

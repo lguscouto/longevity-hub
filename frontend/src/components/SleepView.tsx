@@ -1007,7 +1007,7 @@ export const SleepView: React.FC = () => {
 
           {/* MONTHLY AVERAGES COMPARISON TABLE (Quadro Comparativo de Médias Mensais) */}
           {showMonthlyComparison && monthlySummaries.length > 0 && (
-            <div className="glass-panel p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+            <div className="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -1149,7 +1149,7 @@ export const SleepView: React.FC = () => {
           )}
 
           {/* STACKED BAR CHART CONTAINER (Matching Screenshot) */}
-          <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg relative bg-slate-900/90 text-white">
+          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg relative bg-slate-900/90 text-white">
             {/* Chart Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
@@ -1211,7 +1211,7 @@ export const SleepView: React.FC = () => {
               <div className="relative pt-4 pb-2">
                 {/* FLOATING HOVER TOOLTIP (Fiel ao Anexo) */}
                 {activeTooltipData && (
-                  <div className="hidden sm:block absolute top-4 right-8 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 shadow-2xl min-w-[220px] transition-all">
+                  <div className="hidden sm:block absolute top-4 right-8 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 shadow-dialog min-w-[220px] transition-all">
                     <div className="text-sm font-bold text-white mb-2 border-b border-slate-800 pb-1.5 flex items-center justify-between">
                       <span>{activeTooltipData.date_ref}</span>
                       <span className="text-xs text-slate-400 font-normal">
@@ -1409,7 +1409,7 @@ export const SleepView: React.FC = () => {
           </div>
 
           {/* HISTORICAL RECORDS TABLE (All Records in Database) */}
-          <div className="glass-panel p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="glass-panel p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">

@@ -84,7 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
         aria-describedby={description ? descriptionId : undefined}
         aria-label={ariaLabel}
         tabIndex={-1}
-        className={`relative w-full ${sizeClass} max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl text-slate-900 dark:text-slate-100 my-auto outline-none ${className}`}
+        className={`relative w-full ${sizeClass} max-h-[92vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-dialog text-slate-900 dark:text-slate-100 my-auto outline-none ${className}`}
       >
         {/* Header */}
         {(title || showCloseButton || headerAction) && (
@@ -138,7 +138,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Footer */}
         {footer && (
-          <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-950/40 rounded-b-3xl">
+          <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-950/40 rounded-b-2xl">
             {footer}
           </div>
         )}

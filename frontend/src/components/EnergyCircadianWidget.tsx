@@ -47,7 +47,7 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
   const { energy_bank, circadian } = data
 
   return (
-    <div className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
+    <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">

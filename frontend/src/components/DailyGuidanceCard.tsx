@@ -64,7 +64,7 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
   const limitationsList = Array.isArray(guidance?.limitations) ? guidance.limitations : []
 
   return (
-    <div className={`p-6 rounded-3xl glass-card border bg-gradient-to-br ${stateColors} shadow-sm space-y-4`}>
+    <div className={`p-6 rounded-2xl glass-card border bg-gradient-to-br ${stateColors} shadow-sm space-y-4`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-white/40 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-slate-800">

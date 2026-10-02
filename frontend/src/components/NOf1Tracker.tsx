@@ -49,7 +49,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
   const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus:outline-none";
 
   return (
-    <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+    <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">

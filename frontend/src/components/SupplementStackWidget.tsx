@@ -246,7 +246,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
   const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none";
 
   return (
-    <div className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+    <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-3">
@@ -292,7 +292,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
 
       {/* Análise de IA Formatada em Destaque */}
       {aiAnalysis && (
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-cyan-500/40 text-xs text-slate-800 dark:text-slate-200 space-y-3 relative shadow-2xl">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-cyan-500/40 text-xs text-slate-800 dark:text-slate-200 space-y-3 relative shadow-dialog">
           <button
             onClick={() => setAiAnalysis(null)}
             className="absolute top-3 right-3 p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"

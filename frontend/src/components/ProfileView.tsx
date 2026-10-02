@@ -180,7 +180,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       {internalSubTab === 'profile' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Banner Card Header */}
-          <div className="glass-panel p-6 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-slate-100 via-slate-100 to-emerald-500/10 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/40 relative overflow-hidden shadow-sm">
+          <div className="glass-panel p-6 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-slate-100 via-slate-100 to-emerald-500/10 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/40 relative overflow-hidden shadow-sm">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold shadow-xl glow-emerald">
@@ -284,7 +284,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
           {/* Edit Profile Form */}
           {isEditing && (
-            <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-2xl">
+            <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-dialog">
               <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <Edit3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Editar Informações do Perfil
               </h3>

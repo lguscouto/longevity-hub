@@ -92,7 +92,7 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
   }
 
   return (
-    <div className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
+    <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
       {/* Header with Title and Refresh */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-3">

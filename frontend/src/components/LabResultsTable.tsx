@@ -283,7 +283,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
   const filledCount = Object.values(formValues).filter(v => v !== '' && !isNaN(Number(v))).length;
 
   return (
-    <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+    <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">

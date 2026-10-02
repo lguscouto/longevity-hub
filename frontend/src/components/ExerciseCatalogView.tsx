@@ -101,7 +101,7 @@ export const ExerciseCatalogView: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Barra de Filtros e Busca */}
-      <div className="bg-white dark:bg-slate-900/80 p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 backdrop-blur-md">
+      <div className="bg-white dark:bg-slate-900/80 p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 backdrop-blur-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">

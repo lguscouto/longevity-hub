@@ -141,7 +141,7 @@ export const TimelineView: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Barra de Ações e Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
@@ -277,7 +277,7 @@ export const TimelineView: React.FC = () => {
           <span>Carregando Linha do Tempo...</span>
         </div>
       ) : error ? (
-        <div className="p-6 rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
+        <div className="p-6 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
           {error}
         </div>
       ) : (
@@ -299,7 +299,7 @@ export const TimelineView: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl text-slate-400 text-xs">
+                <div className="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400 text-xs">
                   Nenhum evento registrado no período selecionado. Use o botão "+ Adicionar Evento" para registrar contexto pessoal.
                 </div>
               )}

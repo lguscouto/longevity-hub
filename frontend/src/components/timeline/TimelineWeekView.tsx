@@ -25,7 +25,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
         return (
           <div
             key={`${w.week_start}_${w.week_end}`}
-            className="p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 shadow-sm hover:shadow-md transition"
+            className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 shadow-sm hover:shadow-md transition"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
               <div className="flex items-center gap-2.5">

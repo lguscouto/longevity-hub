@@ -81,7 +81,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           aria-describedby={description ? descriptionId : undefined}
           aria-label={ariaLabel}
           tabIndex={-1}
-          className={`pointer-events-auto w-screen ${sizeClass} bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300 outline-none ${className}`}
+          className={`pointer-events-auto w-screen ${sizeClass} bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-elevation-3 flex flex-col transform transition-transform animate-in slide-in-from-right duration-300 outline-none ${className}`}
         >
           {/* Header */}
           {(title || showCloseButton || badge) && (

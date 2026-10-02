@@ -533,7 +533,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
       <Header
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(normalizeTab(tab))}

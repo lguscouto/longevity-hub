@@ -74,7 +74,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
     25
 
   return (
-    <div className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-full shadow-sm">
+    <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-full shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
         <div className="flex items-center gap-2.5">
           <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
