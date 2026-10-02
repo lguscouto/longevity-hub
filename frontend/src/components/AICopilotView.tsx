@@ -747,7 +747,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
                 <span className="text-amber-500 font-bold shrink-0">ℹ️</span>
                 <span>
-                  Síntese analítica integrativa para apoio à tomada de decisão clínica compartilhada com seu médico, sem substituir diagnósticos.
+                  Aviso Clínico: Projeções e sínteses algorítmicas de IA para apoio à tomada de decisão compartilhada com seu médico. Não substituem o diagnóstico ou prescrição médica.
                 </span>
               </div>
             </div>

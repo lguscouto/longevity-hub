@@ -68,8 +68,16 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
         </div>
       }
     >
-      <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-        {markdownContent || 'Gerando relatório...'}
+      <div className="space-y-4">
+        <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-900 dark:text-cyan-200 flex items-start gap-2.5">
+          <span className="font-bold shrink-0">Aviso Clínico:</span>
+          <span className="leading-relaxed">
+            Este relatório sintetiza dados registrados pelo próprio usuário para subsidiar a discussão em consulta médica. Não substitui o diagnóstico, acompanhamento ou prescrição profissional.
+          </span>
+        </div>
+        <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+          {markdownContent || 'Gerando relatório...'}
+        </div>
       </div>
     </Modal>
   );

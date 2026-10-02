@@ -387,7 +387,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               Fontes de Dados & Wearables Conectados
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Conecte sensores biométricos para alimentar as análises de longevidade, sono e epigenética.
+              Conecte sensores e dispositivos para sincronizar métricas de frequência cardíaca, sono e recuperação.
             </p>
           </div>
 

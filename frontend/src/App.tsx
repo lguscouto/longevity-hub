@@ -747,6 +747,20 @@ export default function App() {
             )}
           </main>
 
+          <footer className="mt-16 border-t border-slate-200 dark:border-slate-800/80 py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Longevidade Hub</span>
+                <span>v1.9.8</span>
+                <span className="text-slate-400 dark:text-slate-600">•</span>
+                <span>Local-first &amp; Soberania de Dados</span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center sm:text-right">
+                Aviso Clínico: Este aplicativo organiza e analisa dados de saúde coletados pelo próprio usuário. Não substitui o diagnóstico, acompanhamento ou prescrição médica.
+              </p>
+            </div>
+          </footer>
+
           <AISettingsModal
             isOpen={showAISettings}
             onClose={() => setShowAISettings(false)}

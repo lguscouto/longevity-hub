@@ -315,7 +315,9 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
 
         <div className="text-[10px] text-slate-600 dark:text-slate-400 flex items-start gap-1">
           <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
-          <span>Valores de idade biológica só aparecem quando o backend retorna um cálculo completo; estados incompletos mostram quais biomarcadores faltam.</span>
+          <span>
+            Estimativa algorítmica baseada em modelos matemáticos (Morgan Levine 2018 / KDM) a partir de exames laboratoriais. Valores só aparecem quando o cálculo está completo; estados incompletos indicam quais biomarcadores faltam. Não substitui diagnóstico médico.
+          </span>
         </div>
       </div>
 
