@@ -87,12 +87,15 @@ Reversão do componente no Header via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Vitest Header & SyncStatusControl Unit Tests (5 testes) | `npm run test:run -- src/components/Header.test.tsx` | 02/10/2026 16:31:31 | Windows 11 | PASS | 5 passed (SyncStatusControl, lastSyncTime timestamp, syncing state, theme toggle) |
+| Vite Production Build | `npm run build` | 02/10/2026 16:32:00 | Windows 11 | PASS | ✓ built in 4.67s (9.29s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 16:32:09 | Windows 11 | PASS | 190 passed across 40 test files (11.70s) |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 16:32:21 | Windows 11 | PASS | 8 passed across 4 viewports (17.19s) |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída

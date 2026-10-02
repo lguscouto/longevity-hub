@@ -60,6 +60,7 @@ interface HeaderProps {
   onOpenAISettings: () => void;
   isSyncing: boolean;
   isSyncingGoogle?: boolean;
+  lastSyncTime?: string | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -73,6 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAISettings,
   isSyncing,
   isSyncingGoogle = false,
+  lastSyncTime,
 }) => {
   const { theme, toggleTheme } = useTheme();
 
@@ -146,29 +148,44 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5" />
 
-          {/* Cluster Técnico / Infraestrutura */}
+          {/* Cluster Técnico / Infraestrutura: SyncStatusControl */}
           <div className="flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80">
             <button
               onClick={() => onSyncZepp()}
-              disabled={isSyncing}
-              title="Atualizar dados de wearables (Zepp OS)"
+              disabled={isSyncing || isSyncingGoogle}
+              title={
+                isSyncing
+                  ? 'Sincronizando dados de wearables (Zepp OS)...'
+                  : lastSyncTime
+                  ? `Última sincronização às ${lastSyncTime}. Clique para atualizar.`
+                  : 'Atualizar dados de wearables (Zepp OS)'
+              }
               aria-label="Sync Zepp"
-              className="relative flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-400 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+              className="relative flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Sincronizando...' : 'Atualizar dados'}</span>
+              <span className="relative flex h-2 w-2 shrink-0">
+                {isSyncing ? (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                ) : null}
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isSyncing ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
+              </span>
+              <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">
+                {isSyncing ? 'Sincronizando...' : lastSyncTime ? `Sincronizado ${lastSyncTime}` : 'Sync Zepp'}
+              </span>
+              <span className="sm:hidden font-medium">Sync</span>
             </button>
 
             {onSyncGoogleHealth && (
               <button
                 onClick={onSyncGoogleHealth}
-                disabled={isSyncingGoogle}
+                disabled={isSyncing || isSyncingGoogle}
                 title="Sincronizar Google Health API v4"
                 aria-label="Sync Google"
                 className="relative flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-lg text-xs font-semibold hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-blue-700 dark:text-blue-400 transition disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isSyncingGoogle ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isSyncingGoogle ? 'Google...' : 'Google'}</span>
+                <span className="hidden md:inline">{isSyncingGoogle ? 'Google...' : 'Google'}</span>
               </button>
             )}
 

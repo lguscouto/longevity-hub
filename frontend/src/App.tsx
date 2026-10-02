@@ -204,6 +204,7 @@ export default function App() {
 
   const [isSyncing, setIsSyncing] = useState(false)
   const [isSyncingGoogle, setIsSyncingGoogle] = useState(false)
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [showWorkoutsTable, setShowWorkoutsTable] = useState(false)
@@ -364,6 +365,7 @@ export default function App() {
       const result = await requestJson<SyncResult>(endpoint, { method: 'POST' })
       setSyncResult(result)
       if (result.status === 'ok') {
+        setLastSyncTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
         await fetchDashboardData()
       }
@@ -552,6 +554,7 @@ export default function App() {
         onOpenAISettings={() => setShowAISettings(true)}
         isSyncing={isSyncing}
         isSyncingGoogle={isSyncingGoogle}
+        lastSyncTime={lastSyncTime}
       />
 
       <ErrorBoundary>
