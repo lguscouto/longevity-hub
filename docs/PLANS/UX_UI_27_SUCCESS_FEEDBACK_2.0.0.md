@@ -90,12 +90,15 @@ Reversão do componente Toast via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Vitest Toast Unit Tests (4 testes) | `npm run test:run -- src/components/ui/Toast.test.tsx` | 02/10/2026 16:27:01 | Windows 11 | PASS | 4 passed (role="status", aria-live="polite", auto-dismiss, dismiss button) |
+| Vite Production Build | `npm run build` | 02/10/2026 16:27:41 | Windows 11 | PASS | ✓ built in 4.79s (9.58s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 16:27:51 | Windows 11 | PASS | 185 passed across 39 test files (11.40s) |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 16:28:02 | Windows 11 | PASS | 8 passed across 4 viewports (17.48s) |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
-import { ConfirmDialog, EmptyState, Modal } from './ui';
+import { ConfirmDialog, EmptyState, Modal, useToast } from './ui';
 
 interface Supplement {
   id: number;
@@ -227,6 +227,7 @@ const FormattedAnalysis: React.FC<{ text: string }> = ({ text }) => {
 };
 
 export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }) => {
+  const { showToast } = useToast();
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [takenIds, setTakenIds] = useState<number[]>([]);
@@ -287,6 +288,10 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
   }, [selectedDate]);
 
   const handleToggleLog = async (id: number) => {
+    const isNowTaken = !takenIds.includes(id);
+    const supp = supplements.find(s => s.id === id);
+    const name = supp?.name ? ` de ${supp.name}` : '';
+
     setTakenIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
@@ -297,6 +302,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplement_id: id, date_ref: selectedDate })
       });
+      showToast(isNowTaken ? `Dose${name} confirmada!` : `Dose${name} desmarcada!`, 'success');
     } catch (caught) {
       setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao alternar suplemento.');
       await loadData();

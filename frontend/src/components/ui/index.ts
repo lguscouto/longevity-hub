@@ -9,3 +9,4 @@ export * from './ConfirmDialog';
 export * from './EmptyState';
 export * from './LoadingIndicator';
 export * from './ErrorState';
+export * from './Toast';

@@ -28,7 +28,7 @@ const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 
 
-import { LoadingIndicator } from './components/ui'
+import { LoadingIndicator, useToast } from './components/ui'
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
 import { DailyGuidanceCard } from './components/DailyGuidanceCard'
@@ -155,6 +155,7 @@ function getInitialTab(): Tab {
 }
 
 export default function App() {
+  const { showToast } = useToast()
   const [activeTab, setActiveTab] = useState<Tab>(getInitialTab)
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [daysRange, setDaysRange] = useState<number>(30)
@@ -445,6 +446,7 @@ export default function App() {
     })
     await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
     await fetchDashboardData()
+    showToast('Métricas manuais registradas com sucesso!')
   }
 
   const handleRecalculatePheno = async (inputData: any) => {
@@ -461,6 +463,7 @@ export default function App() {
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
         await fetchDashboardData()
       }
+      showToast('Cálculo de idade biológica atualizado com sucesso!')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível recalcular o PhenoAge.')
     }
@@ -475,6 +478,7 @@ export default function App() {
       })
       await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
+      showToast('Experimento N-of-1 criado com sucesso!')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível criar o experimento.')
     }
@@ -492,6 +496,7 @@ export default function App() {
       })
       await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
+      showToast('Exames laboratoriais registrados com sucesso!')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar os exames.')
     }
@@ -506,6 +511,7 @@ export default function App() {
       })
       await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
+      showToast('Perfil atualizado com sucesso!')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível atualizar o perfil.')
     }
