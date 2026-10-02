@@ -25,6 +25,7 @@ import { requestJson } from '../lib/api'
 import { WorkoutSession, WorkoutsSummary, WorkoutExercise, ExerciseMedia } from '../types'
 import { ExerciseDetailModal } from './ExerciseDetailModal'
 import { ExerciseCatalogView } from './ExerciseCatalogView'
+import { EmptyState } from './ui'
 
 interface WorkoutsViewProps {
   onSyncZepp?: () => void
@@ -497,19 +498,15 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
           <p className="text-sm font-semibold">{error}</p>
         </div>
       ) : workouts.length === 0 ? (
-        <div className="p-12 text-center bg-white dark:bg-slate-900/20 rounded-2xl border border-slate-200 dark:border-slate-800/50 shadow-xs">
-          <Dumbbell className="h-10 w-10 mx-auto mb-3 text-slate-400 dark:text-slate-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">Nenhum treino encontrado</h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-4">
-            Não encontramos sessões para os filtros selecionados. Sincronize com a API do Hevy ou importe seus treinos do Zepp.
-          </p>
-          <button
-            onClick={handleSyncHevy}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white transition shadow-md"
-          >
-            Sincronizar Treinos Hevy Agora
-          </button>
-        </div>
+        <EmptyState
+          icon={Dumbbell}
+          title="Nenhum treino encontrado"
+          description="Não encontramos sessões para os filtros selecionados. Sincronize com a API do Hevy ou importe seus treinos do Zepp."
+          action={{
+            label: 'Sincronizar Treinos Hevy Agora',
+            onClick: handleSyncHevy,
+          }}
+        />
       ) : (
         <div className="space-y-3">
           {workouts.map((workout) => {

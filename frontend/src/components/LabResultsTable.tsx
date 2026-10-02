@@ -363,18 +363,18 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       <div className="overflow-x-auto max-w-full min-w-0">
         <table className="w-full text-left text-xs block md:table">
           <thead className="hidden md:table-header-group">
-            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-              <th className="pb-3">Data do Laudo</th>
-              <th className="pb-3">Exame / Descrição</th>
-              <th className="pb-3">Destaques Principais</th>
-              <th className="pb-3">Status dos Biomarcadores</th>
-              <th className="pb-3 text-right">Ações</th>
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold text-[10px]">
+              <th className="py-3 px-4">Data do Laudo</th>
+              <th className="py-3 px-4">Exame / Descrição</th>
+              <th className="py-3 px-4">Destaques Principais</th>
+              <th className="py-3 px-4">Status dos Biomarcadores</th>
+              <th className="py-3 px-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="block md:table-row-group divide-y divide-slate-200 dark:divide-slate-800/60">
             {sortedDates.length === 0 ? (
               <tr className="block md:table-row">
-                <td colSpan={5} className="py-8 block md:table-cell">
+                <td colSpan={5} className="py-8 px-4 block md:table-cell">
                   <EmptyState
                     title="Nenhum laudo cadastrado"
                     description="Clique em 'Cadastrar Primeiro Laudo' para registrar seus biomarcadores de sangue."
@@ -407,12 +407,12 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                   .slice(0, 3);
 
                 return (
-                  <tr key={dt} className="block md:table-row p-4 md:py-4 md:px-0 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition cursor-pointer space-y-2 md:space-y-0" onClick={() => setSelectedPanelDate(dt)}>
+                  <tr key={dt} className="block md:table-row p-4 md:py-3 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition cursor-pointer space-y-2 md:space-y-0" onClick={() => setSelectedPanelDate(dt)}>
                     {/* Data */}
-                    <td className="block md:table-cell py-1 md:py-4 text-slate-900 dark:text-white font-mono font-bold">{dt}</td>
+                    <td className="block md:table-cell py-1 md:py-3 md:px-4 text-slate-900 dark:text-white font-mono font-bold">{dt}</td>
 
                     {/* Descrição */}
-                    <td className="block md:table-cell py-1 md:py-4">
+                    <td className="block md:table-cell py-1 md:py-3 md:px-4">
                       <div className="flex items-center gap-2 flex-wrap">
                         <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                         <span className="font-bold text-slate-800 dark:text-slate-200">Painel Completo de Sangue</span>
@@ -428,7 +428,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                     </td>
 
                     {/* Destaques (Máximo 3 mini-badges) */}
-                    <td className="block md:table-cell py-1 md:py-4">
+                    <td className="block md:table-cell py-1 md:py-3 md:px-4">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {highlightItems.map((item, i) => (
                           <span key={i} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
@@ -439,7 +439,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                     </td>
 
                     {/* Status Consolidado */}
-                    <td className="block md:table-cell py-1 md:py-4">
+                    <td className="block md:table-cell py-1 md:py-3 md:px-4">
                       <div className="flex items-center gap-2 flex-wrap">
                         {clinicalCount > 0 ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
@@ -459,7 +459,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                     </td>
 
                     {/* Ações */}
-                    <td className="block md:table-cell py-2 md:py-4 text-left md:text-right" onClick={e => e.stopPropagation()}>
+                    <td className="block md:table-cell py-2 md:py-3 md:px-4 text-left md:text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <button
                           onClick={() => setSelectedPanelDate(dt)}

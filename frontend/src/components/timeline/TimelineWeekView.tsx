@@ -1,6 +1,7 @@
 import React from 'react'
 import { Activity, CalendarDays, ChevronRight, Dumbbell, Heart, Moon } from 'lucide-react'
 import type { TimelineWeekSummary } from './types'
+import { EmptyState } from '../ui'
 
 interface TimelineWeekViewProps {
   weeks: TimelineWeekSummary[]
@@ -10,9 +11,11 @@ interface TimelineWeekViewProps {
 export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSelectWeek }) => {
   if (!weeks || weeks.length === 0) {
     return (
-      <div className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl text-slate-400 text-sm">
-        Nenhum resumo semanal encontrado para o período.
-      </div>
+      <EmptyState
+        icon={CalendarDays}
+        title="Nenhum resumo semanal encontrado"
+        description="Nenhum registro histórico agregado foi encontrado para as semanas deste período."
+      />
     )
   }
 

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Activity, Calendar, ChevronRight, Dumbbell, Heart, Pill, Scale } from 'lucide-react'
 import type { TimelineMonthSummary } from './types'
+import { EmptyState } from '../ui'
 
 interface TimelineMonthViewProps {
   months: TimelineMonthSummary[]
@@ -10,9 +11,11 @@ interface TimelineMonthViewProps {
 export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, onSelectMonth }) => {
   if (!months || months.length === 0) {
     return (
-      <div className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl text-slate-400 text-sm">
-        Nenhum resumo mensal encontrado.
-      </div>
+      <EmptyState
+        icon={Calendar}
+        title="Nenhum resumo mensal encontrado"
+        description="Nenhum registro histórico agregado foi encontrado para este período na Linha do Tempo."
+      />
     )
   }
 

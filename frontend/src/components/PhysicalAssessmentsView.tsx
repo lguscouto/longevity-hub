@@ -1395,9 +1395,11 @@ export const PhysicalAssessmentsView: React.FC = () => {
             </div>
 
             {selectedAssessment.photos.length === 0 ? (
-              <div className="p-8 text-center bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 text-sm">
-                Nenhuma foto anexada a esta avaliação.
-              </div>
+              <EmptyState
+                icon={Camera}
+                title="Nenhuma foto anexada"
+                description="Nenhuma foto corporal foi anexada a esta avaliação clínica."
+              />
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {selectedAssessment.photos.map(photo => (
@@ -1578,9 +1580,11 @@ export const PhysicalAssessmentsView: React.FC = () => {
                 </h4>
 
                 {comparisonManifest.matched_photos.length === 0 ? (
-                  <div className="p-8 text-center glass-panel rounded-2xl text-slate-400 text-sm">
-                    Nenhuma foto equivalente encontrada para parear nesta comparação.
-                  </div>
+                  <EmptyState
+                    icon={Camera}
+                    title="Nenhuma foto correspondente"
+                    description="Nenhuma foto equivalente foi encontrada para parear lado a lado nesta comparação."
+                  />
                 ) : (
                   <div className="space-y-6">
                     {comparisonManifest.matched_photos.map((match, idx) => (

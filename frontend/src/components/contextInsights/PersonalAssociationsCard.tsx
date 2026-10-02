@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { fetchPersonalAssociations, recomputePersonalAssociations } from './api'
 import type { PersonalAssociation } from './types'
+import { EmptyState } from '../ui'
 
 interface PersonalAssociationsCardProps {
   initialMetric?: string
@@ -157,15 +158,11 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
           <span>Calculando correlações históricas...</span>
         </div>
       ) : associations.length === 0 ? (
-        <div className="p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400 space-y-1">
-          <p className="font-semibold text-slate-500 dark:text-slate-400">
-            Nenhuma associação com histórico suficiente encontrada.
-          </p>
-          <p>
-            Conforme você registrar eventos manuais e sincronizar treinos e sono, o motor aprenderá
-            como seu corpo responde individualmente a cada fator.
-          </p>
-        </div>
+        <EmptyState
+          icon={Sparkles}
+          title="Nenhuma associação com histórico suficiente encontrada"
+          description="Conforme você registrar eventos manuais e sincronizar treinos e sono, o motor aprenderá como seu corpo responde individualmente a cada fator."
+        />
       ) : (
         <div className="space-y-3">
           {(expanded ? associations : associations.slice(0, 3)).map(item => (

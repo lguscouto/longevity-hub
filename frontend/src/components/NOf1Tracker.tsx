@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2, Scale } from 'lucide-react';
 import { ConfounderBalanceModal } from './contextInsights/ConfounderBalanceModal';
+import { EmptyState } from './ui';
 
 interface NOf1Experiment {
   id?: number;
@@ -68,8 +69,17 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {experiments.length === 0 ? (
-          <div className="col-span-2 py-10 text-center text-slate-500 glass-card rounded-2xl border border-slate-200 dark:border-slate-800">
-            Nenhum experimento N-of-1 ativo. Clique em "Criar Experimento" para testar uma nova suplementação ou alteração no estilo de vida.
+          <div className="col-span-2">
+            <EmptyState
+              icon={FlaskConical}
+              title="Nenhum experimento N-of-1 ativo"
+              description="Teste causalmente o efeito de um novo suplemento, treino ou rotina de sono sobre seus biomarcadores usando rigor estatístico N-of-1."
+              action={{
+                label: 'Criar Experimento',
+                onClick: () => setShowModal(true),
+                icon: Plus,
+              }}
+            />
           </div>
         ) : (
           experiments.map((exp, idx) => {

@@ -11,6 +11,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { ExerciseDetailModal, ExerciseMedia } from './ExerciseDetailModal'
+import { EmptyState } from './ui'
 
 const MUSCLE_FILTERS = [
   { label: 'Todos os Músculos', value: '' },
@@ -192,13 +193,19 @@ export const ExerciseCatalogView: React.FC = () => {
           Carregando catálogo de exercícios...
         </div>
       ) : exercises.length === 0 ? (
-        <div className="p-12 text-center bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800">
-          <Dumbbell className="h-10 w-10 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
-          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Nenhum exercício encontrado</h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Tente buscar com outros termos ou selecione "Todos os Músculos".
-          </p>
-        </div>
+        <EmptyState
+          icon={Dumbbell}
+          title="Nenhum exercício encontrado"
+          description="Tente buscar com outros termos ou selecione 'Todos os Músculos'."
+          action={{
+            label: 'Limpar busca',
+            onClick: () => {
+              setQuery('')
+              setSelectedMuscle(MUSCLE_FILTERS[0])
+              setSelectedEquipment(EQUIPMENT_FILTERS[0])
+            },
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {exercises.map((ex) => (
