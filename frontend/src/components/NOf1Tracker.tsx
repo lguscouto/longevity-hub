@@ -46,7 +46,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
     setShowModal(false);
   };
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus:outline-none";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none";
 
   return (
     <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">

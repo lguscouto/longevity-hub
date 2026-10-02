@@ -420,7 +420,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
   const countSuplemento = supplements.filter(s => s.category === 'Suplemento' || !s.category).length;
   const countHormonio = supplements.filter(s => s.category === 'Hormônio' || s.category === 'Peptídeo').length;
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none";
 
   return (
     <div className="space-y-6">
@@ -670,7 +670,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                               <button
                                 type="button"
                                 aria-label={`Marcar dose de ${supp.name}`}
-                                className="shrink-0 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full"
+                                className="shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none rounded-full"
                               >
                                 {isTaken ? (
                                   <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
@@ -764,7 +764,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                 placeholder="Buscar composto..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
               />
             </div>
           </div>
@@ -874,7 +874,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
                   placeholder="Filtrar eventos de auditoria..."
                   value={auditSearchTerm}
                   onChange={e => setAuditSearchTerm(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                 />
               </div>
             </div>

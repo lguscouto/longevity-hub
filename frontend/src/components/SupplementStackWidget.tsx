@@ -243,7 +243,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
     ? Math.round((takenIds.length / supplements.length) * 100)
     : 0;
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none";
 
   return (
     <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">

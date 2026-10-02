@@ -86,12 +86,16 @@ Reversão das classes de foco via Git.
 
 | Critério / Teste | Comando | Data/Hora | Ambiente | Status | Detalhes / Log |
 |---|---|---|---|---|---|
-| Planejamento Inicial | N/A | 02/10/2026 | Local | PENDING | Aguardando início da execução |
+| Playwright Keyboard Navigation E2E (8 fluxos) | `npx playwright test -c e2e/playwright.config.ts e2e/keyboard-navigation.spec.ts` | 02/10/2026 16:12:39 | Windows 11 / Chromium & Mobile Safari | PASS | 8 passed across Chromium e Mobile (Tab sequence, modal focus trap, Escape key) em 9.1s |
+| Eliminação de focus:outline-none | Verificação estática (`Select-String`) | 02/10/2026 16:11:20 | Windows 11 | PASS | 0 ocorrências residuais de `focus:outline-none`; 100% substituídos por `focus-visible:ring-2` e `focus-visible:outline-none` |
+| Vite Production Build | `npm run build` | 02/10/2026 16:17:49 | Windows 11 | PASS | ✓ built in 4.68s (9.41s) |
+| Vitest Unit & Component Suite | `npm run test:run` | 02/10/2026 16:17:58 | Windows 11 | PASS | 181 passed across 38 test files |
+| Playwright Visual QA Multi-Viewport | `npx playwright test -c e2e/playwright.config.ts e2e/visual-qa.spec.ts` | 02/10/2026 16:18:09 | Windows 11 | PASS | 8 passed (16.4s) |
 
 ## Checklist de conclusão
-- [ ] Implementação de código finalizada
-- [ ] Testes unitários aprovados
-- [ ] Testes E2E aprovados
-- [ ] Validação visual realizada
-- [ ] Evidências de execução registradas
-- [ ] Homologação concluída
+- [x] Implementação de código finalizada
+- [x] Testes unitários aprovados
+- [x] Testes E2E aprovados
+- [x] Validação visual realizada
+- [x] Evidências de execução registradas
+- [x] Homologação concluída

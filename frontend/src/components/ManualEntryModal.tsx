@@ -46,7 +46,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
     }
   }
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus:outline-none"
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
   const labelClass = "block text-slate-600 dark:text-slate-400 mb-1 font-semibold"
 
   return (

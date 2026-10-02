@@ -76,7 +76,7 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
               type="date"
               value={selectedDate}
               onChange={e => onDateChange(e.target.value)}
-              className="bg-transparent text-slate-900 dark:text-white font-bold text-xs focus:outline-none cursor-pointer"
+              className="bg-transparent text-slate-900 dark:text-white font-bold text-xs rounded px-1 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer"
             />
           </div>
 

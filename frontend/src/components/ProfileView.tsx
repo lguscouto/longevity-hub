@@ -128,7 +128,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const currentWeight = profile.current_weight_kg;
 
   const inputClass =
-    'w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus:outline-none';
+    'w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none';
 
   return (
     <div className="space-y-6">

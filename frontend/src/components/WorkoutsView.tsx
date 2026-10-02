@@ -462,7 +462,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
             placeholder="Buscar exercício ou treino (ex: Supino, Ombros)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition shadow-2xs"
+            className="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-purple-500 dark:focus:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none transition shadow-2xs"
           />
         </div>
       </div>

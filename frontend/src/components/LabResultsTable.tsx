@@ -632,7 +632,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                 type="date"
                 value={collectedAt}
                 onChange={e => setCollectedAt(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
+                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
               />
             </div>
 
@@ -668,7 +668,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                           placeholder="Vazio"
                           value={formValues[item.key] || ''}
                           onChange={e => handleInputChange(item.key, e.target.value)}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus:outline-none"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
                         />
                         <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
                       </div>

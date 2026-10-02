@@ -417,7 +417,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                 aria-label="Modelo de IA Selecionado"
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
               >
                 {activeProvider === 'openrouter' && (
                   <>
@@ -454,7 +454,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                 aria-label="Modo de privacidade do contexto IA"
                 value={privacyMode}
                 onChange={(event) => setPrivacyMode(normalizePrivacyMode(event.target.value))}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
               >
                 <option value="minimal">Mínimo (padrão)</option>
                 <option value="full">Completo (opt-in)</option>
@@ -664,7 +664,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                     placeholder="c10ddad3-e147-496b-ba35-..."
                     value={hevyKey}
                     onChange={(e) => setHevyKey(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono text-xs focus:border-purple-500 focus:outline-none"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono text-xs focus:border-purple-500 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                   />
                 </div>
               </div>
