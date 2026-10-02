@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Modal } from '../ui'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -110,46 +110,40 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
     }
   }
 
-  const modalContent = (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confounder-modal-title"
-      className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5"
-    >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 max-w-3xl w-full shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] flex flex-col overflow-hidden animate-fadeIn">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4 shrink-0">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                <Scale className="h-5 w-5" />
-              </span>
-              <h2 id="confounder-modal-title" className="text-base sm:text-lg font-bold">
-                Balanço de Confundidores & Covariáveis
-              </h2>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Avaliação de fatores exógenos entre controle e intervenção para prevenir falsa causalidade.
-            </p>
-            {(experimentTitle || interventionName) && (
-              <span className="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
-                {experimentTitle || interventionName}
-              </span>
-            )}
-          </div>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Balanço de Confundidores & Covariáveis"
+      description="Avaliação de fatores exógenos entre controle e intervenção para prevenir falsa causalidade."
+      icon={
+        <span className="p-1.5 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
+          <Scale className="h-5 w-5" />
+        </span>
+      }
+      size="3xl"
+      closeButtonAriaLabel="Fechar modal"
+      footer={
+        <div className="flex justify-end">
           <button
             onClick={onClose}
-            aria-label="Fechar modal"
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
           >
-            <X className="h-5 w-5" />
+            Fechar
           </button>
         </div>
+      }
+    >
+      {(experimentTitle || interventionName) && (
+        <div className="mb-4">
+          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
+            {experimentTitle || interventionName}
+          </span>
+        </div>
+      )}
 
-        {/* Body (scrollable) */}
-        <div className="overflow-y-auto flex-1 py-4 space-y-4 pr-1">
-          {loading && (
+      <div className="space-y-4 pr-1">
+        {loading && (
             <div className="py-16 text-center text-slate-500 space-y-2">
               <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
               <p className="text-xs font-medium">Calculando balanço padronizado de covariáveis...</p>
@@ -315,19 +309,6 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
             </>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="flex justify-end pt-3 border-t border-slate-200 dark:border-slate-800 shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
-          >
-            Fechar
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
-
-  return createPortal(modalContent, document.body)
 }

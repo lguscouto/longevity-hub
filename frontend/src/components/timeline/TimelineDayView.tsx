@@ -252,6 +252,7 @@ export const TimelineDayView: React.FC<TimelineDayViewProps> = ({ day, onDeleteM
                   <button
                     onClick={() => onDeleteManualEvent(ev.id)}
                     title="Remover evento manual"
+                    aria-label="Remover evento manual"
                     className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

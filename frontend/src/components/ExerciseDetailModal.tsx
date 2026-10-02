@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 
 import { ExerciseMedia } from '../types'
+import { Modal } from './ui'
 export type { ExerciseMedia }
 
 interface ExerciseDetailModalProps {
@@ -151,35 +152,30 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
     : currentMedia?.gif_url || currentMedia?.image_url
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div
-        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-500/15 border border-purple-200 dark:border-purple-500/30 text-purple-600 dark:text-purple-400">
-              <Dumbbell className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white capitalize">
-                {exerciseTitle}
-              </h3>
-              {currentMedia?.name && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium capitalize">
-                  {currentMedia.name}
-                </p>
-              )}
-            </div>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={exerciseTitle}
+      description={currentMedia?.name}
+      icon={
+        <div className="p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-500/15 border border-purple-200 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 shrink-0">
+          <Dumbbell className="h-5 w-5" />
+        </div>
+      }
+      size="2xl"
+      closeButtonAriaLabel="Fechar detalhes do exercício"
+      footer={
+        <div className="flex justify-end">
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
           >
-            <X className="h-5 w-5" />
+            Fechar
           </button>
         </div>
+      }
+      contentClassName="p-0"
+    >
 
         {/* Feedback de Vínculo */}
         {linkFeedback && (
@@ -409,16 +405,6 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Rodapé */}
-        <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/30 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-          >
-            Fechar
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

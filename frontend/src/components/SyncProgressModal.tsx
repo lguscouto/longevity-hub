@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { X, RefreshCw, CheckCircle2, AlertCircle, Activity, Shield, Eye } from 'lucide-react'
+import { Modal, IconButton } from './ui'
 
 interface SyncResult {
   status: 'ok' | 'error' | 'warning'
@@ -91,17 +92,27 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
         : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md animate-fade-in">
-      <div className={`relative w-full max-w-md rounded-3xl glass-card border p-6 shadow-2xl text-center ${statusTone}`}>
-        {!isSyncing && (
-          <button
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      showCloseButton={false}
+      ariaLabel={heading}
+      size="md"
+      className={statusTone}
+      contentClassName="p-6 text-center"
+    >
+      {!isSyncing && (
+        <div className="flex justify-end -mt-2 -mr-2 mb-1">
+          <IconButton
+            icon={X}
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             aria-label="Fechar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+            variant="ghost"
+            size="sm"
+            className="text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          />
+        </div>
+      )}
 
         <div className="flex flex-col items-center justify-center mb-6">
           {isSyncing ? (
@@ -198,7 +209,6 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   )
 }

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { createHealthEvent } from './api'
 import type { HealthEventCreatePayload } from './types'
+import { Modal } from '../ui'
 
 interface AddHealthEventModalProps {
   isOpen: boolean
@@ -178,26 +179,20 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-8">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <PlusCircle className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Adicionar Evento de Contexto</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Contextualize dados não capturados por wearables</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Adicionar Evento de Contexto"
+      description="Contextualize dados não capturados por wearables"
+      icon={
+        <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <PlusCircle className="h-5 w-5" />
         </div>
+      }
+      size="lg"
+      closeButtonAriaLabel="Fechar diálogo"
+      contentClassName="p-0"
+    >
 
         {/* Presets Bar */}
         <div className="px-6 pt-4 pb-2">
@@ -527,7 +522,6 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }

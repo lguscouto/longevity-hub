@@ -205,7 +205,7 @@ describe('InsightDrawer', () => {
       expect(screen.getByText('HRV (VFC) — Entender Mudança')).toBeInTheDocument()
     })
 
-    const closeBtn = screen.getByRole('button', { name: '' }) // X button
+    const closeBtn = screen.getByRole('button', { name: /fechar/i })
     await user.click(closeBtn)
 
     expect(onCloseMock).toHaveBeenCalledTimes(1)

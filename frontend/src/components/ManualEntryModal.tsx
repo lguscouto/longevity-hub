@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { PlusCircle } from 'lucide-react'
 
 import { ApiError } from '../lib/api'
+import { Modal } from './ui'
 
 interface ManualEntryModalProps {
   isOpen: boolean
@@ -49,22 +50,15 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
   const labelClass = "block text-slate-600 dark:text-slate-400 mb-1 font-semibold"
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Registrar Métrica Manual"
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto"
-      >
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
-          <div className="flex items-center gap-2">
-            <PlusCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Registrar Métricas Manuais</h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-900 dark:hover:text-white" aria-label="Fechar modal">
-            ✕
-          </button>
-        </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Registrar Métricas Manuais"
+      ariaLabel="Registrar Métrica Manual"
+      icon={<PlusCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
+      size="md"
+      closeButtonAriaLabel="Fechar modal"
+    >
 
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
           <div>
@@ -187,7 +181,6 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }

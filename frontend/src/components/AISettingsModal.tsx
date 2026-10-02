@@ -18,6 +18,7 @@ import {
 import { ApiError, requestJson } from '../lib/api'
 import { useTheme } from '../context/ThemeContext'
 import { HevyStatus } from '../types'
+import { Modal } from './ui'
 
 interface AISettingsModalProps {
   isOpen: boolean
@@ -280,32 +281,20 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl space-y-5 text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ai-settings-title"
-      >
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white glow-cyan">
-              <Bot className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 id="ai-settings-title" className="text-base font-bold text-slate-900 dark:text-white">
-                Configurações & Chaves
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Gerenciador de Inteligência Artificial, Hevy e Wearables
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg font-bold" aria-label="Fechar">
-            ✕
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Configurações & Chaves"
+      description="Gerenciador de Inteligência Artificial, Hevy e Wearables"
+      icon={
+        <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white glow-cyan shrink-0">
+          <Bot className="h-6 w-6" />
         </div>
+      }
+      size="lg"
+      closeButtonAriaLabel="Fechar"
+      contentClassName="space-y-5"
+    >
 
         {/* Alternador de Abas */}
         <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -749,7 +738,6 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   )
 }
