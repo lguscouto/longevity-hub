@@ -85,12 +85,12 @@ Estabelecer o protocolo final de controle de qualidade, validação visual e hom
   ```
 
 ## Critérios de aceite
-- [ ] 100% dos testes unitários (Vitest) aprovados.
-- [ ] 100% dos testes E2E (Playwright) aprovados em desktop e mobile.
-- [ ] Compilação de produção (`tsc && vite build`) com zero erros ou avisos graves.
-- [ ] Zero overflow horizontal em todas as 10 áreas do produto.
-- [ ] Ambas as paletas (Dark e Light Mode) auditadas com legibilidade e contraste adequados.
-- [ ] Documentação de screenshots pós-redesign arquivada no repositório.
+- [x] 100% dos testes unitários (Vitest) aprovados.
+- [x] 100% dos testes E2E (Playwright) aprovados em desktop e mobile.
+- [x] Compilação de produção (`tsc && vite build`) com zero erros ou avisos graves.
+- [x] Zero overflow horizontal em todas as 10 áreas do produto.
+- [x] Ambas as paletas (Dark e Light Mode) auditadas com legibilidade e contraste adequados.
+- [x] Documentação de screenshots pós-redesign arquivada no repositório.
 
 ## Riscos
 - Risco de pequenas variações de renderização de fontes entre sistemas operacionais (Windows vs. macOS vs. Linux).
@@ -100,8 +100,8 @@ Estabelecer o protocolo final de controle de qualidade, validação visual e hom
 - Reversão controlada via Git de qualquer alteração visual que reprove nos critérios de aceite.
 
 ## Checklist de conclusão
-- [ ] Executar suíte de testes Vitest
-- [ ] Executar suíte de testes Playwright E2E
-- [ ] Executar auditoria de contraste em Dark e Light mode
-- [ ] Capturar e arquivar screenshots comparativos
-- [ ] Assinar homologação do plano mestre de UX/UI
+- [x] Executar suíte de testes Vitest
+- [x] Executar suíte de testes Playwright E2E
+- [x] Executar auditoria de contraste em Dark e Light mode
+- [x] Capturar e arquivar screenshots comparativos
+- [x] Assinar homologação do plano mestre de UX/UI

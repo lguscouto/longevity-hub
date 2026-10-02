@@ -85,10 +85,10 @@ Consolidar a camada de design system do Longevidade Hub através da padronizaç�
 - Validação de renderização em modo claro e escuro.
 
 ## Critérios de aceite
-- [ ] Primitives `Button`, `IconButton`, `StatusBadge` e `Card` implementados e testados.
-- [ ] Escala tipográfica formalizada sem novos usos de `text-[9px]` ou `text-[10px]` para conteúdo essencial.
-- [ ] Cores semânticas consolidadas (verde para positivo/sucesso, vermelho para crítico, âmbar para atenção).
-- [ ] 100% dos testes unitários passando.
+- [x] Primitives `Button`, `IconButton`, `StatusBadge` e `Card` implementados e testados.
+- [x] Escala tipográfica formalizada sem novos usos de `text-[9px]` ou `text-[10px]` para conteúdo essencial.
+- [x] Cores semânticas consolidadas (verde para positivo/sucesso, vermelho para crítico, âmbar para atenção).
+- [x] 100% dos testes unitários passando.
 
 ## Riscos
 - Risco de pequenas quebras visuais de alinhamento em tabelas legadas.
@@ -98,7 +98,7 @@ Consolidar a camada de design system do Longevidade Hub através da padronizaç�
 - Reversão controlada dos commits dos primitives em `frontend/src/components/ui/`.
 
 ## Checklist de conclusão
-- [ ] Atualizar tokens no `tailwind.config.js` e `index.css`
-- [ ] Criar componentes em `frontend/src/components/ui/`
-- [ ] Implementar testes unitários dos primitives
-- [ ] Atualizar documentação de uso do Design System
+- [x] Atualizar tokens no `tailwind.config.js` e `index.css`
+- [x] Criar componentes em `frontend/src/components/ui/`
+- [x] Implementar testes unitários dos primitives
+- [x] Atualizar documentação de uso do Design System (`docs/DESIGN_SYSTEM.md`)

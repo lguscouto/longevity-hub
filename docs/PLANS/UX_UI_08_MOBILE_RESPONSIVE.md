@@ -83,10 +83,10 @@ Garantir uma experiência mobile de primeira classe (Mobile is not a Shrunk Desk
 - Verificação de snapshots e logs de auditoria de elementos com transbordamento (`badElements`).
 
 ## Critérios de aceite
-- [ ] `LabResultsTable` e `WorkoutsTable` utilizam visualização otimizada em cards no mobile (< 768px).
-- [ ] Cobertura E2E executando e aprovada em 375×667, 390×844, 768×1024 e 1280×800.
-- [ ] Zero overflow horizontal (`scrollWidth <= innerWidth`) em todas as telas e abas.
-- [ ] Modais totalmente acessíveis em telas verticais pequenas sem corte de conteúdo.
+- [x] `LabResultsTable` e `WorkoutsTable` utilizam visualização otimizada em cards no mobile (< 768px).
+- [x] Cobertura E2E executando e aprovada em 375×667, 390×844, 768×1024 e 1280×800.
+- [x] Zero overflow horizontal (`scrollWidth <= innerWidth`) em todas as telas e abas.
+- [x] Modais totalmente acessíveis em telas verticais pequenas sem corte de conteúdo.
 
 ## Riscos
 - Risco de usuários que preferem visão em grade tabular tradicional em tablets.
@@ -96,7 +96,7 @@ Garantir uma experiência mobile de primeira classe (Mobile is not a Shrunk Desk
 - Reversão das alterações em `LabResultsTable.tsx` e `mobile-audit.spec.ts` via Git.
 
 ## Checklist de conclusão
-- [ ] Implementar visualização Row Card em `LabResultsTable.tsx`
-- [ ] Adequar `WorkoutsTable.tsx` para mobile
-- [ ] Parametrizar viewports em `mobile-audit.spec.ts`
-- [ ] Validar execução completa dos testes E2E
+- [x] Implementar visualização Row Card em `LabResultsTable.tsx`
+- [x] Adequar `WorkoutsTable.tsx` para mobile
+- [x] Parametrizar viewports em `mobile-audit.spec.ts`
+- [x] Validar execução completa dos testes E2E

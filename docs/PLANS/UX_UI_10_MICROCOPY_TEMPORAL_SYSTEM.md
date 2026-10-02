@@ -90,10 +90,10 @@ Estabelecer um vocabulário textual claro, consistente e orientado à tarefa (Ta
 - Testes de componentes verificando se os novos textos são renderizados corretamente.
 
 ## Critérios de aceite
-- [ ] Primitive `TimeRangeControl` implementado e adotado no `DateNavigator` e gráficos.
-- [ ] Rótulos temporais normalizados para "Hoje", "7 dias", "30 dias", "90 dias", "Tudo".
-- [ ] Ação rápida "Registrar" substituída por nomenclatura clara baseada no formulário de entrada.
-- [ ] Microcopy revisada eliminando termos de autoelogio técnico em favor de clareza de tarefas.
+- [x] Primitive `TimeRangeControl` implementado e adotado no `DateNavigator` e gráficos.
+- [x] Rótulos temporais normalizados para "Hoje", "7 dias", "30 dias", "90 dias", "Tudo".
+- [x] Ação rápida "Registrar" substituída por nomenclatura clara baseada no formulário de entrada.
+- [x] Microcopy revisada eliminando termos de autoelogio técnico em favor de clareza de tarefas.
 
 ## Riscos
 - Risco de usuários habituados a siglas curtas ("7d", "30d") acharem rótulos mais longos excessivos em mobile.
@@ -103,7 +103,7 @@ Estabelecer um vocabulário textual claro, consistente e orientado à tarefa (Ta
 - Reversão dos commits de texto e do componente `TimeRangeControl.tsx` via Git.
 
 ## Checklist de conclusão
-- [ ] Criar `TimeRangeControl.tsx`
-- [ ] Integrar no `DateNavigator.tsx`
-- [ ] Atualizar microcopy nos componentes principais
-- [ ] Validar testes unitários e E2E
+- [x] Criar `TimeRangeControl.tsx`
+- [x] Integrar no `DateNavigator.tsx`
+- [x] Atualizar microcopy nos componentes principais
+- [x] Validar testes unitários e E2E

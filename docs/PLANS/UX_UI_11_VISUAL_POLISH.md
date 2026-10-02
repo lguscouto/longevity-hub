@@ -88,10 +88,10 @@ Promover o refinamento estético e a sobriedade visual do Longevidade Hub, reduz
 - Teste unitário verificando que `MetricCard` não possui mais a classe `hover:scale-[1.02]`.
 
 ## Critérios de aceite
-- [ ] Eliminação de `hover:scale-*` em todos os cards de métricas e tabelas de dados.
-- [ ] Diretiva global `prefers-reduced-motion` ativa e funcional.
-- [ ] Redução de gradientes e efeitos glow em cards analíticos de rotina.
-- [ ] Zero regressão em contraste e legibilidade em dark e light mode.
+- [x] Eliminação de `hover:scale-*` em todos os cards de métricas e tabelas de dados.
+- [x] Diretiva global `prefers-reduced-motion` ativa e funcional.
+- [x] Redução de gradientes e efeitos glow em cards analíticos de rotina.
+- [x] Zero regressão em contraste e legibilidade em dark e light mode.
 
 ## Riscos
 - Risco de usuários acharem a interface "menos chamativa".
@@ -101,7 +101,7 @@ Promover o refinamento estético e a sobriedade visual do Longevidade Hub, reduz
 - Reversão controlada dos arquivos `MetricCard.tsx` e `index.css` via Git.
 
 ## Checklist de conclusão
-- [ ] Adicionar CSS de reduced motion em `index.css`
-- [ ] Remover hover scale de `MetricCard.tsx`
-- [ ] Suavizar gradientes em widgets analíticos
-- [ ] Validar testes unitários e visuais
+- [x] Adicionar CSS de reduced motion em `index.css`
+- [x] Remover hover scale de `MetricCard.tsx`
+- [x] Suavizar gradientes em widgets analíticos
+- [x] Validar testes unitários e visuais

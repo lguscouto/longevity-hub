@@ -82,10 +82,10 @@ Unificar os padrões de feedback visual e de estado em todo o Longevidade Hub, i
 - Atualizar testes existentes que zombavam de `window.confirm`.
 
 ## Critérios de aceite
-- [ ] Eliminação de 100% dos `window.confirm()` e `window.alert()` em fluxos de produção.
-- [ ] Componente `EmptyState` padronizado e aplicado nos módulos principais.
-- [ ] Primitives de loading e confirmação implementados e testados.
-- [ ] Erros comunicam claramente a causa e fornecem ação imediata de recuperação.
+- [x] Eliminação de 100% dos `window.confirm()` e `window.alert()` em fluxos de produção.
+- [x] Componente `EmptyState` padronizado e aplicado nos módulos principais.
+- [x] Primitives de loading e confirmação implementados e testados.
+- [x] Erros comunicam claramente a causa e fornecem ação imediata de recuperação.
 
 ## Riscos
 - Risco de quebra de testes que interceptavam `window.confirm` via mocks do Vitest.
@@ -95,8 +95,8 @@ Unificar os padrões de feedback visual e de estado em todo o Longevidade Hub, i
 - Reversão controlada dos arquivos de primitive e restauração dos fluxos anteriores via Git.
 
 ## Checklist de conclusão
-- [ ] Criar `ConfirmDialog.tsx`
-- [ ] Criar `EmptyState.tsx`
-- [ ] Substituir `window.confirm()` em `AICopilotView.tsx` e `SupplementsView.tsx`
-- [ ] Aplicar `EmptyState` em tabelas e listas
-- [ ] Validar testes unitários
+- [x] Criar `ConfirmDialog.tsx`
+- [x] Criar `EmptyState.tsx`
+- [x] Substituir `window.confirm()` em `AICopilotView.tsx` e `SupplementsView.tsx`
+- [x] Aplicar `EmptyState` em tabelas e listas
+- [x] Validar testes unitários
