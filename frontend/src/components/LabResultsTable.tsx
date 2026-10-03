@@ -5,6 +5,7 @@ import { ApiError, requestJson } from '../lib/api';
 import { ConfirmDialog, EmptyState, InlineError, Button, IconButton, ResponsiveDataTable, DataColumn } from './ui';
 import {
   LabResult,
+  getLabMarkerStatus,
   getMetricDisplayName,
   isClinicallyEligibleLab,
   isMarkerOptimal,
@@ -29,6 +30,7 @@ interface PanelRow {
   clinicalCount: number;
   nonClinicalCount: number;
   optimalCount: number;
+  inRangeCount: number;
   attentionCount: number;
   highlights: LabResult[];
 }
@@ -58,10 +60,21 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
   const panelRows: PanelRow[] = sortedDates.map((dt) => {
     const items = groupedLabs[dt] || [];
     const totalCount = items.length;
-    const clinicalCount = items.filter(isClinicallyEligibleLab).length;
+    const clinicalItems = items.filter(isClinicallyEligibleLab);
+    const clinicalCount = clinicalItems.length;
     const nonClinicalCount = totalCount - clinicalCount;
-    const optimalCount = items.filter(isClinicallyEligibleLab).filter(isMarkerOptimal).length;
-    const attentionCount = clinicalCount - optimalCount;
+
+    let optimalCount = 0;
+    let inRangeCount = 0;
+    let attentionCount = 0;
+
+    clinicalItems.forEach((item) => {
+      const status = getLabMarkerStatus(item);
+      if (status === 'optimal') optimalCount += 1;
+      else if (status === 'in_clinical_range') inRangeCount += 1;
+      else if (status === 'out_of_range') attentionCount += 1;
+    });
+
     const highlights = pickHighlights(items, 3);
     return {
       date: dt,
@@ -70,6 +83,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       clinicalCount,
       nonClinicalCount,
       optimalCount,
+      inRangeCount,
       attentionCount,
       highlights,
     };
@@ -111,11 +125,11 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         <div className="flex items-center gap-2 flex-wrap">
           <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
           <span className="font-bold text-slate-800 dark:text-slate-200">Painel Completo de Sangue</span>
-          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
+          <span className="px-2 py-0.5 rounded-radius-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
             {row.totalCount} exames
           </span>
           {row.nonClinicalCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
+            <span className="px-2 py-0.5 rounded-radius-full text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
               {row.nonClinicalCount} sem provenance clínica
             </span>
           )}
@@ -147,17 +161,26 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       render: (row) => (
         <div className="flex items-center gap-2 flex-wrap">
           {row.clinicalCount > 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-              <CheckCircle2 className="h-3 w-3" /> {row.optimalCount} Ótimos
-            </span>
+            <>
+              {row.optimalCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> {row.optimalCount} Ótimos
+                </span>
+              )}
+              {row.inRangeCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">
+                  {row.inRangeCount} Na referência
+                </span>
+              )}
+            </>
           ) : (
             <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               Sem dados clínicos elegíveis
             </span>
           )}
           {row.attentionCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-              <AlertCircle className="h-3 w-3" /> {row.attentionCount} Atenção
+            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+              <AlertCircle className="h-3 w-3" aria-hidden="true" /> {row.attentionCount} Atenção clínica
             </span>
           )}
         </div>
@@ -193,7 +216,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
   ];
 
   return (
-    <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+    <div className="glass-panel rounded-radius-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -218,7 +241,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       {deleteError && <InlineError message={deleteError} />}
 
       {excludedLabsCount > 0 && (
-        <div role="status" className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+        <div role="status" className="rounded-radius-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
           {excludedLabsCount} registro(s) sem provenance clínica verificável estão visíveis para auditoria, mas foram excluídos de cálculos, razões e relatórios clínicos.
         </div>
       )}

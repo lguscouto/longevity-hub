@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dna, Trash2 } from 'lucide-react';
-import { Modal, Button } from '../ui';
-import { LAB_MARKERS_GROUPS, LabBatchRecord } from './labMarkers';
+import { Modal, Button, FormField, Input } from '../ui';
+import { LAB_MARKERS_GROUPS, LabBatchRecord, formatOptimalTargetText } from './labMarkers';
 import { formatLocalDateKey } from '../../lib/formatters';
 
 interface LabBatchEntryModalProps {
@@ -10,34 +10,66 @@ interface LabBatchEntryModalProps {
   onSubmit: (records: LabBatchRecord[]) => void;
 }
 
-/** Modal de Inclusão em Lote: preenche apenas os marcadores presentes no laudo. */
+/** Modal de Inclusão em Lote (UX_UI_54): migrado para primitivos Input e FormField com validação explícita. */
 export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [collectedAt, setCollectedAt] = useState(formatLocalDateKey());
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateValue = (key: string, val: string): string | null => {
+    if (!val || val.trim() === '') return null;
+    const num = Number(val);
+    if (isNaN(num)) return 'Use um número válido.';
+    if (num < 0) return 'O valor não pode ser negativo.';
+    if (num > 100000) return 'Valor excessivamente alto.';
+    return null;
+  };
 
   const handleInputChange = (key: string, val: string) => {
-    setFormValues(prev => ({ ...prev, [key]: val }));
+    setFormValues((prev) => ({ ...prev, [key]: val }));
+    const err = validateValue(key, val);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (err) next[key] = err;
+      else delete next[key];
+      return next;
+    });
   };
+
+  const hasAnyErrors = Object.keys(errors).length > 0;
+
+  const validEntries = Object.entries(formValues).filter(([k, v]) => {
+    if (!v || v.trim() === '') return false;
+    const num = Number(v);
+    return !isNaN(num) && num >= 0 && num <= 100000 && !errors[k];
+  });
+
+  const filledCount = validEntries.length;
 
   const handleBatchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (hasAnyErrors || filledCount === 0) return;
+
     const recordsToSave: LabBatchRecord[] = [];
 
-    LAB_MARKERS_GROUPS.forEach(group => {
-      group.items.forEach(item => {
+    LAB_MARKERS_GROUPS.forEach((group) => {
+      group.items.forEach((item) => {
         const rawVal = formValues[item.key];
-        if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
-          recordsToSave.push({
-            collected_at: collectedAt,
-            metric_key: item.key,
-            metric_name: item.name,
-            value: Number(rawVal),
-            unit: item.unit,
-            ref_min: item.ref_min,
-            ref_max: item.ref_max,
-            optimal_target: item.optimal,
-            category: item.category
-          });
+        if (rawVal !== undefined && rawVal.trim() !== '') {
+          const num = Number(rawVal);
+          if (!isNaN(num) && num >= 0 && !errors[item.key]) {
+            recordsToSave.push({
+              collected_at: collectedAt,
+              metric_key: item.key,
+              metric_name: item.name,
+              value: num,
+              unit: item.unit,
+              ref_min: item.ref_min,
+              ref_max: item.ref_max,
+              optimal_target: item.optimal,
+              category: item.category,
+            });
+          }
         }
       });
     });
@@ -45,10 +77,14 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
     if (recordsToSave.length > 0) {
       onSubmit(recordsToSave);
       setFormValues({});
+      setErrors({});
     }
   };
 
-  const filledCount = Object.values(formValues).filter(v => v !== '' && !isNaN(Number(v))).length;
+  const handleClearAll = () => {
+    setFormValues({});
+    setErrors({});
+  };
 
   return (
     <Modal
@@ -56,7 +92,7 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
       onClose={onClose}
       title="Registrar Painel Completo de Exames de Sangue"
       description="Preencha apenas os marcadores realizados no seu laudo médico"
-      icon={<Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />}
+      icon={<Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />}
       size="4xl"
       footer={
         <div className="flex items-center justify-between w-full">
@@ -74,7 +110,7 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
               form="batch-lab-form"
               variant="primary"
               size="sm"
-              disabled={filledCount === 0}
+              disabled={filledCount === 0 || hasAnyErrors}
             >
               Salvar Painel Completo ({filledCount})
             </Button>
@@ -83,16 +119,17 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
       }
     >
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
-          <div className="flex items-center gap-2">
-            <label htmlFor="lab-collected-at" className="text-slate-600 dark:text-slate-400 font-semibold">Data da Coleta:</label>
-            <input
-              id="lab-collected-at"
-              type="date"
-              value={collectedAt}
-              onChange={e => setCollectedAt(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
-            />
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-radius-lg border border-slate-200 dark:border-slate-800 text-xs">
+          <div className="flex items-center gap-2 max-w-xs">
+            <FormField id="lab-collected-at" label="Data da Coleta:" className="flex items-center gap-2">
+              <Input
+                id="lab-collected-at"
+                type="date"
+                value={collectedAt}
+                onChange={(e) => setCollectedAt(e.target.value)}
+                className="max-w-[160px] py-1 text-xs"
+              />
+            </FormField>
           </div>
 
           <div className="flex items-center gap-2">
@@ -100,7 +137,7 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => setFormValues({})}
+              onClick={handleClearAll}
               leftIcon={Trash2}
             >
               Limpar Tudo
@@ -112,32 +149,57 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
           {LAB_MARKERS_GROUPS.map((group, idx) => (
             <div key={idx} className="space-y-3">
               <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
-                <span>{group.icon}</span> {group.groupName}
+                <span aria-hidden="true">{group.icon}</span> {group.groupName}
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {group.items.map((item) => (
-                  <div key={item.key} className="bg-slate-50 dark:bg-slate-950/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
-                    <label htmlFor={`lab-marker-${item.key}`} className="block text-xs font-bold text-slate-900 dark:text-white mb-1 truncate" title={item.name}>
-                      {item.name}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
+                {group.items.map((item) => {
+                  const errorMsg = errors[item.key];
+                  const targetFormatted = formatOptimalTargetText(item);
+
+                  return (
+                    <div
+                      key={item.key}
+                      className={`bg-slate-50 dark:bg-slate-950/80 p-3 rounded-radius-lg border transition shadow-sm ${
+                        errorMsg
+                          ? 'border-rose-400 dark:border-rose-700'
+                          : 'border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <FormField
                         id={`lab-marker-${item.key}`}
-                        type="number"
-                        step="0.01"
-                        placeholder="Vazio"
-                        value={formValues[item.key] || ''}
-                        onChange={e => handleInputChange(item.key, e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
-                      />
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
+                        label={item.name}
+                        error={errorMsg}
+                      >
+                        <Input
+                          id={`lab-marker-${item.key}`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Vazio"
+                          value={formValues[item.key] || ''}
+                          error={errorMsg}
+                          onChange={(e) => handleInputChange(item.key, e.target.value)}
+                          rightIcon={
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              {item.unit}
+                            </span>
+                          }
+                          className="text-xs font-semibold"
+                        />
+                      </FormField>
+
+                      <span
+                        className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 block truncate"
+                        title={`Meta funcional preventiva: ${targetFormatted}${
+                          item.provenance ? ` • Fonte: ${item.provenance}` : ''
+                        }`}
+                      >
+                        Alvo Ótimo: {targetFormatted}
+                      </span>
                     </div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block" title="Referência funcional preconizada para longevidade preventiva">
-                      Referência Ótima: {item.optimal} {item.unit}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
