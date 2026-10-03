@@ -7,6 +7,9 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+env:
+  TZ: "America/Sao_Paulo"
+
 jobs:
   frontend:
     name: Frontend Quality & Design System

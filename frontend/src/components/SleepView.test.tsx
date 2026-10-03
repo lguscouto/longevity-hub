@@ -279,10 +279,15 @@ describe('SleepView', () => {
     expect(screen.getAllByText('Taxa Resp.').length).toBeGreaterThanOrEqual(1);
 
     // Table row values
-    expect(screen.getAllByText('22:38').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('30/09/2026').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('06:02').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('01/10/2026').length).toBeGreaterThanOrEqual(1);
+    const expectedSleepStart = new Date('2026-09-30T22:38:00-03:00').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const expectedStartDate = new Date('2026-09-30T22:38:00-03:00').toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const expectedSleepEnd = new Date('2026-10-01T06:02:00-03:00').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const expectedEndDate = new Date('2026-10-01T06:02:00-03:00').toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    expect(screen.getAllByText(expectedSleepStart).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(expectedStartDate).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(expectedSleepEnd).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(expectedEndDate).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('16.2 rpm').length).toBeGreaterThanOrEqual(1);
     // 404 / (404 + 40) = 404 / 444 = 91%
     expect(screen.getAllByText('91%').length).toBeGreaterThanOrEqual(1);
