@@ -319,13 +319,13 @@ for (const vp of VIEWPORTS) {
 
       await expect(page.getByText('Paciente Longevidade')).toBeVisible();
 
-      // Click Integrações sub-tab in main content
-      const integracoesBtn = page.getByRole('main').getByRole('button', { name: 'Integrações' });
+      // Click Integrações sub-tab in main content (role="tab")
+      const integracoesBtn = page.getByRole('main').getByRole('tab', { name: 'Integrações' });
       await integracoesBtn.click();
       await expect(page.getByText(/Google Health/i).first()).toBeVisible();
 
-      // Click Diagnóstico & Sistema sub-tab in main content
-      const diagBtn = page.getByRole('main').getByRole('button', { name: 'Diagnóstico & Sistema' });
+      // Click Diagnóstico & Sistema sub-tab in main content (role="tab")
+      const diagBtn = page.getByRole('main').getByRole('tab', { name: 'Diagnóstico & Sistema' });
       await diagBtn.click();
       await expect(page.getByText('Base de Dados SQLite Local')).toBeVisible();
     });

@@ -253,7 +253,7 @@ test.describe('Smoke – Longevidade Dashboard', () => {
 
     await expect(page.getByRole('heading', { name: 'Sincronização com erro' })).toBeVisible()
     await expect(
-      page.getByText('A coleta Zepp não foi concluída; snapshots anteriores não foram importados.')
+      page.getByText('A coleta Zepp não foi concluída; snapshots anteriores não foram importados.').first()
     ).toBeVisible()
     await expect(page.getByText('Fechar', { exact: true })).toBeVisible()
   })
