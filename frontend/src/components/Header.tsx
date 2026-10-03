@@ -137,11 +137,11 @@ export const Header: React.FC<HeaderProps> = ({
       ref={isActive ? activeSubNavRef : undefined}
       onClick={() => handleTabClick(id)}
       aria-current={isActive ? 'page' : undefined}
-      className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-medium transition shrink-0 whitespace-nowrap ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-radius-md text-xs font-medium transition shrink-0 whitespace-nowrap ${
         isActive ? activeSubClass : inactiveSubClass
       }`}
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       <span>{label}</span>
     </button>
   );
@@ -154,13 +154,13 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start min-w-0">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             {/* ds-exception: DSX-003 */}
-            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white shrink-0">
-              <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-radius-lg bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white shrink-0">
+              <Activity className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               {/* ds-exception: DSX-004 */}
               <h1 className="text-sm sm:text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-emerald-600 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent flex items-center gap-1.5 truncate">
-                LONGEVIDADE <span className="text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">HUB</span>
+                LONGEVIDADE <span className="text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-radius-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">HUB</span>
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
                 Gestão e acompanhamento pessoal de saúde e longevidade
@@ -185,30 +185,23 @@ export const Header: React.FC<HeaderProps> = ({
         />
       </div>
 
-      {/* Linha Principal: Barra de Navegação Consolidada (6 Áreas Primárias) */}
+      {/* Linha Principal: Barra de Navegação Consolidada (6 Áreas Primárias com Landing Canônica - U22-P1-05) */}
       <div className="max-w-7xl mx-auto py-0.5">
-        <nav aria-label="Navegação Principal" className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100/90 dark:bg-slate-900/70 p-1 sm:p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <nav aria-label="Navegação Principal" className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100/90 dark:bg-slate-900/70 p-1 sm:p-1.5 rounded-radius-xl border border-slate-200 dark:border-slate-800">
           {PRIMARY_NAV_ITEMS.map((item) => {
             const isActive = primaryTab === item.id;
-            const target =
-              item.id === 'health'
-                ? (primaryTab === 'health' ? activeTab : 'labs')
-                : item.id === 'interventions'
-                ? (primaryTab === 'interventions' ? activeTab : 'supplements')
-                : item.id === 'profile'
-                ? (primaryTab === 'profile' ? activeTab : 'profile')
-                : item.targetTab;
+            const target = item.targetTab;
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 onClick={() => handleTabClick(target)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 min-h-[44px] rounded-radius-lg text-xs sm:text-sm font-medium transition-all ${
                   isActive ? activePrimaryClass : inactivePrimaryClass
                 }`}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{item.label}</span>
               </button>
             );
@@ -220,14 +213,14 @@ export const Header: React.FC<HeaderProps> = ({
       {primaryTab === 'health' && (
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
           <div className="relative">
-            <nav aria-label="Sub-navegação de Saúde" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+            <nav aria-label="Sub-navegação de Saúde" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
               {renderSubNavButton('labs', 'Exames & PhenoAge', Dna, activeTab === 'labs')}
               {renderSubNavButton('sleep', 'Sono', Moon, activeTab === 'sleep')}
               {renderSubNavButton('timeline', 'Linha do Tempo', History, activeTab === 'timeline')}
               {renderSubNavButton('physical-assessments', 'Avaliações Físicas', Camera, activeTab === 'physical-assessments')}
             </nav>
             {/* ds-exception: DSX-005 */}
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-xl sm:hidden" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-radius-lg sm:hidden" />
           </div>
         </div>
       )}
@@ -235,12 +228,12 @@ export const Header: React.FC<HeaderProps> = ({
       {primaryTab === 'interventions' && (
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
           <div className="relative">
-            <nav aria-label="Sub-navegação de Intervenções" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+            <nav aria-label="Sub-navegação de Intervenções" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
               {renderSubNavButton('supplements', 'Suplementos & Hormônios', Pill, activeTab === 'supplements')}
               {renderSubNavButton('n-of-1', 'N-of-1 Tests', FlaskConical, activeTab === 'n-of-1')}
             </nav>
             {/* ds-exception: DSX-006 */}
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-xl sm:hidden" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-radius-lg sm:hidden" />
           </div>
         </div>
       )}
@@ -248,13 +241,13 @@ export const Header: React.FC<HeaderProps> = ({
       {primaryTab === 'profile' && (
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
           <div className="relative">
-            <nav aria-label="Sub-navegação de Perfil" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+            <nav aria-label="Sub-navegação de Perfil" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
               {renderSubNavButton('profile', 'Meu Perfil', User, activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab))}
               {renderSubNavButton('integrations', 'Integrações', ShieldCheck, activeTab === 'integrations')}
               {renderSubNavButton('system', 'Diagnóstico & Sistema', Activity, activeTab === 'system' || activeTab === 'diagnostics')}
             </nav>
             {/* ds-exception: DSX-007 */}
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-xl sm:hidden" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-radius-lg sm:hidden" />
           </div>
         </div>
       )}

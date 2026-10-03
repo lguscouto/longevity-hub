@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Sparkles, History, AlertCircle } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
+import { Button } from './ui';
 import { CopilotHeader } from './ai/CopilotHeader';
 import { AnalysisPanel } from './ai/AnalysisPanel';
 import { CopilotChat } from './ai/CopilotChat';
@@ -314,19 +315,21 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
           { key: 'chat', label: 'Conversar com Copiloto', icon: Bot },
           { key: 'history', label: `Histórico de Relatórios (${reports.length})`, icon: History },
         ].map(({ key, label, icon: Icon }) => (
-          <button
+          <Button
             key={key}
             type="button"
+            variant={mode === key ? 'secondary' : 'ghost'}
+            size="sm"
             onClick={() => setMode(key as AICopilotMode)}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-radius-sm text-xs font-bold transition flex-1 sm:flex-initial ${
+            leftIcon={Icon}
+            className={`text-xs font-bold min-h-0 h-auto py-1.5 px-3 flex-1 sm:flex-initial transition ${
               mode === key
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Icon className="h-4 w-4 text-cyan-500" />
             {label}
-          </button>
+          </Button>
         ))}
       </div>
 

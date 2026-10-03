@@ -99,12 +99,12 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />{' '}
+            <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />{' '}
             Síntese de Tendências & Longevidade
           </h3>
           {activeReportMeta?.created_at && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
-              <Clock className="h-3 w-3 text-cyan-500" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-radius-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
+              <Clock className="h-3 w-3 text-cyan-500" aria-hidden="true" />
               {new Date(activeReportMeta.created_at).toLocaleDateString([], {
                 day: '2-digit',
                 month: '2-digit',
@@ -122,7 +122,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           )}
           {activeReportMeta?.time_window && (
             <span
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-radius-full text-xs font-black uppercase tracking-wider ${
                 activeReportMeta.time_window === 'today'
                   ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                   : activeReportMeta.time_window === '7d'

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ShieldAlert, CheckCircle2, Info, Activity, Database, AlertCircle } from 'lucide-react';
+import { Sparkles, ShieldAlert, CheckCircle2, Activity, Database } from 'lucide-react';
 import { InsightItem } from './types';
 
 export interface EvidenceBlockProps {
@@ -12,10 +12,14 @@ export interface EvidenceBlockProps {
 }
 
 export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceContext }) => {
-  // Parsing inteligente caso o insight_text traga observações em formato de tópicos
+  // Parsing inteligente separando DADO, INTERPRETAÇÃO, LIMITAÇÃO e RECOMENDAÇÃO (U22-P1-45)
   const observationText =
     insight.observation ||
     insight.insight_text;
+
+  const associationText =
+    insight.association ||
+    (insight.insight_text !== insight.observation ? insight.insight_text : undefined);
 
   const actionableText =
     insight.recommendation ||
@@ -33,15 +37,15 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
       {/* Topo do Insight: Categoria, Selo IA e Headline */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
+          <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-radius-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
             {insight.category.replace('_', ' ')}
           </span>
           <span
-            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
             title="Síntese gerada por inteligência artificial a partir de dados fisiológicos"
           >
-            <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
-            <span>Gerado por IA</span>
+            <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
+            <span>Inferência de IA</span>
           </span>
         </div>
 
@@ -56,23 +60,36 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
         {insight.headline}
       </h4>
 
-      {/* Grid Epistemológico: Observação, Associação, Limitação e Recomendação */}
+      {/* Grid Epistemológico: DADO, INTERPRETAÇÃO, RECOMENDAÇÃO, LIMITAÇÃO (U22-P1-45) */}
       <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
-        {/* 1. Observação Fisiológica (Fato Medido) */}
+        {/* 1. DADO: Observação Fisiológica (Fato Medido) */}
         <div className="p-3 rounded-radius-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
-            <Activity className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>Observação Fisiológica (Dado Medido)</span>
+            <Activity className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+            <span>Dado Fisiológico Observado (Medido)</span>
           </div>
-          <p className="leading-relaxed pl-5">{observationText}</p>
+          <p className="leading-relaxed pl-5 text-slate-800 dark:text-slate-200">{observationText}</p>
         </div>
 
-        {/* 2. Recomendação Prática Acionável */}
+        {/* 2. INTERPRETAÇÃO: Correlação e Inferência Clínica */}
+        {associationText && associationText !== observationText && (
+          <div className="p-3 rounded-radius-md bg-cyan-500/5 dark:bg-cyan-500/10 border border-cyan-500/20 space-y-1">
+            <div className="flex items-center gap-1.5 font-bold text-cyan-800 dark:text-cyan-300">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
+              <span>Interpretação & Inferência Clínica</span>
+            </div>
+            <p className="leading-relaxed pl-5 text-slate-800 dark:text-slate-200">
+              {associationText}
+            </p>
+          </div>
+        )}
+
+        {/* 3. RECOMENDAÇÃO: Conduta Prática Acionável */}
         {actionableText && (
           <div className="p-3 rounded-radius-md bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>Conduta Prática Recomendada</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+              <span>Ação Sugerida (Conduta Prática)</span>
             </div>
             <p className="leading-relaxed pl-5 text-emerald-900 dark:text-emerald-200">
               {actionableText}
@@ -80,28 +97,31 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
           </div>
         )}
 
-        {/* 3. Limitação & Prudência Epistemológica */}
+        {/* 4. LIMITAÇÃO: Prudência Epistemológica e Variáveis de Confusão */}
         <div className="p-2.5 rounded-radius-md bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-slate-600 dark:text-slate-400 space-y-0.5">
           <div className="flex items-center gap-1.5 font-semibold text-amber-800 dark:text-amber-300 text-xs">
-            <ShieldAlert className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
+            <ShieldAlert className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
             <span>Limitação da Inferência</span>
           </div>
           <p className="text-xs leading-tight pl-4">{limitationText}</p>
         </div>
       </div>
 
-      {/* Dados Considerados no Modelo */}
-      {sourceContext?.sampleCountText && (
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <Database className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-            <span>Dados considerados:</span>
+      {/* Fontes de Evidência e Claims (U22-P1-47) */}
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <span className="flex items-center gap-1.5">
+          <Database className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
+          <span>
+            Fontes:{' '}
+            <strong className="text-slate-700 dark:text-slate-300 font-medium">
+              {sourceContext?.sources?.join(', ') || 'Sono, HRV, RHR, CGM, Exames Clínicos'}
+            </strong>
           </span>
-          <span className="font-mono text-slate-700 dark:text-slate-300">
-            {sourceContext.sampleCountText}
-          </span>
-        </div>
-      )}
+        </span>
+        <span className="font-mono text-slate-700 dark:text-slate-300">
+          {sourceContext?.sampleCountText || `Período: ${sourceContext?.timeWindowLabel || '30 dias'}`}
+        </span>
+      </div>
     </article>
   );
 };

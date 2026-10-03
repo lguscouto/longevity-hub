@@ -27,11 +27,11 @@ export const WorkoutSummaryCards: React.FC<WorkoutSummaryCardsProps> = ({ summar
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {/* Card 1: Sessões */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+      <div className="p-5 rounded-radius-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span className="text-xs font-semibold uppercase tracking-wider">Total de Sessões</span>
-          <div className="p-2 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30">
-            <Activity className="h-4 w-4" />
+          <div className="p-2 rounded-radius-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30">
+            <Activity className="h-4 w-4" aria-hidden="true" />
           </div>
         </div>
         <div className="mt-3">
@@ -46,12 +46,12 @@ export const WorkoutSummaryCards: React.FC<WorkoutSummaryCardsProps> = ({ summar
         </div>
       </div>
 
-      {/* Card 2: Volume de Força */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+      {/* Card 2: Volume Total de Força (U22-P1-61 desambiguação com Carga Cardiovascular) */}
+      <div className="p-5 rounded-radius-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-          <span className="text-xs font-semibold uppercase tracking-wider">Carga Acumulada</span>
-          <div className="p-2 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-500/30">
-            <Award className="h-4 w-4" />
+          <span className="text-xs font-semibold uppercase tracking-wider">Volume Total de Força</span>
+          <div className="p-2 rounded-radius-lg bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-500/30">
+            <Award className="h-4 w-4" aria-hidden="true" />
           </div>
         </div>
         <div className="mt-3">
@@ -67,11 +67,11 @@ export const WorkoutSummaryCards: React.FC<WorkoutSummaryCardsProps> = ({ summar
       </div>
 
       {/* Card 3: Tempo Total */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+      <div className="p-5 rounded-radius-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span className="text-xs font-semibold uppercase tracking-wider">Tempo em Treino</span>
-          <div className="p-2 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 dark:border-cyan-500/30">
-            <Clock className="h-4 w-4" />
+          <div className="p-2 rounded-radius-lg bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 dark:border-cyan-500/30">
+            <Clock className="h-4 w-4" aria-hidden="true" />
           </div>
         </div>
         <div className="mt-3">
@@ -89,11 +89,11 @@ export const WorkoutSummaryCards: React.FC<WorkoutSummaryCardsProps> = ({ summar
       </div>
 
       {/* Card 4: Calorias */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+      <div className="p-5 rounded-radius-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition flex flex-col justify-between">
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
           <span className="text-xs font-semibold uppercase tracking-wider">Calorias Gastas</span>
-          <div className="p-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/30">
-            <Flame className="h-4 w-4" />
+          <div className="p-2 rounded-radius-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/30">
+            <Flame className="h-4 w-4" aria-hidden="true" />
           </div>
         </div>
         <div className="mt-3">

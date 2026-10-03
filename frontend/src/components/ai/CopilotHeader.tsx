@@ -27,21 +27,21 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
   onGenerateAnalysis,
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-radius-lg p-4 sm:p-6 shadow-sm relative overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-radius-lg p-4 sm:p-6 shadow-xs relative overflow-hidden">
       <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-        <Bot className="h-64 w-64 text-cyan-400" />
+        <Bot className="h-64 w-64 text-cyan-400" aria-hidden="true" />
       </div>
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
-              <Sparkles className="h-3 w-3" /> Copiloto Longevidade AI
+            <span className="px-2.5 py-0.5 rounded-radius-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
+              <Sparkles className="h-3 w-3" aria-hidden="true" /> Copiloto Longevidade AI
             </span>
-            <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
-              <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" /> Modelo:{' '}
-              <strong className="text-slate-900 dark:text-white break-all">{selectedModel}</strong>{' '}
-              ({activeProvider.toUpperCase()})
+            {/* Peso visual contido para o modelo (U22-P1-46) */}
+            <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
+              Modelo: <span className="font-mono text-slate-700 dark:text-slate-300 break-all">{selectedModel.split('/')[1] || selectedModel}</span> ({activeProvider})
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -56,7 +56,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
             aria-label="Aviso de envio para IA externa"
             className="mt-3 max-w-2xl rounded-radius-md border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2"
           >
-            <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-300" />
+            <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-300" aria-hidden="true" />
             <div className="space-y-1">
               <p>
                 Envio externo:{' '}
@@ -81,64 +81,52 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
             size="md"
           />
 
-          {/* Grupo de Análise Rápida: Hoje (24h) | Semana (7d) | Mês (30d) */}
+          {/* Grupo de Análise Rápida: Hoje (24h) | Semana (7d) | Mês (30d) com prevenção de concorrência (U22-P1-50) */}
           <div className="flex items-center gap-1.5 p-1 rounded-radius-md bg-slate-200/60 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700/60 shrink-0">
-            <button
+            <Button
               type="button"
+              variant={generatingWindow === 'today' ? 'primary' : 'secondary'}
+              size="sm"
               onClick={() => onGenerateAnalysis('today')}
               disabled={isGenerating || !hasApiKey}
-              className={`px-3 py-2 rounded-radius-sm font-bold flex items-center justify-center gap-1.5 transition text-xs ${
-                !hasApiKey
-                  ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                  : generatingWindow === 'today'
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                  : 'bg-white dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 hover:bg-amber-500/15 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200/80 dark:border-slate-700/60'
-              }`}
+              loading={generatingWindow === 'today'}
+              loadingText="Analisando..."
+              leftIcon={generatingWindow !== 'today' ? RefreshCw : undefined}
               title="Prontidão diária, recuperação do sono da última noite e treino de hoje"
+              className="text-xs font-bold min-h-0 h-auto py-1.5 px-3"
             >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${generatingWindow === 'today' ? 'animate-spin' : ''}`}
-              />
-              {generatingWindow === 'today' ? 'Analisando...' : 'Hoje (24h)'}
-            </button>
+              Hoje (24h)
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant={generatingWindow === '7d' ? 'primary' : 'secondary'}
+              size="sm"
               onClick={() => onGenerateAnalysis('7d')}
               disabled={isGenerating || !hasApiKey}
-              className={`px-3 py-2 rounded-radius-sm font-bold flex items-center justify-center gap-1.5 transition text-xs ${
-                !hasApiKey
-                  ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                  : generatingWindow === '7d'
-                  ? 'bg-cyan-500 text-slate-950 font-black shadow-md'
-                  : 'bg-white dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 hover:bg-cyan-500/15 hover:text-cyan-600 dark:hover:text-cyan-400 border border-slate-200/80 dark:border-slate-700/60'
-              }`}
+              loading={generatingWindow === '7d'}
+              loadingText="Analisando..."
+              leftIcon={generatingWindow !== '7d' ? RefreshCw : undefined}
               title="Médias dos últimos 7 dias, microciclo, balanço de fadiga e carga aguda de treinos"
+              className="text-xs font-bold min-h-0 h-auto py-1.5 px-3"
             >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${generatingWindow === '7d' ? 'animate-spin' : ''}`}
-              />
-              {generatingWindow === '7d' ? 'Analisando...' : 'Semana (7d)'}
-            </button>
+              Semana (7d)
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={() => onGenerateAnalysis('30d')}
               disabled={isGenerating || !hasApiKey}
-              className={`px-3.5 py-2 rounded-radius-sm font-bold flex items-center justify-center gap-1.5 transition text-xs ${
-                !hasApiKey
-                  ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                  : generatingWindow === '30d'
-                  ? 'bg-cyan-500 text-slate-950 font-black shadow-md'
-                  : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black shadow-sm'
-              }`}
+              loading={generatingWindow === '30d'}
+              loadingText="Analisando..."
+              leftIcon={generatingWindow !== '30d' ? RefreshCw : undefined}
               title="Visão geral de 30 dias com exames de sangue, idade biológica PhenoAge/KDM e hábitos"
+              className="text-xs font-bold min-h-0 h-auto py-1.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black shadow-xs"
             >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${generatingWindow === '30d' ? 'animate-spin' : ''}`}
-              />
-              {generatingWindow === '30d' ? 'Analisando...' : 'Mês (30d)'}
-            </button>
+              Mês (30d)
+            </Button>
           </div>
         </div>
       </div>
@@ -146,7 +134,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
       {!hasApiKey && (
         <div className="mt-4 p-3 rounded-radius-md bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 shrink-0" />
+            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
               Nenhuma chave de API ativada para o provedor selecionado. Configure sua API Key para
               desbloquear as análises da IA.
