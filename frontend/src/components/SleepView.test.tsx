@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { SleepView } from './SleepView';
+import { formatDateTimeDetails } from './sleep/types';
 
 // Global fetch mock
 const mockFetch = vi.fn();
@@ -279,15 +280,13 @@ describe('SleepView', () => {
     expect(screen.getAllByText('Taxa Resp.').length).toBeGreaterThanOrEqual(1);
 
     // Table row values
-    const expectedSleepStart = new Date('2026-09-30T22:38:00-03:00').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const expectedStartDate = new Date('2026-09-30T22:38:00-03:00').toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const expectedSleepEnd = new Date('2026-10-01T06:02:00-03:00').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const expectedEndDate = new Date('2026-10-01T06:02:00-03:00').toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const startDetails = formatDateTimeDetails('2026-09-30T22:38:00-03:00');
+    const endDetails = formatDateTimeDetails('2026-10-01T06:02:00-03:00');
 
-    expect(screen.getAllByText(expectedSleepStart).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(expectedStartDate).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(expectedSleepEnd).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(expectedEndDate).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(startDetails.time).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(startDetails.date).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(endDetails.time).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(endDetails.date).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('16.2 rpm').length).toBeGreaterThanOrEqual(1);
     // 404 / (404 + 40) = 404 / 444 = 91%
     expect(screen.getAllByText('91%').length).toBeGreaterThanOrEqual(1);
