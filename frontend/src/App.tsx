@@ -36,6 +36,7 @@ import { DailyCheckinCard } from './components/DailyCheckinCard'
 import { TrainingLoadWidget } from './components/TrainingLoadWidget'
 import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
+import { formatLocalDateKey } from './lib/formatters'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 import type { SyncState } from './components/ui/SyncStatusBadge'
 import type { SyncResult } from './components/SyncProgressModal'
@@ -578,7 +579,7 @@ export default function App() {
         body: JSON.stringify(inputData),
       })
       if (response?.saved === false && response?.result) {
-        setPhenoHistory((prev) => [{ ...response.result, calculated_at: new Date().toISOString().slice(0, 10) }, ...prev])
+        setPhenoHistory((prev) => [{ ...response.result, calculated_at: formatLocalDateKey() }, ...prev])
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       } else {
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)

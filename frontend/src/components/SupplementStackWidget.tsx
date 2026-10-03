@@ -320,14 +320,20 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
           return (
             <div
               key={supp.id}
-              onClick={() => handleToggleLog(supp.id)}
-              className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-2 group ${
+              className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-2 group ${
                 isTaken
                   ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30 dark:border-emerald-500/40 text-slate-900 dark:text-white'
                   : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
               }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              {/* ds-exception: DSX-013 */}
+              <button
+                type="button"
+                onClick={() => handleToggleLog(supp.id)}
+                aria-pressed={isTaken}
+                aria-label={`Marcar dose de ${supp.name}`}
+                className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer rounded-radius-md p-1 -m-1 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+              >
                 {isTaken ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 ) : (
@@ -345,7 +351,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
 
               <div className="flex items-center gap-1.5 shrink-0">
                 {supp.notes && (
@@ -356,8 +362,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
                 <IconButton
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={() => {
                     setDeleteConfirmSupp({ id: supp.id, name: supp.name });
                   }}
                   icon={Trash2}

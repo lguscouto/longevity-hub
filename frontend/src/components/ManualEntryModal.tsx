@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { PlusCircle } from 'lucide-react'
 
 import { ApiError } from '../lib/api'
+import { formatLocalDateKey } from '../lib/formatters'
 import { Modal, FormField, Input } from './ui'
 
 interface ManualEntryModalProps {
@@ -16,7 +17,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
   onSaveMetric,
 }) => {
   const [formData, setFormData] = useState({
-    date_ref: new Date().toISOString().slice(0, 10),
+    date_ref: formatLocalDateKey(),
     systolic_bp: 120,
     diastolic_bp: 78,
     waist_cm: 82,

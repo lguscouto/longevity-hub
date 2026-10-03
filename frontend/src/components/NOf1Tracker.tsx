@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2, Scale } from 'lucide-react';
 import { ConfounderBalanceModal } from './contextInsights/ConfounderBalanceModal';
 import { EmptyState, Modal, Button, FormField, Input, Select } from './ui';
+import { formatLocalDateKey } from '../lib/formatters';
 
 interface NOf1Experiment {
   id?: number;
@@ -28,7 +29,7 @@ interface NOf1TrackerProps {
 export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateExperiment }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedExperimentForBalance, setSelectedExperimentForBalance] = useState<NOf1Experiment | null>(null);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = formatLocalDateKey();
   const [formData, setFormData] = useState({
     title: '',
     hypothesis: '',

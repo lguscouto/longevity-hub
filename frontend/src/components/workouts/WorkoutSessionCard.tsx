@@ -54,8 +54,8 @@ const formatVolume = (kg: number) => {
   return `${Math.round(kg)} kg`
 }
 
-const getSetTypeBadge = (type: string) => {
-  switch (type.toLowerCase()) {
+const getSetTypeBadge = (type?: string) => {
+  switch ((type || '').toLowerCase()) {
     case 'warmup':
       return (
         <span className="text-xs uppercase font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
@@ -97,9 +97,13 @@ export const WorkoutSessionCard: React.FC<WorkoutSessionCardProps> = ({
   return (
     <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-200">
       {/* Header do Card (Clicável) */}
-      <div
+      {/* ds-exception: DSX-015 */}
+      <button
+        type="button"
         onClick={() => onToggleExpand(workout.id)}
-        className="p-4 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition"
+        aria-expanded={isExpanded}
+        aria-label={`${isExpanded ? 'Recolher' : 'Expandir'} detalhes do treino ${workout.title || workout.category}`}
+        className="w-full text-left p-4 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
       >
         <div className="flex items-center gap-3.5">
           {/* Badge de Ícone da Fonte */}
@@ -191,7 +195,7 @@ export const WorkoutSessionCard: React.FC<WorkoutSessionCardProps> = ({
             {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Conteúdo Expansível */}
       {isExpanded && (
@@ -217,10 +221,13 @@ export const WorkoutSessionCard: React.FC<WorkoutSessionCardProps> = ({
                     <div className="flex items-center justify-between gap-3 mb-2.5">
                       <div className="flex items-center gap-3 min-w-0">
                         {/* Miniatura do Exercício com Trigger para Modal do GIF */}
-                        <div
+                        {/* ds-exception: DSX-016 */}
+                        <button
+                          type="button"
                           onClick={() => onOpenExerciseMedia(ex.title, ex.media || null, workout.id, exIdx)}
-                          className="relative w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden flex-shrink-0 cursor-pointer group shadow-2xs hover:border-purple-400 dark:hover:border-purple-500/60 transition"
+                          className="relative w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden flex-shrink-0 cursor-pointer group shadow-2xs hover:border-purple-400 dark:hover:border-purple-500/60 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 text-left"
                           title="Clique para ver animação e execução"
+                          aria-label={`Ver animação e execução de ${ex.title}`}
                         >
                           {ex.media?.image_url ? (
                             <img
@@ -237,7 +244,7 @@ export const WorkoutSessionCard: React.FC<WorkoutSessionCardProps> = ({
                           <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                             <Play className="h-3.5 w-3.5 text-white fill-current" />
                           </div>
-                        </div>
+                        </button>
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">

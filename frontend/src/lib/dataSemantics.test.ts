@@ -3,6 +3,10 @@ import {
   describeAbsence,
   getSourceConfig,
   formatDataFreshness,
+  formatLocalDateKey,
+  formatConfidenceLabel,
+  evaluateSyncStale,
+  STALE_THRESHOLDS,
   AbsenceKind,
   SourceKind,
 } from './dataSemantics';
@@ -106,6 +110,58 @@ describe('dataSemantics (UX_UI_43)', () => {
       expect(freshness.text).toBe('Dados desatualizados (há 10 dias)');
       expect(freshness.isStale).toBe(true);
       expect(freshness.statusTone).toBe('stale');
+    });
+
+    it('does not label historical records as stale when isHistorical is true', () => {
+      const thirtyDaysAgo = '2026-08-15';
+      const freshness = formatDataFreshness(thirtyDaysAgo, { isHistorical: true });
+      expect(freshness.text).toBe('Registro histórico');
+      expect(freshness.isStale).toBe(false);
+      expect(freshness.statusTone).toBe('fresh');
+    });
+  });
+
+  describe('Chave de Data Local e Fuso Horário (formatLocalDateKey)', () => {
+    it('formats a date as YYYY-MM-DD in local timezone without UTC drift', () => {
+      const testDate = new Date(2026, 9, 3, 23, 30); // 3 de Outubro de 2026, 23:30 local
+      expect(formatLocalDateKey(testDate)).toBe('2026-10-03');
+    });
+
+    it('defaults to current local date when called with no arguments', () => {
+      const key = formatLocalDateKey();
+      expect(key).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  describe('Rótulos Canônicos de Confiança (formatConfidenceLabel)', () => {
+    it('translates confidence levels to Portuguese', () => {
+      expect(formatConfidenceLabel('high')).toBe('Alta');
+      expect(formatConfidenceLabel('medium')).toBe('Média');
+      expect(formatConfidenceLabel('low')).toBe('Baixa');
+      expect(formatConfidenceLabel('unavailable')).toBe('Indisponível');
+    });
+
+    it('provides detailed labels when requested', () => {
+      expect(formatConfidenceLabel('high', true)).toBe('Alta confiança');
+      expect(formatConfidenceLabel('medium', true)).toBe('Média confiança');
+      expect(formatConfidenceLabel('low', true)).toBe('Baixa confiança');
+      expect(formatConfidenceLabel('unavailable', true)).toBe('Dados insuficientes');
+    });
+  });
+
+  describe('Governança Centralizada de Stale (evaluateSyncStale & STALE_THRESHOLDS)', () => {
+    it('defines 24 hours for wearable sync and 7 days for clinical records', () => {
+      expect(STALE_THRESHOLDS.WEARABLE_HOURS).toBe(24);
+      expect(STALE_THRESHOLDS.CLINICAL_DAYS).toBe(7);
+    });
+
+    it('evaluates sync freshness against 24h threshold', () => {
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+      const thirtyHoursAgo = new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString();
+
+      expect(evaluateSyncStale(twelveHoursAgo)).toBe(false);
+      expect(evaluateSyncStale(thirtyHoursAgo)).toBe(true);
+      expect(evaluateSyncStale(null)).toBe(false);
     });
   });
 });

@@ -101,35 +101,26 @@ export const RoutineTodayView: React.FC<RoutineTodayViewProps> = ({
                     const isHormone = supp.category === 'Hormônio' || supp.category === 'Peptídeo';
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={supp.id}
                         onClick={() => onToggleLog(supp.id)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onToggleLog(supp.id);
-                          }
-                        }}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-left ${
+                        aria-pressed={isTaken}
+                        aria-label={`Marcar dose de ${supp.name}`}
+                        className={`w-full p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-left focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
                           isTaken
                             ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30 dark:border-emerald-500/40 text-slate-900 dark:text-white shadow-sm'
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <button
-                            type="button"
-                            aria-label={`Marcar dose de ${supp.name}`}
-                            className="shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none rounded-full"
-                          >
+                          <span className="shrink-0" aria-hidden="true">
                             {isTaken ? (
                               <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                             ) : (
                               <Circle className="h-6 w-6 text-slate-400 dark:text-slate-600" />
                             )}
-                          </button>
+                          </span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <h5
@@ -169,7 +160,7 @@ export const RoutineTodayView: React.FC<RoutineTodayViewProps> = ({
                         <span className="text-xs font-semibold text-slate-400 shrink-0">
                           {isTaken ? 'Tomado' : 'Pendente'}
                         </span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

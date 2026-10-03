@@ -185,7 +185,7 @@ describe('SupplementsView (UX-P1-19)', () => {
     expect(screen.getByText('Tomado')).toBeInTheDocument();
 
     // Creatina is pending (id: 2)
-    const creatinaCard = screen.getByText('Creatina Monohidratada').closest('[role="button"]')!;
+    const creatinaCard = screen.getByText('Creatina Monohidratada').closest('button')!;
     expect(creatinaCard).toBeInTheDocument();
     expect(screen.getAllByText('Pendente').length).toBeGreaterThan(0);
 

@@ -199,14 +199,75 @@ export interface DataFreshness {
   statusTone: 'fresh' | 'moderate' | 'stale';
 }
 
+export interface DataFreshnessOptions {
+  isHistorical?: boolean;
+  staleThresholdHours?: number;
+}
+
+/**
+ * Retorna a chave de data no fuso horário local no padrão ISO (AAAA-MM-DD).
+ * Previne inconsistências de virada de dia causadas por `new Date().toISOString().slice(0, 10)`
+ * em fusos com offset negativo (ex: Brasil UTC-3 entre 21h e 23h59).
+ */
+export function formatLocalDateKey(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Formata o nível de confiança técnica em linguagem canônica em português.
+ * Evita exibir termos crus como "high", "medium", "low" (U22-P1-15).
+ */
+export function formatConfidenceLabel(confidence: string | null | undefined, detailed = false): string {
+  switch ((confidence || '').toLowerCase()) {
+    case 'high':
+      return detailed ? 'Alta confiança' : 'Alta';
+    case 'medium':
+      return detailed ? 'Média confiança' : 'Média';
+    case 'low':
+      return detailed ? 'Baixa confiança' : 'Baixa';
+    case 'unavailable':
+    default:
+      return detailed ? 'Dados insuficientes' : 'Indisponível';
+  }
+}
+
+/**
+ * Limiares canônicos de estagnação de dados (U22-P1-56).
+ */
+export const STALE_THRESHOLDS = {
+  WEARABLE_HOURS: 24, // Sincronização contínua de wearables (>24h sem dados é stale)
+  CLINICAL_DAYS: 7,   // Check-in e métricas clínicas longitudinais (>=7 dias é stale)
+} as const;
+
+/**
+ * Avalia se uma sincronização está desatualizada com base no limiar especificado.
+ */
+export function evaluateSyncStale(
+  lastSyncDate: string | Date | null | undefined,
+  thresholdHours: number = STALE_THRESHOLDS.WEARABLE_HOURS
+): boolean {
+  if (!lastSyncDate) return false;
+  const syncTime = typeof lastSyncDate === 'string' ? new Date(lastSyncDate).getTime() : lastSyncDate.getTime();
+  if (isNaN(syncTime)) return false;
+  const diffHours = (Date.now() - syncTime) / (1000 * 60 * 60);
+  return diffHours > thresholdHours;
+}
+
 /**
  * Avalia o frescor de uma data de registro e retorna rótulo padronizado.
  * - Hoje: "Atualizado hoje" (fresh)
  * - Ontem: "Atualizado ontem" (fresh)
  * - 2 a 6 dias: "Atualizado há X dias" (moderate)
  * - >= 7 dias: "Dados desatualizados (há X dias)" (stale)
+ * - Histórico: se explicitamente marcado como histórico, não rotula como desatualizado.
  */
-export function formatDataFreshness(dateInput: string | Date | null | undefined): DataFreshness {
+export function formatDataFreshness(
+  dateInput: string | Date | null | undefined,
+  options?: DataFreshnessOptions
+): DataFreshness {
   if (!dateInput) {
     return {
       text: 'Sem registro de atualização',
@@ -240,6 +301,15 @@ export function formatDataFreshness(dateInput: string | Date | null | undefined)
     const diffMs = today.getTime() - eventDay.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+    if (options?.isHistorical && diffDays > 0) {
+      return {
+        text: 'Registro histórico',
+        isStale: false,
+        daysDifference: diffDays,
+        statusTone: 'fresh',
+      };
+    }
+
     if (diffDays <= 0) {
       return {
         text: 'Atualizado hoje',
@@ -255,6 +325,19 @@ export function formatDataFreshness(dateInput: string | Date | null | undefined)
         isStale: false,
         daysDifference: 1,
         statusTone: 'fresh',
+      };
+    }
+
+    const isStaleByHours =
+      options?.staleThresholdHours !== undefined &&
+      diffMs / (1000 * 60 * 60) >= options.staleThresholdHours;
+
+    if (isStaleByHours || diffDays >= 7) {
+      return {
+        text: `Dados desatualizados (há ${diffDays} dias)`,
+        isStale: true,
+        daysDifference: diffDays,
+        statusTone: 'stale',
       };
     }
 

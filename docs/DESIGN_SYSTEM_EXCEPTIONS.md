@@ -16,6 +16,12 @@
 | DSX-009 | `frontend/src/components/AICopilotView.tsx` | `gradients.bg` | Barra de progresso de geração de insights de IA | 2026-10-03 | Encerrada (código refatorado para cor sólida/tokens) |
 | DSX-010 | `frontend/src/components/SyncProgressModal.tsx` | `gradients.bg` | Barra de progresso de sincronização | 2026-10-03 | Encerrada (código refatorado para cor sólida/tokens) |
 | DSX-011 | `frontend/src/index.css` | `effects.backdrop-blur` | Superfície legada glass-panel global (migração gradual no UX_UI_60) | 2026-10-03 | Ativa |
+| DSX-012 | `frontend/src/components/ExerciseCatalogView.tsx` | `native.button` | Card clicável acessível do catálogo de exercícios (navegação para modal de detalhe) | 2026-10-03 | Ativa |
+| DSX-013 | `frontend/src/components/SupplementStackWidget.tsx` | `native.button` | Botão semântico de alternância de dose diária de suplemento | 2026-10-03 | Ativa |
+| DSX-014 | `frontend/src/components/sleep/SleepStagesChart.tsx` | `native.button` | Botão acessível de inspeção de data no eixo X do gráfico de sono | 2026-10-03 | Ativa |
+| DSX-015 | `frontend/src/components/workouts/WorkoutSessionCard.tsx` | `native.button` | Header expansível de acordeão de sessão de treino | 2026-10-03 | Ativa |
+| DSX-016 | `frontend/src/components/workouts/WorkoutSessionCard.tsx` | `native.button` | Gatilho de miniatura/mídia de execução do exercício | 2026-10-03 | Ativa |
+| DSX-017 | `frontend/src/components/DailyComplianceWidget.tsx` | `native.button` | Botão switch acessível dos quatro pilares de conformidade do protocolo | 2026-10-03 | Ativa |
 
 ## Como adicionar
 

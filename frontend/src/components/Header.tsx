@@ -147,7 +147,7 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="sticky top-0 z-40 glass-panel border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-1.5 sm:py-3 mb-3 sm:mb-8 space-y-1.5 sm:space-y-2.5">
+    <header className="sticky top-0 z-sticky glass-panel border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-1.5 sm:py-3 mb-3 sm:mb-8 space-y-1.5 sm:space-y-2.5">
       {/* Linha Superior: Marca e Ações (Separadas entre Clínicas e Infraestrutura) */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3">
         {/* Marca / Identidade */}

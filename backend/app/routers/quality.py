@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+from datetime import datetime, timezone
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -28,6 +29,8 @@ class DailyQualitySummaryResponse(BaseModel):
     warnings: List[str]
     sources: List[str]
     items: List[MetricQualityItem]
+    evaluated_at: Optional[str] = None
+    last_sync_at: Optional[str] = None
 
 
 @router.get("/daily", response_model=DailyQualitySummaryResponse)
@@ -74,6 +77,15 @@ def get_daily_quality_summary(date_ref: str):
     else:
         confidence = "unavailable"
 
+    evaluated_at = datetime.now(timezone.utc).isoformat()
+    last_sync_at = None
+    try:
+        runs = repo.get_pipeline_runs(limit=1)
+        if runs and runs[0].get("run_at"):
+            last_sync_at = str(runs[0]["run_at"])
+    except Exception:
+        pass
+
     return DailyQualitySummaryResponse(
         date_ref=date_ref,
         coverage_pct=coverage_pct,
@@ -83,4 +95,6 @@ def get_daily_quality_summary(date_ref: str):
         warnings=list(set(all_warnings)),
         sources=sources,
         items=metric_items,
+        evaluated_at=evaluated_at,
+        last_sync_at=last_sync_at,
     )

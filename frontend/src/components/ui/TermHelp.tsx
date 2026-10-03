@@ -189,6 +189,13 @@ export const TermHelp: React.FC<TermHelpProps> = ({
           aria-describedby={isOpen ? tooltipId : undefined}
           onFocus={() => setIsOpen(true)}
           onBlur={() => setIsOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsOpen((prev) => !prev);
+            }
+          }}
           onClick={(e) => {
             e.stopPropagation();
             setIsOpen((prev) => !prev);

@@ -82,6 +82,7 @@ export function ResponsiveDataTable<T>({
           columns={columns}
           rows={rows}
           getRowKey={getRowKey}
+          getRowLabel={getRowLabel}
           onRowClick={onRowClick}
           isRowSelected={isRowSelected}
           stickyFirstColumn={stickyFirstColumn}
@@ -107,7 +108,7 @@ export function ResponsiveDataTable<T>({
 
 type InnerProps<T> = Pick<
   ResponsiveDataTableProps<T>,
-  'caption' | 'captionVisible' | 'columns' | 'rows' | 'getRowKey' | 'onRowClick' | 'isRowSelected'
+  'caption' | 'captionVisible' | 'columns' | 'rows' | 'getRowKey' | 'getRowLabel' | 'onRowClick' | 'isRowSelected'
 >;
 
 function DesktopTable<T>({
@@ -116,6 +117,7 @@ function DesktopTable<T>({
   columns,
   rows,
   getRowKey,
+  getRowLabel,
   onRowClick,
   isRowSelected,
   stickyFirstColumn,
@@ -176,11 +178,30 @@ function DesktopTable<T>({
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {rows.map((row, rowIdx) => {
               const selected = isRowSelected?.(row) ?? false;
+              const rowLabel = getRowLabel?.(row);
               return (
                 <tr
                   key={getRowKey(row, rowIdx)}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={`transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${
+                  onKeyDown={
+                    onRowClick
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onRowClick(row);
+                          }
+                        }
+                      : undefined
+                  }
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role={onRowClick ? 'button' : undefined}
+                  aria-label={onRowClick ? rowLabel : undefined}
+                  aria-selected={isRowSelected ? selected : undefined}
+                  className={`transition-colors ${
+                    onRowClick
+                      ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500'
+                      : ''
+                  } ${
                     selected ? 'bg-cyan-500/10 dark:bg-cyan-500/15' : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
                   }`}
                 >
@@ -250,17 +271,29 @@ function RowCards<T>({
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'
                 }`}
               >
-                <div
-                  className={`flex items-start justify-between gap-2 ${onRowClick ? 'cursor-pointer' : ''}`}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                >
-                  <div className="min-w-0 flex-1 space-y-1 text-sm font-bold text-slate-900 dark:text-white">
-                    {headingCols.map((col) => (
-                      <div key={col.key}>{col.render(row)}</div>
-                    ))}
+                {onRowClick ? (
+                  <button
+                    type="button"
+                    onClick={() => onRowClick(row)}
+                    aria-label={getRowLabel?.(row)}
+                    className="w-full text-left flex items-start justify-between gap-2 p-1 -m-1 rounded-radius-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1 text-sm font-bold text-slate-900 dark:text-white">
+                      {headingCols.map((col) => (
+                        <div key={col.key}>{col.render(row)}</div>
+                      ))}
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 space-y-1 text-sm font-bold text-slate-900 dark:text-white">
+                      {headingCols.map((col) => (
+                        <div key={col.key}>{col.render(row)}</div>
+                      ))}
+                    </div>
                   </div>
-                  {onRowClick && <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" aria-hidden="true" />}
-                </div>
+                )}
 
                 {bodyCols.length > 0 && (
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">

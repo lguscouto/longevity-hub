@@ -70,6 +70,15 @@ export default {
         'elevation-2': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
         'elevation-3': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
       },
+      zIndex: {
+        'base': '0',
+        'sticky': '20',
+        'dropdown': '30',
+        'drawer': '40',
+        'modal': '50',
+        'confirm': '60',
+        'toast': '70',
+      },
       fontFamily: {
         sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
       }

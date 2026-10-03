@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ShieldCheck, AlertTriangle, Layers, RefreshCw } from 'lucide-react'
 import { requestJson } from '../lib/api'
+import { formatLocalDateKey, formatConfidenceLabel } from '../lib/dataSemantics'
 import { Input, IconButton } from './ui'
 
 interface MetricItem {
@@ -25,7 +26,7 @@ interface QualitySummary {
 }
 
 export const DataQualityPanel: React.FC = () => {
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = formatLocalDateKey()
   const [selectedDate, setSelectedDate] = useState(todayStr)
   const [summary, setSummary] = useState<QualitySummary | null>(null)
   const [loading, setLoading] = useState(false)
@@ -81,14 +82,14 @@ export const DataQualityPanel: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
             <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Status de Confiança</span>
-            <span className="text-lg font-black text-slate-900 dark:text-white capitalize">{summary?.confidence || 'unavailable'}</span>
+            <span className="text-lg font-black text-slate-900 dark:text-white">{formatConfidenceLabel(summary?.confidence, true)}</span>
             <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">
               {summary?.metrics_available ?? 0} de {summary?.metrics_expected ?? 7} métricas validadas
             </span>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Cobertura Birométrica</span>
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Cobertura Biométrica</span>
             <span className="text-lg font-black text-slate-900 dark:text-white">{summary?.coverage_pct ?? 0}%</span>
             <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">Densidade de amostras por 24h</span>
           </div>

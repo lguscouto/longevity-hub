@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dna, Trash2 } from 'lucide-react';
 import { Modal, Button } from '../ui';
 import { LAB_MARKERS_GROUPS, LabBatchRecord } from './labMarkers';
+import { formatLocalDateKey } from '../../lib/formatters';
 
 interface LabBatchEntryModalProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface LabBatchEntryModalProps {
 
 /** Modal de Inclusão em Lote: preenche apenas os marcadores presentes no laudo. */
 export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [collectedAt, setCollectedAt] = useState(new Date().toISOString().slice(0, 10));
+  const [collectedAt, setCollectedAt] = useState(formatLocalDateKey());
   const [formValues, setFormValues] = useState<Record<string, string>>({});
 
   const handleInputChange = (key: string, val: string) => {

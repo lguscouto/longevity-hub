@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ShieldCheck, ShieldAlert, Shield } from 'lucide-react'
 import { requestJson } from '../lib/api'
-import { formatDataFreshness } from '../lib/dataSemantics'
+import { formatDataFreshness, formatLocalDateKey, formatConfidenceLabel, STALE_THRESHOLDS } from '../lib/dataSemantics'
 
 interface DataConfidenceBadgeProps {
   selectedDate: string
@@ -14,6 +14,8 @@ interface QualitySummary {
   metrics_available: number
   metrics_expected: number
   warnings: string[]
+  evaluated_at?: string
+  last_sync_at?: string
 }
 
 export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ selectedDate }) => {
@@ -39,29 +41,34 @@ export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ select
 
   const config = {
     high: {
-      label: 'Confiança Alta',
+      label: formatConfidenceLabel('high', true),
       bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
       icon: ShieldCheck,
     },
     medium: {
-      label: 'Confiança Média',
+      label: formatConfidenceLabel('medium', true),
       bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
       icon: Shield,
     },
     low: {
-      label: 'Confiança Baixa',
+      label: formatConfidenceLabel('low', true),
       bg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
       icon: ShieldAlert,
     },
     unavailable: {
-      label: 'Dados Parciais',
+      label: formatConfidenceLabel('unavailable', true),
       bg: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
       icon: ShieldAlert,
     },
   }[confidenceKey]
 
   const Icon = config.icon
-  const freshness = formatDataFreshness(selectedDate)
+  const isToday = selectedDate === formatLocalDateKey()
+  const freshnessSource = summary.last_sync_at || summary.evaluated_at || (isToday ? selectedDate : undefined)
+  const freshness = formatDataFreshness(freshnessSource, {
+    isHistorical: !isToday,
+    staleThresholdHours: summary.last_sync_at ? STALE_THRESHOLDS.WEARABLE_HOURS : undefined,
+  })
 
   return (
     <div

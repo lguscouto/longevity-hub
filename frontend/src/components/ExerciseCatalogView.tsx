@@ -208,10 +208,12 @@ export const ExerciseCatalogView: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {exercises.map((ex) => (
-            <div
+            /* ds-exception: DSX-012 */
+            <button
+              type="button"
               key={ex.catalog_id || (ex as any).id}
               onClick={() => handleOpenDetail(ex)}
-              className="group bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/90 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:border-purple-300 dark:hover:border-purple-500/50 transition cursor-pointer flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/90 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:border-purple-300 dark:hover:border-purple-500/50 transition cursor-pointer flex flex-col justify-between text-left w-full focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
             >
               <div>
                 {/* Mídia / Thumbnail */}
@@ -250,7 +252,7 @@ export const ExerciseCatalogView: React.FC = () => {
                   {ex.equipment_pt || ex.equipment || ''}
                 </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}

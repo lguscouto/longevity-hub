@@ -139,4 +139,91 @@ describe('ResponsiveDataTable', () => {
     expect(screen.getByRole('list', { name: 'Exames' })).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
+
+  it('triggers onRowClick via keyboard (Enter and Space) on desktop table rows (U22-P1-31)', async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+
+    render(
+      <ResponsiveDataTable
+        caption="Exames"
+        columns={columns}
+        rows={rows}
+        getRowKey={(r) => r.id}
+        getRowLabel={(r) => `Exame ${r.marker}`}
+        onRowClick={onRowClick}
+        layout="table"
+      />,
+    );
+
+    const clickableRows = screen.getAllByRole('button');
+    // Deve haver 2 botões de ação nas células + 2 linhas com role="button"
+    const tableRowButtons = clickableRows.filter((el) => el.tagName === 'TR');
+    expect(tableRowButtons).toHaveLength(2);
+    expect(tableRowButtons[0]).toHaveAttribute('tabindex', '0');
+    expect(tableRowButtons[0]).toHaveAttribute('aria-label', 'Exame ApoB');
+
+    // Testar ativação por Enter
+    tableRowButtons[0].focus();
+    expect(tableRowButtons[0]).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+    expect(onRowClick).toHaveBeenCalledWith(rows[0]);
+
+    // Testar ativação por Space
+    onRowClick.mockClear();
+    tableRowButtons[1].focus();
+    await user.keyboard(' ');
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+    expect(onRowClick).toHaveBeenCalledWith(rows[1]);
+  });
+
+  it('does not assign button role or tabIndex to rows when onRowClick is omitted', () => {
+    render(
+      <ResponsiveDataTable
+        caption="Exames"
+        columns={columns}
+        rows={rows}
+        getRowKey={(r) => r.id}
+        layout="table"
+      />,
+    );
+
+    const table = screen.getByRole('table');
+    const trElements = within(table).getAllByRole('row');
+    // O tr header + 2 trs de dados
+    expect(trElements).toHaveLength(3);
+    // Nenhuma TR deve ser role="button"
+    trElements.forEach((tr) => {
+      expect(tr).not.toHaveAttribute('role', 'button');
+      expect(tr).not.toHaveAttribute('tabindex');
+    });
+  });
+
+  it('renders an accessible button header in mobile Row Cards when onRowClick is provided', async () => {
+    mockMatchMedia(false);
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+
+    render(
+      <ResponsiveDataTable
+        caption="Exames"
+        columns={columns}
+        rows={rows}
+        getRowKey={(r) => r.id}
+        getRowLabel={(r) => `Exame ${r.marker}`}
+        onRowClick={onRowClick}
+        layout="cards"
+      />,
+    );
+
+    const cardButton = screen.getByRole('button', { name: 'Exame ApoB' });
+    expect(cardButton).toBeInTheDocument();
+    expect(cardButton.tagName).toBe('BUTTON');
+
+    await user.click(cardButton);
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+    expect(onRowClick).toHaveBeenCalledWith(rows[0]);
+  });
 });
+

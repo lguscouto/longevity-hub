@@ -218,8 +218,18 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
                 return (
                   <div
                     key={m.date_ref || idx}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Estágios do sono em ${m.date_ref}: Total ${formatMinutesToHHMM(totalMins)}`}
                     onMouseEnter={() => setHoveredMetric(m)}
-                    className="flex-1 flex flex-col justify-end h-full items-center cursor-pointer group relative"
+                    onFocus={() => setHoveredMetric(m)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setHoveredMetric(m);
+                      }
+                    }}
+                    className="flex-1 flex flex-col justify-end h-full items-center cursor-pointer group relative focus-visible:outline-none"
                   >
                     {/* Stacked Segments */}
                     <div
@@ -274,15 +284,19 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
               const step = chartData.length > 30 ? 5 : chartData.length > 15 ? 3 : 1;
               const showLabel = idx === 0 || idx === chartData.length - 1 || idx % step === 0;
               return (
-                <div
+                /* ds-exception: DSX-014 */
+                <button
+                  type="button"
                   key={m.date_ref || idx}
-                  className={`flex-1 text-center font-mono transition-colors cursor-pointer ${
+                  aria-label={`Visualizar sono de ${m.date_ref}`}
+                  tabIndex={showLabel ? 0 : -1}
+                  className={`flex-1 text-center font-mono transition-colors cursor-pointer rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500 ${
                     activeTooltipData?.date_ref === m.date_ref ? 'text-cyan-600 dark:text-cyan-400 font-bold' : ''
                   }`}
                   onClick={() => setHoveredMetric(m)}
                 >
                   {showLabel ? m.date_ref : ''}
-                </div>
+                </button>
               );
             })}
           </div>

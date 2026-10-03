@@ -5,7 +5,9 @@
  * e formatação de datas baseada no timezone do usuário.
  */
 
-import { AbsenceKind, describeAbsence } from './dataSemantics';
+import { AbsenceKind, describeAbsence, formatLocalDateKey, formatConfidenceLabel } from './dataSemantics';
+
+export { formatLocalDateKey, formatConfidenceLabel };
 
 export interface FormatMetricOptions {
   decimals?: number;

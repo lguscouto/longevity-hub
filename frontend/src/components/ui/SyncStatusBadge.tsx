@@ -9,6 +9,7 @@ import {
   CloudOff,
   KeyRound,
 } from 'lucide-react';
+import { STALE_THRESHOLDS } from '../../lib/dataSemantics';
 
 export type SyncState =
   | 'never'
@@ -118,14 +119,14 @@ const STATE_CONFIGS: Record<SyncState, StateConfig> = {
     ariaDescription: 'Nenhum dispositivo ou fonte de wearable está conectado.',
   },
   stale: {
-    label: 'Dados antigos (>24h)',
+    label: `Dados antigos (>${STALE_THRESHOLDS.WEARABLE_HOURS}h)`,
     badgeLabel: 'Dados desatualizados',
     icon: Clock,
     containerClass:
       'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300',
     iconClass: 'text-amber-600 dark:text-amber-400',
     textClass: 'text-amber-800 dark:text-amber-300 font-medium',
-    ariaDescription: 'Dados de saúde não são atualizados há mais de 24 horas.',
+    ariaDescription: `Dados de saúde não são atualizados há mais de ${STALE_THRESHOLDS.WEARABLE_HOURS} horas.`,
   },
 };
 
