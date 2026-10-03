@@ -1,8 +1,8 @@
-# Design System — Longevidade Hub v2.1.0
+# Design System — Longevidade Hub v2.2.0
 
 > **Guia Canônico de Arquitetura Visual, Primitives, Tokens, Acessibilidade e Responsividade**  
-> **Status:** Ativo & Estabilizado  
-> **Última Atualização:** Outubro/2026 (v2.1.0)
+> **Status:** Ativo & Em Governança Contínua (v2.2.0)  
+> **Última Atualização:** Outubro/2026 (v2.2.0 — Baseline v2.1.0 consolidado)
 
 ---
 
@@ -43,7 +43,9 @@ A gramática visual do Longevidade Hub adota uma escala semântica coesa mapeada
 | `pill` | `rounded-full` | `9999px` | Avatares circulares, badges em formato de pílula, barras de progresso, toggles. |
 
 > [!NOTE]
-> Valores arbitrários de raio (ex: `rounded-[28px]`) e classes descontinuadas (`rounded-3xl`) são proibidos pelo audit de conformidade automatizado. Os tokens `radius-sm` a `radius-xl` em `tailwind.config.js` são mantidos alinhados a esta escala semântica (8px, 12px, 16px, 16px).
+> **Governança de Border Radius (v2.2.0):**
+> Valores arbitrários de raio (ex: `rounded-[28px]`) e classes descontinuadas (`rounded-3xl`) são terminantemente proibidos e avaliados com `FAIL` no gate automatizado.
+> A auditoria estática (`audit-design-system.mjs`) monitora o uso de classes Tailwind padrão (`rounded-lg`, `rounded-xl`, etc.) via teto de baseline decrescente (ratchet down: 447 abertos). O plano `UX_UI_48` consolidará a convergência definitiva para uma fonte única de verdade entre classes semânticas e tokens do Tailwind.
 
 ### 2.2. Tokens de Elevação e Sombras (Box Shadow)
 

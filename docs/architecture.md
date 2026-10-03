@@ -110,27 +110,29 @@ O contexto inclui perfil, métricas recentes, exames, PhenoAge, CGM, N-of-1, pil
 
 ## 4. Interface e navegação
 
-`App.tsx` controla seis abas por estado local (`activeTab`); não existe React Router nem rotas/deep links por URL:
+A partir da versão 2.2.0, a interface do Longevidade Hub adota uma arquitetura de navegação primária em **6 áreas canônicas** gerenciadas pelo `Header.tsx` (via `resolvePrimaryTab`) e sincronizadas por hash routing (`window.location.hash`) com persistência em `localStorage` (`longevidade_active_tab`):
 
-| Aba | Componente/tela | Fonte principal |
+| Área Primária (`PrimaryTab`) | Sub-rotas / Telas mapeadas | Responsabilidade e Componentes Chave |
 |---|---|---|
-| Visão Geral | `App.tsx`, `DateNavigator`, `DailyComplianceWidget`, `CGMDashboard`, `PhenoAgeWidget` | métricas, PhenoAge, CGM e compliance |
-| Exames & PhenoAge | `LabResultsTable` | exames e lote de marcadores |
-| Suplementos & Hormônios | `SupplementsView` | pilha, logs diários, auditoria e IA |
-| IA & Copiloto | `AICopilotView`, `AISettingsModal` | configurações, histórico, chat e insights |
-| N-of-1 Tests | `NOf1Tracker` | experimentos persistidos |
-| Perfil | `ProfileView` | perfil, IMC e indicadores Google |
+| **Hoje** (`today`) | `overview`, `today` | Dashboard consolidado, `DateNavigator`, `DailyComplianceWidget`, `CGMDashboard`, `PhenoAgeWidget`, `TrainingLoadWidget`, `EnergyCircadianWidget`. |
+| **Saúde** (`health`) | `labs`, `sleep`, `timeline`, `physical-assessments` | Biomarcadores laboratoriais (`LabResultsTable`), estágios de sono (`SleepView`), linha do tempo N-of-1 (`TimelineView`) e fotos corporais (`PhysicalAssessmentsView`). |
+| **Treinos** (`workouts`) | `workouts` | Sessões de exercício, tabela detalhada de treinos (`WorkoutsView`, `WorkoutsTable`) e carga de treinamento. |
+| **Intervenções** (`interventions`) | `supplements`, `n-of-1` | Gestão de compostos e rotinas diárias (`SupplementsView`) e testes controlados N-of-1 (`NOf1Tracker`). |
+| **IA & Copiloto** (`ai`) | `ai` | Análises epigenéticas, chat clínico estruturado com evidências (`AICopilotView`) e `AISettingsModal`. |
+| **Perfil** (`profile`) | `profile`, `integrations`, `system`, `diagnostics` | Metas pessoais (`ProfileView`), integrações externas (`GoogleHealthAuthModal`), status de pipeline (`PipelineStatusPanel`) e diagnóstico. |
 
-O tema usa Tailwind, paleta escura (`#0B0F17`) e componentes `lucide-react`; os gráficos usam Recharts.
+Ações de infraestrutura e utilidades (registro manual, briefing médico, sincronização e alternador de tema) ficam concentradas no `HeaderUtilityActions.tsx`, separando fluxos de dados de tarefas administrativas.
+
+O design segue o Design System em Tailwind CSS, suporte estrito a temas Claro/Escuro via `ThemeContext`, e primitives acessíveis (`components/ui/`).
 
 ## 5. Versionamento
 
-A versão do sistema é **unificada** em **0.6.0**:
+A versão do sistema é **unificada** em **2.2.0**:
 
-- Fonte de verdade: `src/longevidade/version.py` (`__version__`)
+- Fonte de verdade: `src/longevidade/version.py` (`__version__ = "2.2.0"`)
 - Pacote Python: lê de `version.py` via `__init__.py`
-- Frontend: `frontend/package.json`
-- FastAPI: usa o `__version__` importado do pacote
+- Frontend: `frontend/package.json` (`"version": "2.2.0"`)
+- FastAPI: usa o `__version__` importado do pacote em `backend/app/main.py`
 - `/api/health` retorna a versão unificada no campo `version`
 
-Todas as modificações de versão devem ser feitas em `src/longevidade/version.py`.
+Todas as modificações de versão devem ser sincronizadas com `src/longevidade/version.py`.
