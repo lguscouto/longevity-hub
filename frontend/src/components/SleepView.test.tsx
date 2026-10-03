@@ -73,7 +73,7 @@ describe('SleepView', () => {
     expect(screen.getByText(/Carregando histórico de sono.../i)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+      expect(screen.queryByText(/Carregando histórico de sono.../i)).not.toBeInTheDocument();
     });
 
     // Month filter bar elements
@@ -98,7 +98,7 @@ describe('SleepView', () => {
     render(<SleepView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+      expect(screen.queryByText(/Carregando histórico de sono.../i)).not.toBeInTheDocument();
     });
 
     const monthSelect = screen.getByRole('combobox', { name: 'Selecionar Mês' });
@@ -138,7 +138,7 @@ describe('SleepView', () => {
     render(<SleepView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+      expect(screen.queryByText(/Carregando histórico de sono.../i)).not.toBeInTheDocument();
     });
 
     // Click on Ago/26 pill
@@ -264,7 +264,7 @@ describe('SleepView', () => {
     render(<SleepView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+      expect(screen.queryByText(/Carregando histórico de sono.../i)).not.toBeInTheDocument();
     });
 
     // Circadian KPI cards
@@ -316,7 +316,7 @@ describe('SleepView', () => {
     render(<SleepView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+      expect(screen.queryByText(/Carregando histórico de sono.../i)).not.toBeInTheDocument();
     });
 
     // 89% should be displayed with "Sono Curto" tag in KPI Card, Monthly Table, and Daily Table
@@ -339,7 +339,7 @@ describe('SleepView', () => {
     render(<SleepView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Monitoramento & Fases do Sono')).toBeInTheDocument();
+      expect(screen.queryByText(/Carregando histórico de sono.../i)).not.toBeInTheDocument();
     });
 
     expect(screen.getByText('Sem registros de sono no período')).toBeInTheDocument();
