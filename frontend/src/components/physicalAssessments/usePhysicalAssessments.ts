@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../ui';
 import {
   Photo,
   PhysicalAssessment,
@@ -8,6 +9,7 @@ import {
 } from './types';
 
 export function usePhysicalAssessments() {
+  const { showToast } = useToast();
   const [assessments, setAssessments] = useState<PhysicalAssessment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -402,9 +404,10 @@ export function usePhysicalAssessments() {
         setActiveMode('history');
       }
       setChartRefreshKey(prev => prev + 1);
+      showToast('Avaliação física excluída com sucesso.');
     } catch (err) {
       console.error(err);
-      alert('Erro ao excluir avaliação física.');
+      showToast('Erro ao excluir avaliação física.', 'error');
     }
   };
 
@@ -417,9 +420,10 @@ export function usePhysicalAssessments() {
       const res = await fetch(`/api/physical-assessments/${assessmentId}/photos/${photoId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao excluir foto');
       await fetchAssessments();
+      showToast('Fotografia corporal excluída com sucesso.');
     } catch (err) {
       console.error(err);
-      alert('Erro ao excluir fotografia corporal.');
+      showToast('Erro ao excluir fotografia corporal.', 'error');
     }
   };
 

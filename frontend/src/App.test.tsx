@@ -152,7 +152,7 @@ describe('App', () => {
 
     // Click 'Saúde' tab (which activates labs / Exames & PhenoAge)
     await user.click(screen.getByRole('button', { name: /^saúde$/i }))
-    expect(await screen.findByText(/exames laboratoriais & alvos de longevidade/i)).toBeInTheDocument()
+    expect(await screen.findByText(/exames laboratoriais & referências de longevidade/i)).toBeInTheDocument()
 
     // Click 'Intervenções' tab (which activates supplements)
     await user.click(screen.getByRole('button', { name: /^intervenções$/i }))

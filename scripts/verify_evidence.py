@@ -1,7 +1,7 @@
 """
-Script de Validação e Telemetria de Evidências (UX_UI_15).
+Script de Validação e Telemetria de Evidências (UX_UI_15 & UX_UI_45).
 Executa as suites de testes configuradas, captura métricas, hash do commit e ambiente,
-gerando a tabela de evidências canônica exigida pelo CODEX_LONGEVIDADE_HUB_2.0.0_UX_UI_REAUDIT_MASTER.
+gerando a tabela de evidências canônica exigida pelo CODEX_LONGEVIDADE_HUB_2.1.0_UX_UI_REAUDIT_MASTER.
 """
 
 import argparse
@@ -10,7 +10,6 @@ import os
 import platform
 import subprocess
 import sys
-
 import threading
 
 # Garante flushing imediato em pipes, redirecionamentos e logs de tarefas
@@ -30,7 +29,7 @@ def get_git_commit() -> str:
         return "unknown"
 
 
-def run_check(name: str, cmd: list[str], cwd: str | None = None, stream_output: bool = True, timeout: int = 240) -> dict:
+def run_check(name: str, cmd: list[str], cwd: str | None = None, stream_output: bool = True, timeout: int = 360) -> dict:
     timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     start_time = datetime.datetime.now()
     is_windows = platform.system() == "Windows"
@@ -101,9 +100,9 @@ def run_check(name: str, cmd: list[str], cwd: str | None = None, stream_output: 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validação de evidências e telemetria v2.0.0")
-    parser.add_argument("--skip-backend", action="store_true", help="Pular testes lentos do backend (pytest) para ciclos rápidos de UX")
-    parser.add_argument("--quick", action="store_true", help="Executar apenas build e testes unitários do frontend")
+    parser = argparse.ArgumentParser(description="Validação de evidências e telemetria v2.1.0")
+    parser.add_argument("--skip-backend", action="store_true", help="Pular testes do backend (pytest) para ciclos rápidos de UX")
+    parser.add_argument("--quick", action="store_true", help="Executar apenas build, audit DS e testes unitários do frontend")
     args = parser.parse_args()
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -116,13 +115,17 @@ def main():
     print("=" * 60, flush=True)
 
     checks = [
+        ("Design System Conformance Audit", ["npm", "run", "audit:design-system"], frontend_dir),
         ("Vite Production Build", ["npm", "run", "build"], frontend_dir),
         ("Vitest Unit & Component Suite", ["npm", "run", "test:run"], frontend_dir),
     ]
 
     if not args.quick:
         checks.append(
-            ("Playwright Visual QA Multi-Viewport", ["npx", "playwright", "test", "-c", "e2e/playwright.config.ts", "e2e/visual-qa.spec.ts"], frontend_dir)
+            ("Playwright Viewport Matrix (8 viewports × 6 views)", ["npx", "playwright", "test", "e2e/viewport-matrix.spec.ts", "--config=e2e/playwright.config.ts"], frontend_dir)
+        )
+        checks.append(
+            ("Playwright Visual Regression & Baselines (24 baselines)", ["npx", "playwright", "test", "e2e/visual-regression.spec.ts", "--config=e2e/playwright.config.ts"], frontend_dir)
         )
 
     if not args.skip_backend and not args.quick:

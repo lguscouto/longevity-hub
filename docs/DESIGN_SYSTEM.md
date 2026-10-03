@@ -30,17 +30,20 @@ O **Longevidade Hub** é uma plataforma médica e de saúde pessoal voltada à l
 
 Os tokens fundamentais estão centralizados em `frontend/tailwind.config.js` e em variáveis CSS em `frontend/src/index.css`.
 
-### 2.1. Escala de Arredondamento (Border Radius)
+### 2.1. Escala de Arredondamento Semântico (Border Radius)
 
-| Token | Classe Tailwind | Valor | Aplicação Típica |
+A gramática visual do Longevidade Hub adota uma escala semântica coesa mapeada sobre as classes utilitárias do Tailwind CSS e tokens em `tailwind.config.js`:
+
+| Nível Semântico | Classe Tailwind | Valor Real | Aplicação Típica |
 | :--- | :--- | :--- | :--- |
-| `radius-sm` | `rounded-sm` | `8px` (`0.5rem`) | Badges de status, tags compactas, chips laboratoriais. |
-| `radius-md` | `rounded-md` | `12px` (`0.75rem`) | Botões (`Button`), inputs de formulário, caixas de seleção, tooltips. |
-| `radius-lg` | `rounded-lg` | `20px` (`1.25rem`) | Cards analíticos (`Card`), widgets de gráficos, painéis de métrica. |
-| `radius-xl` | `rounded-xl` | `24px` (`1.5rem`) | Diálogos (`Modal`), gavetas laterais (`Drawer`), caixas de confirmação. |
+| `surface-xs` / `badge` | `rounded-lg` (`rounded-surface-xs`) | `8px` (`0.5rem`) | Badges de status, tags compactas, chips laboratoriais, botões micro. |
+| `control` / `surface-sm` | `rounded-xl` (`rounded-surface-sm`) | `12px` (`0.75rem`) | Botões (`Button`), inputs de formulário (`Input`), caixas de seleção (`Select`), tooltips. |
+| `card` / `surface-md` | `rounded-2xl` (`rounded-surface-md`) | `16px` (`1.0rem`) | Cards analíticos (`Card`), widgets de gráficos, painéis de métrica. |
+| `dialog` / `surface-lg` | `rounded-2xl` (`rounded-surface-lg`) | `16px` (`1.0rem`) | Diálogos (`Modal`), gavetas laterais (`Drawer`), caixas de confirmação suspensas. |
+| `pill` | `rounded-full` | `9999px` | Avatares circulares, badges em formato de pílula, barras de progresso, toggles. |
 
 > [!NOTE]
-> Valores arbitrários de raio (ex: `rounded-3xl` ou `rounded-[28px]`) estão descontinuados. Utilize sempre a escala tokenizada.
+> Valores arbitrários de raio (ex: `rounded-[28px]`) e classes descontinuadas (`rounded-3xl`) são proibidos pelo audit de conformidade automatizado. Os tokens `radius-sm` a `radius-xl` em `tailwind.config.js` são mantidos alinhados a esta escala semântica (8px, 12px, 16px, 16px).
 
 ### 2.2. Tokens de Elevação e Sombras (Box Shadow)
 
@@ -58,7 +61,7 @@ Os tokens fundamentais estão centralizados em `frontend/tailwind.config.js` e e
 | Superfície | Contexto | Modo Claro | Modo Escuro |
 | :--- | :--- | :--- | :--- |
 | **Surface 0** | Fundo raiz da aplicação | `bg-slate-50` (`#f8fafc`) | `bg-slate-950` (`#020617`) |
-| **Surface 1** | Header fixo e barras de navegação | `bg-white/80 backdrop-blur-md` | `bg-slate-900/80 backdrop-blur-md border-slate-800` |
+| **Surface 1** | Header fixo e barras de navegação | `bg-white/95 border-b border-slate-200` | `bg-slate-900/95 border-b border-slate-800` |
 | **Surface 2** | Cards de métricas e tabelas | `bg-white border-slate-200` | `bg-slate-900 border-slate-800` |
 | **Surface 3** | Áreas de filtros, subpainéis e contexto | `bg-slate-100/80 border-slate-200` | `bg-slate-850/80 border-slate-800/80` |
 | **Surface 4** | Diálogos e modais sobrepostos | `bg-white shadow-dialog` | `bg-slate-900 shadow-dialog border-slate-800` |
@@ -86,7 +89,7 @@ A tipografia do Longevidade Hub prioriza a leitura rápida e segura de exames e 
 - **`text-metric` / `font-mono` (24–36px):** Valores quantitativos com peso visual (ex: glicemia `88 mg/dL`, HRV `64 ms`), com cifras alinhadas monospaçadas para evitar saltos visuais.
 
 > [!CAUTION]
-> Microtipografias abaixo de 11px (`text-[9px]`, `text-[10px]`) são proibidas para textos funcionais essenciais. Devem ser restritas exclusivamente a siglas de tags compactas e labels decorativos de apoio.
+> Microtipografias abaixo de 12px (`text-[9px]`, `text-[10px]`, `text-[11px]`) são terminantemente proibidas para qualquer texto informativo, clínico ou funcional no sistema (piso semântico do Design System: `text-xs` / 12px). Exceções pontuais decorativas exigem anotação explícita e validação no audit de conformidade.
 
 ---
 
@@ -187,7 +190,7 @@ Diálogos e gavetas modais com gerenciamento completo de foco acessível:
 - Aprisionamento de foco (*focus trap*).
 - Fechamento com tecla `Escape`.
 - Foco automático no primeiro controle interativo ao abrir e retorno ao gatilho original ao fechar.
-- Backdrop translúcido com `backdrop-blur-md` e bloqueio de scroll na página principal.
+- Backdrop do overlay: único local autorizado do sistema com transluscência discreta (`backdrop-blur-sm`) sobre Surface 4 para foco contextual, com bloqueio de scroll na página principal.
 
 ### 4.8. `ConfirmDialog`
 Modal especializado para confirmação de ações de alto impacto (exclusão de exames, cancelamento de protocolos):
@@ -212,6 +215,83 @@ Controle segmentado padronizado para navegação temporal em painéis e gráfico
 - Opções padronizadas: `Hoje` (24h), `7 dias`, `30 dias`, `90 dias`, `Tudo`.
 - Suporte a navegação por teclado (`ArrowLeft` e `ArrowRight`).
 - Anúncio semântico para leitores de tela (`aria-current="true"` ou role `radiogroup`).
+
+### 4.10. `SyncStatusBadge`
+Badge semântico e acessível para comunicação de estado de sincronização e frescor de dados. Mapeia os 8 estados canônicos do sistema:
+- `never`: Nunca sincronizado (cinza/slate).
+- `syncing`: Sincronização em andamento (spinner acessível, cyan).
+- `success`: Sincronizado com sucesso e dados recentes (emerald).
+- `partial`: Sincronização parcial com dados incompletos ou advertências (amber).
+- `error`: Falha operacional de rede ou servidor (rose).
+- `expired`: Credenciais ou token de integração expirado (amber).
+- `disconnected`: Integração desconectada intencionalmente (slate).
+- `stale`: Dados antigos sem upload há mais de 7 dias (amber).
+
+```tsx
+import { SyncStatusBadge } from './ui';
+
+<SyncStatusBadge
+  state="success"
+  lastSyncAt="2026-10-03T14:30:00Z"
+  coveredUntil="14:00"
+  serviceName="Zepp Wearables"
+/>
+```
+
+### 4.11. `ResponsiveDataTable`
+Componente canônico para apresentação de dados densos com comportamento responsivo inteligente:
+- **Desktop (≥ md):** Tabela clínica semântica (`<table role="table">`) com cabeçalho de colunas estruturado e `caption` acessível via `sr-only`.
+- **Mobile (< md):** Cartões de linha (*Row Cards*) independentes que impedem overflow horizontal, preservam padding tátil e associam cada valor ao seu respectivo rótulo de coluna.
+
+```tsx
+import { ResponsiveDataTable } from './ui';
+
+<ResponsiveDataTable
+  caption="Histórico de Exames Laboratoriais"
+  data={records}
+  columns={[
+    { key: 'date', label: 'Data', render: (r) => r.formattedDate },
+    { key: 'name', label: 'Biomarcador', render: (r) => r.name },
+    { key: 'value', label: 'Resultado', align: 'right', render: (r) => `${r.value} ${r.unit}` },
+  ]}
+/>
+```
+
+### 4.12. `EvidenceBlock` (IA e Epistemologia)
+Bloco padrão para apresentação de sínteses analíticas e correlações de IA, eliminando risco de confusão epistemológica entre dados medidos e inferências algorítmicas:
+- **Observação Fisiológica:** Dado mensurado ou fato empírico identificado.
+- **Conduta Prática Recomendada:** Ação prática ou intervenção sugerida.
+- **Limitação da Inferência:** Advertência de que associações não implicam causalidade estrita.
+- **Dados Considerados:** Transparência de insumos (fontes, contagem de registros, período amostral).
+- **Selo Obrigatório:** Badge visual explícito "Gerado por IA".
+
+### 4.13. Arquitetura Semântica do Header e Navegação
+
+O cabeçalho superior (`<header>`) organiza a interface em quatro regiões semânticas bem delineadas, evitando sobrecarga cognitiva e separando estritamente comandos operacionais de preferências e infraestrutura:
+
+```text
+Header (<header role="banner">)
+  ├── 1. Identidade & Marca (Brand)
+  ├── 2. Ações Utilitárias (HeaderUtilityActions, role="toolbar")
+  │     ├── Ações Clínicas Operacionais ("Ações do Dia", role="group")
+  │     │     ├── Registrar Métrica (PlusCircle)
+  │     │     └── Doctor Briefing (Stethoscope)
+  │     ├── Infraestrutura & Sincronização (role="group")
+  │     │     ├── Sync Wearables Zepp (com indicador de estado)
+  │     │     └── Sync Google Health Connect
+  │     └── Preferências & Configurações de Sistema (role="group")
+  │           ├── Configurações de IA e Provedores (Settings)
+  │           └── Alternador de Tema Claro/Escuro (Sun/Moon)
+  ├── 3. Navegação Primária (<nav aria-label="Navegação Principal">)
+  │     └── 6 Áreas Canônicas: Hoje, Saúde, Treinos, Intervenções, IA & Copiloto, Perfil
+  └── 4. Sub-navegação Contextual (<nav aria-label="Sub-navegação de ...">)
+        └── Segmentos específicos da área ativa (ex: Exames, Sono, Linha do Tempo, Avaliações Físicas)
+```
+
+#### Regras de Governança do Header:
+1. **Piso de Alvo de Toque:** Todo botão e item de navegação possui dimensões táteis mínimas de $44 \times 44$px (ou pseudoelementos `after:min-h-[44px]` em mobile).
+2. **Separação de Infraestrutura vs. Rotina Clínica:** Ações clínicas do dia permanecem proeminentes à esquerda no toolbar, enquanto sincronização e configurações avançadas ficam agrupadas à direita.
+3. **Paridade de Acesso:** Todas as configurações técnicas e chaves de IA acessíveis pelo atalho rápido do Header também estão disponíveis no painel de **Perfil → Integrações & Configurações**, permitindo gestão profunda de provedores (BYOK) sem poluir o fluxo clínico diário.
 
 ---
 
@@ -296,11 +376,93 @@ A aplicação é continuamente testada e homologada em quatro viewports de refer
 - **Curto, Direto e Tarefeiro:** Evitar jargões grandiloquentes como *"Hub de Inteligência Epigenética Global"* ou *"Otimização Biológica Quântica"*. Usar linguagem humana: *"Como você está se sentindo hoje?"*, *"Histórico de alterações auditado"*.
 - **Mesmo Termo para o Mesmo Conceito:** Não alternar entre "Exames", "Labs", "Laudos" e "Testes" no mesmo contexto. O termo canônico para exames de sangue é **Exames Laboratoriais**.
 
-### 7.2. Distinção Obrigatória: Dado Observado vs. Modelo
-- **Dado Observado:** Acompanhado de data de coleta, valor, unidade e laboratório/origem comprovada.
-- **Modelo / Estimativa:** Deve conter identificação clara da metodologia (ex: *Modelo Morgan Levine 2018*, *Algoritmo Klemera-Doubal*) e rótulo indicando que se trata de uma projeção matemática baseada nos insumos disponíveis.
+### 7.2. Camada Epistemológica (`SourceTag`)
+Todo indicador ou conclusão analítica na interface possui uma classificação epistemológica explícita (WCAG 1.4.1 — nunca apenas por cor; com ícone semântico, texto claro e `role="note"`):
+- **Dado Observado (`observed`):** Medição física direta obtida por sensor wearable homologado (ex: FC, HRV, passos) ou resultado de laudo laboratorial comprovado com provenance.
+- **Modelo Matemático (`model`):** Projeção algorítmica matemática calculada a partir de múltiplos biomarcadores biológicos validados na literatura médica (ex: Morgan Levine PhenoAge 2018, Klemera-Doubal KDM).
+- **Inferência de IA (`inference`):** Conclusão interpretativa, correlação hipotética ou síntese gerada por Inteligência Artificial — orientada a apoiar o raciocínio clínico, exigindo validação médica profissional.
+- **Referência Clínica (`clinical`):** Parâmetro normativo estabelecido por diretrizes médicas e consensos de saúde.
+- **Atenção Clínica (`warning`):** Sinalização de desvio relevante ou dado fora da faixa esperada.
+- **Ação Recomendada (`action`):** Passo prático, sugestão comportamental ou conduta operacional recomendada.
 
-### 7.3. Aviso Clínico Canônico
+### 7.3. Vocabulário Canônico: Metas vs. Referências (Master §14, §40)
+- **Meta Pessoal:** Objetivo funcional individual deliberadamente definido pelo usuário em seu protocolo (ex: caminhar 10.000 passos/dia, dormir 8 horas). Somente neste contexto o termo "Meta" é autorizado.
+- **Proibição de "Alvo" para Referências:** É estritamente proibido usar o termo "Alvo" para referências estatísticas, laboratoriais ou populacionais.
+- **Referência Clínica:** Faixa ou parâmetro normativo adotado por diretrizes médicas padrão (ex: Taxa Respiratória 12 a 20 rpm).
+- **Referência Ótima (Longevidade):** Faixa funcional preconizada pela medicina preventiva e de longevidade para otimização de sobrevida e resiliência biológica (ex: FC de repouso < 55 bpm, ApoB < 70 mg/dL, PCR-us < 0.5 mg/L).
+- **Estimativa:** Valor numérico aproximado ou projetado (ex: Estimativa de calorias ativas 24h).
+
+### 7.4. Taxonomia dos 6 Estados de Ausência de Dados (Master §15, §16, UX_UI_43)
+A aplicação nunca converte dados ausentes em valor zero real (`0`). Zero real medido (ex: 0 passos, 0 eventos de apneia) é preservado. Quando não há dados, aplica-se a taxonomia tipada:
+1. **Sem dados (`no_data`):** Nenhum registro encontrado para a janela temporal selecionada. Exibe `—` e texto acessível explicativo.
+2. **Não monitorado (`unmonitored`):** Biomarcador ou métrica não configurado para rastreamento ativo nas preferências.
+3. **Não calculável (`uncomputable`):** Insumos necessários incompletos para alimentar o algoritmo matemático.
+4. **Não sincronizado (`unsynced`):** Dispositivo pareado sem upload recente de pacotes.
+5. **Desatualizado (`stale`):** Medição com idade superior ao horizonte de validade clínica (≥ 7 dias).
+6. **Erro de leitura (`error`):** Falha técnica na captura, transmissão ou integridade do pacote.
+
+### 7.5. Padrão de Semântica Temporal e Frescor do Dado (Master §75, §76, §77)
+- **Rótulos Canônicos de Período:** `Hoje`, `Ontem`, `Últimos 7 dias`, `Últimos 30 dias`, `Últimos 90 dias`, `Período personalizado`. Proibido misturar livremente `30d` com `30 dias`.
+- **Frescor do Dado:** Avaliado por `formatDataFreshness`: `Atualizado hoje`, `Atualizado ontem`, `Atualizado há X dias` (< 7 dias) e `Dados desatualizados (há X dias)` (≥ 7 dias).
+- **Timezone Local:** Toda formatação de data e hora apresentada ao usuário no frontend utiliza explicitamente o fuso horário local (`pt-BR`).
+
+### 7.6. Aviso Clínico Canônico
 Todo relatório exportado, sumário de IA, painel de longevidade e o rodapé geral da aplicação devem apresentar o aviso clínico padronizado:
 
 > **Aviso Clínico:** Este aplicativo organiza e analisa dados de saúde coletados pelo próprio usuário. Não substitui o diagnóstico, acompanhamento ou prescrição médica. Consulte sempre um médico ou profissional de saúde habilitado antes de iniciar ou alterar intervenções terapêuticas.
+
+---
+
+## 8. Governança, Auditoria Automatizada e Registro de Exceções (v2.1.0+)
+
+Para assegurar que as diretrizes do Design System não se degradem ao longo do desenvolvimento contínuo, a plataforma conta com um motor estático de conformidade automatizada (`frontend/scripts/audit-design-system.mjs`) e um registro formal de exceções.
+
+### 8.1. Motor de Auditoria de Conformidade
+
+O comando pode ser executado a qualquer momento dentro do diretório `frontend/`:
+
+```bash
+npm run audit:design-system
+```
+
+O auditor inspeciona recursivamente `src/**/*.{ts,tsx,css}` (excluindo arquivos de teste e primitives em `components/ui/` onde aplicável) e avalia 16 regras estruturais distribuídas em 7 categorias:
+
+1. **Tipografia:** Proibição de microtexto funcional (`text-[9px]`, `text-[10px]`, `text-[10.5px]`, `text-[11px]`).
+2. **Raio de Borda (Radius):** Restrição a tokens canônicos (`radius.arbitrary`, `radius.3xl`, `radius.non-token`).
+3. **Gradientes:** Rejeição de gradientes arbitrários em fundos (`bg-gradient-to-*`) que contradigam a sobriedade clínica.
+4. **Efeitos Visuais:** Restrição de glow decorativo (`effects.glow`), blur em excesso (`backdrop-blur`) e sombras arbitrárias.
+5. **Acessibilidade de Foco:** Detecção de `focus:outline-none` sem o correspondente anel `focus-visible`.
+6. **Movimento (Motion):** Restrição a animações decorativas permanentes (`animate-ping`, `animate-bounce`).
+7. **Controles Nativos:** Detecção de uso desgovernado de tags `<button>`, `<input>`, `<select>` e `<textarea>` em telas e modais em detrimento dos primitives de UI correspondentes.
+
+### 8.2. Estados e Portão de Regressão (Ratchet Baseline)
+
+Cada regra do auditor é classificada em um dos quatro estados canônicos:
+
+- **`PASS`:** Nenhuma ocorrência não justificada encontrada no código.
+- **`EXCEPTION`:** Ocorrências identificadas possuem justificativa formal registrada em `docs/DESIGN_SYSTEM_EXCEPTIONS.md` e marcadas no código via `ds-exception: DSX-NNN`.
+- **`WARN`:** Dívida legada identificada, porém contida dentro do teto histórico registrado em `frontend/audit-baseline.json`. O comando encerra com exit code `0`.
+- **`FAIL`:** Regressão detectada (ocorrências abertas excedem o baseline estipulado) ou exceção referenciada no código sem registro correspondente em documentação. O comando encerra imediatamente com exit code `1`, bloqueando pipelines e releases.
+
+### 8.3. Atualização do Baseline e Redução Gradual da Dívida
+
+Sempre que uma refatoração ou plano de consolidação eliminar ocorrências de dívida técnica, o baseline deve sofrer *ratchet down* (redução irreversível do teto) com o comando:
+
+```bash
+npm run audit:design-system:baseline
+```
+
+O baseline nunca deve ser afrouxado ou aumentado manualmente para mascarar novas violações.
+
+### 8.4. Fluxo de Registro de Exceções
+
+Quando uma exceção visual for clinicamente ou tecnicamente necessária (por exemplo, gradiente estrito de escala térmica em um gráfico de variabilidade glicêmica):
+
+1. Reserve o próximo identificador sequencial `DSX-NNN` em `docs/DESIGN_SYSTEM_EXCEPTIONS.md`.
+2. Documente o arquivo, regra afetada, justificativa detalhada e prazo/status.
+3. No código-fonte correspondente, anote na linha anterior ou na mesma linha:
+   ```tsx
+   // ds-exception: DSX-001
+   <div className="bg-gradient-to-r ...">
+   ```
+

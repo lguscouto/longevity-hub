@@ -12,8 +12,8 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
-import { ExerciseMedia } from '../types'
-import { Modal } from './ui'
+import { Modal, Button, Input } from './ui'
+import type { ExerciseMedia } from '../types'
 export type { ExerciseMedia }
 
 interface ExerciseDetailModalProps {
@@ -166,12 +166,13 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
       closeButtonAriaLabel="Fechar detalhes do exercício"
       footer={
         <div className="flex justify-end">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
           >
             Fechar
-          </button>
+          </Button>
         </div>
       }
       contentClassName="p-0"
@@ -194,9 +195,14 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
               )}
               <span>{linkFeedback.message}</span>
             </div>
-            <button onClick={() => setLinkFeedback(null)} className="text-xs font-bold underline">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLinkFeedback(null)}
+              className="text-xs font-bold underline min-h-0 h-auto p-1"
+            >
               OK
-            </button>
+            </Button>
           </div>
         )}
 
@@ -250,7 +256,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
               {currentMedia.target_pt && (
                 <span className="text-xs font-bold px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-                  Alvo: {currentMedia.target_pt}
+                  Foco Muscular: {currentMedia.target_pt}
                 </span>
               )}
 
@@ -283,7 +289,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
                   Passo a Passo de Execução
                 </h4>
                 {/* Seletor de Idioma de Instrução */}
-                <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 text-[10px] font-bold">
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold">
                   <button
                     onClick={() => setSelectedLanguage('es')}
                     className={`px-2 py-0.5 rounded ${
@@ -310,7 +316,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
               <ol className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                 {instructionsList.map((step, idx) => (
                   <li key={idx} className="flex items-start gap-2.5 leading-relaxed">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 font-bold flex items-center justify-center text-[10px]">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 font-bold flex items-center justify-center text-xs">
                       {idx + 1}
                     </span>
                     <span>{step}</span>
@@ -323,40 +329,42 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
           {/* Área de Re-vinculação Manual */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
             {!showReLinkSearch ? (
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => setShowReLinkSearch(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl text-xs font-bold border border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-500/50 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 shadow-2xs transition"
+                leftIcon={Link2}
+                className="w-full text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400"
               >
-                <Link2 className="h-4 w-4" />
                 Vincular outro GIF / Trocar Exercício da Biblioteca
-              </button>
+              </Button>
             ) : (
               <div className="space-y-3 bg-slate-50 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     Buscar exercício na biblioteca (1.300+)
                   </span>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowReLinkSearch(false)}
-                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 py-0.5 px-2"
                   >
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
 
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <input
+                <div className="w-full">
+                  <Input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearchCatalog(e.target.value)}
                     placeholder="Ex: bench press, squat, bicep curl..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-purple-500"
+                    leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+                    rightIcon={isSearching ? <RefreshCw className="h-4 w-4 text-purple-600 animate-spin" /> : undefined}
                     autoFocus
                   />
-                  {isSearching && (
-                    <RefreshCw className="absolute right-3 top-2.5 h-4 w-4 text-purple-600 animate-spin" />
-                  )}
                 </div>
 
                 {/* Lista de Resultados de Busca */}
@@ -383,19 +391,22 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
                             <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 truncate capitalize">
                               {item.name}
                             </span>
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 capitalize">
                               {item.target_pt || item.target || item.body_part_pt || ''}
                             </span>
                           </div>
                         </div>
 
-                        <button
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => handleSelectExerciseToLink(item)}
                           disabled={isSubmittingLink}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-50 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white transition disabled:opacity-50 flex-shrink-0 ml-2"
+                          loading={isSubmittingLink}
+                          className="text-purple-700 dark:text-purple-300 flex-shrink-0 ml-2 py-1 px-2.5 text-xs"
                         >
                           Vincular
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>

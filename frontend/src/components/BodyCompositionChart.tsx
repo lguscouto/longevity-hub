@@ -229,18 +229,18 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
     const pt: TimelinePoint = payload[0].payload;
 
     return (
-      <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-xl border border-slate-700 shadow-dialog text-xs space-y-2 max-w-xs z-50">
+      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 shadow-dialog text-xs space-y-2 max-w-xs z-50">
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
           <div className="flex items-center gap-1.5 font-bold text-slate-200">
             <Calendar className="h-3.5 w-3.5 text-cyan-400" />
             <span>{formatDateFull(pt.date)}</span>
           </div>
           {pt.is_physical_assessment ? (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30 text-[10px]">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30 text-xs">
               <Camera className="h-3 w-3" /> Avaliação Oficial
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium text-[10px]">
+            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium text-xs">
               {pt.source || 'Wearable'}
             </span>
           )}
@@ -304,7 +304,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
         </div>
 
         {pt.is_physical_assessment && (
-          <div className="border-t border-slate-800 pt-1.5 text-[10px] text-cyan-400/90 italic flex items-center gap-1">
+          <div className="border-t border-slate-800 pt-1.5 text-xs text-cyan-400/90 italic flex items-center gap-1">
             <Sparkles className="h-3 w-3" /> Clique no ponto para abrir fotos e detalhes
           </div>
         )}
@@ -342,7 +342,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <Activity className="h-5 w-5" />
             </div>
             <div>
@@ -360,13 +360,13 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {/* Peso Atual */}
           <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400/90 font-medium">Peso:</span>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400/90 font-medium">Peso:</span>
             <strong className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
               {formatMetricValueString(activeSummary?.latest_weight_kg, 'kg')}
             </strong>
             {activeSummary?.weight_delta !== null && activeSummary?.weight_delta !== undefined && (
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
                   activeSummary.weight_delta <= 0
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
@@ -384,13 +384,13 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
 
           {/* Gordura Corporal */}
           <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
-            <span className="text-[11px] text-amber-600 dark:text-amber-400/90 font-medium">Gordura:</span>
+            <span className="text-xs text-amber-600 dark:text-amber-400/90 font-medium">Gordura:</span>
             <strong className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">
               {formatMetricValueString(activeSummary?.latest_body_fat_pct, '%')}
             </strong>
             {activeSummary?.body_fat_delta !== null && activeSummary?.body_fat_delta !== undefined && (
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
                   activeSummary.body_fat_delta <= 0
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
@@ -408,13 +408,13 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
 
           {/* Massa Magra */}
           <div className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2">
-            <span className="text-[11px] text-cyan-600 dark:text-cyan-400/90 font-medium">Massa Magra:</span>
+            <span className="text-xs text-cyan-600 dark:text-cyan-400/90 font-medium">Massa Magra:</span>
             <strong className="text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400">
               {formatMetricValueString(activeSummary?.latest_lean_mass_kg, 'kg')}
             </strong>
             {activeSummary?.lean_mass_delta !== null && activeSummary?.lean_mass_delta !== undefined && (
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
                   activeSummary.lean_mass_delta >= 0
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
@@ -437,7 +437,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           {data?.target_weight_kg && (
             <div className="px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center gap-1.5 text-violet-600 dark:text-violet-300">
               <Target className="h-3.5 w-3.5 text-violet-400" />
-              <span className="text-[11px] font-medium">Meta:</span>
+              <span className="text-xs font-medium">Meta:</span>
               <strong className="text-xs sm:text-sm font-bold">{data.target_weight_kg} kg</strong>
             </div>
           )}
@@ -452,7 +452,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
             onClick={() => setViewMode('weight_fat')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
               viewMode === 'weight_fat'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -462,7 +462,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
             onClick={() => setViewMode('body_comp')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
               viewMode === 'body_comp'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm'
+                ? 'bg-cyan-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -472,7 +472,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
             onClick={() => setViewMode('measurements')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
               viewMode === 'measurements'
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-sm'
+                ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -677,7 +677,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
       </div>
 
       {/* Footnote Guide */}
-      <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 gap-2">
+      <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 gap-2">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded-full border-2 border-cyan-400 bg-emerald-500" />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeftRight, AlertCircle, RefreshCw, Camera } from 'lucide-react';
-import { EmptyState } from '../ui';
+import { EmptyState, Select, FormField, Button } from '../ui';
 import { PhysicalAssessment, ComparisonManifest, Photo, ANGLE_LABELS } from './types';
 
 interface AssessmentComparisonProps {
@@ -43,12 +43,11 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Avaliação Anterior (Baseline)</label>
-            <select
+          <FormField id="compare-prev-id" label="Avaliação Anterior (Baseline)">
+            <Select
+              id="compare-prev-id"
               value={comparePrevId}
               onChange={e => setComparePrevId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-violet-500"
             >
               <option value="">Selecione a avaliação anterior...</option>
               {assessments.map(a => (
@@ -56,15 +55,14 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                   {new Date(a.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')} — {a.title || 'Sem título'} ({a.weight_kg ? `${a.weight_kg}kg` : 'sem peso'})
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">Avaliação Atual (Evolução)</label>
-            <select
+          <FormField id="compare-curr-id" label="Avaliação Atual (Evolução)">
+            <Select
+              id="compare-curr-id"
               value={compareCurrId}
               onChange={e => setCompareCurrId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-violet-500"
             >
               <option value="">Selecione a avaliação recente...</option>
               {assessments.map(a => (
@@ -72,19 +70,22 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                   {new Date(a.assessment_date + 'T00:00:00').toLocaleDateString('pt-BR')} — {a.title || 'Sem título'} ({a.weight_kg ? `${a.weight_kg}kg` : 'sem peso'})
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
         </div>
 
         <div className="flex justify-end">
-          <button
+          <Button
+            variant="primary"
+            leftIcon={compareLoading ? RefreshCw : ArrowLeftRight}
+            loading={compareLoading}
+            loadingText="Gerando Comparativo..."
             onClick={onRunComparison}
-            disabled={compareLoading || !comparePrevId || !compareCurrId}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold text-sm shadow-lg hover:shadow-purple-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
+            disabled={!comparePrevId || !compareCurrId}
+            className="bg-violet-600 hover:bg-violet-500 border-violet-600/30"
           >
-            {compareLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowLeftRight className="h-4 w-4" />}
             Gerar Comparativo Lado a Lado
-          </button>
+          </Button>
         </div>
       </div>
 

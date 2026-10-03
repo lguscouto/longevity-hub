@@ -66,8 +66,8 @@ describe('MetricCard (UX_UI_32)', () => {
       />
     );
 
-    // Alvo Pessoal
-    expect(screen.getByLabelText('Alvo Pessoal: 10.000')).toBeInTheDocument();
+    // Meta Pessoal
+    expect(screen.getByLabelText('Meta Pessoal: 10.000')).toBeInTheDocument();
     expect(screen.getByText('10.000')).toBeInTheDocument();
 
     // Referência Clínica
@@ -84,7 +84,7 @@ describe('MetricCard (UX_UI_32)', () => {
     expect(screen.getByLabelText('Referência Clínica: 12-20')).toBeInTheDocument();
     expect(screen.getByText('12-20')).toBeInTheDocument();
 
-    // Alvo Ótimo de Longevidade
+    // Referência Ótima de Longevidade
     rerender(
       <MetricCard
         title="FC Repouso"
@@ -95,7 +95,23 @@ describe('MetricCard (UX_UI_32)', () => {
         icon={Activity}
       />
     );
-    expect(screen.getByLabelText('Alvo Ótimo: < 55 bpm')).toBeInTheDocument();
+    expect(screen.getByLabelText('Referência Ótima: < 55 bpm')).toBeInTheDocument();
     expect(screen.getByText('< 55 bpm')).toBeInTheDocument();
   });
+
+  it('renders SourceTag epistemological layer when sourceKind is provided', () => {
+    render(
+      <MetricCard
+        title="HRV (RMSSD)"
+        value={65}
+        unit="ms"
+        sourceKind="observed"
+        icon={Activity}
+      />
+    );
+
+    expect(screen.getByText('Observado')).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: /natureza do dado: dado observado diretamente/i })).toBeInTheDocument();
+  });
 });
+

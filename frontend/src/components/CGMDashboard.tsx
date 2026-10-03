@@ -3,6 +3,7 @@ import { Activity, Zap, FileSpreadsheet, Download } from 'lucide-react'
 
 import { ApiError, requestJson } from '../lib/api'
 import { TermHelp } from './ui/TermHelp'
+import { Button } from './ui'
 
 interface CGMSummary {
   date_ref: string
@@ -77,7 +78,7 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
             <span>Glicemia Contínua (CGM - Continuous Glucose Monitor)</span>
             <TermHelp termKey="cgm" />
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Variabilidade glicêmica, Média de 24h e Tempo no Alvo de Longevidade (70-140 mg/dL)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Variabilidade glicêmica, Média de 24h e Tempo na Faixa de Longevidade (70-140 mg/dL)</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -89,21 +90,26 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
             className="hidden"
           />
 
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition glow-amber shadow-md"
+            loading={isUploading}
+            leftIcon={FileSpreadsheet}
+            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold"
           >
-            <FileSpreadsheet className="h-4 w-4" />
             {isUploading ? 'Importando...' : 'Importar CSV Libre / Dexcom'}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-sm"
+            leftIcon={Download}
           >
-            <Download className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Exportar CSV
-          </button>
+            Exportar CSV
+          </Button>
         </div>
       </div>
 
@@ -125,40 +131,40 @@ export const CGMDashboard: React.FC<CGMDashboardProps> = ({ summaries, onRefresh
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Glicemia Média 24h</span>
+            <span className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">Glicemia Média 24h</span>
             <TermHelp termKey="mean_glucose" />
           </div>
           <div className={`text-2xl font-extrabold mt-1 ${metricTone}`}>
             {latest ? `${latest.mean_glucose} mg/dL` : '—'}
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">{latest ? 'Target Funcional: < 90 mg/dL' : 'Sem dados para a data'}</span>
+          <span className="text-xs text-slate-500 mt-1 block">{latest ? 'Referência Funcional: < 90 mg/dL' : 'Sem dados para a data'}</span>
         </div>
 
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Time-In-Range (70-140)</span>
+            <span className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">Time-In-Range (70-140)</span>
             <TermHelp termKey="tir" />
           </div>
           <div className={`text-2xl font-extrabold mt-1 ${latest ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-300'}`}>
             {latest ? `${latest.time_in_range_pct}%` : '—'}
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">{latest ? 'Alvo Longevidade: > 95%' : 'Sem dados para a data'}</span>
+          <span className="text-xs text-slate-500 mt-1 block">{latest ? 'Referência Longevidade: > 95%' : 'Sem dados para a data'}</span>
         </div>
 
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-          <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Variabilidade (CV %)</span>
+          <span className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">Variabilidade (CV %)</span>
           <div className={`text-2xl font-extrabold mt-1 ${latest ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-500 dark:text-slate-300'}`}>
             {latest ? `${latest.cv_pct}%` : '—'}
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">{latest ? 'Alvo Estabilidade: < 15%' : 'Sem dados para a data'}</span>
+          <span className="text-xs text-slate-500 mt-1 block">{latest ? 'Referência Estabilidade: < 15%' : 'Sem dados para a data'}</span>
         </div>
 
         <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-          <span className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">Total de Leituras</span>
+          <span className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">Total de Leituras</span>
           <div className={`text-2xl font-extrabold mt-1 ${latest ? 'text-slate-900 dark:text-slate-200' : 'text-slate-500 dark:text-slate-300'}`}>
             {latest ? `${latest.total_readings}` : '—'}
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">{latest ? 'Sensor Ativo 24/7' : 'Sem dados para a data'}</span>
+          <span className="text-xs text-slate-500 mt-1 block">{latest ? 'Sensor Ativo 24/7' : 'Sem dados para a data'}</span>
         </div>
       </div>
     </div>

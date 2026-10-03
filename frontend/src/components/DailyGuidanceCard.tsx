@@ -54,26 +54,26 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
     : 'insufficient_data'
 
   const stateColors = {
-    optimal: 'from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
-    moderate: 'from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/30 text-amber-600 dark:text-amber-400',
-    recover: 'from-violet-500/15 via-violet-500/5 to-transparent border-violet-500/30 text-violet-600 dark:text-violet-400',
-    insufficient_data: 'from-slate-500/15 via-slate-500/5 to-transparent border-slate-500/30 text-slate-600 dark:text-slate-400',
+    optimal: 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
+    moderate: 'bg-amber-500/5 dark:bg-amber-950/20 border-amber-500/30 text-amber-600 dark:text-amber-400',
+    recover: 'bg-violet-500/5 dark:bg-violet-950/20 border-violet-500/30 text-violet-600 dark:text-violet-400',
+    insufficient_data: 'bg-slate-500/5 dark:bg-slate-900 border-slate-500/30 text-slate-600 dark:text-slate-400',
   }[stateKey]
 
   const factorsList = Array.isArray(guidance?.factors) ? guidance.factors : []
   const limitationsList = Array.isArray(guidance?.limitations) ? guidance.limitations : []
 
   return (
-    <div className={`p-6 rounded-2xl glass-card border bg-gradient-to-br ${stateColors} shadow-sm space-y-4`}>
+    <div className={`p-6 rounded-2xl glass-card border ${stateColors} shadow-sm space-y-4`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-white/40 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-slate-800">
+          <div className="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             <Compass className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider opacity-75">Como estou hoje?</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900/10 dark:bg-white/10 uppercase">
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-900/10 dark:bg-white/10 uppercase">
                 {guidance?.confidence || 'unavailable'}
               </span>
             </div>
@@ -84,12 +84,12 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
         {guidance?.score != null && (
           <div className="text-right">
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{guidance.score}</span>
-            <span className="text-[10px] font-bold uppercase block text-slate-500 dark:text-slate-400">Score Prontidão</span>
+            <span className="text-xs font-bold uppercase block text-slate-500 dark:text-slate-400">Score Prontidão</span>
           </div>
         )}
       </div>
 
-      <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80">
+      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800/80">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
           Ação Recomendada Hoje
         </span>

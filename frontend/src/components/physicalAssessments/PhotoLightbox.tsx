@@ -69,7 +69,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 type="button"
                 onClick={handlePrev}
                 aria-label="Foto anterior"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 backdrop-blur transition-all"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 shadow-md transition-all"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -86,7 +86,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 type="button"
                 onClick={handleNext}
                 aria-label="Próxima foto"
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 backdrop-blur transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 shadow-md transition-all"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
@@ -95,7 +95,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
           <div className="mt-3 text-center flex flex-col items-center gap-1">
             {photos.length > 1 && currentIndex >= 0 && (
-              <span className="text-[11px] text-slate-400 font-medium">
+              <span className="text-xs text-slate-400 font-medium">
                 {currentIndex + 1} de {photos.length}
               </span>
             )}

@@ -20,7 +20,7 @@ export interface TimeRangeControlProps<T extends string | number = string | numb
 }
 
 const ACTIVE_COLOR_STYLES: Record<'emerald' | 'indigo' | 'slate', string> = {
-  emerald: 'bg-emerald-500 text-slate-950 font-black shadow-xs glow-emerald',
+  emerald: 'bg-emerald-500 text-slate-950 font-black shadow-xs',
   indigo: 'bg-indigo-600 text-white font-bold shadow-xs',
   slate: 'bg-slate-800 text-white dark:bg-slate-700 font-bold shadow-xs',
 };

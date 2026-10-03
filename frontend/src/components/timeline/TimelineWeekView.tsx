@@ -34,7 +34,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">{w.title}</h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-xs text-slate-400">
                     {w.week_start} até {w.week_end}
                   </p>
                 </div>
@@ -53,7 +53,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
             {/* Grid de Métricas Agregadas */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3.5">
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Moon className="h-3 w-3 text-indigo-400" /> Sono Médio
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -62,7 +62,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Heart className="h-3 w-3 text-rose-500" /> FC Repouso Médio
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -71,7 +71,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Dumbbell className="h-3 w-3 text-purple-500" /> Treinos
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -80,7 +80,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Activity className="h-3 w-3 text-emerald-500" /> Eventos-Chave
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -92,7 +92,7 @@ export const TimelineWeekView: React.FC<TimelineWeekViewProps> = ({ weeks, onSel
             {/* Lista de Eventos Relevantes da Semana */}
             {w.key_events.length > 0 && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                <span className="text-[11px] font-semibold text-slate-400 mb-1.5 block">Destaques da semana:</span>
+                <span className="text-xs font-semibold text-slate-400 mb-1.5 block">Destaques da semana:</span>
                 <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
                   {w.key_events.map(e => (
                     <li key={e.id} className="flex items-center gap-2">

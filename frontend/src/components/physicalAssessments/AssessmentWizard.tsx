@@ -16,6 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { NewPhotoDraft, WIZARD_STEPS } from './types';
+import { Input, Select, Textarea, FormField, Button, IconButton } from '../ui';
 
 interface AssessmentWizardProps {
   currentStep: number;
@@ -134,7 +135,7 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                     </div>
                     <div className="min-w-0">
                       <span className="block text-xs font-bold truncate">{step.label}</span>
-                      <span className="block text-[10px] text-slate-400 dark:text-slate-500 truncate hidden sm:block">
+                      <span className="block text-xs text-slate-400 dark:text-slate-500 truncate hidden sm:block">
                         {step.description}
                       </span>
                     </div>
@@ -166,39 +167,28 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="assessment-date-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Data da Avaliação <span className="text-rose-400">*</span>
-              </label>
-              <input
+            <FormField id="assessment-date-input" label="Data da Avaliação" required>
+              <Input
                 id="assessment-date-input"
                 type="date"
                 required
                 value={formDate}
                 onChange={e => setFormDate(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label htmlFor="assessment-title-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Título (Opcional)
-              </label>
-              <input
+            <FormField id="assessment-title-input" label="Título (Opcional)">
+              <Input
                 id="assessment-title-input"
                 type="text"
                 placeholder="Ex: Início do cutting / Medição mensal"
                 value={formTitle}
                 onChange={e => setFormTitle(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label htmlFor="assessment-weight-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Peso (kg)
-              </label>
-              <input
+            <FormField id="assessment-weight-input" label="Peso (kg)">
+              <Input
                 id="assessment-weight-input"
                 type="number"
                 step="0.1"
@@ -206,9 +196,9 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                 placeholder="Ex: 78.5"
                 value={formWeight}
                 onChange={e => setFormWeight(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                rightIcon={<span className="text-xs text-slate-400 font-semibold pr-2">kg</span>}
               />
-            </div>
+            </FormField>
           </div>
         </div>
       )}
@@ -226,11 +216,8 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="assessment-waist-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Cintura (cm)
-              </label>
-              <input
+            <FormField id="assessment-waist-input" label="Cintura (cm)" helperText="Ponto mais estreito do tronco">
+              <Input
                 id="assessment-waist-input"
                 type="number"
                 step="0.5"
@@ -238,16 +225,12 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                 placeholder="Ex: 82.0"
                 value={formWaist}
                 onChange={e => setFormWaist(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                rightIcon={<span className="text-xs text-slate-400 font-semibold pr-2">cm</span>}
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">Ponto mais estreito do tronco</span>
-            </div>
+            </FormField>
 
-            <div>
-              <label htmlFor="assessment-abdomen-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Abdômen (cm)
-              </label>
-              <input
+            <FormField id="assessment-abdomen-input" label="Abdômen (cm)" helperText="Na altura da cicatriz umbilical">
+              <Input
                 id="assessment-abdomen-input"
                 type="number"
                 step="0.5"
@@ -255,16 +238,12 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                 placeholder="Ex: 85.0"
                 value={formAbdomen}
                 onChange={e => setFormAbdomen(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                rightIcon={<span className="text-xs text-slate-400 font-semibold pr-2">cm</span>}
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">Na altura da cicatriz umbilical</span>
-            </div>
+            </FormField>
 
-            <div>
-              <label htmlFor="assessment-hip-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Quadril (cm)
-              </label>
-              <input
+            <FormField id="assessment-hip-input" label="Quadril (cm)" helperText="Ponto de maior proeminência glútea">
+              <Input
                 id="assessment-hip-input"
                 type="number"
                 step="0.5"
@@ -272,10 +251,9 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                 placeholder="Ex: 96.0"
                 value={formHip}
                 onChange={e => setFormHip(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                rightIcon={<span className="text-xs text-slate-400 font-semibold pr-2">cm</span>}
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">Ponto de maior proeminência glútea</span>
-            </div>
+            </FormField>
           </div>
         </div>
       )}
@@ -293,11 +271,12 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
           </div>
 
           <div className="max-w-md">
-            <label htmlFor="assessment-bodyfat-input" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Gordura Corporal (%)
-            </label>
-            <div className="relative">
-              <input
+            <FormField
+              id="assessment-bodyfat-input"
+              label="Gordura Corporal (%)"
+              helperText="Este valor será utilizado no gráfico histórico e no acompanhamento longitudinal da massa magra."
+            >
+              <Input
                 id="assessment-bodyfat-input"
                 type="number"
                 step="0.1"
@@ -305,13 +284,9 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                 placeholder="Ex: 15.2"
                 value={formBodyFat}
                 onChange={e => setFormBodyFat(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-3.5 pr-8 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500"
+                rightIcon={<span className="text-xs text-slate-400 font-semibold pr-2">%</span>}
               />
-              <span className="absolute right-3.5 top-2.5 text-slate-400 font-semibold text-sm">%</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1.5">
-              Este valor será utilizado no gráfico histórico e no acompanhamento longitudinal da massa magra.
-            </p>
+            </FormField>
           </div>
         </div>
       )}
@@ -370,9 +345,9 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                       className="w-20 h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0"
                     />
                     <div className="flex-1 space-y-2 text-xs">
-                      <div>
-                        <label className="block text-slate-500 dark:text-slate-400 mb-1 font-semibold">Ângulo Corporal</label>
-                        <select
+                      <FormField id={`draft-angle-${idx}`} label="Ângulo Corporal">
+                        <Select
+                          id={`draft-angle-${idx}`}
                           value={draft.angle}
                           onChange={e => {
                             const val = e.target.value as any;
@@ -382,19 +357,19 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                               return copy;
                             });
                           }}
-                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-medium"
+                          className="min-h-[36px] text-xs py-1"
                         >
                           <option value="front">Frente</option>
                           <option value="back">Costas</option>
                           <option value="left_side">Lado Esquerdo</option>
                           <option value="right_side">Lado Direito</option>
                           <option value="other">Outro</option>
-                        </select>
-                      </div>
+                        </Select>
+                      </FormField>
 
-                      <div>
-                        <label className="block text-slate-500 dark:text-slate-400 mb-1 font-semibold">Estado Corporal</label>
-                        <select
+                      <FormField id={`draft-state-${idx}`} label="Estado Corporal">
+                        <Select
+                          id={`draft-state-${idx}`}
                           value={draft.body_state}
                           onChange={e => {
                             const val = e.target.value as any;
@@ -404,23 +379,23 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
                               return copy;
                             });
                           }}
-                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-medium"
+                          className="min-h-[36px] text-xs py-1"
                         >
                           <option value="relaxed">Relaxado</option>
                           <option value="flexed">Contraído</option>
                           <option value="unspecified">Não informado</option>
-                        </select>
-                      </div>
+                        </Select>
+                      </FormField>
                     </div>
 
-                    <button
-                      type="button"
+                    <IconButton
+                      icon={X}
                       onClick={() => onRemoveDraft(idx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                      title="Remover foto"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                      className="p-1.5 text-slate-400 hover:text-rose-500"
+                      aria-label="Remover foto"
+                      variant="ghost"
+                      size="sm"
+                    />
                   </div>
                 ))}
               </div>
@@ -442,15 +417,15 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
               </p>
             </div>
 
-            <div>
-              <textarea
+            <FormField id="assessment-notes-input" label="Observações & Notas Clínicas">
+              <Textarea
+                id="assessment-notes-input"
                 rows={3}
                 placeholder="Ex: Medição realizada em jejum pela manhã logo após acordar..."
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-cyan-500 resize-none"
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Review Card */}
@@ -500,22 +475,27 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
       {/* Stepper Navigation Actions */}
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onCancel}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+            className="w-full sm:w-auto"
           >
             Cancelar
-          </button>
+          </Button>
 
           {currentStep > 1 && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setCurrentStep(prev => prev - 1)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              leftIcon={ChevronLeft}
+              className="w-full sm:w-auto"
             >
-              <ChevronLeft className="h-4 w-4" /> Etapa Anterior
-            </button>
+              Etapa Anterior
+            </Button>
           )}
         </div>
 
@@ -523,38 +503,40 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
           {currentStep < 5 ? (
             <>
               {/* Atalho para salvar antes de passar por todas as etapas se o usuário tiver dados parciais */}
-              <button
+              <Button
                 type="submit"
+                variant="secondary"
+                size="sm"
                 disabled={submitting}
-                className="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                leftIcon={CheckCircle2}
+                className="w-full sm:w-auto text-slate-800 dark:text-slate-200"
               >
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Salvar Avaliação Física
-              </button>
+                Salvar Avaliação Física
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={() => setCurrentStep(prev => prev + 1)}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                rightIcon={ChevronRight}
+                className="w-full sm:w-auto"
               >
-                Próxima Etapa <ChevronRight className="h-4 w-4" />
-              </button>
+                Próxima Etapa
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="sm"
               disabled={submitting}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              loading={submitting}
+              leftIcon={CheckCircle2}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500"
             >
-              {submitting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" /> Salvando Avaliação...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" /> Salvar Avaliação Física
-                </>
-              )}
-            </button>
+              Salvar Avaliação Física
+            </Button>
           )}
         </div>
       </div>

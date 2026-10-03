@@ -46,20 +46,20 @@ function getSourceConfig(source: string): { label: string; icon: React.FC<{ clas
 function StatusBadge({ status }: { status: string }) {
   if (status === 'sucesso' || status === 'ok') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
         <CheckCircle2 className="w-3 h-3" /> Sucesso
       </span>
     )
   }
   if (status === 'erro' || status === 'error') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
         <XCircle className="w-3 h-3" /> Falha
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
       <Clock className="w-3 h-3" /> {status}
     </span>
   )
@@ -142,7 +142,7 @@ export const PipelineStatusPanel: React.FC<PipelineStatusPanelProps> = ({ runs, 
                       <span className="font-semibold text-slate-900 dark:text-slate-200 text-xs">{sourceCfg.label}</span>
                       <StatusBadge status={run.status} />
                     </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 truncate max-w-[280px]">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 truncate max-w-[280px]">
                       {runMessage}
                     </p>
                   </div>
@@ -150,11 +150,11 @@ export const PipelineStatusPanel: React.FC<PipelineStatusPanelProps> = ({ runs, 
 
                 <div className="flex items-center gap-3 shrink-0 ml-3">
                   {!isError && (
-                    <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                    <span className="text-xs font-mono text-slate-600 dark:text-slate-400">
                       {run.records_inserted} recs
                     </span>
                   )}
-                  <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                  <span className="text-xs text-slate-500 whitespace-nowrap">
                     {formatRunAt(run.run_at)}
                   </span>
                 </div>

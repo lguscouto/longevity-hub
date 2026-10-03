@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, Search, ChevronUp, ChevronDown, Download, Moon } from 'lucide-react';
-import { EmptyState } from '../ui';
+import { EmptyState, Input, Button, ResponsiveDataTable, DataColumn } from '../ui';
 import {
   DailyMetric,
   MonthlySleepSummary,
@@ -18,6 +18,304 @@ export interface SleepMonthlyTableProps {
   showMonthlyComparison: boolean;
   activeRecords: DailyMetric[];
 }
+
+const NoValue = () => <span className="text-slate-400 font-mono">—</span>;
+
+const EfficiencyBadge: React.FC<{ pct: number | null | undefined; total: number }> = ({ pct, total }) => {
+  const badge = getEfficiencyBadge(pct ?? null, total);
+  if (!badge) return <span className="text-slate-400">—</span>;
+  return (
+    <span
+      title={badge.tooltip}
+      className={`px-2 py-0.5 rounded-full font-bold text-xs whitespace-nowrap inline-flex items-center gap-1.5 ${badge.badgeClass}`}
+    >
+      <span>{badge.pct}%</span>
+      {badge.tag && (
+        <span className={`text-xs px-1.5 py-0.5 rounded font-extrabold ${badge.tagClass || ''}`}>{badge.tag}</span>
+      )}
+    </span>
+  );
+};
+
+const ClockCell: React.FC<{ details: { time: string; date: string }; tone: 'indigo' | 'amber' }> = ({ details, tone }) => {
+  if (details.time === '—') return <NoValue />;
+  const toneClass = tone === 'indigo' ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400';
+  return (
+    <div className="inline-flex flex-col">
+      <span className={`font-bold font-mono text-xs ${toneClass}`}>{details.time}</span>
+      <span className="text-xs font-normal text-slate-500 dark:text-slate-400 font-mono">{details.date}</span>
+    </div>
+  );
+};
+
+const StageCell: React.FC<{ minutes: number; pct: number; tone: string; pctTone: string }> = ({ minutes, pct, tone, pctTone }) => (
+  <span className={`font-semibold font-mono ${tone}`}>
+    {formatMinutesToText(minutes)} <span className={`text-xs ${pctTone}`}>({pct}%)</span>
+  </span>
+);
+
+interface NightRow {
+  record: DailyMetric;
+  total: number;
+  deep: number;
+  rem: number;
+  light: number;
+  awake: number;
+  deepPct: number;
+  remPct: number;
+  lightPct: number;
+  eff: number | null;
+  start: { time: string; date: string };
+  end: { time: string; date: string };
+}
+
+const toNightRow = (m: DailyMetric): NightRow => {
+  const total = m.sleep_minutes || 0;
+  const deep = m.sleep_deep_min || 0;
+  const rem = m.sleep_rem_min || 0;
+  const light = m.sleep_light_min || 0;
+  const awake = m.sleep_awake_min || 0;
+  return {
+    record: m,
+    total,
+    deep,
+    rem,
+    light,
+    awake,
+    deepPct: total > 0 ? Math.round((deep / total) * 100) : 0,
+    remPct: total > 0 ? Math.round((rem / total) * 100) : 0,
+    lightPct: total > 0 ? Math.round((light / total) * 100) : 0,
+    eff: calculateNightEfficiency(total, awake),
+    start: formatDateTimeDetails(m.sleep_start),
+    end: formatDateTimeDetails(m.sleep_end),
+  };
+};
+
+/** Registros noturnos — mobile prioriza data, duração, eficiência, profundo, REM (UX_UI_41 §2). */
+const NIGHT_COLUMNS: DataColumn<NightRow>[] = [
+  {
+    key: 'date',
+    header: 'Data',
+    priority: 'primary',
+    cellClassName: 'font-bold text-slate-900 dark:text-white font-mono',
+    render: (n) => formatDatePtBr(n.record.date_ref),
+  },
+  {
+    key: 'total',
+    header: 'Tempo Total',
+    cellClassName: 'font-bold text-slate-800 dark:text-slate-200 font-mono',
+    render: (n) => formatMinutesToText(n.total),
+  },
+  {
+    key: 'eff',
+    header: 'Eficiência',
+    headerClassName: 'text-emerald-600 dark:text-emerald-400',
+    render: (n) => <EfficiencyBadge pct={n.eff} total={n.total} />,
+  },
+  {
+    key: 'deep',
+    header: 'Sono Profundo',
+    headerClassName: 'text-purple-600 dark:text-purple-400',
+    render: (n) => (
+      <StageCell minutes={n.deep} pct={n.deepPct} tone="text-purple-600 dark:text-purple-300" pctTone="text-purple-400/80" />
+    ),
+  },
+  {
+    key: 'rem',
+    header: 'Sono REM',
+    headerClassName: 'text-cyan-600 dark:text-cyan-400',
+    render: (n) => (
+      <StageCell minutes={n.rem} pct={n.remPct} tone="text-cyan-600 dark:text-cyan-300" pctTone="text-cyan-400/80" />
+    ),
+  },
+  {
+    key: 'start',
+    header: 'Dormiu',
+    priority: 'detail',
+    headerClassName: 'text-indigo-600 dark:text-indigo-400',
+    render: (n) => <ClockCell details={n.start} tone="indigo" />,
+  },
+  {
+    key: 'end',
+    header: 'Acordou',
+    priority: 'detail',
+    headerClassName: 'text-amber-600 dark:text-amber-400',
+    render: (n) => <ClockCell details={n.end} tone="amber" />,
+  },
+  {
+    key: 'light',
+    header: 'Sono Leve',
+    priority: 'detail',
+    headerClassName: 'text-slate-600 dark:text-slate-400',
+    render: (n) => (
+      <StageCell minutes={n.light} pct={n.lightPct} tone="text-slate-600 dark:text-slate-300" pctTone="text-slate-500 dark:text-slate-400" />
+    ),
+  },
+  {
+    key: 'awake',
+    header: 'Acordado',
+    priority: 'detail',
+    headerClassName: 'text-amber-600 dark:text-amber-400',
+    cellClassName: 'text-amber-600 dark:text-amber-400 font-semibold font-mono',
+    render: (n) => formatMinutesToText(n.awake),
+  },
+  {
+    key: 'resp',
+    header: 'Taxa Resp.',
+    priority: 'detail',
+    headerClassName: 'text-cyan-600 dark:text-cyan-400',
+    cellClassName: 'text-cyan-600 dark:text-cyan-300 font-mono',
+    render: (n) => (n.record.respiratory_rate_rpm != null ? `${n.record.respiratory_rate_rpm.toFixed(1)} rpm` : '—'),
+  },
+  {
+    key: 'hrv',
+    header: 'VFC Noturna',
+    priority: 'detail',
+    cellClassName: 'text-slate-700 dark:text-slate-300 font-mono',
+    render: (n) => (n.record.hrv_ms != null ? `${n.record.hrv_ms} ms` : '—'),
+  },
+  {
+    key: 'rhr',
+    header: 'FC Repouso',
+    priority: 'detail',
+    cellClassName: 'text-slate-700 dark:text-slate-300 font-mono',
+    render: (n) => (n.record.rhr_bpm != null ? `${n.record.rhr_bpm} bpm` : '—'),
+  },
+  {
+    key: 'source',
+    header: 'Fonte',
+    priority: 'detail',
+    align: 'right',
+    cellClassName: 'text-slate-500 dark:text-slate-400 text-xs',
+    render: (n) => n.record.source || 'Zepp',
+  },
+];
+
+const buildMonthColumns = (
+  selectedMonth: string,
+  onSelectMonth: (monthKey: string) => void,
+): DataColumn<MonthlySleepSummary>[] => [
+  {
+    key: 'month',
+    header: 'Mês',
+    priority: 'primary',
+    cellClassName: 'font-bold text-slate-900 dark:text-white',
+    render: (m) => m.label,
+  },
+  {
+    key: 'count',
+    header: 'Noites',
+    cellClassName: 'text-slate-600 dark:text-slate-400 font-mono',
+    render: (m) => m.count,
+  },
+  {
+    key: 'total',
+    header: 'Tempo Total',
+    cellClassName: 'font-bold text-slate-800 dark:text-slate-200 font-mono',
+    render: (m) => formatMinutesToText(m.avgTotal),
+  },
+  {
+    key: 'eff',
+    header: 'Eficiência',
+    headerClassName: 'text-emerald-600 dark:text-emerald-400',
+    render: (m) => <EfficiencyBadge pct={m.efficiencyPct} total={m.avgTotal} />,
+  },
+  {
+    key: 'deep',
+    header: 'Sono Profundo',
+    headerClassName: 'text-purple-600 dark:text-purple-400',
+    render: (m) => (
+      <StageCell minutes={m.avgDeep} pct={m.deepPct} tone="text-purple-600 dark:text-purple-300" pctTone="text-purple-400/80" />
+    ),
+  },
+  {
+    key: 'rem',
+    header: 'Sono REM',
+    headerClassName: 'text-cyan-600 dark:text-cyan-400',
+    render: (m) => (
+      <StageCell minutes={m.avgRem} pct={m.remPct} tone="text-cyan-600 dark:text-cyan-300" pctTone="text-cyan-400/80" />
+    ),
+  },
+  {
+    key: 'bedtime',
+    header: 'Dormir Médio',
+    priority: 'detail',
+    headerClassName: 'text-indigo-600 dark:text-indigo-400',
+    cellClassName: 'text-indigo-600 dark:text-indigo-400 font-semibold font-mono',
+    render: (m) => m.avgBedtime || '—',
+  },
+  {
+    key: 'wake',
+    header: 'Acordar Médio',
+    priority: 'detail',
+    headerClassName: 'text-amber-600 dark:text-amber-400',
+    cellClassName: 'text-amber-600 dark:text-amber-400 font-semibold font-mono',
+    render: (m) => m.avgWakeTime || '—',
+  },
+  {
+    key: 'light',
+    header: 'Sono Leve',
+    priority: 'detail',
+    headerClassName: 'text-slate-600 dark:text-slate-400',
+    render: (m) => (
+      <StageCell minutes={m.avgLight} pct={m.lightPct} tone="text-slate-600 dark:text-slate-300" pctTone="text-slate-500 dark:text-slate-400" />
+    ),
+  },
+  {
+    key: 'awake',
+    header: 'Acordado',
+    priority: 'detail',
+    headerClassName: 'text-amber-600 dark:text-amber-400',
+    cellClassName: 'text-amber-600 dark:text-amber-400 font-semibold font-mono',
+    render: (m) => formatMinutesToText(m.avgAwake),
+  },
+  {
+    key: 'resp',
+    header: 'Taxa Resp.',
+    priority: 'detail',
+    headerClassName: 'text-cyan-600 dark:text-cyan-400',
+    cellClassName: 'text-cyan-600 dark:text-cyan-300 font-mono',
+    render: (m) => (m.avgRespRate != null ? `${m.avgRespRate} rpm` : '—'),
+  },
+  {
+    key: 'hrv',
+    header: 'VFC Média',
+    priority: 'detail',
+    cellClassName: 'text-slate-700 dark:text-slate-300 font-mono',
+    render: (m) => (m.avgHrv != null ? `${m.avgHrv} ms` : '—'),
+  },
+  {
+    key: 'rhr',
+    header: 'FC Repouso',
+    priority: 'detail',
+    cellClassName: 'text-slate-700 dark:text-slate-300 font-mono',
+    render: (m) => (m.avgRhr != null ? `${m.avgRhr} bpm` : '—'),
+  },
+  {
+    key: 'action',
+    header: 'Ação',
+    priority: 'action',
+    align: 'right',
+    render: (m) => {
+      const isSelected = selectedMonth === m.monthKey;
+      return (
+        <Button
+          type="button"
+          size="sm"
+          variant={isSelected ? 'secondary' : 'outline'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelectMonth(isSelected ? 'all' : m.monthKey);
+          }}
+          aria-pressed={isSelected}
+          className="w-full md:w-auto"
+        >
+          {isSelected ? 'Ver Todos' : 'Filtrar Mês'}
+        </Button>
+      );
+    },
+  },
+];
 
 export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
   monthlySummaries,
@@ -47,6 +345,10 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
     });
     return result;
   }, [activeRecords, searchTerm, sortAsc]);
+
+  const nightRows = useMemo(() => tableData.map(toNightRow), [tableData]);
+  const monthColumns = useMemo(() => buildMonthColumns(selectedMonth, onSelectMonth), [selectedMonth, onSelectMonth]);
+  const selectedLabel = monthlySummaries.find((m) => m.monthKey === selectedMonth)?.label;
 
   const handleExportCSV = () => {
     if (activeRecords.length === 0) return;
@@ -121,139 +423,17 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
             <span className="text-xs text-slate-500 dark:text-slate-400">Clique na linha para filtrar o painel</span>
           </div>
 
-          <div className="overflow-x-auto max-w-full">
-            <table className="w-full text-left text-xs block md:table">
-              <thead className="hidden md:table-header-group">
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider text-xs">
-                  <th className="py-2.5 px-3">Mês</th>
-                  <th className="py-2.5 px-3">Noites</th>
-                  <th className="py-2.5 px-3 text-indigo-600 dark:text-indigo-400">Dormir Médio</th>
-                  <th className="py-2.5 px-3 text-amber-600 dark:text-amber-400">Acordar Médio</th>
-                  <th className="py-2.5 px-3">Tempo Total</th>
-                  <th className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400">Eficiência</th>
-                  <th className="py-2.5 px-3 text-purple-600 dark:text-purple-400">Sono Profundo</th>
-                  <th className="py-2.5 px-3 text-cyan-600 dark:text-cyan-400">Sono REM</th>
-                  <th className="py-2.5 px-3 text-slate-600 dark:text-slate-400">Sono Leve</th>
-                  <th className="py-2.5 px-3 text-amber-600 dark:text-amber-400">Acordado</th>
-                  <th className="py-2.5 px-3 text-cyan-600 dark:text-cyan-400">Taxa Resp.</th>
-                  <th className="py-2.5 px-3">VFC Média</th>
-                  <th className="py-2.5 px-3">FC Repouso</th>
-                  <th className="py-2.5 px-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="block md:table-row-group divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
-                {monthlySummaries.map((m) => {
-                  const isSelected = selectedMonth === m.monthKey;
-                  return (
-                    <tr
-                      key={m.monthKey}
-                      onClick={() => onSelectMonth(isSelected ? 'all' : m.monthKey)}
-                      className={`block md:table-row p-3 md:p-0 space-y-1 md:space-y-0 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'bg-cyan-500/10 dark:bg-cyan-500/15 border-l-4 md:border-l-0 border-cyan-500'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-900/50'
-                      }`}
-                    >
-                      <td className="block md:table-cell py-1 md:py-3 md:px-3 font-bold text-slate-900 dark:text-white">
-                        <div className="flex items-center justify-between md:block">
-                          <span>{m.label}</span>
-                          <span className="md:hidden text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            {m.count} noites
-                          </span>
-                        </div>
-                      </td>
-                      <td className="hidden md:table-cell py-3 px-3 text-slate-600 dark:text-slate-400 font-mono">
-                        {m.count}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-indigo-600 dark:text-indigo-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Dormir:</span>
-                        {m.avgBedtime || '—'}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Acordar:</span>
-                        {m.avgWakeTime || '—'}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 font-bold text-slate-800 dark:text-slate-200 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">Total:</span>
-                        {formatMinutesToText(m.avgTotal)}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Eficiência:</span>
-                        {(() => {
-                          const badge = getEfficiencyBadge(m.efficiencyPct, m.avgTotal);
-                          if (!badge) return <span className="text-slate-400">—</span>;
-                          return (
-                            <span
-                              title={badge.tooltip}
-                              className={`px-2 py-0.5 rounded-full font-bold text-xs whitespace-nowrap inline-flex items-center gap-1.5 ${badge.badgeClass}`}
-                            >
-                              <span>{badge.pct}%</span>
-                              {badge.tag && (
-                                <span
-                                  className={`text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
-                                    badge.tagClass || ''
-                                  }`}
-                                >
-                                  {badge.tag}
-                                </span>
-                              )}
-                            </span>
-                          );
-                        })()}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-purple-600 dark:text-purple-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Profundo:</span>
-                        {formatMinutesToText(m.avgDeep)}{' '}
-                        <span className="text-xs text-purple-400/80">({m.deepPct}%)</span>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-cyan-600 dark:text-cyan-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">REM:</span>
-                        {formatMinutesToText(m.avgRem)}{' '}
-                        <span className="text-xs text-cyan-400/80">({m.remPct}%)</span>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-600 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Leve:</span>
-                        {formatMinutesToText(m.avgLight)}{' '}
-                        <span className="text-xs text-slate-500 dark:text-slate-400">({m.lightPct}%)</span>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Acordado:</span>
-                        {formatMinutesToText(m.avgAwake)}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-cyan-600 dark:text-cyan-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">Resp:</span>
-                        {m.avgRespRate != null ? `${m.avgRespRate} rpm` : '—'}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">VFC:</span>
-                        {m.avgHrv != null ? `${m.avgHrv} ms` : '—'}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3 md:px-3 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans mr-1">FC Repouso:</span>
-                        {m.avgRhr != null ? `${m.avgRhr} bpm` : '—'}
-                      </td>
-                      <td className="block md:table-cell py-2 md:py-3 md:px-3 text-left md:text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectMonth(isSelected ? 'all' : m.monthKey);
-                          }}
-                          className={`w-full md:w-auto px-2.5 py-1.5 md:py-1 rounded-lg text-xs font-semibold transition-all ${
-                            isSelected
-                              ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
-                              : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20'
-                          }`}
-                        >
-                          {isSelected ? 'Ver Todos' : 'Filtrar Mês'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveDataTable
+            caption="Médias mensais de sono"
+            columns={monthColumns}
+            rows={monthlySummaries}
+            getRowKey={(m) => m.monthKey}
+            getRowLabel={(m) => `${m.label}: ${m.count} noites`}
+            onRowClick={(m) => onSelectMonth(selectedMonth === m.monthKey ? 'all' : m.monthKey)}
+            isRowSelected={(m) => selectedMonth === m.monthKey}
+            stickyFirstColumn
+            detailsLabel="Mais métricas do mês"
+          />
         </div>
       )}
 
@@ -264,50 +444,52 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Calendar className="h-5 w-5 text-cyan-500" />
               {selectedMonth !== 'all'
-                ? `Histórico de Registros do Sono - ${
-                    monthlySummaries.find((m) => m.monthKey === selectedMonth)?.label
-                  } (${tableData.length})`
+                ? `Histórico de Registros do Sono - ${selectedLabel} (${tableData.length})`
                 : `Histórico Completo de Registros do Sono (${tableData.length})`}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {selectedMonth !== 'all'
-                ? `Exibindo apenas os registros de sono de ${
-                    monthlySummaries.find((m) => m.monthKey === selectedMonth)?.label
-                  }.`
+                ? `Exibindo apenas os registros de sono de ${selectedLabel}.`
                 : 'Todos os registros salvos localmente no dispositivo sem limitação.'}
             </p>
           </div>
 
           {/* Search & Export Controls */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="h-4 w-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
+            <div className="flex-1 sm:flex-initial w-full sm:w-60">
+              <Input
                 type="text"
                 placeholder="Filtrar por data (AAAA-MM-DD)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none w-full sm:w-60"
+                leftIcon={<Search className="h-4 w-4 text-slate-400" />}
               />
             </div>
 
-            <button
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setSortAsc(!sortAsc)}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all shrink-0"
+              leftIcon={sortAsc ? ChevronUp : ChevronDown}
               title="Inverter Ordem de Data"
+              className="shrink-0"
             >
-              {sortAsc ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               {sortAsc ? 'Mais Antigos' : 'Mais Recentes'}
-            </button>
+            </Button>
 
-            <button
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
               onClick={handleExportCSV}
               disabled={tableData.length === 0}
-              className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+              leftIcon={Download}
               title="Exportar registros como arquivo CSV"
+              className="shrink-0"
             >
-              <Download className="h-4 w-4" /> Exportar CSV
-            </button>
+              Exportar CSV
+            </Button>
           </div>
         </div>
 
@@ -321,170 +503,15 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto max-w-full min-w-0">
-            <table className="w-full text-left text-xs block md:table">
-              <thead className="hidden md:table-header-group">
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider text-xs">
-                  <th className="py-3 px-4">Data</th>
-                  <th className="py-3 px-4 text-indigo-600 dark:text-indigo-400">Dormiu</th>
-                  <th className="py-3 px-4 text-amber-600 dark:text-amber-400">Acordou</th>
-                  <th className="py-3 px-4">Tempo Total</th>
-                  <th className="py-3 px-4 text-emerald-600 dark:text-emerald-400">Eficiência</th>
-                  <th className="py-3 px-4 text-purple-600 dark:text-purple-400">Sono Profundo</th>
-                  <th className="py-3 px-4 text-cyan-600 dark:text-cyan-400">Sono REM</th>
-                  <th className="py-3 px-4 text-slate-600 dark:text-slate-400">Sono Leve</th>
-                  <th className="py-3 px-4 text-amber-600 dark:text-amber-400">Acordado</th>
-                  <th className="py-3 px-4 text-cyan-600 dark:text-cyan-400">Taxa Resp.</th>
-                  <th className="py-3 px-4">VFC Noturna</th>
-                  <th className="py-3 px-4">FC Repouso</th>
-                  <th className="py-3 px-4 text-right">Fonte</th>
-                </tr>
-              </thead>
-              <tbody className="block md:table-row-group divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
-                {tableData.map((m) => {
-                  const total = m.sleep_minutes || 0;
-                  const deep = m.sleep_deep_min || 0;
-                  const rem = m.sleep_rem_min || 0;
-                  const light = m.sleep_light_min || 0;
-                  const awake = m.sleep_awake_min || 0;
-
-                  const deepPct = total > 0 ? Math.round((deep / total) * 100) : 0;
-                  const remPct = total > 0 ? Math.round((rem / total) * 100) : 0;
-                  const lightPct = total > 0 ? Math.round((light / total) * 100) : 0;
-
-                  const stDetails = formatDateTimeDetails(m.sleep_start);
-                  const edDetails = formatDateTimeDetails(m.sleep_end);
-                  const eff = calculateNightEfficiency(total, awake);
-
-                  return (
-                    <tr
-                      key={m.date_ref}
-                      className="block md:table-row p-3.5 md:p-0 space-y-2 md:space-y-0 hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors"
-                    >
-                      <td className="block md:table-cell py-1 md:py-3.5 md:px-4 font-bold text-slate-900 dark:text-white font-mono text-sm md:text-xs">
-                        <div className="flex items-center justify-between md:block">
-                          <span>{formatDatePtBr(m.date_ref)}</span>
-                          <span className="md:hidden text-slate-500 dark:text-slate-400 font-sans text-xs">
-                            {m.source || 'Zepp'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Dormiu:</span>
-                        {stDetails.time !== '—' ? (
-                          <div className="inline-flex flex-col md:flex">
-                            <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono text-xs">
-                              {stDetails.time}
-                            </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                              {stDetails.date}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 font-mono">—</span>
-                        )}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Acordou:</span>
-                        {edDetails.time !== '—' ? (
-                          <div className="inline-flex flex-col md:flex">
-                            <span className="font-bold text-amber-600 dark:text-amber-400 font-mono text-xs">
-                              {edDetails.time}
-                            </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                              {edDetails.date}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 font-mono">—</span>
-                        )}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 font-bold text-slate-800 dark:text-slate-200 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          Total:
-                        </span>
-                        {formatMinutesToText(total)}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 mr-1">Eficiência:</span>
-                        {(() => {
-                          const effBadge = getEfficiencyBadge(eff, total);
-                          if (!effBadge) return <span className="text-slate-400">—</span>;
-                          return (
-                            <span
-                              title={effBadge.tooltip}
-                              className={`px-2 py-0.5 rounded-full font-bold text-xs whitespace-nowrap inline-flex items-center gap-1.5 ${effBadge.badgeClass}`}
-                            >
-                              <span>{effBadge.pct}%</span>
-                              {effBadge.tag && (
-                                <span
-                                  className={`text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
-                                    effBadge.tagClass || ''
-                                  }`}
-                                >
-                                  {effBadge.tag}
-                                </span>
-                              )}
-                            </span>
-                          );
-                        })()}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-purple-600 dark:text-purple-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          Profundo:
-                        </span>
-                        {formatMinutesToText(deep)}{' '}
-                        <span className="text-xs text-purple-400/80">({deepPct}%)</span>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-cyan-600 dark:text-cyan-300 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          REM:
-                        </span>
-                        {formatMinutesToText(rem)}{' '}
-                        <span className="text-xs text-cyan-400/80">({remPct}%)</span>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-600 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          Leve:
-                        </span>
-                        {formatMinutesToText(light)}{' '}
-                        <span className="text-xs text-slate-500 dark:text-slate-400">({lightPct}%)</span>
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          Acordado:
-                        </span>
-                        {formatMinutesToText(awake)}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-cyan-600 dark:text-cyan-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          Taxa Resp:
-                        </span>
-                        {m.respiratory_rate_rpm != null
-                          ? `${m.respiratory_rate_rpm.toFixed(1)} rpm`
-                          : '—'}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          VFC:
-                        </span>
-                        {m.hrv_ms != null ? `${m.hrv_ms} ms` : '—'}
-                      </td>
-                      <td className="inline-block md:table-cell mr-3 md:mr-0 py-0.5 md:py-3.5 md:px-4 text-slate-700 dark:text-slate-300 font-mono">
-                        <span className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-sans font-normal mr-1">
-                          FC Repouso:
-                        </span>
-                        {m.rhr_bpm != null ? `${m.rhr_bpm} bpm` : '—'}
-                      </td>
-                      <td className="hidden md:table-cell py-3.5 px-4 text-right text-slate-500 dark:text-slate-400 text-xs">
-                        {m.source || 'Zepp'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveDataTable
+            caption={`Registros noturnos de sono (${tableData.length})`}
+            columns={NIGHT_COLUMNS}
+            rows={nightRows}
+            getRowKey={(n) => n.record.date_ref}
+            getRowLabel={(n) => `Noite de ${formatDatePtBr(n.record.date_ref)}`}
+            stickyFirstColumn
+            detailsLabel="Horários, fases e sinais autonômicos"
+          />
         )}
       </div>
     </div>

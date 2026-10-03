@@ -80,7 +80,7 @@ export const SleepSummaryCards: React.FC<SleepSummaryCardsProps> = ({
             )}
             <span className="flex items-center gap-1.5">
               Regularidade:
-              <strong className={`px-1.5 py-0.5 rounded text-[10px] border font-bold ${stats.regularity.badgeClass}`}>
+              <strong className={`px-1.5 py-0.5 rounded text-xs border font-bold ${stats.regularity.badgeClass}`}>
                 {stats.regularity.score}% ({stats.regularity.label})
               </strong>
             </span>
@@ -235,7 +235,7 @@ export const SleepSummaryCards: React.FC<SleepSummaryCardsProps> = ({
                     {stats.efficiencyPct}%
                   </span>
                   {isShort && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    <span className="text-xs px-1.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                       Sono Curto
                     </span>
                   )}

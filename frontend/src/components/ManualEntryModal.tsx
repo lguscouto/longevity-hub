@@ -162,7 +162,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition text-center min-h-[44px]">
             Cancelar
           </button>
-          <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold glow-emerald transition shadow-md text-center min-h-[44px]" disabled={isSaving}>
+          <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition shadow-md text-center min-h-[44px]" disabled={isSaving}>
             {isSaving ? 'Salvando…' : 'Salvar Registro'}
           </button>
         </div>

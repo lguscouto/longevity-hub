@@ -73,37 +73,37 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
     switch (category) {
       case 'substance':
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
             Substância
           </span>
         )
       case 'exercise':
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
             Exercício
           </span>
         )
       case 'routine':
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
             Rotina
           </span>
         )
       case 'supplement':
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20">
+          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20">
             Suplementação
           </span>
         )
       case 'sleep':
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
             Sono
           </span>
         )
       default:
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20">
+          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20">
             {category}
           </span>
         )
@@ -167,7 +167,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
               {/* Janelas Temporais */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block tracking-wider">
+                  <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block tracking-wider">
                     Período de Controle
                   </span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 block">
@@ -175,7 +175,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
                   </span>
                 </div>
                 <div className="p-3 rounded-2xl bg-violet-500/5 dark:bg-violet-950/30 border border-violet-500/20">
-                  <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-400 block tracking-wider">
+                  <span className="text-xs uppercase font-bold text-violet-600 dark:text-violet-400 block tracking-wider">
                     Período de Intervenção
                   </span>
                   <span className="font-semibold text-violet-900 dark:text-violet-200 mt-0.5 block">
@@ -213,21 +213,22 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Tabela de Balanço de Covariáveis (Covariate Balance)
                   </h3>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     Critério de Desequilíbrio: |d| ≥ 0.30 ou |Δ%| ≥ 20%
                   </span>
                 </div>
 
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
                   <table className="w-full text-left text-xs border-collapse">
+                    <caption className="sr-only">Tabela de Balanço de Covariáveis Exógenas</caption>
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
-                        <th className="py-2.5 px-3 font-semibold">Covariável Exógena</th>
-                        <th className="py-2.5 px-3 font-semibold text-right">Controle</th>
-                        <th className="py-2.5 px-3 font-semibold text-right">Intervenção</th>
-                        <th className="py-2.5 px-3 font-semibold text-right">Δ%</th>
-                        <th className="py-2.5 px-3 font-semibold text-right">Cohen's d</th>
-                        <th className="py-2.5 px-3 font-semibold text-center">Balanço</th>
+                      <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+                        <th scope="col" className="py-2.5 px-3 font-semibold">Covariável Exógena</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold text-right">Controle</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold text-right">Intervenção</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold text-right">Δ%</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold text-right">Cohen's d</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold text-center">Balanço</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -243,12 +244,12 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
                             <td className="py-2.5 px-3">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-semibold text-slate-900 dark:text-white">
-                                  {cov.name}
+                                   {cov.name}
                                 </span>
                                 {getCategoryBadge(cov.category)}
                               </div>
                               {cov.detail_text && (
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
                                   {cov.detail_text}
                                 </span>
                               )}
@@ -277,11 +278,11 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               {cov.is_imbalanced ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30">
                                   <AlertTriangle className="h-3 w-3" /> Desequilibrado
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                                   <CheckCircle2 className="h-3 w-3" /> Balanceado
                                 </span>
                               )}
@@ -295,7 +296,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
               </div>
 
               {/* Salvaguarda Clínica / Aviso Metodológico */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-2.5">
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2.5">
                 <ShieldAlert className="h-4 w-4 shrink-0 text-slate-500 mt-0.5" />
                 <div className="space-y-0.5">
                   <span className="font-bold text-slate-800 dark:text-slate-200 block">

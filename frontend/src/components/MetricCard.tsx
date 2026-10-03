@@ -2,7 +2,9 @@ import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { ExplainChangeButton } from './contextInsights/ExplainChangeButton';
 import { formatMetricValue } from '../lib/formatters';
+import { SourceKind } from '../lib/dataSemantics';
 import { TermHelp } from './ui/TermHelp';
+import { SourceTag } from './ui/SourceTag';
 
 export type RangeType = 'target' | 'reference' | 'optimal';
 
@@ -14,6 +16,7 @@ export interface MetricCardProps {
   rangeType?: RangeType;
   rangeValue?: string;
   termKey?: string;
+  sourceKind?: SourceKind;
   icon: LucideIcon;
   color?: 'emerald' | 'cyan' | 'violet' | 'rose' | 'amber';
   trend?: string;
@@ -30,8 +33,8 @@ export const RANGE_SEMANTICS: Record<
   }
 > = {
   target: {
-    label: 'Alvo Pessoal',
-    shortLabel: 'Alvo',
+    label: 'Meta Pessoal',
+    shortLabel: 'Meta',
     tooltip: 'Meta personalizada definida no seu protocolo de saúde',
     badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
   },
@@ -42,8 +45,8 @@ export const RANGE_SEMANTICS: Record<
     badgeClass: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
   },
   optimal: {
-    label: 'Alvo Ótimo',
-    shortLabel: 'Ótimo',
+    label: 'Referência Ótima',
+    shortLabel: 'Ótima',
     tooltip: 'Faixa funcional preconizada para longevidade preventiva',
     badgeClass: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20',
   },
@@ -65,6 +68,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   rangeType,
   rangeValue,
   termKey,
+  sourceKind,
   icon: Icon,
   color = 'emerald',
   trend,
@@ -76,9 +80,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{title}</span>
           {termKey && <TermHelp termKey={termKey} />}
+          {sourceKind && <SourceTag kind={sourceKind} compact />}
         </div>
         <div className={`p-2 rounded-xl border ${iconBgMap[color]} shrink-0`}>
           <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -102,7 +107,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             {rangeConfig && rangeValue ? (
               <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold border ${rangeConfig.badgeClass}`}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${rangeConfig.badgeClass}`}
                 title={rangeConfig.tooltip}
                 aria-label={`${rangeConfig.label}: ${rangeValue}`}
               >

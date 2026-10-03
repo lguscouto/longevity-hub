@@ -1,0 +1,78 @@
+name: CI Longevidade Hub
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: Frontend Quality & Design System
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application (TypeScript & Vite)
+        run: npm run build
+
+      - name: Vitest Unit & Component Tests
+        run: npm run test:run
+
+      - name: Design System Conformance Audit
+        run: npm run audit:design-system
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright Viewport Matrix Tests
+        run: npx playwright test e2e/viewport-matrix.spec.ts --config=e2e/playwright.config.ts
+
+      - name: Run Playwright Visual Regression Tests
+        run: npx playwright test e2e/visual-regression.spec.ts --config=e2e/playwright.config.ts
+
+      - name: Upload Test Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  backend:
+    name: Backend Pytest Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Run Pytest Suite
+        run: pytest -v

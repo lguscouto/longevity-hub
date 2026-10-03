@@ -15,10 +15,12 @@ import {
   Database,
   Lock,
   ChevronRight,
+  Sparkles,
+  Settings,
 } from 'lucide-react';
 import { PipelineStatusPanel, PipelineRun } from './PipelineStatusPanel';
 import { DataQualityPanel } from './DataQualityPanel';
-import { StatusBadge } from './ui';
+import { StatusBadge, FormField, Input, Select, Button } from './ui';
 
 export type ProfileSubTab = 'profile' | 'integrations' | 'system';
 
@@ -50,6 +52,7 @@ interface ProfileViewProps {
   isSyncingZepp?: boolean;
   onSyncGoogleHealth?: () => void;
   isSyncingGoogle?: boolean;
+  onOpenAISettings?: () => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -66,6 +69,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   isSyncingZepp = false,
   onSyncGoogleHealth,
   isSyncingGoogle = false,
+  onOpenAISettings,
 }) => {
   const [internalSubTab, setInternalSubTab] = useState<ProfileSubTab>(activeSubTab);
   const [isEditing, setIsEditing] = useState(false);
@@ -180,10 +184,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       {internalSubTab === 'profile' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Banner Card Header */}
-          <div className="glass-panel p-6 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-slate-100 via-slate-100 to-emerald-500/10 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/40 relative overflow-hidden shadow-sm">
+          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 relative overflow-hidden shadow-sm">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-5">
-                <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold shadow-xl glow-emerald">
+                {/* ds-exception: DSX-008 */}
+                <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold shadow-md">
                   {profile.name ? profile.name[0].toUpperCase() : 'P'}
                 </div>
                 <div>
@@ -199,14 +204,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setIsEditing(!isEditing)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 transition shadow-md focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                leftIcon={Edit3}
               >
-                <Edit3 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 {isEditing ? 'Cancelar Edição' : 'Editar Perfil'}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -289,86 +295,83 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <Edit3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Editar Informações do Perfil
               </h3>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Nome Completo</label>
-                  <input
+                <FormField id="profile-name" label="Nome Completo" required>
+                  <Input
+                    id="profile-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={inputClass}
+                    required
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Data de Nascimento</label>
-                  <input
+                <FormField id="profile-birthdate" label="Data de Nascimento">
+                  <Input
+                    id="profile-birthdate"
                     type="date"
                     value={formData.birthdate}
                     onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                    className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Altura (cm)</label>
-                  <input
+                <FormField id="profile-height" label="Altura (cm)">
+                  <Input
+                    id="profile-height"
                     type="number"
                     step="0.5"
                     value={formData.height_cm}
                     onChange={(e) => setFormData({ ...formData, height_cm: +e.target.value })}
-                    className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Peso Atual (kg)</label>
-                  <input
+                <FormField id="profile-current-weight" label="Peso Atual (kg)">
+                  <Input
+                    id="profile-current-weight"
                     type="number"
                     step="0.1"
                     value={formData.current_weight_kg}
                     onChange={(e) => setFormData({ ...formData, current_weight_kg: e.target.value })}
-                    className={inputClass}
                     placeholder="Ex: 87.0"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Meta de Peso (kg)</label>
-                  <input
+                <FormField id="profile-target-weight" label="Meta de Peso (kg)">
+                  <Input
+                    id="profile-target-weight"
                     type="number"
                     step="0.5"
                     value={formData.target_weight_kg}
                     onChange={(e) => setFormData({ ...formData, target_weight_kg: +e.target.value })}
-                    className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Sexo</label>
-                  <select
+                <FormField id="profile-gender" label="Sexo">
+                  <Select
+                    id="profile-gender"
                     value={formData.gender}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className={inputClass}
                   >
                     <option value="Masculino">Masculino</option>
                     <option value="Feminino">Feminino</option>
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
 
-                <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-                  <button
+                <div className="md:col-span-2 flex justify-end gap-3 mt-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold glow-emerald transition shadow-md"
+                    variant="primary"
+                    size="sm"
                   >
                     Salvar Alterações
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -416,25 +419,27 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
               <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 {onSyncZepp && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => onSyncZepp(false)}
-                    disabled={isSyncingZepp}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-xs disabled:opacity-50"
+                    loading={isSyncingZepp}
+                    loadingText="Sincronizando..."
+                    leftIcon={RefreshCw}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
                   >
-                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingZepp ? 'animate-spin' : ''}`} />
-                    <span>{isSyncingZepp ? 'Sincronizando...' : 'Sync Zepp'}</span>
-                  </button>
+                    Sync Zepp
+                  </Button>
                 )}
                 {onSyncZepp && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => onSyncZepp(true)}
                     disabled={isSyncingZepp}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition disabled:opacity-50"
                   >
-                    <span>Full Sync Zepp</span>
-                  </button>
+                    Full Sync Zepp
+                  </Button>
                 )}
               </div>
             </div>
@@ -469,32 +474,35 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 {profile.google_connected ? (
                   <>
                     {onSyncGoogleHealth && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={onSyncGoogleHealth}
-                        disabled={isSyncingGoogle}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-xs disabled:opacity-50"
+                        loading={isSyncingGoogle}
+                        loadingText="Sincronizando..."
+                        leftIcon={RefreshCw}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
                       >
-                        <RefreshCw className={`h-3.5 w-3.5 ${isSyncingGoogle ? 'animate-spin' : ''}`} />
-                        <span>{isSyncingGoogle ? 'Sincronizando...' : 'Sync Google'}</span>
-                      </button>
+                        Sync Google
+                      </Button>
                     )}
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={onOpenGoogleHealthModal}
-                      className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
                     >
                       Configurações Google
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={onOpenGoogleHealthModal}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-xs"
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
                   >
-                    <span>+ Conectar Google Health</span>
-                  </button>
+                    + Conectar Google Health
+                  </Button>
                 )}
               </div>
             </div>
@@ -526,6 +534,44 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Pronto para sincronização
                 </span>
+              </div>
+            </div>
+
+            {/* Card Inteligência Artificial & Modelos (BYOK) */}
+            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between md:col-span-2">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Inteligência Artificial & Provedores LLM</h4>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        OpenAI, Anthropic, Gemini, Groq, Ollama (BYOK)
+                      </span>
+                    </div>
+                  </div>
+                  <StatusBadge variant="info">Configuração Local</StatusBadge>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+                  Gerencie chaves de API, escolha modelos locais ou de nuvem e defina o modo de privacidade estrito para análise de correlações e geração de insights clínicos.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Chaves armazenadas localmente de forma segura</span>
+                {onOpenAISettings && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onOpenAISettings}
+                    leftIcon={Settings}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+                  >
+                    Configurar Provedores & Privacidade
+                  </Button>
+                )}
               </div>
             </div>
           </div>

@@ -105,4 +105,43 @@ describe('Toast Primitive Component', () => {
 
     expect(screen.queryByText('Operação realizada com sucesso!')).not.toBeInTheDocument();
   });
+
+  it('renders warning and partial toasts with action button and handles persistent duration (0)', () => {
+    const onDismiss = vi.fn();
+    const onAction = vi.fn();
+
+    render(
+      <Toast
+        toast={{
+          id: 't-partial',
+          type: 'partial',
+          title: 'Sincronização Parcial',
+          message: '32 importados · 4 não processados',
+          duration: 0,
+          action: {
+            label: 'Ver detalhes',
+            onClick: onAction,
+          },
+        }}
+        onDismiss={onDismiss}
+      />
+    );
+
+    expect(screen.getByText('Sincronização Parcial')).toBeInTheDocument();
+    expect(screen.getByText('32 importados · 4 não processados')).toBeInTheDocument();
+
+    // Verify it stays persistent (does not auto-dismiss after 10 seconds)
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    // Click action button
+    const actionBtn = screen.getByRole('button', { name: 'Ver detalhes' });
+    expect(actionBtn).toBeInTheDocument();
+    fireEvent.click(actionBtn);
+
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveBeenCalledWith('t-partial');
+  });
 });

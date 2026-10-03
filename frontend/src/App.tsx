@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from 'react'
-import { Activity, ChevronDown, Dna, Flame, Footprints, Heart, Moon, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
+import { Activity, ChevronDown, Dna, Flame, Footprints, Heart, Moon, PlusCircle, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
 
 import { Header } from './components/Header'
 import { MetricCard } from './components/MetricCard'
@@ -28,7 +28,7 @@ const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 
 
-import { LoadingIndicator, useToast } from './components/ui'
+import { EmptyState, LoadingIndicator, useToast } from './components/ui'
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
 import { DailyGuidanceCard } from './components/DailyGuidanceCard'
@@ -37,6 +37,8 @@ import { TrainingLoadWidget } from './components/TrainingLoadWidget'
 import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
 import type { PipelineRun } from './components/PipelineStatusPanel'
+import type { SyncState } from './components/ui/SyncStatusBadge'
+import type { SyncResult } from './components/SyncProgressModal'
 
 type Tab =
   | 'overview'
@@ -79,14 +81,6 @@ type DailyMetric = {
   workout_count?: number | null
   workout_duration_min?: number | null
   calories?: number | null
-}
-
-type SyncResult = {
-  status: 'ok' | 'error' | 'warning'
-  message?: string
-  zepp_records_imported?: number
-  google_health_records_imported?: number
-  total_sources?: number
 }
 
 const NO_DATA_LABEL = 'Sem dados para a data'
@@ -205,6 +199,8 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [isSyncingGoogle, setIsSyncingGoogle] = useState(false)
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
+  const [syncState, setSyncState] = useState<SyncState>('never')
+  const [dataCoveredUntil, setDataCoveredUntil] = useState<string | null>(null)
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [showWorkoutsTable, setShowWorkoutsTable] = useState(false)
@@ -235,6 +231,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.steps != null ? 'passos' : undefined,
       rangeType: hasMetric ? ('target' as const) : undefined,
       rangeValue: hasMetric ? '10.000' : undefined,
+      sourceKind: 'observed' as const,
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Footprints,
       color: 'emerald' as const,
@@ -245,6 +242,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.rhr_bpm != null ? 'bpm' : undefined,
       rangeType: hasMetric ? ('optimal' as const) : undefined,
       rangeValue: hasMetric ? '< 55 bpm' : undefined,
+      sourceKind: 'observed' as const,
       termKey: 'rhr',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Heart,
@@ -256,6 +254,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.hrv_ms != null ? 'ms' : undefined,
       rangeType: hasMetric ? ('optimal' as const) : undefined,
       rangeValue: hasMetric ? '> 50 ms' : undefined,
+      sourceKind: 'observed' as const,
       termKey: 'hrv',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Zap,
@@ -266,6 +265,7 @@ export default function App() {
       value: hasMetric && activeMetric?.sleep_minutes != null ? formatSleepMinutes(activeMetric.sleep_minutes) : '—',
       rangeType: hasMetric ? ('target' as const) : undefined,
       rangeValue: hasMetric ? '8h' : undefined,
+      sourceKind: 'observed' as const,
       termKey: 'sleep_efficiency',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Moon,
@@ -277,6 +277,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.vo2_max != null ? 'ml/kg/min' : undefined,
       rangeType: hasMetric ? ('optimal' as const) : undefined,
       rangeValue: hasMetric ? '> 45' : undefined,
+      sourceKind: 'model' as const,
       termKey: 'vo2max',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Wind,
@@ -289,6 +290,7 @@ export default function App() {
       title: 'Calorias Ativas',
       value: hasMetric && activeMetric?.calories != null ? `${Math.round(activeMetric.calories)} kcal` : '—',
       unit: hasMetric && activeMetric?.calories != null ? 'kcal' : undefined,
+      sourceKind: 'model' as const,
       subtitle: hasMetric ? 'Estimativa 24h' : NO_DATA_LABEL,
       icon: Flame,
       color: 'emerald' as const,
@@ -299,6 +301,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.respiratory_rate_rpm != null ? 'rpm' : undefined,
       rangeType: hasMetric ? ('reference' as const) : undefined,
       rangeValue: hasMetric ? '12-20' : undefined,
+      sourceKind: 'observed' as const,
       termKey: 'respiratory_rate',
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Activity,
@@ -310,6 +313,7 @@ export default function App() {
       unit: hasMetric && activeMetric?.spo2_avg_pct != null ? '%' : undefined,
       rangeType: hasMetric ? ('reference' as const) : undefined,
       rangeValue: hasMetric ? '≥ 95%' : undefined,
+      sourceKind: 'observed' as const,
       subtitle: hasMetric ? undefined : NO_DATA_LABEL,
       icon: Shield,
       color: 'emerald' as const,
@@ -374,7 +378,9 @@ export default function App() {
   }, [activeTab])
 
   const handleSyncZepp = async (full: boolean = false) => {
+    if (isSyncing || isSyncingGoogle) return
     setIsSyncing(true)
+    setSyncState('syncing')
     setSyncResult(null)
     setIsSyncModalOpen(true)
 
@@ -383,21 +389,91 @@ export default function App() {
       const endpoint = isFull ? '/api/metrics/sync/zepp?full=true' : '/api/metrics/sync/zepp'
       const result = await requestJson<SyncResult>(endpoint, { method: 'POST' })
       setSyncResult(result)
+
+      const zeppCount =
+        typeof result.zepp === 'object'
+          ? result.zepp.records_inserted ?? 0
+          : typeof result.zepp === 'number'
+          ? result.zepp
+          : result.zepp_records_imported ?? 0
+      const googleCount =
+        typeof result.google_health === 'object'
+          ? result.google_health.records_inserted ?? 0
+          : typeof result.google_health === 'number'
+          ? result.google_health
+          : result.google_health_records_imported ?? 0
+      const importedTotal = zeppCount + googleCount
+
+      const zeppSkipped =
+        typeof result.zepp === 'object' ? result.zepp.records_skipped ?? 0 : 0
+      const googleSkipped =
+        typeof result.google_health === 'object' ? result.google_health.records_skipped ?? 0 : 0
+      const unprocessable = (result.unprocessable_records ?? 0) + zeppSkipped + googleSkipped
+      const warningsList = (result.warnings ?? []).concat(
+        typeof result.zepp === 'object' ? result.zepp.warnings ?? [] : []
+      )
+
+      const coveredUntil =
+        result.data_covered_until ||
+        (typeof result.zepp === 'object' ? result.zepp.data_covered_until : undefined)
+      if (coveredUntil) setDataCoveredUntil(coveredUntil)
+
       if (result.status === 'ok') {
-        setLastSyncTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+        const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        setLastSyncTime(timeNow)
+
+        if (unprocessable > 0 || warningsList.length > 0) {
+          setSyncState('partial')
+          showToast({
+            title: 'Sincronização parcial',
+            message: `${importedTotal} importados · ${unprocessable || warningsList.length} não processados`,
+            type: 'partial',
+            duration: 0,
+            action: {
+              label: 'Ver detalhes',
+              onClick: () => setIsSyncModalOpen(true),
+            },
+          })
+        } else {
+          setSyncState('success')
+          showToast({
+            title: 'Sincronização concluída',
+            message: importedTotal > 0 ? `${importedTotal} novos registros sincronizados com sucesso.` : 'Sincronização concluída sem novos registros.',
+            type: 'success',
+          })
+        }
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
         await fetchDashboardData()
       }
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 409) {
+        setSyncState('syncing')
         setSyncResult({
           status: 'warning',
           message: caught.message || 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.',
         })
+        showToast({
+          title: 'Sincronização em andamento',
+          message: 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão.',
+          type: 'warning',
+        })
       } else {
+        const errMsg = caught instanceof ApiError ? caught.message : 'Falha ao sincronizar as fontes.'
+        const isExp = errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('expirad')
+        setSyncState(isExp ? 'expired' : 'error')
         setSyncResult({
-          status: 'error',
-          message: caught instanceof ApiError ? caught.message : 'Falha ao sincronizar as fontes.',
+          status: isExp ? 'expired' : 'error',
+          message: errMsg,
+        })
+        showToast({
+          title: isExp ? 'Token expirado' : 'Falha na sincronização',
+          message: errMsg,
+          type: 'error',
+          duration: 0,
+          action: {
+            label: isExp ? 'Reautenticar' : 'Ver detalhes',
+            onClick: isExp ? () => setShowGoogleHealthModal(true) : () => setIsSyncModalOpen(true),
+          },
         })
       }
     } finally {
@@ -406,9 +482,11 @@ export default function App() {
   }
 
   const handleSyncGoogleHealth = async () => {
+    if (isSyncing || isSyncingGoogle) return
     try {
       const status = await requestJson<{ connected: boolean; reauthentication_required: boolean }>('/api/google-health/status')
       if (!status.connected || status.reauthentication_required) {
+        setSyncState(status.reauthentication_required ? 'expired' : 'disconnected')
         setShowGoogleHealthModal(true)
         return
       }
@@ -417,6 +495,7 @@ export default function App() {
     }
 
     setIsSyncingGoogle(true)
+    setSyncState('syncing')
     setSyncResult(null)
     setIsSyncModalOpen(true)
 
@@ -424,13 +503,34 @@ export default function App() {
       const result = await requestJson<SyncResult>('/api/google-health/sync', { method: 'POST' })
       setSyncResult(result)
       if (result.status === 'ok') {
+        const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        setLastSyncTime(timeNow)
+        setSyncState('success')
+        showToast({
+          title: 'Google Health sincronizado',
+          message: 'Métricas de saúde integradas com sucesso.',
+          type: 'success',
+        })
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
         await fetchDashboardData()
       }
     } catch (caught) {
+      const errMsg = caught instanceof ApiError ? caught.message : 'Falha ao sincronizar com Google Health API.'
+      const isExp = errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('expirad')
+      setSyncState(isExp ? 'expired' : 'error')
       setSyncResult({
-        status: 'error',
-        message: caught instanceof ApiError ? caught.message : 'Falha ao sincronizar com Google Health API.',
+        status: isExp ? 'expired' : 'error',
+        message: errMsg,
+      })
+      showToast({
+        title: isExp ? 'Token expirado' : 'Falha no Google Health',
+        message: errMsg,
+        type: 'error',
+        duration: 0,
+        action: {
+          label: isExp ? 'Reautenticar' : 'Ver detalhes',
+          onClick: isExp ? () => setShowGoogleHealthModal(true) : () => setIsSyncModalOpen(true),
+        },
       })
     } finally {
       setIsSyncingGoogle(false)
@@ -574,6 +674,9 @@ export default function App() {
         isSyncing={isSyncing}
         isSyncingGoogle={isSyncingGoogle}
         lastSyncTime={lastSyncTime}
+        syncState={syncState}
+        dataCoveredUntil={dataCoveredUntil}
+        onOpenSyncStatus={() => setIsSyncModalOpen(true)}
       />
 
       <ErrorBoundary>
@@ -643,6 +746,7 @@ export default function App() {
                           rangeType={card.rangeType}
                           rangeValue={card.rangeValue}
                           termKey={card.termKey}
+                          sourceKind={card.sourceKind}
                           icon={card.icon}
                           color={card.color}
                         />
@@ -665,6 +769,7 @@ export default function App() {
                           rangeType={card.rangeType}
                           rangeValue={card.rangeValue}
                           termKey={card.termKey}
+                          sourceKind={card.sourceKind}
                           icon={card.icon}
                           color={card.color}
                         />
@@ -673,9 +778,31 @@ export default function App() {
                   </div>
 
                   {!loading && !hasMetric && (
-                    <p className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 text-slate-700 dark:text-slate-300">
-                      Sem dados disponíveis para a data selecionada.
-                    </p>
+                    <EmptyState
+                      title="Sem dados disponíveis para a data selecionada."
+                      description="Nenhuma medição foi capturada para este dia civil. Siga o fluxo clínico orientado para consolidar sua linha de base:"
+                      absenceKind="no_data"
+                      source="Sensores Vestíveis & Registros Clínicos"
+                      lastSync={selectedDate}
+                      reason="Sem sincronização de dispositivo ou aferição manual para este dia civil"
+                      pipelineSteps={[
+                        { step: 1, label: 'Perfil e Metas de Longevidade', done: true },
+                        { step: 2, label: 'Conectar Fontes (Zepp / Google Health)', active: true },
+                        { step: 3, label: 'Registrar Primeiros Dados (Manual ou CSV)' },
+                        { step: 4, label: 'Acompanhar Métricas (HRV, Sono e Passos)' },
+                        { step: 5, label: 'Análise Avançada (PhenoAge, KDM e Copiloto IA)' },
+                      ]}
+                      action={{
+                        label: 'Adicionar Métrica',
+                        onClick: () => setShowManualModal(true),
+                        icon: PlusCircle,
+                      }}
+                      secondaryAction={{
+                        label: 'Configurar Integrações & Fontes',
+                        onClick: () => setActiveTab('profile'),
+                      }}
+                      className="my-4"
+                    />
                   )}
                 </section>
               </>
@@ -781,6 +908,7 @@ export default function App() {
                 isSyncingZepp={isSyncing}
                 onSyncGoogleHealth={handleSyncGoogleHealth}
                 isSyncingGoogle={isSyncingGoogle}
+                onOpenAISettings={() => setShowAISettings(true)}
               />
             )}
           </main>
@@ -793,7 +921,7 @@ export default function App() {
                 <span className="text-slate-400 dark:text-slate-600">•</span>
                 <span>Local-first &amp; Soberania de Dados</span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center sm:text-right">
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center sm:text-right">
                 Aviso Clínico: Este aplicativo organiza e analisa dados de saúde coletados pelo próprio usuário. Não substitui o diagnóstico, acompanhamento ou prescrição médica.
               </p>
             </div>
@@ -823,6 +951,8 @@ export default function App() {
             isSyncing={isSyncing || isSyncingGoogle}
             syncResult={syncResult}
             onViewHistory={handleViewPipelineHistory}
+            onReauthenticate={() => setShowGoogleHealthModal(true)}
+            onRetrySync={() => void handleSyncZepp()}
           />
           <DoctorBriefingModal isOpen={showDoctorModal} onClose={() => setShowDoctorModal(false)} markdownContent={doctorBriefingMd} />
         </Suspense>

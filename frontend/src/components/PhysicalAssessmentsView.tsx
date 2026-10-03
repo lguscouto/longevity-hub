@@ -135,7 +135,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
               onClick={() => setActiveMode('history')}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                 activeMode === 'history'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                  ? 'bg-cyan-600 text-white shadow-xs'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
@@ -145,7 +145,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
               onClick={() => setActiveMode('create')}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                 activeMode === 'create'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
+                  ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
@@ -161,7 +161,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
               }}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                 activeMode === 'compare'
-                  ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md'
+                  ? 'bg-violet-600 text-white shadow-xs'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >

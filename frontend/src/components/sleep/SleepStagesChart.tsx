@@ -113,7 +113,7 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
         <div className="relative pt-4 pb-2">
           {/* FLOATING HOVER TOOLTIP */}
           {activeTooltipData && (
-            <div className="hidden sm:block absolute top-4 right-8 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 shadow-dialog min-w-[220px] transition-all">
+            <div className="hidden sm:block absolute top-4 right-8 z-20 bg-slate-950 border border-slate-700/80 rounded-2xl p-4 shadow-dialog min-w-[220px] transition-all">
               <div className="text-sm font-bold text-white mb-2 border-b border-slate-800 pb-1.5 flex items-center justify-between">
                 <span>{activeTooltipData.date_ref}</span>
                 <span className="text-xs text-slate-400 font-normal">
@@ -191,7 +191,7 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
               const hhmm = formatMinutesToHHMM(totalMins);
               return (
                 <div key={ratio} className="relative w-full border-b border-slate-200/60 dark:border-slate-800/60 flex items-center">
-                  <span className="absolute -left-12 text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                  <span className="absolute -left-12 text-xs text-slate-400 dark:text-slate-500 font-mono">
                     {hhmm}
                   </span>
                 </div>
@@ -268,7 +268,7 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
           </div>
 
           {/* X-Axis Date Labels */}
-          <div className="pl-12 pr-4 pt-3 flex justify-between gap-1 text-[10px] text-slate-500 dark:text-slate-400 overflow-x-auto">
+          <div className="pl-12 pr-4 pt-3 flex justify-between gap-1 text-xs text-slate-500 dark:text-slate-400 overflow-x-auto">
             {chartData.map((m, idx) => {
               // Show date label every N items depending on subset size
               const step = chartData.length > 30 ? 5 : chartData.length > 15 ? 3 : 1;

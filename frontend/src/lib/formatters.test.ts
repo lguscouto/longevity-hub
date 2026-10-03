@@ -60,6 +60,26 @@ describe('formatters - Semântica de Valores e Nulos vs Zero (UX_UI_32)', () => 
       const res = formatMetricValue(null, 'kg', { showUnitWhenEmpty: true });
       expect(res.formattedString).toBe('— kg');
     });
+
+    it('suporta absenceKind gerando rótulos acessíveis e displays descritivos (UX_UI_43)', () => {
+      const unmonitored = formatMetricValue(null, 'bpm', { absenceKind: 'unmonitored' });
+      expect(unmonitored.isNull).toBe(true);
+      expect(unmonitored.displayValue).toBe('—');
+      expect(unmonitored.accessibleText).toBe('Não monitorado');
+
+      const uncomputableWithLabel = formatMetricValue(null, 'anos', {
+        absenceKind: 'uncomputable',
+        useAbsenceLabelAsDisplay: true,
+      });
+      expect(uncomputableWithLabel.displayValue).toBe('Não calculável');
+      expect(uncomputableWithLabel.accessibleText).toBe('Não calculável');
+
+      // Zero real NUNCA é transformado em ausente mesmo com absenceKind
+      const zeroWithAbsence = formatMetricValue(0, 'kcal', { absenceKind: 'no_data' });
+      expect(zeroWithAbsence.isNull).toBe(false);
+      expect(zeroWithAbsence.displayValue).toBe('0');
+      expect(zeroWithAbsence.accessibleText).toBe('0 kcal');
+    });
   });
 
   describe('formatMinutesToHoursAndMinutes', () => {

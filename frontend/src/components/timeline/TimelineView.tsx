@@ -23,7 +23,7 @@ import { TimelineMonthView } from './TimelineMonthView'
 import { TimelineWeekView } from './TimelineWeekView'
 import { InsightDrawer } from '../contextInsights/InsightDrawer'
 import { PersonalAssociationsCard } from '../contextInsights/PersonalAssociationsCard'
-import { ConfirmDialog, InlineError, ErrorState, LoadingIndicator } from '../ui'
+import { ConfirmDialog, InlineError, ErrorState, LoadingIndicator, Select, Button } from '../ui'
 import type {
   TimelineDaySummary,
   TimelineMonthSummary,
@@ -141,13 +141,13 @@ export const TimelineView: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Barra de Ações e Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
               Linha do Tempo
             </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               Contexto Longitudinal
             </span>
           </div>
@@ -203,12 +203,14 @@ export const TimelineView: React.FC = () => {
           </button>
 
           {/* Botão Principal: Adicionar Evento */}
-          <button
+          <Button
+            variant="primary"
+            leftIcon={PlusCircle}
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-md transition"
+            size="sm"
           >
-            <PlusCircle className="h-4 w-4" /> Adicionar Evento
-          </button>
+            Adicionar Evento
+          </Button>
         </div>
       </div>
 
@@ -252,17 +254,20 @@ export const TimelineView: React.FC = () => {
               <span>Apenas significativas</span>
             </label>
 
-            <select
-              value={daysRange}
-              onChange={e => setDaysRange(Number(e.target.value))}
-              className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium"
-            >
-              <option value={7}>Últimos 7 dias</option>
-              <option value={14}>Últimos 14 dias</option>
-              <option value={30}>Últimos 30 dias</option>
-              <option value={60}>Últimos 60 dias</option>
-              <option value={90}>Últimos 90 dias</option>
-            </select>
+            <div className="w-36">
+              <Select
+                value={daysRange}
+                onChange={e => setDaysRange(Number(e.target.value))}
+                aria-label="Filtrar período em dias"
+                className="min-h-[36px] text-xs py-1.5"
+              >
+                <option value={7}>Últimos 7 dias</option>
+                <option value={14}>Últimos 14 dias</option>
+                <option value={30}>Últimos 30 dias</option>
+                <option value={60}>Últimos 60 dias</option>
+                <option value={90}>Últimos 90 dias</option>
+              </Select>
+            </div>
           </div>
         </div>
       )}

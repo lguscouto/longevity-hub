@@ -86,7 +86,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
             <span>{showDetails ? 'Ocultar detalhes técnicos' : 'Ver detalhes técnicos'}</span>
           </button>
           {showDetails && (
-            <pre className="p-2.5 rounded-xl bg-slate-900 text-slate-200 text-[11px] font-mono overflow-x-auto">
+            <pre className="p-2.5 rounded-xl bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto">
               {details}
             </pre>
           )}

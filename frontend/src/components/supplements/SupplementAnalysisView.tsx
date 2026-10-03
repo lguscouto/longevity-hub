@@ -43,12 +43,14 @@ export const FormattedAnalysis: React.FC<{ text: string }> = ({ text }) => {
           className="my-2.5 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/90"
         >
           <table className="w-full text-xs border-collapse">
+            <caption className="sr-only">Tabela do parecer clínico de IA</caption>
             {tableHeader.length > 0 && (
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold text-left">
                   {tableHeader.map((col, cIdx) => (
                     <th
                       key={cIdx}
+                      scope="col"
                       className="p-2 border-r last:border-r-0 border-slate-200 dark:border-slate-800"
                     >
                       {renderInline(col.trim())}
@@ -177,7 +179,7 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
           <button
             onClick={onAnalyzeWithAI}
             disabled={isAnalyzing}
-            className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black shadow-md shrink-0"
+            className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-md shrink-0"
           >
             <Sparkles className="h-4 w-4" />
             {isAnalyzing ? 'Processando Análise...' : 'Gerar Nova Análise'}
@@ -196,7 +198,7 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
         {!isAnalyzing && aiAnalysis && (
           <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-cyan-500/30 text-xs text-slate-800 dark:text-slate-200 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-              <span className="text-[10px] uppercase font-black tracking-wider text-cyan-600 dark:text-cyan-400">
+              <span className="text-xs uppercase font-black tracking-wider text-cyan-600 dark:text-cyan-400">
                 Relatório Clínico Gerado para {selectedDate}
               </span>
               <button

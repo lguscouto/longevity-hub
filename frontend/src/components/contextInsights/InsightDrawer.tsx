@@ -24,7 +24,7 @@ import {
   synthesizeContextExplanation,
 } from './api'
 import type { ContextExplanation, FactorAttribution } from './types'
-import { Drawer } from '../ui'
+import { Drawer, Button, useToast, SourceTag } from '../ui'
 
 interface InsightDrawerProps {
   isOpen: boolean
@@ -41,6 +41,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
   date,
   onOpenAddEvent,
 }) => {
+  const { showToast } = useToast()
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ContextExplanation | null>(null)
@@ -85,7 +86,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
       setAiText(res.text)
       if (res.note) setAiNote(res.note)
     } catch (err: any) {
-      alert(err?.message || 'Não foi possível gerar síntese por IA.')
+      showToast(err?.message || 'Não foi possível gerar síntese por IA.', 'error')
     } finally {
       setSynthesizing(false)
     }
@@ -114,20 +115,20 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
   const getStrengthBadge = (strength: string) => {
     if (strength === 'forte') {
       return (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           Associação forte
         </span>
       )
     }
     if (strength === 'moderada') {
       return (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
           Associação moderada
         </span>
       )
     }
     return (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
         Associação fraca
       </span>
     )
@@ -193,7 +194,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                       O que mudou?
                     </span>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         data.significance === 'significativa'
                           ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                           : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
@@ -222,7 +223,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                         {data.delta_percent < 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
                         {data.delta_percent > 0 ? `+${data.delta_percent}%` : `${data.delta_percent}%`}
                       </div>
-                      <div className="text-[11px] text-slate-400 font-medium">
+                      <div className="text-xs text-slate-400 font-medium">
                         Z-Score: {data.robust_z_score > 0 ? `+${data.robust_z_score}` : data.robust_z_score}
                       </div>
                     </div>
@@ -239,7 +240,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Possíveis Fatores Associados
                     </span>
-                    <span className="text-[11px] text-slate-400 font-medium">
+                    <span className="text-xs text-slate-400 font-medium">
                       {data.factors.length} {data.factors.length === 1 ? 'fator encontrado' : 'fatores encontrados'}
                     </span>
                   </div>
@@ -261,12 +262,12 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                             {f.summary}
                           </p>
                           {f.personal_evidence && (
-                            <div className="text-[11px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 p-2 rounded-xl flex items-start gap-1.5 border border-indigo-200/60 dark:border-indigo-800/60">
+                            <div className="text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 p-2 rounded-xl flex items-start gap-1.5 border border-indigo-200/60 dark:border-indigo-800/60">
                               <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-indigo-500" />
                               <span>{f.personal_evidence}</span>
                             </div>
                           )}
-                          <div className="text-[10px] text-slate-400 flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-700/60">
+                          <div className="text-xs text-slate-400 flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-700/60">
                             <span className="flex items-center gap-0.5">
                               <Clock className="h-3 w-3" /> Janela: {f.window_hours}h anteriores
                             </span>
@@ -296,16 +297,20 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
                       <Sparkles className="h-3.5 w-3.5 text-indigo-500" /> Síntese Contextual
+                      <SourceTag kind="inference" compact />
                     </span>
 
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={handleSynthesizeWithAi}
-                      disabled={synthesizing}
-                      className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 flex items-center gap-1 disabled:opacity-50"
+                      loading={synthesizing}
+                      loadingText="Sintetizando..."
+                      leftIcon={Sparkles}
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 min-h-0 h-auto p-0"
                     >
-                      <Sparkles className={`h-3 w-3 ${synthesizing ? 'animate-spin' : ''}`} />
-                      {synthesizing ? 'Sintetizando...' : 'Aprofundar com Copiloto IA'}
-                    </button>
+                      Aprofundar com Copiloto IA
+                    </Button>
                   </div>
 
                   {aiText ? (
@@ -313,7 +318,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                       <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
                         {aiText}
                       </p>
-                      {aiNote && <p className="text-[10px] text-slate-400 italic">{aiNote}</p>}
+                      {aiNote && <p className="text-xs text-slate-400 italic">{aiNote}</p>}
                     </div>
                   ) : (
                     <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
@@ -334,12 +339,12 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                     <span>Método estatístico:</span>
-                    <span className="font-mono text-[11px]">Mediana + MAD</span>
+                    <span className="font-mono text-xs">Mediana + MAD</span>
                   </div>
                 </div>
 
                 {/* 5. Rodapé obrigatório de salvaguarda */}
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] leading-relaxed flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs leading-relaxed flex items-start gap-2">
                   <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
                   <span>{data.disclaimer}</span>
                 </div>
@@ -356,30 +361,39 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleFeedback(true)}
                         disabled={feedbackLoading}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 transition"
+                        leftIcon={ThumbsUp}
+                        className="flex-1 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100"
                       >
-                        <ThumbsUp className="h-3.5 w-3.5" /> Parece correto
-                      </button>
-                      <button
+                        Parece correto
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => handleFeedback(false)}
                         disabled={feedbackLoading}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-200 transition"
+                        leftIcon={ThumbsDown}
+                        className="flex-1"
                       >
-                        <ThumbsDown className="h-3.5 w-3.5" /> Não relevante
-                      </button>
+                        Não relevante
+                      </Button>
                     </div>
                   )}
 
                   {onOpenAddEvent && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onOpenAddEvent(date)}
-                      className="w-full flex items-center justify-center gap-1.5 pt-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline border-t border-slate-100 dark:border-slate-700"
+                      leftIcon={PlusCircle}
+                      className="w-full text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline border-t border-slate-100 dark:border-slate-700 pt-2 min-h-0 h-auto"
                     >
-                      <PlusCircle className="h-3.5 w-3.5" /> Algo importante aconteceu nesta data? (+ Registrar Evento)
-                    </button>
+                      Algo importante aconteceu nesta data? (+ Registrar Evento)
+                    </Button>
                   )}
                 </div>
               </>

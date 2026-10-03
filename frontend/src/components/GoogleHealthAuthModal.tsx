@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, ConfirmDialog } from './ui'
+import { Modal, ConfirmDialog, FormField, Input, Button } from './ui'
 import {
   X,
   CheckCircle2,
@@ -201,7 +201,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
       title="Conexão Google Health API v4"
       description="Pixel Watch e dispositivos compatíveis Google Health"
       icon={
-        <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+        <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center shadow-xs">
           <Shield className="h-5 w-5" />
         </div>
       }
@@ -248,13 +248,13 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
             </div>
 
             {status.last_sync && (
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
                 Última sincronização: <span className="font-medium text-slate-700 dark:text-slate-300">{new Date(status.last_sync).toLocaleString('pt-BR')}</span>
               </div>
             )}
 
             {status.masked_client_id && (
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
                 <span>Client ID: <code className="text-slate-700 dark:text-slate-300 font-mono">{status.masked_client_id}</code></span>
                 <button
                   type="button"
@@ -268,12 +268,12 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
 
             {status.scopes && (status.connected || status.authenticated) && (
               <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                   Módulos Autorizados (Consentimento):
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${
                       status.scopes.activity
                         ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
@@ -282,7 +282,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                     Atividade Física: {status.scopes.activity ? 'Autorizado' : 'Não concedido'}
                   </span>
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${
                       status.scopes.health_metrics
                         ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
@@ -291,7 +291,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                     Métricas Vitais: {status.scopes.health_metrics ? 'Autorizado' : 'Não concedido'}
                   </span>
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-medium border ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${
                       status.scopes.sleep
                         ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
@@ -301,7 +301,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                   </span>
                 </div>
                 {status.connected && (!status.scopes.activity || !status.scopes.health_metrics || !status.scopes.sleep) && (
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
                     Consentimento parcial: métricas de módulos não concedidos serão ignoradas.
                   </p>
                 )}
@@ -335,68 +335,64 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
                 </a>
               </div>
 
-              <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed space-y-1">
+              <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-1">
                 <p>
                   URL das Credenciais:{' '}
                   <a
                     href="https://console.cloud.google.com/apis/credentials"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-[10.5px] text-blue-700 dark:text-blue-300 hover:underline inline-flex items-center gap-0.5 font-medium break-all"
+                    className="font-mono text-xs text-blue-700 dark:text-blue-300 hover:underline inline-flex items-center gap-0.5 font-medium break-all"
                   >
                     https://console.cloud.google.com/apis/credentials
                     <ExternalLink className="w-2.5 h-2.5 shrink-0 ml-0.5" />
                   </a>
                 </p>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   No Google Cloud Console, clique em <strong>+ Criar credenciais</strong> &rarr; <strong>ID do cliente OAuth</strong> (tipo: <em>Aplicativo da Web</em>).
                 </p>
               </div>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
+              <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                 <span>Adicione a URI de redirecionamento autorizada:</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleCopyUri}
-                  className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 font-semibold text-[10.5px]"
+                  leftIcon={copiedUri ? Check : Copy}
+                  className="text-blue-600 dark:text-blue-400 font-semibold text-xs py-1 px-2"
                 >
-                  {copiedUri ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                   {copiedUri ? 'Copiado!' : 'Copiar URI'}
-                </button>
+                </Button>
               </div>
-              <code className="text-[10px] bg-slate-200/80 dark:bg-slate-800/80 p-2 rounded-lg font-mono select-all block break-all text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+              <code className="text-xs bg-slate-200/80 dark:bg-slate-800/80 p-2 rounded-lg font-mono select-all block break-all text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
                 {status?.redirect_uri || 'http://127.0.0.1:8887/api/google-health/callback'}
               </code>
             </div>
 
-            <div className="space-y-2 pt-1">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Google Client ID (.apps.googleusercontent.com)
-                </label>
-                <input
+            <div className="space-y-3 pt-1">
+              <FormField id="google-client-id" label="Google Client ID (.apps.googleusercontent.com)">
+                <Input
+                  id="google-client-id"
                   type="text"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   placeholder="Ex: 721724668570-...apps.googleusercontent.com"
-                  className="w-full text-xs p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Google Client Secret
-                </label>
-                <input
+              <FormField id="google-client-secret" label="Google Client Secret">
+                <Input
+                  id="google-client-secret"
                   type="password"
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
                   placeholder={status?.has_client_secret ? '•••••••••••••••• (Já salvo no servidor — deixe em branco para manter)' : 'Ex: GOCSPX-...'}
-                  className="w-full text-xs p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
-              </div>
+              </FormField>
             </div>
           </div>
         )}
@@ -404,45 +400,54 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
         {/* Actions */}
         <div className="flex flex-col gap-2 pt-2">
           {!status?.connected ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="md"
               onClick={handleSaveCredentialsAndConnect}
               disabled={loading}
-              className="w-full py-3 rounded-2xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-lg flex items-center justify-center gap-2"
+              loading={loading}
+              leftIcon={ExternalLink}
+              className="w-full bg-blue-600 hover:bg-blue-500"
             >
-              <ExternalLink className="w-4 h-4" />
-              <span>Conectar com Google no Navegador</span>
-            </button>
+              Conectar com Google no Navegador
+            </Button>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={handleTriggerSync}
                 disabled={syncing}
-                className="py-3 rounded-2xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 transition glow-emerald shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                loading={syncing}
+                leftIcon={RefreshCw}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white"
               >
-                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                <span>{syncing ? 'Sincronizando...' : 'Sincronizar Agora'}</span>
-              </button>
+                Sincronizar Agora
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="destructive"
+                size="md"
                 onClick={handleDisconnect}
-                className="py-3 rounded-2xl text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 transition flex items-center justify-center gap-2"
+                leftIcon={LogOut}
               >
-                <LogOut className="w-4 h-4" />
-                <span>Desconectar</span>
-              </button>
+                Desconectar
+              </Button>
             </div>
           )}
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="w-full"
           >
             Fechar
-          </button>
+          </Button>
         </div>
       </Modal>
 

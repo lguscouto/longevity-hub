@@ -18,7 +18,7 @@ import {
 import { ApiError, requestJson } from '../lib/api'
 import { useTheme } from '../context/ThemeContext'
 import { HevyStatus } from '../types'
-import { Modal } from './ui'
+import { Modal, FormField, Input, Select, Button } from './ui'
 
 interface AISettingsModalProps {
   isOpen: boolean
@@ -287,7 +287,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
       title="Configurações & Chaves"
       description="Gerenciador de Inteligência Artificial, Hevy e Wearables"
       icon={
-        <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white glow-cyan shrink-0">
+        <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
           <Bot className="h-6 w-6" />
         </div>
       }
@@ -328,7 +328,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
             {/* Seção de Aparência / Tema Visual */}
             <div className="border-b border-slate-200 dark:border-slate-800/80 pb-4">
               <label className="block text-slate-800 dark:text-slate-300 font-bold mb-1">Aparência</label>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-2.5">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-2.5">
                 Escolha o tema visual utilizado pelo Longevidade Hub.
               </p>
               <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Tema visual">
@@ -366,7 +366,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-slate-800 dark:text-slate-300 font-bold">Provedor de LLM</label>
-                <span className="text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold">
+                <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
                   Ativo: {activeMeta.label}
                 </span>
               </div>
@@ -393,12 +393,12 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                       <div className="flex items-center justify-between w-full mb-1">
                         <span className="font-bold text-xs">{meta.label}</span>
                         {isSelected && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950">
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950">
                             Ativo
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {meta.hasKey ? '● No Cofre' : '○ Sem chave'}
                       </span>
                     </button>
@@ -408,16 +408,12 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
             </div>
 
             {/* Seletor de Modelos */}
-            <div>
-              <label htmlFor="ai-model-select" className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
-                Modelo de IA Selecionado:
-              </label>
-              <select
+            <FormField id="ai-model-select" label="Modelo de IA Selecionado:">
+              <Select
                 id="ai-model-select"
                 aria-label="Modelo de IA Selecionado"
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
               >
                 {activeProvider === 'openrouter' && (
                   <>
@@ -441,29 +437,27 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                     <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Mais Rápido)</option>
                   </>
                 )}
-              </select>
-            </div>
+              </Select>
+            </FormField>
 
             {/* Modo de privacidade */}
             <div>
-              <label htmlFor="ai-privacy-mode" className="block text-slate-800 dark:text-slate-300 font-bold mb-1">
-                Modo de privacidade do contexto IA:
-              </label>
-              <select
-                id="ai-privacy-mode"
-                aria-label="Modo de privacidade do contexto IA"
-                value={privacyMode}
-                onChange={(event) => setPrivacyMode(normalizePrivacyMode(event.target.value))}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
-              >
-                <option value="minimal">Mínimo (padrão)</option>
-                <option value="full">Completo (opt-in)</option>
-              </select>
-              <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">
+              <FormField id="ai-privacy-mode" label="Modo de privacidade do contexto IA:">
+                <Select
+                  id="ai-privacy-mode"
+                  aria-label="Modo de privacidade do contexto IA"
+                  value={privacyMode}
+                  onChange={(event) => setPrivacyMode(normalizePrivacyMode(event.target.value))}
+                >
+                  <option value="minimal">Mínimo (padrão)</option>
+                  <option value="full">Completo (opt-in)</option>
+                </Select>
+              </FormField>
+              <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
                 {PRIVACY_MODE_DESCRIPTIONS[privacyMode]}
               </p>
               {privacyMode === 'full' && (
-                <div role="alert" className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                <div role="alert" className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
                   <span>Modo completo é opt-in: revise antes de enviar, pois pode incluir contexto ampliado nas chamadas de IA externa.</span>
                 </div>
@@ -478,11 +472,11 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                   Chave API — {activeMeta.label} (Provedor Selecionado)
                 </span>
                 {activeMeta.hasKey ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-xs bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                     <ShieldCheck className="h-3 w-3" /> Chave Configurada
                   </span>
                 ) : (
-                  <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                     Chave não configurada
                   </span>
                 )}
@@ -490,25 +484,29 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
 
               {/* Input Chave Provedor Ativo */}
               <div className="p-3.5 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 dark:bg-cyan-950/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor={activeMeta.keyId} className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
-                    {activeMeta.keyLabel}
-                  </label>
-                  {activeMeta.hasKey && (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
-                      Cofre do Windows
-                    </span>
-                  )}
-                </div>
-                <input
+                <FormField
                   id={activeMeta.keyId}
-                  type="password"
-                  placeholder={activeMeta.placeholder}
-                  value={activeMeta.keyVal}
-                  onChange={(event) => activeMeta.setKeyVal(event.target.value)}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
-                />
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  label={
+                    <span className="flex items-center justify-between w-full">
+                      <span>{activeMeta.keyLabel}</span>
+                      {activeMeta.hasKey && (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
+                          Cofre do Windows
+                        </span>
+                      )}
+                    </span>
+                  }
+                >
+                  <Input
+                    id={activeMeta.keyId}
+                    type="password"
+                    placeholder={activeMeta.placeholder}
+                    value={activeMeta.keyVal}
+                    onChange={(event) => activeMeta.setKeyVal(event.target.value)}
+                    className="font-mono"
+                  />
+                </FormField>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {activeMeta.description}
                 </p>
               </div>
@@ -517,32 +515,38 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
               <details className="group border border-slate-200 dark:border-slate-800 rounded-2xl p-3 text-xs bg-slate-50/50 dark:bg-slate-950/40">
                 <summary className="cursor-pointer font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-between list-none">
                   <span>Gerenciar chaves dos outros provedores ({otherProviders.map((p) => providerMetaMap[p].label).join(', ')})</span>
-                  <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼</span>
+                  <span className="text-slate-400 text-xs group-open:rotate-180 transition-transform">▼</span>
                 </summary>
                 <div className="mt-3 space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     As chaves ficam no cofre de credenciais local do Windows. Campos vazios ou valores mascarados preservam o estado atual no backend.
                   </p>
                   {otherProviders.map((prov) => {
                     const meta = providerMetaMap[prov]
                     return (
                       <div key={prov} className="space-y-1">
-                        <label htmlFor={meta.keyId} className="block text-slate-700 dark:text-slate-300 font-semibold flex items-center justify-between">
-                          <span>{meta.keyLabel}</span>
-                          {meta.hasKey && (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
-                              Cofre do Windows
-                            </span>
-                          )}
-                        </label>
-                        <input
+                        <FormField
                           id={meta.keyId}
-                          type="password"
-                          placeholder={meta.placeholder}
-                          value={meta.keyVal}
-                          onChange={(event) => meta.setKeyVal(event.target.value)}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono"
-                        />
+                          label={
+                            <span className="flex items-center justify-between w-full">
+                              <span>{meta.keyLabel}</span>
+                              {meta.hasKey && (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
+                                  Cofre do Windows
+                                </span>
+                              )}
+                            </span>
+                          }
+                        >
+                          <Input
+                            id={meta.keyId}
+                            type="password"
+                            placeholder={meta.placeholder}
+                            value={meta.keyVal}
+                            onChange={(event) => meta.setKeyVal(event.target.value)}
+                            className="font-mono"
+                          />
+                        </FormField>
                       </div>
                     )
                   })}
@@ -571,31 +575,39 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
             )}
 
             <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={handleTestConnection}
                 disabled={isTesting}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-200 dark:border-slate-700 transition w-full sm:w-auto"
+                loading={isTesting}
+                leftIcon={RefreshCw}
+                className="w-full sm:w-auto"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${isTesting ? 'animate-spin' : ''}`} />
                 {isTesting ? `Testando ${activeMeta.label}...` : `Testar Chave (${activeMeta.label})`}
-              </button>
+              </Button>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={onClose}
-                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition text-center"
+                  className="flex-1 sm:flex-none"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
+                  size="sm"
                   disabled={isSaving}
-                  className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold glow-cyan transition shadow-md text-center"
+                  loading={isSaving}
+                  className="flex-1 sm:flex-none"
                 >
                   {isSaving ? 'Salvando...' : 'Salvar Configurações'}
-                </button>
+                </Button>
               </div>
             </div>
           </form>
@@ -613,24 +625,24 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Hevy Public API</h4>
-                    <p className="text-[11px] text-slate-500">Sincronização de treinos de força, séries, repetições e cargas.</p>
+                    <p className="text-xs text-slate-500">Sincronização de treinos de força, séries, repetições e cargas.</p>
                   </div>
                 </div>
 
                 {hevyStatus?.connected ? (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold text-[10px]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold text-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     Conectado
                   </span>
                 ) : (
-                  <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold text-[10px]">
+                  <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold text-xs">
                     Pendente
                   </span>
                 )}
               </div>
 
               {hevyStatus?.user && (
-                <div className="p-2.5 rounded-xl bg-purple-500/5 border border-purple-500/20 text-[11px] text-purple-300 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-purple-500/5 border border-purple-500/20 text-xs text-purple-300 flex items-center justify-between">
                   <span>Atleta conectado: <strong>{hevyStatus.user.name}</strong></span>
                   {hevyStatus.user.url && (
                     <a
@@ -647,26 +659,31 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
 
               {/* Input Hevy API Key */}
               <div>
-                <label className="block text-slate-800 dark:text-slate-300 font-bold mb-1 flex items-center justify-between">
-                  <span>Chave de API do Hevy (UUID)</span>
-                  <a
-                    href="https://hevy.com/settings?developer"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] text-purple-400 hover:underline flex items-center gap-1"
-                  >
-                    Obter Chave no Hevy Pro <ExternalLink className="h-3 w-3" />
-                  </a>
-                </label>
-                <div className="relative">
-                  <input
+                <FormField
+                  id="hevy-key-input"
+                  label={
+                    <span className="flex items-center justify-between w-full">
+                      <span>Chave de API do Hevy (UUID)</span>
+                      <a
+                        href="https://hevy.com/settings?developer"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-purple-400 hover:underline flex items-center gap-1 font-normal"
+                      >
+                        Obter Chave no Hevy Pro <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </span>
+                  }
+                >
+                  <Input
+                    id="hevy-key-input"
                     type="text"
                     placeholder="c10ddad3-e147-496b-ba35-..."
                     value={hevyKey}
                     onChange={(e) => setHevyKey(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono text-xs focus:border-purple-500 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                    className="font-mono text-xs focus:border-purple-500"
                   />
-                </div>
+                </FormField>
               </div>
 
               {hevyFeedback && (
@@ -687,15 +704,18 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
               )}
 
               <div className="flex items-center justify-end gap-2 pt-1">
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={handleSaveHevy}
                   disabled={isSavingHevy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition shadow-md disabled:opacity-50"
+                  loading={isSavingHevy}
+                  leftIcon={RefreshCw}
+                  className="bg-purple-600 hover:bg-purple-500 text-white"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isSavingHevy ? 'animate-spin' : ''}`} />
                   {isSavingHevy ? 'Testando & Salvando...' : 'Testar & Salvar Hevy'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -706,11 +726,11 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                   <Activity className="h-4 w-4 text-emerald-500" />
                   <span className="font-bold text-slate-800 dark:text-slate-200">Zepp / Amazfit</span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                   Pronto para Sincronização
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Os dados de corrida, cardio e métricas diárias são importados diretamente dos snapshots do Zepp Life / Amazfit.
               </p>
 
@@ -720,19 +740,22 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       Reimportação Histórica Total
                     </span>
-                    <p className="text-[10px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Baixa e reconcilia todo o histórico de atividades e métricas desde o início (2022).
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={onSyncZeppFull}
                     disabled={isSyncingZepp}
-                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition disabled:opacity-50 shrink-0"
+                    loading={isSyncingZepp}
+                    leftIcon={RefreshCw}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs shrink-0"
                   >
-                    <RefreshCw className={`h-3 w-3 ${isSyncingZepp ? 'animate-spin' : ''}`} />
                     {isSyncingZepp ? 'Sincronizando...' : 'Full Sync Zepp'}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

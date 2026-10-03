@@ -11,7 +11,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { ExerciseDetailModal, ExerciseMedia } from './ExerciseDetailModal'
-import { EmptyState } from './ui'
+import { EmptyState, Input, Button } from './ui'
 
 const MUSCLE_FILTERS = [
   { label: 'Todos os Músculos', value: '' },
@@ -101,7 +101,7 @@ export const ExerciseCatalogView: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Barra de Filtros e Busca */}
-      <div className="bg-white dark:bg-slate-900/80 p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 backdrop-blur-md">
+      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
@@ -117,8 +117,7 @@ export const ExerciseCatalogView: React.FC = () => {
 
           {/* Input de Busca */}
           <form onSubmit={handleSearchSubmit} className="relative min-w-[280px] sm:min-w-[340px]">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input
+            <Input
               type="text"
               value={query}
               onChange={(e) => {
@@ -126,14 +125,14 @@ export const ExerciseCatalogView: React.FC = () => {
                 setPage(1)
               }}
               placeholder="Buscar por nome (ex: squat, bench press, curl)..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-purple-500 shadow-2xs"
+              leftIcon={<Search className="h-4 w-4" />}
             />
           </form>
         </div>
 
         {/* Chips de Filtro por Grupo Muscular */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Grupo Muscular</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Grupo Muscular</span>
           <div className="flex items-center gap-1.5 flex-wrap">
             {MUSCLE_FILTERS.map((m) => (
               <button
@@ -156,7 +155,7 @@ export const ExerciseCatalogView: React.FC = () => {
 
         {/* Chips de Filtro por Equipamento */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Equipamento</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Equipamento</span>
           <div className="flex items-center gap-1.5 flex-wrap">
             {EQUIPMENT_FILTERS.map((eq) => (
               <button
@@ -165,7 +164,7 @@ export const ExerciseCatalogView: React.FC = () => {
                   setSelectedEquipment(eq)
                   setPage(1)
                 }}
-                className={`px-3 py-1 rounded-lg text-[11px] font-medium transition ${
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
                   selectedEquipment.value === eq.value
                     ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xs font-bold'
                     : 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
@@ -243,7 +242,7 @@ export const ExerciseCatalogView: React.FC = () => {
               </div>
 
               {/* Tags de Classificação */}
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1 text-[10px]">
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1 text-xs">
                 <span className="font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-500/15 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-500/30 truncate max-w-[120px]">
                   {ex.target_pt || ex.target || 'Geral'}
                 </span>
@@ -259,27 +258,29 @@ export const ExerciseCatalogView: React.FC = () => {
       {/* Paginação */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-4">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+            leftIcon={ChevronLeft}
           >
-            <ChevronLeft className="h-4 w-4" />
             Anterior
-          </button>
+          </Button>
 
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
             {page} / {totalPages}
           </span>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+            rightIcon={ChevronRight}
           >
             Próximo
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       )}
 

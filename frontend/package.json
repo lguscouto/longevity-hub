@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:e2e": "playwright test --config=e2e/playwright.config.ts"
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "audit:design-system": "node scripts/audit-design-system.mjs",
+    "audit:design-system:baseline": "node scripts/audit-design-system.mjs --update-baseline"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",

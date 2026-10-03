@@ -34,7 +34,7 @@ export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, on
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">{m.title}</h3>
-                  <p className="text-[11px] text-slate-400">{m.month_ref}</p>
+                  <p className="text-xs text-slate-400">{m.month_ref}</p>
                 </div>
               </div>
 
@@ -51,7 +51,7 @@ export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, on
             {/* Grid de Tendências Mensais */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3.5">
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Scale className="h-3 w-3 text-cyan-500" /> Variação de Peso
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -62,7 +62,7 @@ export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, on
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Activity className="h-3 w-3 text-emerald-500" /> HRV Médio
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -71,7 +71,7 @@ export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, on
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Heart className="h-3 w-3 text-rose-500" /> FC Repouso Médio
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -80,7 +80,7 @@ export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, on
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1 mb-1">
                   <Dumbbell className="h-3 w-3 text-purple-500" /> Volume Treinos
                 </span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -92,14 +92,14 @@ export const TimelineMonthView: React.FC<TimelineMonthViewProps> = ({ months, on
             {/* Protocolos / Intervenções Ativas no Mês */}
             {m.active_interventions && m.active_interventions.length > 0 && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 mb-2">
-                <span className="text-[11px] font-semibold text-slate-400 mb-1.5 flex items-center gap-1">
+                <span className="text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1">
                   <Pill className="h-3 w-3 text-emerald-500" /> Protocolos Ativos:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {m.active_interventions.map((p, idx) => (
                     <span
                       key={idx}
-                      className="text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50 px-2 py-0.5 rounded-lg"
+                      className="text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50 px-2 py-0.5 rounded-lg"
                     >
                       {p}
                     </span>

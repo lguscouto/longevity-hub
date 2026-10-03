@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-10-03T18:55:37.090Z",
+  "rules": {
+    "typography.micro-9": 0,
+    "typography.micro-10": 0,
+    "typography.micro-11": 0,
+    "radius.arbitrary": 0,
+    "radius.3xl": 0,
+    "radius.non-token": 447,
+    "gradients.bg": 0,
+    "effects.glow": 0,
+    "effects.backdrop-blur": 0,
+    "effects.arbitrary-shadow": 0,
+    "focus.outline-none": 0,
+    "motion.decorative": 0,
+    "native.button": 94,
+    "native.input": 7,
+    "native.select": 0,
+    "native.textarea": 0
+  }
+}

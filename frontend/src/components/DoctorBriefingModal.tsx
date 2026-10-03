@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Stethoscope, Download, Copy, Check } from 'lucide-react';
-import { Modal } from './ui';
+import { Modal, Button } from './ui';
 
 interface DoctorBriefingModalProps {
   isOpen: boolean;
@@ -44,17 +44,15 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
           >
             <Download className="h-4 w-4" /> Baixar PDF
           </a>
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
+            leftIcon={copied ? Check : Copy}
           >
-            {copied ? (
-              <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Copy className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-            )}
             {copied ? 'Copiado!' : 'Copiar MD'}
-          </button>
+          </Button>
         </div>
       }
       footer={
@@ -68,24 +66,24 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
             >
               <Download className="h-4 w-4" /> PDF
             </a>
-            <button
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
+              leftIcon={copied ? Check : Copy}
             >
-              {copied ? (
-                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Copy className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-              )}
               {copied ? 'Copiado!' : 'Copiar'}
-            </button>
+            </Button>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition"
           >
             Fechar
-          </button>
+          </Button>
         </div>
       }
     >

@@ -82,18 +82,18 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Protocol Compliance Score</h3>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400">Padrão de Longevidade ({selectedDate})</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Padrão de Longevidade ({selectedDate})</p>
           </div>
         </div>
 
         <div className="text-right">
           <span className="text-2xl font-black text-slate-900 dark:text-white">{scorePct}%</span>
-          <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase font-bold">Conformidade</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 block uppercase font-bold">Conformidade</span>
         </div>
       </div>
 
       {loadError && (
-        <div role="alert" className="mb-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[11px] text-rose-800 dark:text-rose-300">
+        <div role="alert" className="mb-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-800 dark:text-rose-300">
           {loadError}
         </div>
       )}
@@ -114,7 +114,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
           )}
           <div>
             <span className="text-xs font-bold block text-slate-900 dark:text-white">Janela de Sono</span>
-            <span className="text-[10px] text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
               <Moon className="h-3 w-3 text-indigo-600 dark:text-indigo-400" /> Dormir & Acordar no horário
             </span>
           </div>
@@ -135,7 +135,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
           )}
           <div>
             <span className="text-xs font-bold block text-slate-900 dark:text-white">Suplementação</span>
-            <span className="text-[10px] text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
               <Pill className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Pilha do dia completa
             </span>
           </div>
@@ -156,7 +156,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
           )}
           <div>
             <span className="text-xs font-bold block text-slate-900 dark:text-white">Treino / Exercício</span>
-            <span className="text-[10px] text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
               <Dumbbell className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Sessão de treino cumprida
             </span>
           </div>
@@ -177,7 +177,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
           )}
           <div>
             <span className="text-xs font-bold block text-slate-900 dark:text-white">Janela de Jejum</span>
-            <span className="text-[10px] text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
               <Utensils className="h-3 w-3 text-amber-600 dark:text-amber-400" /> Jejum noturno respeitado
             </span>
           </div>

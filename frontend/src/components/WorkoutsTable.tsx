@@ -13,7 +13,7 @@ import {
 
 import { requestJson } from '../lib/api'
 import { WorkoutSession } from '../types'
-import { EmptyState, LoadingPanel, InlineError } from './ui'
+import { EmptyState, LoadingPanel, InlineError, Input, ResponsiveDataTable, DataColumn } from './ui'
 
 interface WorkoutsTableProps {
   initialLimit?: number
@@ -22,6 +22,130 @@ interface WorkoutsTableProps {
 const CATEGORIES = ['Todas', 'Corrida', 'Ciclismo', 'Treino Força', 'Caminhada', 'Outros'] as const
 type CategoryFilter = typeof CATEGORIES[number]
 
+const formatDate = (isoDate: string) => {
+  try {
+    const parts = isoDate.split('-')
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    return isoDate
+  } catch {
+    return isoDate
+  }
+}
+
+const getCategoryBadgeClass = (category: string) => {
+  switch (category) {
+    case 'Corrida':
+      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+    case 'Ciclismo':
+      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+    case 'Treino Força':
+      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+    case 'Caminhada':
+      return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'
+    default:
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+  }
+}
+
+const NoValue = () => <span className="text-slate-400">—</span>
+
+/** Colunas canônicas (UX_UI_41): mesma fonte para tabela desktop e Row Card mobile. */
+const WORKOUT_COLUMNS: DataColumn<WorkoutSession>[] = [
+  {
+    key: 'date',
+    header: 'Data / Hora',
+    priority: 'primary',
+    render: (w) => (
+      <div className="flex items-center justify-between gap-2 md:block">
+        <span className="font-semibold text-slate-900 dark:text-white block">{formatDate(w.workout_date)}</span>
+        <span className="text-xs font-normal text-slate-400 flex items-center gap-1">
+          <Clock className="h-3 w-3 inline" aria-hidden="true" /> {w.workout_time}
+        </span>
+      </div>
+    ),
+  },
+  {
+    key: 'modality',
+    header: 'Modalidade',
+    priority: 'primary',
+    render: (w) => (
+      <div className="flex items-center gap-2 flex-wrap">
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${getCategoryBadgeClass(
+            w.category
+          )}`}
+        >
+          {w.category}
+        </span>
+        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{w.activity_type}</span>
+        {w.city && (
+          <span className="text-xs font-normal text-slate-400 flex items-center gap-0.5">
+            <MapPin className="h-2.5 w-2.5 inline" aria-hidden="true" /> {w.city}
+          </span>
+        )}
+      </div>
+    ),
+  },
+  {
+    key: 'duration',
+    header: 'Duração',
+    cellClassName: 'font-semibold text-slate-800 dark:text-slate-200',
+    render: (w) => `${w.duration_min} min`,
+  },
+  {
+    key: 'distance',
+    header: 'Distância',
+    cellClassName: 'text-slate-700 dark:text-slate-300',
+    render: (w) => (w.distance_km > 0 ? <span className="font-semibold">{w.distance_km} km</span> : <NoValue />),
+  },
+  {
+    key: 'calories',
+    header: 'Calorias',
+    cellClassName: 'text-slate-700 dark:text-slate-300',
+    render: (w) =>
+      w.calories > 0 ? (
+        <span className="inline-flex items-center gap-1 font-semibold">
+          <Flame className="h-3.5 w-3.5 text-amber-500 inline" aria-hidden="true" />
+          {w.calories} kcal
+        </span>
+      ) : (
+        <NoValue />
+      ),
+  },
+  {
+    key: 'hr',
+    header: 'FC Média / Máx',
+    cellClassName: 'text-slate-700 dark:text-slate-300',
+    render: (w) =>
+      w.avg_hr != null || w.max_hr != null ? (
+        <span className="inline-flex items-center gap-1">
+          <Heart className="h-3.5 w-3.5 text-rose-500 inline" aria-hidden="true" />
+          <span className="font-semibold">{w.avg_hr ?? '—'}</span>
+          <span className="text-slate-400">/</span>
+          <span className="text-slate-500 dark:text-slate-400">{w.max_hr ?? '—'}</span>
+          <span className="text-xs text-slate-400">bpm</span>
+        </span>
+      ) : (
+        <NoValue />
+      ),
+  },
+  {
+    key: 'te',
+    header: 'TE Carga',
+    render: (w) =>
+      w.training_effect != null ? (
+        <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-radius-sm text-xs border border-amber-500/20">
+          <TrendingUp className="h-3 w-3 inline" aria-hidden="true" />
+          TE {w.training_effect}
+        </span>
+      ) : (
+        <NoValue />
+      ),
+  },
+]
+
 export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 }) => {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,18 +153,6 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('Todas')
   const [searchQuery, setSearchQuery] = useState('')
   const [limit, setLimit] = useState(initialLimit)
-
-  const formatDate = (isoDate: string) => {
-    try {
-      const parts = isoDate.split('-')
-      if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`
-      }
-      return isoDate
-    } catch {
-      return isoDate
-    }
-  }
 
   const fetchWorkouts = async () => {
     setLoading(true)
@@ -76,21 +188,6 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
     })
   }, [workouts, searchQuery])
 
-  const getCategoryBadgeClass = (category: string) => {
-    switch (category) {
-      case 'Corrida':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-      case 'Ciclismo':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-      case 'Treino Força':
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-      case 'Caminhada':
-        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'
-      default:
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-    }
-  }
-
   return (
     <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
       {/* Header with Title and Refresh */}
@@ -121,7 +218,7 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
 
       {/* Controls: Search and Category Pills */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Category Pills */}
+        {/* Category Pills — overflow-x-auto legítimo (UX_UI_41): faixa de filtros, não dado clínico */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 mr-1 hidden sm:inline" />
           {CATEGORIES.map((cat) => (
@@ -140,14 +237,13 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
         </div>
 
         {/* Search Bar */}
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          <input
+        <div className="w-full md:w-64">
+          <Input
             type="text"
             placeholder="Buscar esporte ou cidade..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+            leftIcon={<Search className="h-3.5 w-3.5 text-slate-400" />}
           />
         </div>
       </div>
@@ -179,125 +275,27 @@ export const WorkoutsTable: React.FC<WorkoutsTableProps> = ({ initialLimit = 50 
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-          <table className="w-full text-left text-xs block md:table">
-            <thead className="hidden md:table-header-group bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="py-3 px-4">Data / Hora</th>
-                <th className="py-3 px-4">Modalidade</th>
-                <th className="py-3 px-4">Duração</th>
-                <th className="py-3 px-4">Distância</th>
-                <th className="py-3 px-4">Calorias</th>
-                <th className="py-3 px-4">FC Média / Máx</th>
-                <th className="py-3 px-4">TE Carga</th>
-              </tr>
-            </thead>
-            <tbody className="block md:table-row-group divide-y divide-slate-100 dark:divide-slate-800/60">
-              {filteredWorkouts.map((w) => (
-                <tr
-                  key={w.id}
-                  className="block md:table-row p-4 md:py-3 md:px-4 space-y-2 md:space-y-0 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+        <ResponsiveDataTable
+          caption={`Histórico de treinos (${filteredWorkouts.length} sessões)`}
+          columns={WORKOUT_COLUMNS}
+          rows={filteredWorkouts}
+          getRowKey={(w) => w.id}
+          getRowLabel={(w) => `${w.activity_type} em ${formatDate(w.workout_date)} às ${w.workout_time}`}
+          stickyFirstColumn
+          footer={
+            workouts.length >= limit && limit < 500 ? (
+              <div className="mt-3 py-3 border-t border-slate-200 dark:border-slate-800 text-center">
+                <button
+                  type="button"
+                  onClick={() => setLimit((prev) => Math.min(prev + 50, 500))}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm"
                 >
-                  <td className="block md:table-cell py-1 md:py-3 md:px-4 md:whitespace-nowrap">
-                    <div className="flex items-center justify-between md:block">
-                      <span className="font-semibold text-slate-900 dark:text-white block">
-                        {formatDate(w.workout_date)}
-                      </span>
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                        <Clock className="h-3 w-3 inline" /> {w.workout_time}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="block md:table-cell py-1 md:py-3 md:px-4 md:whitespace-nowrap">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${getCategoryBadgeClass(
-                          w.category
-                        )}`}
-                      >
-                        {w.category}
-                      </span>
-                      <span className="font-medium text-slate-700 dark:text-slate-200">
-                        {w.activity_type}
-                      </span>
-                      {w.city && (
-                        <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                          <MapPin className="h-2.5 w-2.5 inline" /> {w.city}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-
-                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap font-semibold text-slate-800 dark:text-slate-200">
-                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">Duração:</span>
-                    {w.duration_min} min
-                  </td>
-
-                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap text-slate-700 dark:text-slate-300">
-                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">Dist:</span>
-                    {w.distance_km > 0 ? (
-                      <span className="font-semibold">{w.distance_km} km</span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-
-                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap text-slate-700 dark:text-slate-300">
-                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">Calorias:</span>
-                    {w.calories > 0 ? (
-                      <span className="inline-flex items-center gap-1 font-semibold">
-                        <Flame className="h-3.5 w-3.5 text-amber-500 inline" />
-                        {w.calories} kcal
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-
-                  <td className="inline-block md:table-cell mr-3 md:mr-0 py-1 md:py-3 md:px-4 md:whitespace-nowrap text-slate-700 dark:text-slate-300">
-                    <span className="md:hidden text-[10px] text-slate-400 font-normal mr-1">FC:</span>
-                    {w.avg_hr != null || w.max_hr != null ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Heart className="h-3.5 w-3.5 text-rose-500 inline" />
-                        <span className="font-semibold">{w.avg_hr ?? '—'}</span>
-                        <span className="text-slate-400">/</span>
-                        <span className="text-slate-500 dark:text-slate-400">
-                          {w.max_hr ?? '—'}
-                        </span>
-                        <span className="text-[10px] text-slate-400">bpm</span>
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-
-                  <td className="block md:table-cell py-1 md:py-3 md:px-4 md:whitespace-nowrap">
-                    {w.training_effect != null ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg text-[11px] border border-amber-500/20">
-                        <TrendingUp className="h-3 w-3 inline" />
-                        TE {w.training_effect}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 hidden md:inline">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {workouts.length >= limit && limit < 500 && (
-            <div className="py-3 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800 text-center">
-              <button
-                type="button"
-                onClick={() => setLimit((prev) => Math.min(prev + 50, 500))}
-                className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm"
-              >
-                <span>Carregar mais treinos (+50)</span>
-              </button>
-            </div>
-          )}
-        </div>
+                  <span>Carregar mais treinos (+50)</span>
+                </button>
+              </div>
+            ) : null
+          }
+        />
       )}
     </div>
   )

@@ -107,3 +107,27 @@ Este documento estabelece as definições de microcopy clínica padronizadas par
 - **O que é?** Quantidade de ciclos respiratórios (inspiração/expiração) por minuto durante o sono profundo.
 - **Por que importa?** É uma métrica extraordinariamente estável no indivíduo sadio (12-16 rpm). Um aumento de 1 a 2 rpm acima da média pessoal é um indicador precoce de infecção subclínica, estresse ou febre.
 - **Direção Ótima:** Estabilidade na baseline pessoal (típico: 12 a 16 rpm).
+
+---
+
+## 6. Vocabulário Epistemológico e Semântica de Dados (v2.1.0)
+
+### 6.1. Metas vs. Referências
+- **Meta Pessoal:** Objetivo funcional individual deliberadamente definido pelo usuário em seu protocolo de saúde (ex: caminhar 10.000 passos/dia, dormir 8 horas). Somente neste contexto o termo "Meta" é autorizado. É estritamente proibido usar o termo "Alvo" para referências laboratoriais, estatísticas ou populacionais (Master §14, §40).
+- **Referência Clínica:** Faixa ou parâmetro populacional normativo padrão adotado por sociedades médicas e laboratórios de análises clínicas (ex: Taxa Respiratória 12 a 20 rpm).
+- **Referência Ótima (Longevidade):** Faixa funcional preconizada pela medicina preventiva e de longevidade para otimização de sobrevida e resiliência fisiológica (ex: FC de repouso < 55 bpm, ApoB < 70 mg/dL, PCR-us < 0.5 mg/L).
+- **Estimativa:** Valor numérico projetado a partir de medições indiretas (ex: Calorias Ativas estimadas ao longo de 24 horas por acelerometria).
+
+### 6.2. Camada Epistemológica (Natureza da Fonte de Dados)
+- **Dado Observado (`observed`):** Medição física direta obtida por sensor wearable homologado (ex: FC, HRV, passos) ou resultado de laudo laboratorial comprovado com provenance.
+- **Modelo Matemático (`model`):** Projeção algorítmica matemática calculada a partir de múltiplos biomarcadores biológicos validados na literatura médica (ex: Morgan Levine PhenoAge 2018, Klemera-Doubal KDM).
+- **Inferência de IA (`inference`):** Conclusão interpretativa, correlação hipotética ou síntese gerada por Inteligência Artificial — orientada a apoiar o raciocínio clínico, exigindo validação médica profissional.
+
+### 6.3. Taxonomia dos 6 Estados de Ausência de Dados
+- **Sem dados (`no_data`):** Nenhum registro capturado para a data ou período selecionado.
+- **Não monitorado (`unmonitored`):** Indicador não configurado para rastreamento ativo nas preferências.
+- **Não calculável (`uncomputable`):** Insumos mínimos incompletos para alimentar o modelo matemático.
+- **Não sincronizado (`unsynced`):** Dispositivo pareado sem upload recente de pacotes.
+- **Desatualizado (`stale`):** Medição com idade superior ao horizonte de validade clínica (≥ 7 dias).
+- **Erro de leitura (`error`):** Falha técnica na captura, transmissão ou integridade do pacote.
+

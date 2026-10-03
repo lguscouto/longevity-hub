@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ShieldCheck, AlertTriangle, Layers, RefreshCw } from 'lucide-react'
 import { requestJson } from '../lib/api'
+import { Input, IconButton } from './ui'
 
 interface MetricItem {
   date_ref: string
@@ -59,19 +60,20 @@ export const DataQualityPanel: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-900 dark:text-white font-medium"
+            className="min-h-[36px] text-xs py-1"
           />
-          <button
+          <IconButton
+            variant="secondary"
+            size="sm"
             onClick={() => void fetchQuality()}
-            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
-            title="Atualizar auditoria"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+            icon={RefreshCw}
+            aria-label="Atualizar auditoria"
+            loading={loading}
+          />
         </div>
       </div>
 

@@ -112,17 +112,17 @@ describe('BodyCompositionChart', () => {
     // Switch to Massa Magra vs Gorda
     const compTab = screen.getByRole('button', { name: /Massa Magra vs. Gorda/i });
     fireEvent.click(compTab);
-    expect(compTab.className).toContain('from-cyan-500');
+    expect(compTab.className).toContain('bg-cyan-600');
 
     // Switch to Medidas (cm)
     const measurementsTab = screen.getByRole('button', { name: /Medidas \(cm\)/i });
     fireEvent.click(measurementsTab);
-    expect(measurementsTab.className).toContain('from-purple-500');
+    expect(measurementsTab.className).toContain('bg-purple-600');
 
     // Switch back to Peso & % Gordura
     const weightTab = screen.getByRole('button', { name: /Peso & % Gordura/i });
     fireEvent.click(weightTab);
-    expect(weightTab.className).toContain('from-emerald-500');
+    expect(weightTab.className).toContain('bg-emerald-600');
   });
 
   it('switches time range filters', async () => {

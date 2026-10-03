@@ -52,10 +52,10 @@ export const GLOSSARY_TERMS: Record<string, GlossaryDefinition> = {
     optimalTarget: 'Estabilidade glicêmica sustentada',
   },
   tir: {
-    title: 'TIR (Time in Range / Tempo no Alvo)',
+    title: 'TIR (Time in Range / Tempo na Faixa)',
     shortDescription: 'Porcentagem de tempo em que a glicemia permanece na faixa ótima pré-determinada (ex: 70 a 140 mg/dL).',
     whyItMatters: 'Manter TIR elevado reduz estresse oxidativo e lesões vasculares induzidas por picos.',
-    optimalTarget: 'Maior é melhor (alvo: > 85%)',
+    optimalTarget: 'Maior é melhor (referência ótima: > 85%)',
   },
   mean_glucose: {
     title: 'Glicose Média Diária',
@@ -67,13 +67,13 @@ export const GLOSSARY_TERMS: Record<string, GlossaryDefinition> = {
     title: 'ApoB (Apolipoproteína B)',
     shortDescription: 'Marcador do número total de partículas aterogênicas circulantes (LDL, VLDL, IDL, Lp(a)).',
     whyItMatters: 'É superior ao LDL-colesterol tradicional na avaliação do risco de formação de placas nas artérias.',
-    optimalTarget: 'Menor é melhor (alvo longevidade: < 70 mg/dL)',
+    optimalTarget: 'Menor é melhor (referência de longevidade: < 70 mg/dL)',
   },
   hscrp: {
     title: 'PCR-us (Proteína C Reativa Ultrassensível)',
     shortDescription: 'Biomarcador hepático de inflamação sistêmica crônica de baixa intensidade.',
     whyItMatters: 'A inflamação subclínica mantida acelera o envelhecimento cardiovascular, neural e metabólico.',
-    optimalTarget: 'Menor é melhor (alvo longevidade: < 0.5 mg/L)',
+    optimalTarget: 'Menor é melhor (referência de longevidade: < 0.5 mg/L)',
   },
   hba1c: {
     title: 'Hemoglobina Glicada (HbA1c)',
@@ -85,7 +85,7 @@ export const GLOSSARY_TERMS: Record<string, GlossaryDefinition> = {
     title: 'Eficiência do Sono',
     shortDescription: 'Proporção entre o tempo real dormindo e o tempo total passado na cama.',
     whyItMatters: 'Eficiência alta indica sono contínuo, adormecimento rápido e ausência de despertares prolongados.',
-    optimalTarget: 'Maior é melhor (alvo: > 85%, excelente: > 90%)',
+    optimalTarget: 'Maior é melhor (meta recomendada: > 85%, excelente: > 90%)',
   },
   sleep_deep: {
     title: 'Sono Profundo (Ondas Lentas)',
@@ -223,7 +223,7 @@ export const TermHelp: React.FC<TermHelpProps> = ({
         <div
           id={tooltipId}
           role="tooltip"
-          className={`absolute z-50 w-72 max-w-[calc(100vw-32px)] p-3.5 rounded-2xl shadow-dialog border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-left text-xs transition-all pointer-events-auto ${
+          className={`absolute z-50 w-72 max-w-[calc(100vw-32px)] p-3.5 rounded-2xl shadow-dialog border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-left text-xs transition-all pointer-events-auto ${
             placement === 'top'
               ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
               : 'top-full mt-2 left-1/2 -translate-x-1/2'
@@ -249,26 +249,26 @@ export const TermHelp: React.FC<TermHelpProps> = ({
           {/* Description ("O que é?") */}
           <div className="space-y-2 text-slate-600 dark:text-slate-300">
             <div>
-              <span className="font-semibold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider text-xs mb-0.5">
+              <span className="font-semibold text-slate-900 dark:text-slate-100 block text-xs uppercase tracking-wider mb-0.5">
                 O que é:
               </span>
-              <p className="text-[11px] leading-relaxed">{description}</p>
+              <p className="text-xs leading-relaxed">{description}</p>
             </div>
 
             {/* Why It Matters ("Por que importa?") */}
             {whyItMatters && (
               <div>
-                <span className="font-semibold text-cyan-600 dark:text-cyan-400 block text-[11px] uppercase tracking-wider text-xs mb-0.5">
+                <span className="font-semibold text-cyan-600 dark:text-cyan-400 block text-xs uppercase tracking-wider mb-0.5">
                   Importância para a longevidade:
                 </span>
-                <p className="text-[11px] leading-relaxed">{whyItMatters}</p>
+                <p className="text-xs leading-relaxed">{whyItMatters}</p>
               </div>
             )}
 
             {/* Optimal Direction ("Direção Ótima") */}
             {optimalTarget && (
-              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">Alvo / Direção:</span>
+              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Referência / Direção:</span>
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                   {optimalTarget}
                 </span>

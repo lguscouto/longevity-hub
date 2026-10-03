@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'partial';
 
 export interface ToastItem {
   id: string;
@@ -9,6 +9,10 @@ export interface ToastItem {
   title?: string;
   message: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface ToastContextValue {
@@ -33,17 +37,23 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
     return () => clearTimeout(timer);
   }, [toast.id, toast.duration, onDismiss]);
 
-  const icons = {
+  const icons: Record<ToastType, React.ReactNode> = {
     success: <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />,
     error: <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />,
     info: <Info className="h-5 w-5 text-cyan-500 shrink-0" />,
+    warning: <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />,
+    partial: <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />,
   };
 
-  const borderColors = {
+  const borderColors: Record<ToastType, string> = {
     success: 'border-emerald-500/30 dark:border-emerald-500/40',
     error: 'border-rose-500/30 dark:border-rose-500/40',
     info: 'border-cyan-500/30 dark:border-cyan-500/40',
+    warning: 'border-amber-500/30 dark:border-amber-500/40',
+    partial: 'border-amber-500/30 dark:border-amber-500/40',
   };
+
+  const isWarningOrPartial = toast.type === 'warning' || toast.type === 'partial';
 
   return (
     <div
@@ -55,6 +65,22 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
       <div className="flex-1 min-w-0 pt-0.5">
         {toast.title && <p className="font-bold text-slate-900 dark:text-white mb-0.5">{toast.title}</p>}
         <p className="leading-snug break-words">{toast.message}</p>
+        {toast.action && (
+          <button
+            type="button"
+            onClick={() => {
+              toast.action?.onClick();
+              onDismiss(toast.id);
+            }}
+            className={`mt-2 inline-flex items-center gap-1 text-xs font-bold transition rounded-radius-sm px-2.5 py-1 focus-visible:ring-2 focus-visible:outline-none ${
+              isWarningOrPartial
+                ? 'text-amber-800 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 focus-visible:ring-amber-500'
+                : 'text-cyan-800 dark:text-cyan-200 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 focus-visible:ring-cyan-500'
+            }`}
+          >
+            {toast.action.label}
+          </button>
+        )}
       </div>
       <button
         type="button"
@@ -77,7 +103,7 @@ export const ToastContainer: React.FC<{
   return (
     <div
       aria-label="Notificações do sistema"
-      className="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:right-6 sm:bottom-6 z-50 flex flex-col items-center sm:items-end gap-2 pointer-events-none"
+      className="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:right-6 sm:bottom-6 z-[70] flex flex-col items-center sm:items-end gap-2 pointer-events-none"
     >
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto w-full sm:w-auto">

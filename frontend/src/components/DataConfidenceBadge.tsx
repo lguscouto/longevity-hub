@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ShieldCheck, ShieldAlert, Shield } from 'lucide-react'
 import { requestJson } from '../lib/api'
+import { formatDataFreshness } from '../lib/dataSemantics'
 
 interface DataConfidenceBadgeProps {
   selectedDate: string
@@ -60,15 +61,19 @@ export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ select
   }[confidenceKey]
 
   const Icon = config.icon
+  const freshness = formatDataFreshness(selectedDate)
 
   return (
     <div
-      title={`${summary.metrics_available}/${summary.metrics_expected} métricas ativas (${summary.coverage_pct}% cobertura)`}
+      title={`${summary.metrics_available}/${summary.metrics_expected} métricas ativas (${summary.coverage_pct}% cobertura) • ${freshness.text}`}
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${config.bg} transition-all`}
     >
       <Icon className="h-3.5 w-3.5" />
       <span>{config.label}</span>
       <span className="opacity-75 font-normal">({summary.coverage_pct}%)</span>
+      {freshness.isStale && (
+        <span className="text-xs text-rose-500 font-bold ml-0.5">• Desatualizado</span>
+      )}
     </div>
   )
 }

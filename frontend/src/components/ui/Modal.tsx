@@ -21,6 +21,7 @@ export interface ModalProps {
   contentClassName?: string
   headerAction?: React.ReactNode
   role?: 'dialog' | 'alertdialog'
+  zIndex?: string
 }
 
 const SIZE_CLASSES: Record<NonNullable<ModalProps['size']>, string> = {
@@ -51,6 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
   contentClassName = '',
   headerAction,
   role = 'dialog',
+  zIndex,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -65,10 +67,12 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen || typeof document === 'undefined') return null
 
   const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.md
+  const effectiveZIndex = zIndex || (role === 'alertdialog' ? 'z-[60]' : 'z-50')
 
   const modalNode = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-sm animate-fade-in overflow-y-auto"
+      /* ds-exception: DSX-001 */
+      className={`fixed inset-0 ${effectiveZIndex} flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-sm animate-fade-in overflow-y-auto`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()

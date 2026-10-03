@@ -2,7 +2,7 @@ import React from 'react';
 
 export interface FormFieldProps {
   id?: string;
-  label?: string;
+  label?: React.ReactNode;
   helperText?: string;
   error?: string;
   required?: boolean;
@@ -41,11 +41,11 @@ export const FormField: React.FC<FormFieldProps> = ({
       {children}
 
       {error ? (
-        <p id={errorId} role="alert" className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+        <p id={errorId} role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">
           {error}
         </p>
       ) : helperText ? (
-        <p id={helperId} className="text-[11px] text-slate-500 dark:text-slate-400">
+        <p id={helperId} className="text-xs text-slate-500 dark:text-slate-400">
           {helperText}
         </p>
       ) : null}

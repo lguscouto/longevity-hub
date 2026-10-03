@@ -142,7 +142,7 @@ export const RoutineTodayView: React.FC<RoutineTodayViewProps> = ({
                                 {supp.name}
                               </h5>
                               <span
-                                className={`text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded border ${
+                                className={`text-xs uppercase font-extrabold px-1.5 py-0.5 rounded border ${
                                   isHormone
                                     ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
                                     : 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30'

@@ -67,7 +67,7 @@ export const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({
                       <span className="text-xs">Sem fotos</span>
                     </div>
                   )}
-                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 font-medium flex items-center gap-1.5">
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/95 dark:bg-slate-900/95 shadow-xs border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 font-medium flex items-center gap-1.5">
                     <Camera className="h-3.5 w-3.5 text-cyan-400" />
                     {ass.photos.length} {ass.photos.length === 1 ? 'foto' : 'fotos'}
                   </div>

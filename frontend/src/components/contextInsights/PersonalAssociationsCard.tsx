@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { fetchPersonalAssociations, recomputePersonalAssociations } from './api'
 import type { PersonalAssociation } from './types'
-import { EmptyState } from '../ui'
+import { EmptyState, Button, IconButton, useToast } from '../ui'
 
 interface PersonalAssociationsCardProps {
   initialMetric?: string
@@ -24,6 +24,7 @@ interface PersonalAssociationsCardProps {
 export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> = ({
   initialMetric,
 }) => {
+  const { showToast } = useToast()
   const [associations, setAssociations] = useState<PersonalAssociation[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [recomputing, setRecomputing] = useState<boolean>(false)
@@ -58,7 +59,7 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
       await recomputePersonalAssociations(selectedMetric || undefined)
       loadData()
     } catch (e: any) {
-      alert(e?.message || 'Falha ao recalcular padrões.')
+      showToast(e?.message || 'Falha ao recalcular padrões.', 'error')
     } finally {
       setRecomputing(false)
     }
@@ -75,20 +76,20 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
   const getConfidenceBadge = (confidence: string) => {
     if (confidence === 'high') {
       return (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           Alta confiança
         </span>
       )
     }
     if (confidence === 'moderate') {
       return (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
           Moderada
         </span>
       )
     }
     return (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
         Em aprendizado
       </span>
     )
@@ -105,7 +106,7 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
               Padrões Pessoais Aprendidos
-              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">
                 N-of-1 Bayesiano
               </span>
             </h3>
@@ -116,21 +117,25 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleRecompute}
-            disabled={recomputing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-50"
+            loading={recomputing}
+            loadingText="Recalcular"
+            leftIcon={RefreshCw}
             title="Recalcular correlações e regularização bayesiana"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${recomputing ? 'animate-spin text-indigo-500' : ''}`} />
             <span className="hidden sm:inline">Recalcular</span>
-          </button>
-          <button
+          </Button>
+          <IconButton
+            icon={expanded ? ChevronUp : ChevronDown}
+            variant="ghost"
+            size="sm"
             onClick={() => setExpanded(!expanded)}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-          >
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
+            aria-label={expanded ? 'Recolher associações' : 'Expandir associações'}
+            title={expanded ? 'Recolher' : 'Expandir'}
+          />
         </div>
       </div>
 
@@ -175,7 +180,7 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
                     {item.factor_name}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200/60 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-200/60 dark:bg-slate-700 px-1.5 py-0.5 rounded">
                     {(item.target_metric || '').replace('_', ' ')}
                   </span>
                 </div>
@@ -186,7 +191,7 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
                 {item.headline}
               </p>
 
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1 pt-1.5 border-t border-slate-200/50 dark:border-slate-700/50">
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1 pt-1.5 border-t border-slate-200/50 dark:border-slate-700/50">
                 <span className="font-bold text-slate-700 dark:text-slate-300">
                   n = {item.sample_size} observações
                 </span>
@@ -221,14 +226,16 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
           ))}
 
           {associations.length > 3 && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setExpanded(!expanded)}
-              className="w-full text-center text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline pt-1"
+              className="w-full text-center text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline pt-1 min-h-0 h-auto"
             >
               {expanded
                 ? 'Ver menos'
                 : `Ver todos os ${associations.length} padrões aprendidos`}
-            </button>
+            </Button>
           )}
         </div>
       )}

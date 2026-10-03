@@ -256,7 +256,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Check-in Diário de Percepção (30s)</h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Contexto subjetivo de energia, estresse e hábitos</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Contexto subjetivo de energia, estresse e hábitos</p>
           </div>
         </div>
 

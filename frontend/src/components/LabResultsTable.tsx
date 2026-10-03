@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
-import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, AlertTriangle } from 'lucide-react';
+import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
-import { ConfirmDialog, EmptyState, InlineError, Modal, TermHelp, GLOSSARY_TERMS } from './ui';
+import { ConfirmDialog, EmptyState, InlineError, Button, IconButton, ResponsiveDataTable, DataColumn } from './ui';
+import {
+  LabResult,
+  getMetricDisplayName,
+  isClinicallyEligibleLab,
+  isMarkerOptimal,
+  pickHighlights,
+} from './labs/labMarkers';
+import { CardiovascularRatios } from './labs/CardiovascularRatios';
+import { LabPanelDetailModal } from './labs/LabPanelDetailModal';
+import { LabBatchEntryModal } from './labs/LabBatchEntryModal';
 
-interface LabResult {
-  id?: number;
-  collected_at: string;
-  metric_key: string;
-  metric_name: string;
-  value: number;
-  unit: string;
-  ref_min?: number;
-  ref_max?: number;
-  optimal_target?: number;
-  category?: string;
-  record_origin?: string;
-}
+export type { LabResult };
 
 interface LabResultsTableProps {
   labs: LabResult[];
@@ -24,185 +22,21 @@ interface LabResultsTableProps {
   onRefreshData?: () => void;
 }
 
-interface MarkerMeta {
-  key: string;
-  name: string;
-  unit: string;
-  ref_min?: number;
-  ref_max?: number;
-  optimal: number;
-  category: string;
+interface PanelRow {
+  date: string;
+  items: LabResult[];
+  totalCount: number;
+  clinicalCount: number;
+  nonClinicalCount: number;
+  optimalCount: number;
+  attentionCount: number;
+  highlights: LabResult[];
 }
-
-const LAB_KEY_ALIASES: Record<string, string> = {
-  glucose_mgdl: 'fasting_glucose',
-  fasting_glucose: 'fasting_glucose',
-  creatinine_mgdl: 'creatinine',
-  creatinine: 'creatinine',
-  albumin_gdl: 'albumin',
-  albumin: 'albumin',
-  hscrp_mgl: 'hscrp',
-  hscrp: 'hscrp',
-  rdw_pct: 'rdw',
-  rdw: 'rdw',
-  mcv_fl: 'mcv',
-  mcv: 'mcv',
-  alk_phos_ul: 'alk_phos',
-  alk_phos: 'alk_phos',
-  wbc_1000ul: 'wbc',
-  wbc: 'wbc',
-  hdl: 'hdl_cholesterol',
-  hdl_cholesterol: 'hdl_cholesterol',
-  ldl: 'ldl_cholesterol',
-  ldl_cholesterol: 'ldl_cholesterol',
-  total_cholesterol: 'total_cholesterol',
-  apob: 'apob',
-  apoa1: 'apoa1',
-  triglycerides: 'triglycerides',
-  lpa: 'lpa',
-}
-
-const normalizeLabMetricKey = (key: string) => {
-  const normalized = key.toLowerCase().trim().replace(/\s+/g, '_').replace(/-/g, '_')
-  return LAB_KEY_ALIASES[normalized] ?? normalized
-}
-
-const LAB_MARKERS_GROUPS: { groupName: string; icon: string; items: MarkerMeta[] }[] = [
-  {
-    groupName: "Glicemia & Metabolismo",
-    icon: "⚡",
-    items: [
-      { key: "fasting_glucose", name: "Glicose de Jejum", unit: "mg/dL", ref_min: 70, ref_max: 99, optimal: 85.0, category: "Metabolismo" },
-      { key: "fasting_insulin", name: "Insulina de Jejum", unit: "uIU/mL", ref_min: 2.6, ref_max: 24.9, optimal: 4.0, category: "Metabolismo" },
-      { key: "hba1c", name: "Hemoglobina Glicada (HbA1c)", unit: "%", ref_min: 4.0, ref_max: 5.6, optimal: 5.2, category: "Metabolismo" },
-      { key: "homa_ir", name: "Índice HOMA-IR", unit: "score", ref_min: 0.5, ref_max: 2.1, optimal: 1.0, category: "Metabolismo" },
-      { key: "uric_acid", name: "Ácido Úrico", unit: "mg/dL", ref_min: 3.5, ref_max: 7.2, optimal: 5.0, category: "Metabolismo" }
-    ]
-  },
-  {
-    groupName: "Hormônios & Sexuais",
-    icon: "🧬",
-    items: [
-      { key: "testosterone_total", name: "Testosterona Total", unit: "ng/dL", ref_min: 300, ref_max: 1000, optimal: 750.0, category: "Hormônios" },
-      { key: "testosterone_free", name: "Testosterona Livre", unit: "pg/mL", ref_min: 8.7, ref_max: 25.0, optimal: 18.0, category: "Hormônios" },
-      { key: "estradiol", name: "Estradiol (E2)", unit: "pg/mL", ref_min: 10, ref_max: 40, optimal: 25.0, category: "Hormônios" },
-      { key: "shbg", name: "SHBG (Globulina Ligadora)", unit: "nmol/L", ref_min: 18, ref_max: 54, optimal: 35.0, category: "Hormônios" },
-      { key: "dhea_s", name: "DHEA-S", unit: "ug/dL", ref_min: 160, ref_max: 450, optimal: 350.0, category: "Hormônios" },
-      { key: "cortisol", name: "Cortisol Basal (Manhã)", unit: "ug/dL", ref_min: 6.2, ref_max: 19.4, optimal: 12.0, category: "Hormônios" }
-    ]
-  },
-  {
-    groupName: "Inflamação & Imunidade",
-    icon: "🔥",
-    items: [
-      { key: "hscrp", name: "Proteína C-Reativa (PCR-us)", unit: "mg/L", ref_min: 0, ref_max: 3.0, optimal: 0.5, category: "Inflamação" },
-      { key: "homocysteine", name: "Homocisteína", unit: "umol/L", ref_min: 5.0, ref_max: 15.0, optimal: 7.5, category: "Metilação/Cardio" },
-      { key: "ferritin", name: "Ferritina Sanguínea", unit: "ng/mL", ref_min: 30, ref_max: 300, optimal: 100.0, category: "Inflamação/Ferro" },
-      { key: "wbc", name: "Leucócitos Totais (WBC)", unit: "10^3/uL", ref_min: 4.5, ref_max: 11.0, optimal: 5.5, category: "Imunidade" },
-      { key: "lymphocyte_pct", name: "Linfócitos (%)", unit: "%", ref_min: 20, ref_max: 40, optimal: 30.0, category: "Imunidade" }
-    ]
-  },
-  {
-    groupName: "Hepático & Enzimático",
-    icon: "🧪",
-    items: [
-      { key: "albumin", name: "Albumina Sanguínea", unit: "g/dL", ref_min: 3.5, ref_max: 5.2, optimal: 4.6, category: "Hepático/Nutricional" },
-      { key: "alk_phos", name: "Fosfatase Alcalina", unit: "U/L", ref_min: 44, ref_max: 147, optimal: 65.0, category: "Hepático/Ósseo" },
-      { key: "ast", name: "TGO / AST", unit: "U/L", ref_min: 10, ref_max: 40, optimal: 20.0, category: "Hepático" },
-      { key: "alt", name: "TGP / ALT", unit: "U/L", ref_min: 7, ref_max: 56, optimal: 20.0, category: "Hepático" },
-      { key: "ggt", name: "Gama GT (GGT)", unit: "U/L", ref_min: 8, ref_max: 61, optimal: 18.0, category: "Hepático" }
-    ]
-  },
-  {
-    groupName: "Renal & Eletrólitos",
-    icon: "🩺",
-    items: [
-      { key: "creatinine", name: "Creatinina Sanguínea", unit: "mg/dL", ref_min: 0.7, ref_max: 1.2, optimal: 0.9, category: "Renal" },
-      { key: "cystatin_c", name: "Cistatina C", unit: "mg/L", ref_min: 0.6, ref_max: 1.0, optimal: 0.75, category: "Renal" },
-      { key: "egfr", name: "Taxa de Filtração Glomerular (eGFR)", unit: "mL/min", ref_min: 90, ref_max: 120, optimal: 105.0, category: "Renal" },
-      { key: "urea", name: "Ureia Sanguínea", unit: "mg/dL", ref_min: 15, ref_max: 45, optimal: 25.0, category: "Renal" }
-    ]
-  },
-  {
-    groupName: "Cardiovascular & Lípides",
-    icon: "🫀",
-    items: [
-      { key: "apob", name: "Apolipoproteína B (ApoB)", unit: "mg/dL", ref_min: 60, ref_max: 130, optimal: 60.0, category: "Cardiovascular" },
-      { key: "apoa1", name: "Apolipoproteína A1 (ApoA1)", unit: "mg/dL", ref_min: 120, ref_max: 180, optimal: 150.0, category: "Cardiovascular" },
-      { key: "lpa", name: "Lipoproteína (a) [Lp(a)]", unit: "nmol/L", ref_min: 0, ref_max: 75, optimal: 30.0, category: "Cardiovascular" },
-      { key: "total_cholesterol", name: "Colesterol Total", unit: "mg/dL", ref_min: 125, ref_max: 200, optimal: 160.0, category: "Cardiovascular" },
-      { key: "ldl_cholesterol", name: "Colesterol LDL", unit: "mg/dL", ref_min: 70, ref_max: 130, optimal: 70.0, category: "Cardiovascular" },
-      { key: "hdl_cholesterol", name: "Colesterol HDL", unit: "mg/dL", ref_min: 40, ref_max: 90, optimal: 60.0, category: "Cardiovascular" },
-      { key: "triglycerides", name: "Triglicérides", unit: "mg/dL", ref_min: 50, ref_max: 150, optimal: 80.0, category: "Cardiovascular" }
-    ]
-  },
-  {
-    groupName: "Tireoide & Vitaminas",
-    icon: "💊",
-    items: [
-      { key: "tsh", name: "TSH (Tireoestimulante)", unit: "uIU/mL", ref_min: 0.4, ref_max: 4.0, optimal: 1.5, category: "Tireoide" },
-      { key: "free_t3", name: "T3 Livre", unit: "pg/mL", ref_min: 2.0, ref_max: 4.4, optimal: 3.4, category: "Tireoide" },
-      { key: "free_t4", name: "T4 Livre", unit: "ng/dL", ref_min: 0.8, ref_max: 1.8, optimal: 1.3, category: "Tireoide" },
-      { key: "vitamin_d", name: "Vitamina D (25-OH-D)", unit: "ng/mL", ref_min: 30, ref_max: 100, optimal: 50.0, category: "Vitaminas" },
-      { key: "vitamin_b12", name: "Vitamina B12", unit: "pg/mL", ref_min: 200, ref_max: 900, optimal: 700.0, category: "Vitaminas" },
-      { key: "magnesium", name: "Magnésio Sanguíneo", unit: "mg/dL", ref_min: 1.7, ref_max: 2.6, optimal: 2.3, category: "Minerais" }
-    ]
-  },
-  {
-    groupName: "Hematologia",
-    icon: "🔬",
-    items: [
-      { key: "mcv", name: "Volume Corpuscular Médio (MCV)", unit: "fL", ref_min: 80, ref_max: 100, optimal: 89.0, category: "Hematologia" },
-      { key: "rdw", name: "Amplitude de Distribuição (RDW)", unit: "%", ref_min: 11.5, ref_max: 14.5, optimal: 12.2, category: "Hematologia" },
-      { key: "hemoglobin", name: "Hemoglobina", unit: "g/dL", ref_min: 13.5, ref_max: 17.5, optimal: 15.0, category: "Hematologia" },
-      { key: "platelets", name: "Plaquetas", unit: "10^3/uL", ref_min: 150, ref_max: 450, optimal: 220.0, category: "Hematologia" }
-    ]
-  }
-];
-
-const MARKER_META_BY_KEY = new Map<string, MarkerMeta>(
-  LAB_MARKERS_GROUPS.flatMap((group) => group.items.map((item) => [item.key, item] as const)),
-)
-
-const getMarkerMeta = (metricKey: string) => MARKER_META_BY_KEY.get(normalizeLabMetricKey(metricKey))
-
-const getMetricDisplayName = (lab: LabResult) => getMarkerMeta(lab.metric_key)?.name ?? lab.metric_name
-
-// Helper para saber se resultado é ótimo
-const isMarkerOptimal = (lab: LabResult) => {
-  if (lab.optimal_target === undefined || lab.optimal_target === null) return false;
-  const k = normalizeLabMetricKey(lab.metric_key || '');
-  if (k.includes('hscrp') || k.includes('pcr') || k.includes('apob') || k.includes('lpa') || k.includes('hba1c') || k.includes('insulin') || k.includes('homocysteine') || k.includes('homa') || k.includes('ldl') || k.includes('triglycerides')) {
-    return lab.value <= lab.optimal_target;
-  }
-  return lab.value >= lab.optimal_target;
-};
-
-const CLINICALLY_ELIGIBLE_RECORD_ORIGINS = new Set(['patient_lab', 'imported']);
-
-const isClinicallyEligibleLab = (lab: LabResult) =>
-  CLINICALLY_ELIGIBLE_RECORD_ORIGINS.has(lab.record_origin ?? 'unverified');
-
-const recordOriginLabel = (origin?: string) => {
-  switch (origin) {
-    case 'patient_lab': return 'Resultado informado do laudo';
-    case 'imported': return 'Resultado importado';
-    case 'manual': return 'Entrada manual não verificada';
-    case 'synthetic': return 'Dado sintético';
-    case 'fixture': return 'Fixture de teste';
-    case 'calculated': return 'Valor calculado';
-    case 'demo': return 'Demonstração';
-    default: return 'Proveniência não verificada';
-  }
-};
 
 export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onAddBatchLabs, onRefreshData }) => {
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [selectedPanelDate, setSelectedPanelDate] = useState<string | null>(null);
   const [deleteConfirmDate, setDeleteConfirmDate] = useState<string | null>(null);
-
-  const [collectedAt, setCollectedAt] = useState(new Date().toISOString().slice(0, 10));
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -212,53 +46,34 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
 
   // Agrupamento dos exames por data da coleta (collected_at)
   const groupedLabs: Record<string, LabResult[]> = {};
-  safeLabs.forEach(lab => {
+  safeLabs.forEach((lab) => {
     const dt = lab?.collected_at || 'Desconhecido';
     if (!groupedLabs[dt]) groupedLabs[dt] = [];
     groupedLabs[dt].push(lab);
   });
 
-  // Ordenação cronológica: do mais recente para o mais antigo (DESC)
+  // Ordenação cronológica DESC
   const sortedDates = Object.keys(groupedLabs).sort((a, b) => b.localeCompare(a));
 
-  const handleInputChange = (key: string, val: string) => {
-    setFormValues(prev => ({ ...prev, [key]: val }));
-  };
-
-  const handleClearForm = () => {
-    setFormValues({});
-  };
-
-
-  const handleBatchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const recordsToSave: any[] = [];
-
-    LAB_MARKERS_GROUPS.forEach(group => {
-      group.items.forEach(item => {
-        const rawVal = formValues[item.key];
-        if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
-          recordsToSave.push({
-            collected_at: collectedAt,
-            metric_key: item.key,
-            metric_name: item.name,
-            value: Number(rawVal),
-            unit: item.unit,
-            ref_min: item.ref_min,
-            ref_max: item.ref_max,
-            optimal_target: item.optimal,
-            category: item.category
-          });
-        }
-      });
-    });
-
-    if (recordsToSave.length > 0) {
-      onAddBatchLabs(recordsToSave);
-      setShowBatchModal(false);
-      setFormValues({});
-    }
-  };
+  const panelRows: PanelRow[] = sortedDates.map((dt) => {
+    const items = groupedLabs[dt] || [];
+    const totalCount = items.length;
+    const clinicalCount = items.filter(isClinicallyEligibleLab).length;
+    const nonClinicalCount = totalCount - clinicalCount;
+    const optimalCount = items.filter(isClinicallyEligibleLab).filter(isMarkerOptimal).length;
+    const attentionCount = clinicalCount - optimalCount;
+    const highlights = pickHighlights(items, 3);
+    return {
+      date: dt,
+      items,
+      totalCount,
+      clinicalCount,
+      nonClinicalCount,
+      optimalCount,
+      attentionCount,
+      highlights,
+    };
+  });
 
   const handleConfirmDelete = async () => {
     if (!deleteConfirmDate) return;
@@ -267,7 +82,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       await requestJson('/api/labs/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collected_at: deleteConfirmDate })
+        body: JSON.stringify({ collected_at: deleteConfirmDate }),
       });
       setDeleteConfirmDate(null);
       setDeleteError(null);
@@ -280,29 +95,127 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
     }
   };
 
-  const filledCount = Object.values(formValues).filter(v => v !== '' && !isNaN(Number(v))).length;
+  const panelColumns: DataColumn<PanelRow>[] = [
+    {
+      key: 'date',
+      header: 'Data do Laudo',
+      priority: 'primary',
+      cellClassName: 'text-slate-900 dark:text-white font-mono font-bold',
+      render: (row) => row.date,
+    },
+    {
+      key: 'description',
+      header: 'Exame / Descrição',
+      priority: 'secondary',
+      render: (row) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+          <span className="font-bold text-slate-800 dark:text-slate-200">Painel Completo de Sangue</span>
+          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
+            {row.totalCount} exames
+          </span>
+          {row.nonClinicalCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
+              {row.nonClinicalCount} sem provenance clínica
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'highlights',
+      header: 'Destaques Principais',
+      priority: 'secondary',
+      render: (row) => (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {row.highlights.map((item, i) => (
+            <span
+              key={i}
+              className="text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800"
+            >
+              <strong className="text-cyan-600 dark:text-cyan-400">{getMetricDisplayName(item).split(' ')[0]}:</strong>{' '}
+              {item.value} {item.unit}
+            </span>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status dos Biomarcadores',
+      priority: 'secondary',
+      render: (row) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          {row.clinicalCount > 0 ? (
+            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+              <CheckCircle2 className="h-3 w-3" /> {row.optimalCount} Ótimos
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              Sem dados clínicos elegíveis
+            </span>
+          )}
+          {row.attentionCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+              <AlertCircle className="h-3 w-3" /> {row.attentionCount} Atenção
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Ações',
+      priority: 'action',
+      align: 'right',
+      render: (row) => (
+        <div className="flex items-center justify-start md:justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSelectedPanelDate(row.date)}
+            leftIcon={Eye}
+          >
+            Ver Laudo Completo
+          </Button>
+
+          <IconButton
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteConfirmDate(row.date)}
+            icon={Trash2}
+            title="Excluir este laudo"
+            aria-label="Excluir este laudo"
+          />
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Dna className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Exames Laboratoriais & Alvos de Longevidade
+            <Dna className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Exames Laboratoriais & Referências de Longevidade
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Histórico de laudos em ordem cronológica (mais recente ao mais antigo)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Histórico de laudos em ordem cronológica (mais recente ao mais antigo)
+          </p>
         </div>
 
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => setShowBatchModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition glow-cyan w-full sm:w-auto shrink-0"
+          leftIcon={Plus}
+          className="w-full sm:w-auto shrink-0"
         >
-          <Plus className="h-4 w-4" /> Novo Painel de Exames
-        </button>
+          Novo Painel de Exames
+        </Button>
       </div>
 
-      {deleteError && (
-        <InlineError message={deleteError} />
-      )}
+      {deleteError && <InlineError message={deleteError} />}
 
       {excludedLabsCount > 0 && (
         <div role="status" className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
@@ -310,277 +223,40 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         </div>
       )}
 
-      {/* Cartões de Razões Cardiovasculares Avançadas (Fase 3) */}
-      {(() => {
-        const getV = (k: string) => clinicalLabs.find(l => normalizeLabMetricKey(l.metric_key) === k)?.value;
-        const apob = getV('apob');
-        const apoa1 = getV('apoa1');
-        const tg = getV('triglycerides');
-        const hdl = getV('hdl_cholesterol');
-        const totalChol = getV('total_cholesterol');
-        const ldl = getV('ldl_cholesterol');
+      {/* Cartões de Razões Cardiovasculares Avançadas */}
+      <CardiovascularRatios clinicalLabs={clinicalLabs} />
 
-        const hasNumber = (value: number | undefined): value is number => typeof value === 'number' && Number.isFinite(value);
-
-        const ratioApobApoa1 = (hasNumber(apob) && hasNumber(apoa1) && apoa1 > 0) ? (apob / apoa1).toFixed(2) : null;
-        const ratioTgHdl = (hasNumber(tg) && hasNumber(hdl) && hdl > 0) ? (tg / hdl).toFixed(2) : null;
-        const remnantChol = (hasNumber(totalChol) && hasNumber(hdl) && hasNumber(ldl)) ? (totalChol - hdl - ldl).toFixed(1) : null;
-
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão ApoB / ApoA1</span>
-                <TermHelp termKey="apob" />
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioApobApoa1 ? ratioApobApoa1 : '(Sem ApoB/A1)'}</span>
-                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 0.60</span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Índice primário de risco aterogênico celular (Attia / Longevidade Hub)</p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Razão Triglicerídeos / HDL</span>
-              <div className="flex items-baseline justify-between">
-                <span className="text-xl font-extrabold text-slate-900 dark:text-white">{ratioTgHdl ? ratioTgHdl : '(Sem TG/HDL)'}</span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 1.5</span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Indicador direto de sensibilidade à insulina e LDL denso</p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Colesterol Remanescente</span>
-              <div className="flex items-baseline justify-between">
-                <span className="text-xl font-extrabold text-slate-900 dark:text-white">{remnantChol ? `${remnantChol} mg/dL` : '(Sem dados)'}</span>
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400" title="Alvo funcional preconizado para longevidade preventiva">Alvo Ótimo: &lt; 15 mg/dL</span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Lipoproteínas altamente inflamatórias (Total - HDL - LDL)</p>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Tabela Consolidada (1 Linha por Laudo/Data, Responsiva em Cards no Mobile) */}
-      <div className="overflow-x-auto max-w-full min-w-0">
-        <table className="w-full text-left text-xs block md:table">
-          <thead className="hidden md:table-header-group">
-            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold text-xs">
-              <th className="py-3 px-4">Data do Laudo</th>
-              <th className="py-3 px-4">Exame / Descrição</th>
-              <th className="py-3 px-4">Destaques Principais</th>
-              <th className="py-3 px-4">Status dos Biomarcadores</th>
-              <th className="py-3 px-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="block md:table-row-group divide-y divide-slate-200 dark:divide-slate-800/60">
-            {sortedDates.length === 0 ? (
-              <tr className="block md:table-row">
-                <td colSpan={5} className="py-8 px-4 block md:table-cell">
-                  <EmptyState
-                    title="Nenhum laudo cadastrado"
-                    description="Clique em 'Cadastrar Primeiro Laudo' para registrar seus biomarcadores de sangue."
-                    icon={FileText}
-                    action={{
-                      label: 'Cadastrar Primeiro Laudo',
-                      onClick: () => setShowBatchModal(true),
-                    }}
-                  />
-                </td>
-              </tr>
-            ) : (
-              sortedDates.map((dt) => {
-                const groupItems = groupedLabs[dt] || [];
-                const totalCount = groupItems.length;
-                const clinicalCount = groupItems.filter(isClinicallyEligibleLab).length;
-                const nonClinicalCount = totalCount - clinicalCount;
-
-                const optimalCount = groupItems.filter(isClinicallyEligibleLab).filter(isMarkerOptimal).length;
-                const attentionCount = clinicalCount - optimalCount;
-
-                // Seleciona no máximo 3 mini-badges para manter a linha enxuta
-                const keyPriorities = ['glucose_mgdl', 'fasting_glucose', 'apob', 'testosterone_total', 'hscrp', 'hba1c'];
-                const highlightItems = [...groupItems]
-                  .sort((a, b) => {
-                    const idxA = keyPriorities.indexOf(normalizeLabMetricKey(a.metric_key));
-                    const idxB = keyPriorities.indexOf(normalizeLabMetricKey(b.metric_key));
-                    return (idxA > -1 ? idxA : 99) - (idxB > -1 ? idxB : 99);
-                  })
-                  .slice(0, 3);
-
-                return (
-                  <tr key={dt} className="block md:table-row p-4 md:py-3 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition cursor-pointer space-y-2 md:space-y-0" onClick={() => setSelectedPanelDate(dt)}>
-                    {/* Data */}
-                    <td className="block md:table-cell py-1 md:py-3 md:px-4 text-slate-900 dark:text-white font-mono font-bold">{dt}</td>
-
-                    {/* Descrição */}
-                    <td className="block md:table-cell py-1 md:py-3 md:px-4">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                        <span className="font-bold text-slate-800 dark:text-slate-200">Painel Completo de Sangue</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
-                          {totalCount} exames
-                        </span>
-                        {nonClinicalCount > 0 && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
-                            {nonClinicalCount} sem provenance clínica
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Destaques (Máximo 3 mini-badges) */}
-                    <td className="block md:table-cell py-1 md:py-3 md:px-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {highlightItems.map((item, i) => (
-                          <span key={i} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
-                            <strong className="text-cyan-600 dark:text-cyan-400">{getMetricDisplayName(item).split(' ')[0]}:</strong> {item.value} {item.unit}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-
-                    {/* Status Consolidado */}
-                    <td className="block md:table-cell py-1 md:py-3 md:px-4">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {clinicalCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                            <CheckCircle2 className="h-3 w-3" /> {optimalCount} Ótimos
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                            Sem dados clínicos elegíveis
-                          </span>
-                        )}
-                        {attentionCount > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                            <AlertCircle className="h-3 w-3" /> {attentionCount} Atenção
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Ações */}
-                    <td className="block md:table-cell py-2 md:py-3 md:px-4 text-left md:text-right" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center justify-start md:justify-end gap-2">
-                        <button
-                          onClick={() => setSelectedPanelDate(dt)}
-                          className="relative flex items-center gap-1 px-3 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Ver Laudo Completo
-                        </button>
-
-                        <button
-                          onClick={() => setDeleteConfirmDate(dt)}
-                          className="relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] md:after:hidden rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition flex items-center justify-center"
-                          title="Excluir este laudo"
-                          aria-label="Excluir este laudo"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Tabela / Cards de Laudos Consolidada */}
+      {panelRows.length === 0 ? (
+        <div className="py-4">
+          <EmptyState
+            title="Nenhum laudo cadastrado"
+            description="Clique em 'Cadastrar Primeiro Laudo' para registrar seus biomarcadores de sangue."
+            icon={FileText}
+            action={{
+              label: 'Cadastrar Primeiro Laudo',
+              onClick: () => setShowBatchModal(true),
+            }}
+          />
+        </div>
+      ) : (
+        <ResponsiveDataTable
+          caption={`Laudos laboratoriais cadastrados (${panelRows.length})`}
+          columns={panelColumns}
+          rows={panelRows}
+          getRowKey={(row) => row.date}
+          getRowLabel={(row) => `Laudo de ${row.date} (${row.totalCount} exames)`}
+          onRowClick={(row) => setSelectedPanelDate(row.date)}
+          stickyFirstColumn
+        />
+      )}
 
       {/* Modal de Detalhes do Laudo */}
-      <Modal
-        isOpen={Boolean(selectedPanelDate && groupedLabs[selectedPanelDate])}
+      <LabPanelDetailModal
+        date={selectedPanelDate}
+        results={selectedPanelDate ? groupedLabs[selectedPanelDate] : undefined}
         onClose={() => setSelectedPanelDate(null)}
-        title={selectedPanelDate ? `Laudo Médico — ${selectedPanelDate}` : ''}
-        description={selectedPanelDate && groupedLabs[selectedPanelDate] ? `Total de ${groupedLabs[selectedPanelDate].length} biomarcadores registrados nesta data` : undefined}
-        icon={<FileText className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />}
-        size="4xl"
-        footer={
-          <div className="flex justify-end w-full">
-            <button
-              onClick={() => setSelectedPanelDate(null)}
-              className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
-            >
-              Fechar Laudo
-            </button>
-          </div>
-        }
-      >
-        {selectedPanelDate && groupedLabs[selectedPanelDate] && (
-          <div className="space-y-6 pr-2">
-            {LAB_MARKERS_GROUPS.map((group, idx) => {
-              const groupKeys = group.items.map(i => i.key);
-              const matchingResults = groupedLabs[selectedPanelDate].filter(r => groupKeys.includes(normalizeLabMetricKey(r.metric_key)));
-
-              if (matchingResults.length === 0) return null;
-
-              return (
-                <div key={idx} className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
-                    <span>{group.icon}</span> {group.groupName} ({matchingResults.length})
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {matchingResults.map((item, i) => {
-                      const isEligible = isClinicallyEligibleLab(item);
-                      const isOpt = isEligible && isMarkerOptimal(item);
-                      const markerMeta = getMarkerMeta(item.metric_key);
-                      return (
-                        <div key={i} className="bg-slate-50 dark:bg-slate-950/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-sm">
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate" title={getMetricDisplayName(item)}>
-                                  {getMetricDisplayName(item)}
-                                </span>
-                                {GLOSSARY_TERMS[item.metric_key.toLowerCase()] && (
-                                  <TermHelp termKey={item.metric_key.toLowerCase()} />
-                                )}
-                              </div>
-                              {isOpt ? (
-                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
-                                  <CheckCircle2 className="h-3.5 w-3.5" /> Ótimo
-                                </span>
-                              ) : !isEligible ? (
-                                <span className="text-xs text-amber-700 dark:text-amber-300 font-bold">Não clínico</span>
-                              ) : (
-                                <span className="text-xs text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
-                                  <AlertCircle className="h-3.5 w-3.5" /> Atenção
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="text-xl font-extrabold text-cyan-700 dark:text-cyan-300">
-                              {item.value} <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{item.unit}</span>
-                            </div>
-                          </div>
-
-                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                            <div className="flex justify-between items-center">
-                              <span>Origem: {recordOriginLabel(item.record_origin)}</span>
-                              {markerMeta?.ref_min != null && markerMeta?.ref_max != null && (
-                                <span title="Intervalo populacional padrão de referência clínica">
-                                  Ref: {markerMeta.ref_min} - {markerMeta.ref_max}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex justify-end items-center">
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400" title="Faixa funcional preconizada para longevidade preventiva">
-                                Alvo Ótimo: {item.optimal_target} {item.unit}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Modal>
+      />
 
       {/* Modal de Confirmação de Exclusão */}
       <ConfirmDialog
@@ -596,9 +272,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
                 {groupedLabs[deleteConfirmDate]?.length || 0} exames
               </strong>{' '}
               registrados no laudo do dia{' '}
-              <strong className="text-cyan-600 dark:text-cyan-400">
-                {deleteConfirmDate}
-              </strong>? Ação irreversível de banco de dados.
+              <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>? Ação irreversível de banco de dados.
             </span>
           ) : null
         }
@@ -609,100 +283,14 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       />
 
       {/* Modal de Inclusão em Lote */}
-      <Modal
+      <LabBatchEntryModal
         isOpen={showBatchModal}
         onClose={() => setShowBatchModal(false)}
-        title="Registrar Painel Completo de Exames de Sangue"
-        description="Preencha apenas os marcadores realizados no seu laudo médico"
-        icon={<Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />}
-        size="4xl"
-        footer={
-          <div className="flex items-center justify-between w-full">
-            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
-              {filledCount} marcador(es) pronto(s) para salvar
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowBatchModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="submit"
-                form="batch-lab-form"
-                disabled={filledCount === 0}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs glow-cyan transition"
-              >
-                Salvar Painel Completo ({filledCount})
-              </button>
-            </div>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
-            <div className="flex items-center gap-2">
-              <label htmlFor="lab-collected-at" className="text-slate-600 dark:text-slate-400 font-semibold">Data da Coleta:</label>
-              <input
-                id="lab-collected-at"
-                type="date"
-                value={collectedAt}
-                onChange={e => setCollectedAt(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleClearForm}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition border border-slate-200 dark:border-slate-700"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Limpar Tudo
-              </button>
-            </div>
-          </div>
-
-          <form id="batch-lab-form" onSubmit={handleBatchSubmit} className="space-y-6 pr-2">
-            {LAB_MARKERS_GROUPS.map((group, idx) => (
-              <div key={idx} className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
-                  <span>{group.icon}</span> {group.groupName}
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {group.items.map((item) => (
-                    <div key={item.key} className="bg-slate-50 dark:bg-slate-950/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
-                      <label htmlFor={`lab-marker-${item.key}`} className="block text-xs font-bold text-slate-900 dark:text-white mb-1 truncate" title={item.name}>
-                        {item.name}
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          id={`lab-marker-${item.key}`}
-                          type="number"
-                          step="0.01"
-                          placeholder="Vazio"
-                          value={formValues[item.key] || ''}
-                          onChange={e => handleInputChange(item.key, e.target.value)}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold text-xs focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
-                        />
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{item.unit}</span>
-                      </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block" title="Alvo funcional preconizado para longevidade preventiva">
-                        Alvo Ótimo: {item.optimal} {item.unit}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </form>
-        </div>
-      </Modal>
+        onSubmit={(records) => {
+          onAddBatchLabs(records);
+          setShowBatchModal(false);
+        }}
+      />
     </div>
   );
 };

@@ -16,7 +16,7 @@ export const ExplainChangeButton: React.FC<ExplainChangeButtonProps> = ({
 }) => {
   const sizeClasses =
     size === 'sm'
-      ? 'px-2.5 py-1 text-[11px] gap-1 rounded-xl'
+      ? 'px-2.5 py-1 text-xs gap-1 rounded-xl'
       : 'px-3.5 py-1.5 text-xs gap-1.5 rounded-2xl'
 
   return (

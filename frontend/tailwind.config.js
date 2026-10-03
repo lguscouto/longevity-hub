@@ -23,6 +23,10 @@ export default {
         metric: ['2rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em', fontWeight: '800' }],
       },
       borderRadius: {
+        'surface-xs': '0.5rem',    // 8px - Badges, chips, tags
+        'surface-sm': '0.75rem',   // 12px - Inputs, botões, controles
+        'surface-md': '1rem',      // 16px - Cards, painéis, widgets
+        'surface-lg': '1rem',      // 16px - Diálogos, modais, drawers
         'radius-sm': '0.5rem',     // 8px - Badges, chips, tags
         'radius-md': '0.75rem',    // 12px - Inputs, buttons, controls
         'radius-lg': '1.25rem',    // 20px - Cards, panels, widgets

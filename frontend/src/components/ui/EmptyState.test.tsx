@@ -53,4 +53,40 @@ describe('EmptyState', () => {
     fireEvent.click(secondaryBtn);
     expect(handleSecondary).toHaveBeenCalledTimes(1);
   });
+
+  it('renders absenceKind badge and clinical explanation metadata (UX_UI_43)', () => {
+    render(
+      <EmptyState
+        title="Histórico de Exames"
+        absenceKind="no_data"
+        source="Laboratório Fleury / Manual"
+        lastSync="02/10/2026 14:30"
+        reason="Nenhum laudo anexado neste período"
+      />
+    );
+
+    expect(screen.getByText('Sem dados')).toBeInTheDocument();
+    expect(screen.getByText(/Laboratório Fleury \/ Manual/)).toBeInTheDocument();
+    expect(screen.getByText(/02\/10\/2026 14:30/)).toBeInTheDocument();
+    expect(screen.getByText(/Nenhum laudo anexado neste período/)).toBeInTheDocument();
+  });
+
+  it('renders guided onboarding pipeline steps when provided (Master §109/§110)', () => {
+    render(
+      <EmptyState
+        title="Painel Inicial"
+        pipelineSteps={[
+          { step: 1, label: 'Perfil e Metas', done: true },
+          { step: 2, label: 'Fontes & Sensores', active: true },
+          { step: 3, label: 'Primeiras Métricas' },
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Fluxo Inicial Recomendado')).toBeInTheDocument();
+    expect(screen.getByText('Perfil e Metas')).toBeInTheDocument();
+    expect(screen.getByText('Fontes & Sensores')).toBeInTheDocument();
+    expect(screen.getByText('Primeiras Métricas')).toBeInTheDocument();
+  });
 });
+

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FlaskConical, Plus, CheckCircle2, AlertCircle, TrendingUp, BarChart2, Scale } from 'lucide-react';
 import { ConfounderBalanceModal } from './contextInsights/ConfounderBalanceModal';
-import { EmptyState, Modal } from './ui';
+import { EmptyState, Modal, Button, FormField, Input, Select } from './ui';
 
 interface NOf1Experiment {
   id?: number;
@@ -58,12 +58,15 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           <p className="text-xs text-slate-600 dark:text-slate-400">Validação estatística rigorosa (14d Controle vs 14d Intervenção) com d de Cohen e p-value</p>
         </div>
 
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-violet-500 hover:bg-violet-400 text-slate-950 transition glow-violet shadow-md w-full sm:w-auto shrink-0"
+          leftIcon={Plus}
+          className="bg-violet-600 hover:bg-violet-500 w-full sm:w-auto shrink-0"
         >
-          <Plus className="h-4 w-4" /> Criar Experimento
-        </button>
+          Criar Experimento
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -84,13 +87,13 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           experiments.map((exp, idx) => {
             const isSig = Boolean(exp.statistically_significant);
             return (
-              <div key={idx} className="glass-card rounded-2xl p-5 border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-slate-50 to-white dark:from-violet-950/20 dark:to-slate-900 shadow-sm">
+              <div key={idx} className="glass-card rounded-2xl p-5 border border-violet-500/20 bg-white dark:bg-slate-900 shadow-sm">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-400 tracking-wider">Métrica: {exp.metric_key}</span>
+                    <span className="text-xs uppercase font-bold text-violet-600 dark:text-violet-400 tracking-wider">Métrica: {exp.metric_key}</span>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{exp.title}</h4>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isSig ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${isSig ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
                     {isSig ? 'Significativo (p < 0.05)' : 'Em andamento'}
                   </span>
                 </div>
@@ -103,35 +106,38 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
 
                 <div className="grid grid-cols-2 gap-2 text-center text-xs bg-slate-50 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                   <div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Média Controle</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block">Média Controle</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{exp.control_mean ?? '--'}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Média Intervenção</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block">Média Intervenção</span>
                     <span className="font-bold text-violet-700 dark:text-violet-300">{exp.treatment_mean ?? '--'}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Efeito (Cohen's d)</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block">Efeito (Cohen's d)</span>
                     <span className="font-bold text-cyan-700 dark:text-cyan-400">{exp.cohens_d ?? '--'}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block">p-value</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block">p-value</span>
                     <span className="font-bold text-amber-700 dark:text-amber-400">{exp.p_value ?? '--'}</span>
                   </div>
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     {exp.control_start} → {exp.treatment_end}
                   </span>
                   {exp.id && (
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setSelectedExperimentForBalance(exp)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 border border-violet-500/20 transition"
+                      leftIcon={Scale}
+                      className="text-violet-700 dark:text-violet-300 text-xs py-1"
                     >
-                      <Scale className="h-3.5 w-3.5" /> Balanço de Confundidores
-                    </button>
+                      Balanço de Confundidores
+                    </Button>
                   )}
                 </div>
               </div>
@@ -151,60 +157,95 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           </div>
         }
       >
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          <div>
-            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Título do Experimento</label>
-            <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Hipótese</label>
-            <input type="text" value={formData.hypothesis} onChange={e => setFormData({...formData, hypothesis: e.target.value})} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Métrica Testada</label>
-            <select value={formData.metric_key} onChange={e => setFormData({...formData, metric_key: e.target.value})} className={inputClass}>
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <FormField id="nof1-title" label="Título do Experimento" required>
+            <Input
+              id="nof1-title"
+              type="text"
+              value={formData.title}
+              onChange={e => setFormData({...formData, title: e.target.value})}
+              required
+            />
+          </FormField>
+
+          <FormField id="nof1-hypothesis" label="Hipótese">
+            <Input
+              id="nof1-hypothesis"
+              type="text"
+              value={formData.hypothesis}
+              onChange={e => setFormData({...formData, hypothesis: e.target.value})}
+            />
+          </FormField>
+
+          <FormField id="nof1-metric" label="Métrica Testada">
+            <Select
+              id="nof1-metric"
+              value={formData.metric_key}
+              onChange={e => setFormData({...formData, metric_key: e.target.value})}
+            >
               <option value="hrv_ms">HRV (Variabilidade da Frequência Cardíaca)</option>
               <option value="sleep_deep_min">Sono Profundo (minutos)</option>
               <option value="sleep_rem_min">Sono REM (minutos)</option>
               <option value="rhr_bpm">Frequência Cardíaca de Repouso (RHR)</option>
               <option value="readiness_score">Readiness Score</option>
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Início Controle (14d)</label>
-              <input type="date" value={formData.control_start} onChange={e => setFormData({...formData, control_start: e.target.value})} className={inputClass} />
-            </div>
-            <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Fim Controle</label>
-              <input type="date" value={formData.control_end} onChange={e => setFormData({...formData, control_end: e.target.value})} className={inputClass} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Início Intervenção (14d)</label>
-              <input type="date" value={formData.treatment_start} onChange={e => setFormData({...formData, treatment_start: e.target.value})} className={inputClass} />
-            </div>
-            <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Fim Intervenção</label>
-              <input type="date" value={formData.treatment_end} onChange={e => setFormData({...formData, treatment_end: e.target.value})} className={inputClass} />
-            </div>
+            </Select>
+          </FormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField id="nof1-control-start" label="Início Controle (14d)">
+              <Input
+                id="nof1-control-start"
+                type="date"
+                value={formData.control_start}
+                onChange={e => setFormData({...formData, control_start: e.target.value})}
+              />
+            </FormField>
+            <FormField id="nof1-control-end" label="Fim Controle">
+              <Input
+                id="nof1-control-end"
+                type="date"
+                value={formData.control_end}
+                onChange={e => setFormData({...formData, control_end: e.target.value})}
+              />
+            </FormField>
           </div>
 
-          <div className="flex justify-end gap-2 mt-4 pt-2">
-            <button
+          <div className="grid grid-cols-2 gap-3">
+            <FormField id="nof1-treatment-start" label="Início Intervenção (14d)">
+              <Input
+                id="nof1-treatment-start"
+                type="date"
+                value={formData.treatment_start}
+                onChange={e => setFormData({...formData, treatment_start: e.target.value})}
+              />
+            </FormField>
+            <FormField id="nof1-treatment-end" label="Fim Intervenção">
+              <Input
+                id="nof1-treatment-end"
+                type="date"
+                value={formData.treatment_end}
+                onChange={e => setFormData({...formData, treatment_end: e.target.value})}
+              />
+            </FormField>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 transition"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 font-bold transition shadow-subtle"
+              variant="primary"
+              size="sm"
+              className="bg-violet-600 hover:bg-violet-500"
             >
               Criar &amp; Analisar
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

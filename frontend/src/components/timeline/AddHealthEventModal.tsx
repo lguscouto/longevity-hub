@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { createHealthEvent } from './api'
 import type { HealthEventCreatePayload } from './types'
-import { Modal } from '../ui'
+import { Modal, Input, Select, Textarea, FormField, Button } from '../ui'
 
 interface AddHealthEventModalProps {
   isOpen: boolean
@@ -219,7 +219,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
                   }`}
                 >
                   <Icon className={`h-4 w-4 mb-1 ${p.color}`} />
-                  <span className="truncate w-full text-center text-[11px]">{p.label}</span>
+                  <span className="truncate w-full text-center text-xs">{p.label}</span>
                 </button>
               )
             })}
@@ -237,64 +237,56 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
 
           {/* Data e Hora */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Data</label>
-              <input
+            <FormField id="event-date" label="Data" required>
+              <Input
+                id="event-date"
                 type="date"
                 value={dateRef}
                 onChange={e => setDateRef(e.target.value)}
                 required
-                className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Horário aproximado</label>
-              <div className="relative">
-                <input
-                  type="time"
-                  value={timeRef}
-                  onChange={e => setTimeRef(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
+            </FormField>
+            <FormField id="event-time" label="Horário aproximado" required>
+              <Input
+                id="event-time"
+                type="time"
+                value={timeRef}
+                onChange={e => setTimeRef(e.target.value)}
+                required
+              />
+            </FormField>
           </div>
 
           {/* Dynamic Preset Fields */}
           {activePreset === 'alcohol' && (
             <div className="space-y-3 bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-200/50 dark:border-amber-900/40">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Número de doses
-                  </label>
-                  <select
+                <FormField id="alcohol-servings" label="Número de doses">
+                  <Select
+                    id="alcohol-servings"
                     value={servings}
                     onChange={e => setServings(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value={1}>1 dose (leve)</option>
                     <option value={2}>2 doses (moderado)</option>
                     <option value={3}>3 doses (significativo)</option>
                     <option value={4}>4 doses</option>
                     <option value={5}>5+ doses (intenso)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Bebida</label>
-                  <select
+                  </Select>
+                </FormField>
+                <FormField id="alcohol-drink-type" label="Bebida">
+                  <Select
+                    id="alcohol-drink-type"
                     value={drinkType}
                     onChange={e => setDrinkType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="Vinho tinto">Vinho tinto</option>
                     <option value="Vinho branco">Vinho branco</option>
                     <option value="Cerveja">Cerveja</option>
                     <option value="Destilado / Whisky / Gin">Destilado / Gin / Whisky</option>
                     <option value="Coquetel">Coquetel</option>
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               </div>
             </div>
           )}
@@ -302,32 +294,30 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
           {activePreset === 'caffeine' && (
             <div className="space-y-3 bg-orange-50/40 dark:bg-orange-950/20 p-3.5 rounded-2xl border border-orange-200/50 dark:border-orange-900/40">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Quantidade</label>
-                  <select
+                <FormField id="caffeine-cups" label="Quantidade">
+                  <Select
+                    id="caffeine-cups"
                     value={caffeineCups}
                     onChange={e => setCaffeineCups(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value={1}>1 dose / xícara</option>
                     <option value={2}>2 doses / xícaras</option>
                     <option value={3}>3+ doses</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Fonte</label>
-                  <select
+                  </Select>
+                </FormField>
+                <FormField id="caffeine-type" label="Fonte">
+                  <Select
+                    id="caffeine-type"
                     value={caffeineType}
                     onChange={e => setCaffeineType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="Café expresso">Café expresso</option>
                     <option value="Café coado">Café coado</option>
                     <option value="Pré-treino">Pré-treino estimulante</option>
                     <option value="Energético">Bebida energética</option>
                     <option value="Chá verde / Matcha">Chá verde / Matcha</option>
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               </div>
             </div>
           )}
@@ -335,12 +325,11 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
           {activePreset === 'symptom' && (
             <div className="space-y-3 bg-rose-50/40 dark:bg-rose-950/20 p-3.5 rounded-2xl border border-rose-200/50 dark:border-rose-900/40">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Sintoma</label>
-                  <select
+                <FormField id="symptom-type" label="Sintoma">
+                  <Select
+                    id="symptom-type"
                     value={symptomType}
                     onChange={e => setSymptomType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="Resfriado / Congestão">Resfriado / Congestão</option>
                     <option value="Febre / Calafrios">Febre / Calafrios</option>
@@ -348,20 +337,19 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
                     <option value="Dor de cabeça / Enxaqueca">Dor de cabeça</option>
                     <option value="Desconforto digestivo">Desconforto digestivo</option>
                     <option value="Fadiga intensa">Fadiga intensa</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Severidade</label>
-                  <select
+                  </Select>
+                </FormField>
+                <FormField id="symptom-severity" label="Severidade">
+                  <Select
+                    id="symptom-severity"
                     value={severity}
                     onChange={e => setSeverity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="Leve">Leve</option>
                     <option value="Moderada">Moderada</option>
                     <option value="Severa">Severa</option>
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               </div>
             </div>
           )}
@@ -369,22 +357,20 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
           {activePreset === 'travel' && (
             <div className="space-y-3 bg-cyan-50/40 dark:bg-cyan-950/20 p-3.5 rounded-2xl border border-cyan-200/50 dark:border-cyan-900/40">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Destino</label>
-                  <input
+                <FormField id="travel-destination" label="Destino">
+                  <Input
+                    id="travel-destination"
                     type="text"
                     placeholder="Ex: São Paulo, Londres..."
                     value={travelDestination}
                     onChange={e => setTravelDestination(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Fuso horário</label>
-                  <select
+                </FormField>
+                <FormField id="timezone-diff" label="Fuso horário">
+                  <Select
+                    id="timezone-diff"
                     value={timezoneDiffHours}
                     onChange={e => setTimezoneDiffHours(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value={0}>Mesmo fuso</option>
                     <option value={1}>+1 hora</option>
@@ -393,8 +379,8 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
                     <option value={4}>+4 ou mais horas</option>
                     <option value={-1}>-1 hora</option>
                     <option value={-3}>-3 ou mais horas</option>
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               </div>
             </div>
           )}
@@ -402,124 +388,119 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
           {activePreset === 'stress' && (
             <div className="space-y-3 bg-yellow-50/40 dark:bg-yellow-950/20 p-3.5 rounded-2xl border border-yellow-200/50 dark:border-yellow-900/40">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Nível de Estresse</label>
-                  <select
+                <FormField id="stress-level" label="Nível de Estresse">
+                  <Select
+                    id="stress-level"
                     value={stressLevel}
                     onChange={e => setStressLevel(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="Moderado">Moderado</option>
                     <option value="Elevado">Elevado</option>
                     <option value="Extremo">Extremo / Crítico</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Origem principal</label>
-                  <select
+                  </Select>
+                </FormField>
+                <FormField id="stress-reason" label="Origem principal">
+                  <Select
+                    id="stress-reason"
                     value={stressReason}
                     onChange={e => setStressReason(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="Trabalho">Trabalho / Sobrecarga</option>
                     <option value="Pessoal / Emocional">Pessoal / Emocional</option>
                     <option value="Privação de Sono">Privação de sono</option>
                     <option value="Outro">Outro</option>
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               </div>
             </div>
           )}
 
           {activePreset === 'meal' && (
             <div className="space-y-3 bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 rounded-2xl border border-emerald-200/50 dark:border-emerald-900/40">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Evento Nutricional</label>
-                <select
+              <FormField id="meal-type" label="Tipo de Evento Nutricional">
+                <Select
+                  id="meal-type"
                   value={mealType}
                   onChange={e => setMealType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 >
                   <option value="Jantar pesado & tardio">Jantar pesado & tardio</option>
                   <option value="Jejum intermitente (> 16h)">Jejum intermitente (&gt; 16h)</option>
                   <option value="Excesso calórico / Festa">Excesso calórico / Festa</option>
                   <option value="Refeição com alto teor de sódio">Refeição com alto teor de sódio</option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
             </div>
           )}
 
           {activePreset === 'custom' && (
             <div className="space-y-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Evento</label>
-                <input
+              <FormField id="custom-title" label="Título do Evento" required>
+                <Input
+                  id="custom-title"
                   type="text"
                   placeholder="Ex: Noite mal dormida por barulho, Dor nas costas..."
                   value={customTitle}
                   onChange={e => setCustomTitle(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
-              </div>
+              </FormField>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
-                  <select
+                <FormField id="custom-category" label="Categoria">
+                  <Select
+                    id="custom-category"
                     value={customCategory}
                     onChange={e => setCustomCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="lifestyle">Estilo de vida</option>
                     <option value="symptom">Sintoma</option>
                     <option value="intervention">Intervenção</option>
                     <option value="exercise">Exercício</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Detalhes</label>
-                  <input
+                  </Select>
+                </FormField>
+                <FormField id="custom-description" label="Detalhes">
+                  <Input
+                    id="custom-description"
                     type="text"
                     placeholder="Descrição breve..."
                     value={customDescription}
                     onChange={e => setCustomDescription(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   />
-                </div>
+                </FormField>
               </div>
             </div>
           )}
 
           {/* Campo de notas gerais */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Observações adicionais (opcional)
-            </label>
-            <textarea
+          <FormField id="event-notes" label="Observações adicionais (opcional)">
+            <Textarea
+              id="event-notes"
               rows={2}
               placeholder="Adicione detalhes contextuais que possam ajudar a entender seu organismo..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+              className="resize-none"
             />
-          </div>
+          </FormField>
 
           {/* Footer buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={submitting}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-md transition disabled:opacity-50 flex items-center gap-1.5"
+              variant="primary"
+              size="sm"
+              loading={submitting}
+              loadingText="Salvando..."
             >
-              {submitting ? 'Salvando...' : 'Salvar Evento'}
-            </button>
+              Salvar Evento
+            </Button>
           </div>
         </form>
     </Modal>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pill, CheckCircle2, Plus, Sparkles, History, Calendar, Layers } from 'lucide-react';
 import { ApiError, requestJson } from '../lib/api';
-import { useToast } from './ui';
+import { useToast, Button } from './ui';
 import {
   Supplement,
   AuditLog,
@@ -189,7 +189,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
   return (
     <div className="space-y-6">
       {/* Banner Principal */}
-      <div className="bg-gradient-to-r from-slate-100 via-slate-100 to-cyan-500/10 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
@@ -209,24 +209,27 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold border border-slate-200 dark:border-slate-700 transition flex items-center gap-2 text-xs shadow-sm"
+              leftIcon={Plus}
             >
-              <Plus className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
               Adicionar Composto
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
               onClick={() => {
                 setActiveTab('analysis');
                 handleAnalyzeWithAI();
               }}
               disabled={isAnalyzing}
-              className="px-4 py-2.5 rounded-2xl font-bold flex items-center gap-2 transition bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black shadow-lg shadow-cyan-500/25 glow-cyan"
+              loading={isAnalyzing}
+              leftIcon={Sparkles}
             >
-              <Sparkles className="h-4 w-4" />
-              {isAnalyzing ? 'Analisando...' : 'Otimizar com IA'}
-            </button>
+              Otimizar com IA
+            </Button>
           </div>
         </div>
       </div>

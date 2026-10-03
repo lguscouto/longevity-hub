@@ -15,3 +15,6 @@ export * from './Input';
 export * from './Select';
 export * from './Textarea';
 export * from './TermHelp';
+export * from './SourceTag';
+export * from './ResponsiveDataTable';
+export * from './SyncStatusBadge';

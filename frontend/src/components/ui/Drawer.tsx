@@ -61,12 +61,13 @@ export const Drawer: React.FC<DrawerProps> = ({
 
   const drawerNode = (
     <div
-      className="fixed inset-0 z-50 overflow-hidden"
+      className="fixed inset-0 z-40 overflow-hidden"
       data-testid="drawer-root"
     >
       {/* Backdrop */}
       <div
         onClick={onClose}
+        /* ds-exception: DSX-002 */
         className="absolute inset-0 bg-slate-950/70 dark:bg-slate-950/85 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         data-testid="drawer-backdrop"
       />

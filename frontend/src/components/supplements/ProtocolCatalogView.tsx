@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Clock, Edit3, Trash2 } from 'lucide-react';
-import { EmptyState } from '../ui';
+import { EmptyState, Input, Button, IconButton } from '../ui';
 import { Supplement } from './types';
 
 export interface ProtocolCatalogViewProps {
@@ -77,14 +77,13 @@ export const ProtocolCatalogView: React.FC<ProtocolCatalogViewProps> = ({
           </button>
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="h-4 w-4 text-slate-400 absolute left-3 top-2.5" />
-          <input
+        <div className="w-full sm:w-64">
+          <Input
             type="text"
             placeholder="Buscar composto..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+            leftIcon={<Search className="h-4 w-4 text-slate-400" />}
           />
         </div>
       </div>
@@ -114,7 +113,7 @@ export const ProtocolCatalogView: React.FC<ProtocolCatalogViewProps> = ({
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white">{supp.name}</h4>
                         <span
-                          className={`text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded border ${
+                          className={`text-xs uppercase font-extrabold px-1.5 py-0.5 rounded border ${
                             isHormone
                               ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
                               : 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30'
@@ -151,21 +150,25 @@ export const ProtocolCatalogView: React.FC<ProtocolCatalogViewProps> = ({
                   </span>
 
                   <div className="flex items-center gap-1.5">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => onOpenEditModal(supp)}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition border border-slate-200 dark:border-slate-800 flex items-center gap-1 font-semibold"
+                      leftIcon={Edit3}
+                      className="min-h-0 h-auto py-1 px-2.5 text-xs font-semibold"
                     >
-                      <Edit3 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                       Editar
-                    </button>
+                    </Button>
 
-                    <button
+                    <IconButton
+                      icon={Trash2}
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onConfirmDelete({ id: supp.id, name: supp.name })}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-rose-500/10 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200 dark:border-slate-800 flex items-center gap-1"
+                      aria-label="Remover Composto"
                       title="Remover Composto"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                      className="hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+                    />
                   </div>
                 </div>
               </div>

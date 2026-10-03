@@ -5,10 +5,14 @@
  * e formatação de datas baseada no timezone do usuário.
  */
 
+import { AbsenceKind, describeAbsence } from './dataSemantics';
+
 export interface FormatMetricOptions {
   decimals?: number;
   emptyFallback?: string;
   showUnitWhenEmpty?: boolean;
+  absenceKind?: AbsenceKind;
+  useAbsenceLabelAsDisplay?: boolean;
 }
 
 export interface MetricValueResult {
@@ -22,23 +26,33 @@ export interface MetricValueResult {
 /**
  * Formata um valor numérico ou textual de métrica clínica/física.
  * Garante que valores nulos, vazios, undefined ou NaN recebam o fallback canônico '—'
- * (ou acessível 'Não informado'), enquanto zero real (0) é devidamente preservado e exibido como número medido.
+ * (ou rótulo descritivo de ausência), enquanto zero real (0) é devidamente preservado e exibido como número medido.
  */
 export function formatMetricValue(
   value: number | string | null | undefined,
   unit?: string,
   options: FormatMetricOptions = {}
 ): MetricValueResult {
-  const { decimals, emptyFallback = '—', showUnitWhenEmpty = false } = options;
+  const {
+    decimals,
+    emptyFallback = '—',
+    showUnitWhenEmpty = false,
+    absenceKind,
+    useAbsenceLabelAsDisplay = false,
+  } = options;
+
+  const absence = absenceKind ? describeAbsence(absenceKind) : null;
+  const resolvedEmptyFallback = absence && useAbsenceLabelAsDisplay ? absence.label : emptyFallback;
+  const accessibleFallback = absence ? absence.label : 'Não informado';
 
   // Verifica explicitamente ausência de dados vs medição zero
   if (value === null || value === undefined || value === '') {
     return {
-      displayValue: emptyFallback,
+      displayValue: resolvedEmptyFallback,
       displayUnit: showUnitWhenEmpty ? unit : undefined,
       isNull: true,
-      accessibleText: 'Não informado',
-      formattedString: showUnitWhenEmpty && unit ? `${emptyFallback} ${unit}` : emptyFallback,
+      accessibleText: accessibleFallback,
+      formattedString: showUnitWhenEmpty && unit ? `${resolvedEmptyFallback} ${unit}` : resolvedEmptyFallback,
     };
   }
 
@@ -56,11 +70,11 @@ export function formatMetricValue(
       };
     }
     return {
-      displayValue: emptyFallback,
+      displayValue: resolvedEmptyFallback,
       displayUnit: showUnitWhenEmpty ? unit : undefined,
       isNull: true,
-      accessibleText: 'Não informado',
-      formattedString: showUnitWhenEmpty && unit ? `${emptyFallback} ${unit}` : emptyFallback,
+      accessibleText: accessibleFallback,
+      formattedString: showUnitWhenEmpty && unit ? `${resolvedEmptyFallback} ${unit}` : resolvedEmptyFallback,
     };
   }
 

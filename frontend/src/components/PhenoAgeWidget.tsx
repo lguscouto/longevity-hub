@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Calculator, Dna, Sparkles } from 'lucide-react'
-import { Modal, TermHelp } from './ui'
+import { Modal, TermHelp, SourceTag } from './ui'
 
 type ModelStatus = 'complete' | 'incomplete'
 
@@ -212,30 +212,31 @@ const ModelScore: React.FC<ModelScoreProps> = ({
   className = '',
 }) => (
   <div className={`text-center space-y-1 ${className}`}>
-    <div className="flex items-center justify-center gap-1 mb-0.5">
-      <span className={`text-[10px] uppercase font-bold ${titleClassName}`}>{title}</span>
+    <div className="flex items-center justify-center gap-1.5 mb-0.5 flex-wrap">
+      <span className={`text-xs uppercase font-bold ${titleClassName}`}>{title}</span>
       {termKey && <TermHelp termKey={termKey} />}
+      <SourceTag kind="model" compact />
     </div>
     {complete && age !== null ? (
       <>
         <span className="text-xl font-extrabold text-slate-900 dark:text-white block">{formatAge(age)}</span>
         {delta !== null && (
-          <span className={`text-[10px] font-bold block ${delta < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          <span className={`text-xs font-bold block ${delta < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
             {formatDelta(delta)}
           </span>
         )}
-        {calculatedAt && <span className="text-[10px] text-slate-500 block">Calculado em {calculatedAt}</span>}
+        {calculatedAt && <span className="text-xs text-slate-500 block">Calculado em {calculatedAt}</span>}
         {usedMarkers.length > 0 && (
-          <span className="text-[10px] text-slate-500 block">Insumos: {formatMarkerList(usedMarkers)}</span>
+          <span className="text-xs text-slate-500 block">Insumos: {formatMarkerList(usedMarkers)}</span>
         )}
       </>
     ) : (
       <>
         <span className="text-sm font-extrabold text-slate-800 dark:text-slate-200 block">{unavailableLabel}</span>
-        <span className="text-[10px] text-slate-500 block">{emptyDetail}</span>
-        {calculatedAt && <span className="text-[10px] text-slate-500 block">Última tentativa em {calculatedAt}</span>}
+        <span className="text-xs text-slate-500 block">{emptyDetail}</span>
+        {calculatedAt && <span className="text-xs text-slate-500 block">Última tentativa em {calculatedAt}</span>}
         {missingMarkers.length > 0 && (
-          <span className="text-[10px] text-amber-600 dark:text-amber-300 font-medium block">Faltam: {formatMarkerList(missingMarkers)}</span>
+          <span className="text-xs text-amber-600 dark:text-amber-300 font-medium block">Faltam: {formatMarkerList(missingMarkers)}</span>
         )}
       </>
     )}
@@ -265,7 +266,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
 
   return (
     <>
-      <div className="p-6 rounded-2xl glass-panel border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950 flex flex-col justify-between space-y-5 h-full">
+      <div className="p-6 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-5 h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
@@ -274,15 +275,15 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">Idade Biológica</h3>
-                <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">PhenoAge / KDM</span>
+                <SourceTag kind="model" />
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400">Modelos Morgan Levine (2018) e Klemera-Doubal quando o backend envia cálculo completo</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Modelos Morgan Levine (2018) e Klemera-Doubal quando o backend envia cálculo completo</p>
             </div>
           </div>
 
           <button
             onClick={() => setShowModal(true)}
-            className="px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 flex items-center gap-1 transition glow-cyan"
+            className="px-3 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center gap-1 transition shadow-xs"
           >
             <Calculator className="h-3.5 w-3.5" /> Calcular
           </button>
@@ -320,7 +321,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
           />
         </div>
 
-        <div className="text-[10px] text-slate-600 dark:text-slate-400 flex items-start gap-1">
+        <div className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1">
           <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
           <span>
             Estimativa algorítmica baseada em modelos matemáticos (Morgan Levine 2018 / KDM) a partir de exames laboratoriais. Valores só aparecem quando o cálculo está completo; estados incompletos indicam quais biomarcadores faltam. Não substitui diagnóstico médico.

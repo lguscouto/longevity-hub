@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { History, Search, ArrowRight } from 'lucide-react';
-import { EmptyState } from '../ui';
+import { EmptyState, Input } from '../ui';
 import { AuditLog } from './types';
 
 export interface AuditHistoryViewProps {
@@ -37,14 +37,13 @@ export const AuditHistoryView: React.FC<AuditHistoryViewProps> = ({ auditLogs })
             </p>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="h-4 w-4 text-slate-400 absolute left-3 top-2.5" />
-            <input
+          <div className="w-full sm:w-64">
+            <Input
               type="text"
               placeholder="Filtrar eventos de auditoria..."
               value={auditSearchTerm}
               onChange={(e) => setAuditSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+              leftIcon={<Search className="h-4 w-4 text-slate-400" />}
             />
           </div>
         </div>
@@ -70,7 +69,7 @@ export const AuditHistoryView: React.FC<AuditHistoryViewProps> = ({ auditLogs })
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`text-[10px] uppercase font-black px-2 py-0.5 rounded border ${
+                        className={`text-xs uppercase font-black px-2 py-0.5 rounded border ${
                           isAdd
                             ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
                             : isDel
