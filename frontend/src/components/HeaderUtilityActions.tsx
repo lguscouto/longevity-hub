@@ -64,17 +64,18 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
       <div
         role="group"
         aria-label="Ações clínicas do dia"
-        className="flex items-center gap-2"
+        className="flex items-center flex-wrap justify-center sm:justify-start gap-1.5 sm:gap-2 max-w-full"
       >
         <button
           type="button"
           onClick={onOpenManualEntry}
           title="Registrar métricas manuais (pressão arterial, peso, dinamometria, VO2 max)"
           aria-label="Registrar Métrica Manual"
-          className="relative flex items-center gap-1.5 px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[40px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+          className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[40px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
         >
-          <PlusCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Registrar Métrica</span>
+          <PlusCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="hidden sm:inline">Registrar Métrica</span>
+          <span className="sm:hidden font-medium">Registrar</span>
         </button>
 
         <button
@@ -82,10 +83,11 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
           onClick={onOpenDoctorBriefing}
           title="Gerar briefing clínico estruturado para consulta médica"
           aria-label="Doctor Briefing"
-          className="relative flex items-center gap-1.5 px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[40px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-xl text-xs font-semibold bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+          className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[40px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-xl text-xs font-semibold bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
         >
-          <Stethoscope className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-          <span>Doctor Briefing</span>
+          <Stethoscope className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+          <span className="hidden sm:inline">Doctor Briefing</span>
+          <span className="sm:hidden font-medium">Briefing</span>
         </button>
       </div>
 
