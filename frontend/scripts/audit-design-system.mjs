@@ -49,7 +49,7 @@ const RULES = [
   { id: 'radius.non-token', category: 'Radius', pattern: /(?<![-\w])rounded(?:-[trbl]{1,2})?-(?:sm|md|lg|xl|2xl)\b/g, why: 'Radius Tailwind padrão em vez de token radius-* (tailwind.config.js)' },
   { id: 'gradients.bg', category: 'Gradients', pattern: /bg-gradient-to-/g, why: 'Gradiente de fundo' },
   { id: 'effects.glow', category: 'Effects', pattern: /\bglow(?:-[a-z0-9]+)?\b/g, why: 'Glow decorativo' },
-  { id: 'effects.backdrop-blur', category: 'Effects', pattern: /backdrop-blur(?:-[a-z0-9]+)?/g, why: 'Backdrop blur / glassmorphism' },
+  { id: 'effects.backdrop-blur', category: 'Effects', pattern: /(?:backdrop-blur(?:-[a-z0-9]+)?|(?:-webkit-)?backdrop-filter\s*:)/g, why: 'Backdrop blur / glassmorphism / backdrop-filter' },
   { id: 'effects.arbitrary-shadow', category: 'Effects', pattern: /shadow-\[[^\]]+\]/g, why: 'Sombra fora dos tokens' },
   { id: 'focus.outline-none', category: 'Focus', pattern: /(?<![-\w])focus:outline-none/g, why: 'focus:outline-none sem anel focus-visible' },
   { id: 'motion.decorative', category: 'Motion', pattern: /animate-(?:ping|bounce)\b/g, why: 'Animação decorativa permanente' },
@@ -75,10 +75,27 @@ function walk(dir) {
   return out;
 }
 
-function loadRegistryIds() {
-  if (!fs.existsSync(REGISTRY_PATH)) return new Set();
+function loadRegistry() {
+  if (!fs.existsSync(REGISTRY_PATH)) return { allIds: new Set(), activeIds: new Set() };
   const text = fs.readFileSync(REGISTRY_PATH, 'utf8');
-  return new Set([...text.matchAll(/\|\s*(DSX-\d+)\s*\|/g)].map((m) => m[1]));
+  const allIds = new Set();
+  const activeIds = new Set();
+  for (const line of text.split(/\r?\n/)) {
+    const match = line.match(/\|\s*(DSX-\d+)\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/);
+    if (match) {
+      const id = match[1];
+      const status = match[2].trim();
+      allIds.add(id);
+      if (status.toLowerCase().startsWith('ativa')) {
+        activeIds.add(id);
+      }
+    }
+  }
+  return { allIds, activeIds };
+}
+
+function loadRegistryIds() {
+  return loadRegistry().allIds;
 }
 
 function loadBaseline() {
@@ -91,9 +108,10 @@ function relative(file) {
 }
 
 function scan() {
-  const registry = loadRegistryIds();
+  const registry = loadRegistry();
   const findings = []; // { rule, file, line, excerpt, exception }
   const missingRegistry = [];
+  const usedExceptions = new Set();
 
   for (const file of walk(SRC_DIR)) {
     const rel = relative(file);
@@ -107,10 +125,16 @@ function scan() {
         rule.pattern.lastIndex = 0;
         const matches = text.match(rule.pattern);
         if (!matches) continue;
-        const mark = text.match(EXCEPTION_MARK) ?? (idx > 0 ? lines[idx - 1].match(EXCEPTION_MARK) : null);
+        const mark =
+          text.match(EXCEPTION_MARK) ??
+          (idx > 0 ? lines[idx - 1].match(EXCEPTION_MARK) : null) ??
+          (idx > 1 ? lines[idx - 2].match(EXCEPTION_MARK) : null);
         const exception = mark ? mark[1] : null;
-        if (exception && !registry.has(exception)) {
-          missingRegistry.push({ file: rel, line: idx + 1, exception });
+        if (exception) {
+          usedExceptions.add(exception);
+          if (!registry.allIds.has(exception)) {
+            missingRegistry.push({ file: rel, line: idx + 1, exception });
+          }
         }
         for (let i = 0; i < matches.length; i += 1) {
           findings.push({ rule: rule.id, file: rel, line: idx + 1, excerpt: text.trim().slice(0, 140), exception });
@@ -118,36 +142,42 @@ function scan() {
       }
     });
   }
-  return { findings, missingRegistry };
+
+  // U22-P0-08: Reconciliação - detectar exceções ativas no registro que não existem no código
+  const staleExceptions = [...registry.activeIds].filter((id) => !usedExceptions.has(id));
+
+  return { findings, missingRegistry, usedExceptions: [...usedExceptions], staleExceptions };
 }
 
-function summarize({ findings, missingRegistry }) {
+function summarize({ findings, missingRegistry, staleExceptions = [] }) {
   const baseline = loadBaseline();
   const rows = RULES.map((rule) => {
     const all = findings.filter((f) => f.rule === rule.id);
     const justified = all.filter((f) => f.exception).length;
     const open = all.length - justified;
     const allowed = baseline[rule.id] ?? 0;
+    const delta = open - allowed;
     let status;
     if (open === 0) status = justified > 0 ? 'EXCEPTION' : 'PASS';
-    else if (open > allowed) status = 'FAIL';
+    else if (delta > 0) status = 'FAIL';
     else status = 'WARN';
-    return { rule: rule.id, category: rule.category, why: rule.why, total: all.length, justified, open, baseline: allowed, status };
+    return { rule: rule.id, category: rule.category, why: rule.why, total: all.length, justified, open, baseline: allowed, delta, status };
   });
   const orphan = missingRegistry.length > 0;
   const worst = rows.some((r) => r.status === 'FAIL') || orphan ? 'FAIL' : rows.some((r) => r.status === 'WARN') ? 'WARN' : 'PASS';
-  return { rows, worst, orphan: missingRegistry };
+  return { rows, worst, orphan: missingRegistry, staleExceptions };
 }
 
 function printReport(summary, findings) {
   const pad = (s, n) => String(s).padEnd(n);
   console.log('Design System Conformance Audit');
-  console.log('────────────────────────────────────────────────────────────────────────');
-  console.log(`${pad('Rule', 28)}${pad('Open', 7)}${pad('Exc.', 6)}${pad('Base', 7)}Status`);
+  console.log('──────────────────────────────────────────────────────────────────────────────');
+  console.log(`${pad('Rule', 28)}${pad('Open', 7)}${pad('Exc.', 6)}${pad('Base', 7)}${pad('Delta', 7)}Status`);
   for (const r of summary.rows) {
-    console.log(`${pad(r.rule, 28)}${pad(r.open, 7)}${pad(r.justified, 6)}${pad(r.baseline, 7)}${r.status}`);
+    const deltaStr = r.delta > 0 ? `+${r.delta}` : String(r.delta);
+    console.log(`${pad(r.rule, 28)}${pad(r.open, 7)}${pad(r.justified, 6)}${pad(r.baseline, 7)}${pad(deltaStr, 7)}${r.status}`);
   }
-  console.log('────────────────────────────────────────────────────────────────────────');
+  console.log('──────────────────────────────────────────────────────────────────────────────');
   const byCategory = new Map();
   for (const r of summary.rows) {
     const cur = byCategory.get(r.category) ?? 'PASS';
@@ -156,8 +186,12 @@ function printReport(summary, findings) {
   }
   for (const [cat, st] of byCategory) console.log(`${pad(cat, 20)}${st}`);
   if (summary.orphan.length) {
-    console.log('\nExceções sem registro em docs/DESIGN_SYSTEM_EXCEPTIONS.md:');
+    console.log('\nExceções no código sem registro em docs/DESIGN_SYSTEM_EXCEPTIONS.md (MISSING):');
     for (const o of summary.orphan) console.log(`  ${o.file}:${o.line} → ${o.exception}`);
+  }
+  if (summary.staleExceptions && summary.staleExceptions.length) {
+    console.log('\nExceções ativas no registro sem ocorrência no código (STALE):');
+    for (const s of summary.staleExceptions) console.log(`  ${s}`);
   }
   if (VERBOSE) {
     console.log('\nOcorrências abertas:');
@@ -166,7 +200,7 @@ function printReport(summary, findings) {
   console.log(`\nResultado global: ${summary.worst}`);
 }
 
-export { RULES, walk, scan, summarize, loadBaseline, loadRegistryIds, runCli };
+export { RULES, walk, scan, summarize, loadBaseline, loadRegistry, loadRegistryIds, runCli };
 
 function runCli() {
   const result = scan();

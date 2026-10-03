@@ -13,8 +13,9 @@
 | DSX-006 | `frontend/src/components/Header.tsx` | `gradients.bg` | Máscara de fade para scroll horizontal de tabs mobile (slot 2) | 2026-10-03 | Ativa |
 | DSX-007 | `frontend/src/components/Header.tsx` | `gradients.bg` | Máscara de fade para scroll horizontal de tabs mobile (slot 3) | 2026-10-03 | Ativa |
 | DSX-008 | `frontend/src/components/ProfileView.tsx` | `gradients.bg` | Avatar de identidade do usuário | 2026-10-03 | Ativa |
-| DSX-009 | `frontend/src/components/AICopilotView.tsx` | `gradients.bg` | Barra de progresso de geração de insights de IA | 2026-10-03 | Ativa |
-| DSX-010 | `frontend/src/components/SyncProgressModal.tsx` | `gradients.bg` | Barra de progresso de sincronização | 2026-10-03 | Ativa |
+| DSX-009 | `frontend/src/components/AICopilotView.tsx` | `gradients.bg` | Barra de progresso de geração de insights de IA | 2026-10-03 | Encerrada (código refatorado para cor sólida/tokens) |
+| DSX-010 | `frontend/src/components/SyncProgressModal.tsx` | `gradients.bg` | Barra de progresso de sincronização | 2026-10-03 | Encerrada (código refatorado para cor sólida/tokens) |
+| DSX-011 | `frontend/src/index.css` | `effects.backdrop-blur` | Superfície legada glass-panel global (migração gradual no UX_UI_60) | 2026-10-03 | Ativa |
 
 ## Como adicionar
 

@@ -45,6 +45,12 @@ describe('Design System Audit Engine (UX_UI_34)', () => {
 
       expect('focus:outline-none'.match(focus.pattern)).not.toBeNull();
       expect('focus-visible:outline-none'.match(focus.pattern)).toBeNull();
+
+      const blur = RULES.find((r: { id: string }) => r.id === 'effects.backdrop-blur');
+      expect('backdrop-blur-md'.match(blur.pattern)).not.toBeNull();
+      expect('backdrop-filter: blur(12px);'.match(blur.pattern)).not.toBeNull();
+      expect('-webkit-backdrop-filter: blur(12px);'.match(blur.pattern)).not.toBeNull();
+      expect('filter: blur(12px);'.match(blur.pattern)).toBeNull();
     });
 
     it('detects native controls', () => {
@@ -80,7 +86,21 @@ describe('Design System Audit Engine (UX_UI_34)', () => {
       expect(summary.orphan.length).toBe(1);
     });
 
-    it('classifies as FAIL when open count exceeds baseline', () => {
+    it('calculates delta correctly and reports stale exceptions (UX_UI_49, U22-P0-08, U22-P2-26)', () => {
+      const summary = summarize({
+        findings: [
+          { rule: 'radius.non-token', file: 'a.tsx', line: 1, excerpt: 'rounded-xl', exception: null },
+        ],
+        missingRegistry: [],
+        staleExceptions: ['DSX-099'],
+      });
+      const radiusRow = summary.rows.find((r: { rule: string }) => r.rule === 'radius.non-token');
+      expect(radiusRow).toBeDefined();
+      expect(radiusRow?.delta).toBeDefined();
+      expect(summary.staleExceptions).toContain('DSX-099');
+    });
+
+    it('classifies as FAIL when open count exceeds baseline (delta > 0)', () => {
       const mockFindings = [
         { rule: 'typography.micro-9', file: 'a.tsx', line: 1, excerpt: 'text-[9px]', exception: null },
       ];
@@ -95,6 +115,7 @@ describe('Design System Audit Engine (UX_UI_34)', () => {
       });
       const micro9Row = summary.rows.find((r: { rule: string }) => r.rule === 'typography.micro-9');
       expect(micro9Row?.status).toBe('FAIL');
+      expect(micro9Row?.delta).toBeGreaterThan(0);
       expect(summary.worst).toBe('FAIL');
     });
   });

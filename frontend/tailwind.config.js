@@ -17,7 +17,35 @@ export default {
           violet: "#8B5CF6",
           rose: "#F43F5E",
           amber: "#F59E0B",
-        }
+        },
+        surface: {
+          canvas: 'var(--surface-canvas)',
+          panel: 'var(--surface-panel)',
+          card: 'var(--surface-card)',
+          elevated: 'var(--surface-elevated)',
+          overlay: 'var(--surface-overlay)',
+        },
+        border: {
+          subtle: 'var(--border-subtle)',
+          default: 'var(--border-default)',
+          strong: 'var(--border-strong)',
+          focus: 'var(--border-focus)',
+          danger: 'var(--border-danger)',
+        },
+        content: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          tertiary: 'var(--text-tertiary)',
+          disabled: 'var(--text-disabled)',
+          inverse: 'var(--text-inverse)',
+        },
+        data: {
+          observed: 'var(--data-observed)',
+          derived: 'var(--data-derived)',
+          model: 'var(--data-model)',
+          inference: 'var(--data-inference)',
+          reference: 'var(--data-reference)',
+        },
       },
       fontSize: {
         metric: ['2rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em', fontWeight: '800' }],
@@ -27,10 +55,12 @@ export default {
         'surface-sm': '0.75rem',   // 12px - Inputs, botões, controles
         'surface-md': '1rem',      // 16px - Cards, painéis, widgets
         'surface-lg': '1rem',      // 16px - Diálogos, modais, drawers
-        'radius-sm': '0.5rem',     // 8px - Badges, chips, tags
-        'radius-md': '0.75rem',    // 12px - Inputs, buttons, controls
-        'radius-lg': '1.25rem',    // 20px - Cards, panels, widgets
-        'radius-xl': '1.5rem',     // 24px - Sections, modals, dialogs
+        'dialog': '1rem',          // 16px - Diálogos, modais (Surface 4)
+        'pill': '9999px',          // 9999px - Pílulas, avatares
+        'radius-sm': '0.5rem',     // 8px - Alias semântico para surface-xs
+        'radius-md': '0.75rem',    // 12px - Alias semântico para surface-sm
+        'radius-lg': '1rem',       // 16px - Alias semântico para surface-md
+        'radius-xl': '1rem',       // 16px - Alias semântico para surface-lg
       },
       boxShadow: {
         'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',

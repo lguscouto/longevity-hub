@@ -11,13 +11,41 @@ import tailwindConfig from '../../../tailwind.config.js';
 import cssContent from '../../index.css?raw';
 
 describe('Design Tokens & Reduced Motion Verification (UX-P2-02, UX-P2-03, UX-P2-04)', () => {
-  it('defines canonical borderRadius tokens in tailwind.config.js', () => {
+  it('defines canonical borderRadius tokens in tailwind.config.js (UX_UI_48, U22-P0-06)', () => {
     const borderRadius = tailwindConfig?.theme?.extend?.borderRadius;
     expect(borderRadius).toBeDefined();
+    expect(borderRadius?.['surface-xs']).toBe('0.5rem');
+    expect(borderRadius?.['surface-sm']).toBe('0.75rem');
+    expect(borderRadius?.['surface-md']).toBe('1rem');
+    expect(borderRadius?.['surface-lg']).toBe('1rem');
+    expect(borderRadius?.['dialog']).toBe('1rem');
+    expect(borderRadius?.['pill']).toBe('9999px');
     expect(borderRadius?.['radius-sm']).toBe('0.5rem');
     expect(borderRadius?.['radius-md']).toBe('0.75rem');
-    expect(borderRadius?.['radius-lg']).toBe('1.25rem');
-    expect(borderRadius?.['radius-xl']).toBe('1.5rem');
+    expect(borderRadius?.['radius-lg']).toBe('1rem');
+    expect(borderRadius?.['radius-xl']).toBe('1rem');
+  });
+
+  it('defines canonical semantic color tokens in tailwind.config.js (UX_UI_48, U22-P2-04..07)', () => {
+    const colors = tailwindConfig?.theme?.extend?.colors;
+    expect(colors?.surface?.canvas).toBe('var(--surface-canvas)');
+    expect(colors?.surface?.panel).toBe('var(--surface-panel)');
+    expect(colors?.surface?.card).toBe('var(--surface-card)');
+    expect(colors?.border?.subtle).toBe('var(--border-subtle)');
+    expect(colors?.border?.default).toBe('var(--border-default)');
+    expect(colors?.content?.primary).toBe('var(--text-primary)');
+    expect(colors?.content?.secondary).toBe('var(--text-secondary)');
+    expect(colors?.data?.observed).toBe('var(--data-observed)');
+    expect(colors?.data?.derived).toBe('var(--data-derived)');
+    expect(colors?.data?.model).toBe('var(--data-model)');
+  });
+
+  it('defines semantic CSS variables in index.css (UX_UI_48)', () => {
+    expect(cssContent).toContain('--surface-canvas:');
+    expect(cssContent).toContain('--surface-card:');
+    expect(cssContent).toContain('--border-subtle:');
+    expect(cssContent).toContain('--text-primary:');
+    expect(cssContent).toContain('--data-derived:');
   });
 
   it('defines canonical boxShadow elevation tokens in tailwind.config.js', () => {

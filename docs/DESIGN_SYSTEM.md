@@ -43,9 +43,16 @@ A gramática visual do Longevidade Hub adota uma escala semântica coesa mapeada
 | `pill` | `rounded-full` | `9999px` | Avatares circulares, badges em formato de pílula, barras de progresso, toggles. |
 
 > [!NOTE]
-> **Governança de Border Radius (v2.2.0):**
+> **Governança de Border Radius (v2.2.0 — Consolidado no UX_UI_48):**
 > Valores arbitrários de raio (ex: `rounded-[28px]`) e classes descontinuadas (`rounded-3xl`) são terminantemente proibidos e avaliados com `FAIL` no gate automatizado.
-> A auditoria estática (`audit-design-system.mjs`) monitora o uso de classes Tailwind padrão (`rounded-lg`, `rounded-xl`, etc.) via teto de baseline decrescente (ratchet down: 447 abertos). O plano `UX_UI_48` consolidará a convergência definitiva para uma fonte única de verdade entre classes semânticas e tokens do Tailwind.
+> A escala de radius foi unificada em `tailwind.config.js`:
+> `surface-xs` / `radius-sm` = `8px` (`0.5rem`)
+> `surface-sm` / `radius-md` = `12px` (`0.75rem`)
+> `surface-md` / `radius-lg` = `16px` (`1.0rem`)
+> `surface-lg` / `radius-xl` = `16px` (`1.0rem`)
+> `dialog` = `16px` (`1.0rem`)
+> `pill` = `9999px`
+> A auditoria estática (`audit-design-system.mjs`) monitora o uso de classes Tailwind legadas via teto de baseline decrescente.
 
 ### 2.2. Tokens de Elevação e Sombras (Box Shadow)
 
@@ -76,6 +83,38 @@ A gramática visual do Longevidade Hub adota uma escala semântica coesa mapeada
 - **Amber (Âmbar / Laranja):** Zona de atenção clínica (pré-diabetes, pressão limítrofe), aviso de sincronização pendente, ausência de dados.
 - **Rose (Vermelho / Carmim):** Valor crítico fora da faixa terapêutica, erro de pipeline, cancelamento, ação destrutiva de deleção.
 - **Slate (Neutros):** Tipografia estrutural, separadores, bordas e superfícies neutras.
+
+### 2.5. Tokens Semânticos Canônicos (v2.2.0)
+
+Centralizados em `tailwind.config.js` e em variáveis CSS em `src/index.css`:
+
+#### Superfícies (`surface.*`)
+- `bg-surface-canvas`: Fundo base da aplicação (`--surface-canvas`).
+- `bg-surface-panel`: Barras, subpainéis e cabeçalhos (`--surface-panel`).
+- `bg-surface-card`: Cartões analíticos e widgets (`--surface-card`).
+- `bg-surface-elevated`: Menus flutuantes e tooltips suspensos (`--surface-elevated`).
+- `bg-surface-overlay`: Backdrops translúcidos de modais e gavetas (`--surface-overlay`).
+
+#### Bordas (`border.*`)
+- `border-border-subtle`: Divisores discretos entre seções (`--border-subtle`).
+- `border-border-default`: Borda padrão de cards e inputs (`--border-default`).
+- `border-border-strong`: Ênfase e delimitadores de contraste (`--border-strong`).
+- `border-border-focus`: Anel de foco ativo (`--border-focus`).
+- `border-border-danger`: Estados de validação inválida e erro (`--border-danger`).
+
+#### Conteúdo & Tipografia (`content.*`)
+- `text-content-primary`: Texto principal com contraste máximo (`--text-primary`).
+- `text-content-secondary`: Informações secundárias e descrições (`--text-secondary`).
+- `text-content-tertiary`: Metadados e faixas de referência clínica (`--text-tertiary`).
+- `text-content-disabled`: Ações e textos desabilitados (`--text-disabled`).
+- `text-content-inverse`: Texto contrastante sobre superfícies escuras/claras invertidas (`--text-inverse`).
+
+#### Semântica de Dados (`data.*`)
+- `data-observed`: Dados observados diretamente (exames, sensores) (`--data-observed`).
+- `data-derived`: Valores matematicamente calculados/derivados (`--data-derived`).
+- `data-model`: Modelos preditivos e epigenéticos (PhenoAge, KDM) (`--data-model`).
+- `data-inference`: Inferências clínicas e recomendações de IA (`--data-inference`).
+- `data-reference`: Intervalos e referências populacionais (`--data-reference`).
 
 ---
 

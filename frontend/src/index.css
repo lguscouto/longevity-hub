@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --bg-main: #f4f7fb;
+    --bg-main: #f8fafc;
     --text-main: #0f172a;
     --text-secondary: #475569;
     --text-muted: #64748b;
@@ -13,6 +13,35 @@
     --glass-card-bg: #ffffff;
     --glass-card-border: #e2e8f0;
     --focus-ring: #10b981;
+
+    /* Canonical Semantic Surfaces (UX_UI_48) */
+    --surface-canvas: #f8fafc;
+    --surface-panel: #ffffff;
+    --surface-card: #ffffff;
+    --surface-elevated: #ffffff;
+    --surface-overlay: rgba(15, 23, 42, 0.7);
+
+    /* Canonical Semantic Borders (UX_UI_48) */
+    --border-subtle: #f1f5f9;
+    --border-default: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --border-focus: #10b981;
+    --border-danger: #f43f5e;
+
+    /* Canonical Semantic Text (UX_UI_48) */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #64748b;
+    --text-disabled: #94a3b8;
+    --text-inverse: #ffffff;
+
+    /* Canonical Semantic Data Colors (UX_UI_48) */
+    --data-observed: #10b981;
+    --data-derived: #06b6d4;
+    --data-model: #8b5cf6;
+    --data-inference: #f59e0b;
+    --data-reference: #64748b;
+
     color-scheme: light;
   }
 
@@ -26,6 +55,35 @@
     --glass-card-bg: #131b29;
     --glass-card-border: rgba(255, 255, 255, 0.08);
     --focus-ring: #34d399;
+
+    /* Canonical Semantic Surfaces (UX_UI_48) */
+    --surface-canvas: #020617;
+    --surface-panel: #0f172a;
+    --surface-card: #131b29;
+    --surface-elevated: #1e293b;
+    --surface-overlay: rgba(2, 6, 23, 0.85);
+
+    /* Canonical Semantic Borders (UX_UI_48) */
+    --border-subtle: #1e293b;
+    --border-default: #334155;
+    --border-strong: #475569;
+    --border-focus: #34d399;
+    --border-danger: #fb7185;
+
+    /* Canonical Semantic Text (UX_UI_48) */
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+    --text-disabled: #64748b;
+    --text-inverse: #0f172a;
+
+    /* Canonical Semantic Data Colors (UX_UI_48) */
+    --data-observed: #34d399;
+    --data-derived: #22d3ee;
+    --data-model: #a78bfa;
+    --data-inference: #fbbf24;
+    --data-reference: #94a3b8;
+
     color-scheme: dark;
   }
 
@@ -45,6 +103,7 @@
 /* Moderação de Glassmorphism e Superfícies */
 .glass-panel {
   background: var(--glass-panel-bg);
+  /* ds-exception: DSX-011 */
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-panel-border);
 }
