@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
 
 const mockApi = async (page: Page) => {
   await page.route('**/api/**', async (route) => {
@@ -232,6 +233,65 @@ const mockApi = async (page: Page) => {
       ]),
     });
   });
+  await page.route('**/api/profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Carlos Oliveira',
+        birth_date: '1988-06-15',
+        chronological_age: 38.0,
+        height_cm: 178,
+        weight_kg: 74.5,
+        target_weight_kg: 72.0,
+        activity_level: 'Ativo',
+        health_goals: 'Otimização metabólica, aumento de massa magra e longevidade cardiovascular.',
+        allergies: 'Nenhuma',
+        medications: 'Nenhum',
+        timezone: 'America/Sao_Paulo',
+        language: 'pt-BR',
+      }),
+    });
+  });
+
+  await page.route('**/api/pipeline-runs**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 1,
+          source: 'zepp',
+          started_at: '2026-10-03T07:00:00Z',
+          finished_at: '2026-10-03T07:00:15Z',
+          status: 'success',
+          records_processed: 1440,
+          details: 'Sincronização biométrica completa: RHR, HRV e estágios de sono processados.',
+        },
+      ]),
+    });
+  });
+
+  await page.route('**/api/quality/daily**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        date_ref: '2026-10-03',
+        coverage_pct: 95.5,
+        confidence: 'high',
+        metrics_available: 12,
+        metrics_expected: 12,
+        warnings: [],
+        sources: ['zepp', 'hevy'],
+        items: [
+          { metric_key: 'rhr_bpm', metric_name: 'Frequência Cardíaca de Repouso', status: 'optimal', value: 48, unit: 'bpm' },
+          { metric_key: 'hrv_ms', metric_name: 'Variabilidade da Frequência Cardíaca', status: 'optimal', value: 64.5, unit: 'ms' },
+          { metric_key: 'sleep_minutes', metric_name: 'Tempo de Sono Total', status: 'optimal', value: 465, unit: 'min' },
+        ],
+      }),
+    });
+  });
 };
 
 const BASELINE_VIEWPORTS = [
@@ -250,11 +310,76 @@ const CANONICAL_VIEWS = [
 
 const THEMES = ['dark', 'light'] as const;
 
-test.describe('UX/UI 45 — Visual Regression & Baseline Capture (24 Canonical Baselines)', () => {
+interface BaselineMetadata {
+  id: string;
+  version: string;
+  view: string;
+  view_title: string;
+  viewport: {
+    key: string;
+    name: string;
+    width: number;
+    height: number;
+  };
+  theme: string;
+  reduced_motion: boolean;
+  state: string;
+  filename: string;
+  captured_at: string;
+}
+
+const collectedBaselines: BaselineMetadata[] = [];
+
+test.describe('UX/UI 61 — Visual Regression 2.2.0 Baseline Capture (24 Canonical Baselines)', () => {
+  test.afterAll(async () => {
+    if (collectedBaselines.length > 0) {
+      const baselinesDir = path.resolve(process.cwd(), '../docs/screenshots/baselines');
+      if (!fs.existsSync(baselinesDir)) {
+        fs.mkdirSync(baselinesDir, { recursive: true });
+      }
+
+      const metadataPath = path.join(baselinesDir, 'metadata.json');
+      let existing: BaselineMetadata[] = [];
+      if (fs.existsSync(metadataPath)) {
+        try {
+          const raw = fs.readFileSync(metadataPath, 'utf-8');
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.baselines)) {
+            existing = parsed.baselines;
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+
+      const mergedMap = new Map<string, BaselineMetadata>();
+      for (const b of existing) {
+        mergedMap.set(b.id, b);
+      }
+      for (const b of collectedBaselines) {
+        mergedMap.set(b.id, b);
+      }
+
+      const allBaselines = Array.from(mergedMap.values());
+      const manifest = {
+        version: '2.2.0',
+        generated_at: new Date().toISOString(),
+        reduced_motion: true,
+        canonical_viewports: BASELINE_VIEWPORTS,
+        canonical_themes: THEMES,
+        canonical_views: CANONICAL_VIEWS,
+        total_baselines: allBaselines.length,
+        baselines: allBaselines,
+      };
+
+      fs.writeFileSync(metadataPath, JSON.stringify(manifest, null, 2), 'utf-8');
+    }
+  });
+
   for (const vp of BASELINE_VIEWPORTS) {
     for (const theme of THEMES) {
       for (const view of CANONICAL_VIEWS) {
-        const testTitle = `[v2.1.0] ${view.title} (${view.id}) on ${vp.name} [${theme}]`;
+        const testTitle = `[v2.2.0] ${view.title} (${view.id}) on ${vp.name} [${theme}]`;
 
         test(testTitle, async ({ page }) => {
           await page.setViewportSize({ width: vp.width, height: vp.height });
@@ -277,18 +402,42 @@ test.describe('UX/UI 45 — Visual Regression & Baseline Capture (24 Canonical B
 
           await page.waitForTimeout(100);
 
-          // Salva screenshot canônico versionado
-          const filename = `v2.1.0_${view.id}_${vp.key}_${theme}_normal.png`;
+          // Salva screenshot canônico versionado 2.2.0
+          const filename = `v2.2.0_${view.id}_${vp.key}_${theme}_normal.png`;
           const screenshotPath = path.resolve(
             process.cwd(),
             '../docs/screenshots/baselines',
             filename
           );
 
+          const dir = path.dirname(screenshotPath);
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+
           await page.screenshot({
             path: screenshotPath,
             fullPage: false,
             animations: 'disabled',
+          });
+
+          // Registra metadados estruturados (U22-P2-22)
+          collectedBaselines.push({
+            id: `${view.id}_${vp.key}_${theme}_normal`,
+            version: '2.2.0',
+            view: view.id,
+            view_title: view.title,
+            viewport: {
+              key: vp.key,
+              name: vp.name,
+              width: vp.width,
+              height: vp.height,
+            },
+            theme,
+            reduced_motion: true,
+            state: 'normal',
+            filename,
+            captured_at: new Date().toISOString(),
           });
 
           // Validações fundamentais de renderização e acessibilidade

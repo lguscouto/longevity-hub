@@ -100,7 +100,24 @@
   }
 }
 
-/* Moderação de Glassmorphism e Superfícies */
+/* Canonical Semantic Surfaces (UX_UI_60) */
+.surface-panel {
+  background-color: var(--surface-panel);
+  border: 1px solid var(--border-default);
+}
+
+.surface-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-default);
+}
+
+.surface-elevated {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Moderação de Glassmorphism e Superfícies (Legado Controlado U22-P2-01) */
 .glass-panel {
   background: var(--glass-panel-bg);
   /* ds-exception: DSX-011 */

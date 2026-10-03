@@ -1,6 +1,6 @@
 import React from 'react'
 import { Activity, AlertCircle, CheckCircle2, Clock, Database, XCircle } from 'lucide-react'
-import { EmptyState } from './ui'
+import { EmptyState, Button } from './ui'
 
 export interface PipelineRun {
   id?: number
@@ -77,27 +77,32 @@ function getRunMessage(run: PipelineRun): string {
 
 export const PipelineStatusPanel: React.FC<PipelineStatusPanelProps> = ({ runs, loading, onRefresh }) => {
   return (
-    <div className="glass-panel rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
+    <div className="surface-panel rounded-radius-xl p-6 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Histórico de Sincronizações
+            <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> Histórico de Sincronizações
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Últimas execuções do pipeline de importação</p>
         </div>
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition disabled:opacity-50"
-          aria-label="Atualizar histórico"
-        >
-          {loading ? 'Carregando...' : 'Atualizar'}
-        </button>
+        {onRefresh && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onRefresh}
+            disabled={loading}
+            loading={loading}
+            loadingText="Carregando..."
+            aria-label="Atualizar histórico"
+          >
+            Atualizar
+          </Button>
+        )}
       </div>
 
       {loading && (
         <div className="flex items-center justify-center py-12 text-slate-500 dark:text-slate-400 text-sm">
-          <div className="animate-spin h-5 w-5 border-2 border-emerald-500 border-t-transparent rounded-full mr-3" />
+          <div className="animate-spin h-5 w-5 border-2 border-emerald-500 border-t-transparent rounded-radius-full mr-3" />
           Carregando histórico...
         </div>
       )}
@@ -127,7 +132,7 @@ export const PipelineStatusPanel: React.FC<PipelineStatusPanelProps> = ({ runs, 
             return (
               <div
                 key={run.id ?? `${run.source}-${run.run_at}`}
-                className={`flex items-center justify-between p-3.5 rounded-2xl border text-xs transition ${
+                className={`flex items-center justify-between p-3.5 rounded-radius-lg border text-xs transition ${
                   isError
                     ? 'bg-rose-500/10 dark:bg-rose-950/20 border-rose-500/20'
                     : isZero

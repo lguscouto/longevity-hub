@@ -248,11 +248,11 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
   }, [selectedDate, enqueueSave])
 
   return (
-    <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+    <div className="surface-card p-5 rounded-radius-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <Sparkles className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-radius-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Check-in Diário de Percepção (30s)</h3>
@@ -261,17 +261,17 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
         </div>
 
         {savedSuccess && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
-            <Check className="h-3 w-3" /> Salvo
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-radius-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
+            <Check className="h-3 w-3" aria-hidden="true" /> Salvo
           </span>
         )}
         {saving && !savedSuccess && !errorMsg && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-500/20">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-radius-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-500/20">
             Salvando…
           </span>
         )}
         {errorMsg && (
-          <div role="alert" className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20">
+          <div role="alert" className="inline-flex items-center gap-2 px-2.5 py-1 rounded-radius-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20">
             <span>{errorMsg}</span>
             <button
               type="button"
@@ -298,7 +298,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
                 aria-label={`Energia nível ${level}`}
                 aria-pressed={checkin.energy_score === level}
                 onClick={() => void handleScoreChange('energy_score', level)}
-                className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
+                className={`flex-1 py-1.5 rounded-radius-md text-xs font-bold border transition ${
                   checkin.energy_score === level
                     ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
                     : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-amber-500/50'
@@ -323,7 +323,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
                 aria-label={`Humor nível ${level}`}
                 aria-pressed={checkin.mood_score === level}
                 onClick={() => void handleScoreChange('mood_score', level)}
-                className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
+                className={`flex-1 py-1.5 rounded-radius-md text-xs font-bold border transition ${
                   checkin.mood_score === level
                     ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm'
                     : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-emerald-500/50'
@@ -348,7 +348,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
                 aria-label={`Estresse nível ${level}`}
                 aria-pressed={checkin.perceived_stress === level}
                 onClick={() => void handleScoreChange('perceived_stress', level)}
-                className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
+                className={`flex-1 py-1.5 rounded-radius-md text-xs font-bold border transition ${
                   checkin.perceived_stress === level
                     ? 'bg-rose-500 text-white border-rose-400 shadow-sm'
                     : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-rose-500/50'
@@ -374,7 +374,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
                 aria-label={`Tag ${tag.label}`}
                 aria-pressed={isSelected}
                 onClick={() => void handleToggleTag(tag.id)}
-                className={`px-3 py-1 rounded-xl text-xs font-medium border transition ${
+                className={`px-3 py-1 rounded-radius-md text-xs font-medium border transition ${
                   isSelected
                     ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40 font-bold'
                     : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400'

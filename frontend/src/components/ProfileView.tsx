@@ -1,58 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import {
   User,
-  Calendar,
-  Ruler,
-  Scale,
-  Target,
   ShieldCheck,
-  Edit3,
   Activity,
-  RefreshCw,
-  Dumbbell,
-  CheckCircle2,
-  AlertTriangle,
-  Database,
-  Lock,
-  ChevronRight,
-  Sparkles,
-  Settings,
 } from 'lucide-react';
-import { PipelineStatusPanel, PipelineRun } from './PipelineStatusPanel';
-import { DataQualityPanel } from './DataQualityPanel';
-import { StatusBadge, FormField, Input, Select, Button } from './ui';
+import {
+  ProfileData,
+  ProfileSubTab,
+  ProfileViewProps,
+} from './profile/ProfileTypes';
+import { ProfilePersonalSection } from './profile/ProfilePersonalSection';
+import { ProfileIntegrationsSection } from './profile/ProfileIntegrationsSection';
+import { ProfileSystemSection } from './profile/ProfileSystemSection';
 
-export type ProfileSubTab = 'profile' | 'integrations' | 'system';
+export type { ProfileData, ProfileSubTab, ProfileViewProps };
 
-interface ProfileData {
-  name: string;
-  email: string;
-  birthdate: string;
-  chronological_age: number;
-  height_cm: number;
-  current_weight_kg?: number;
-  target_weight_kg: number;
-  bmi?: number;
-  gender: string;
-  google_connected: boolean;
-  source: string;
+const PROFILE_SUBTAB_STORAGE_KEY = 'longevidade:profile_subtab:v1';
+
+function getStoredSubTab(defaultValue: ProfileSubTab): ProfileSubTab {
+  try {
+    const stored = localStorage.getItem(PROFILE_SUBTAB_STORAGE_KEY);
+    if (stored === 'profile' || stored === 'integrations' || stored === 'system') {
+      return stored;
+    }
+  } catch {
+    // Ignore storage access errors in private/sandboxed environments
+  }
+  return defaultValue;
 }
 
-interface ProfileViewProps {
-  profile: ProfileData;
-  onUpdateProfile: (updated: any) => void;
-  pipelineRuns?: PipelineRun[];
-  pipelineLoading?: boolean;
-  onRefreshPipeline?: () => void;
-  historySectionRef?: React.Ref<HTMLDivElement>;
-  onOpenGoogleHealthModal?: () => void;
-  activeSubTab?: ProfileSubTab;
-  onSelectSubTab?: (subTab: ProfileSubTab) => void;
-  onSyncZepp?: (full?: boolean) => void;
-  isSyncingZepp?: boolean;
-  onSyncGoogleHealth?: () => void;
-  isSyncingGoogle?: boolean;
-  onOpenAISettings?: () => void;
+function setStoredSubTab(tab: ProfileSubTab) {
+  try {
+    localStorage.setItem(PROFILE_SUBTAB_STORAGE_KEY, tab);
+  } catch {
+    // Ignore storage access errors
+  }
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -63,7 +45,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onRefreshPipeline = () => {},
   historySectionRef,
   onOpenGoogleHealthModal,
-  activeSubTab = 'profile',
+  activeSubTab,
   onSelectSubTab,
   onSyncZepp,
   isSyncingZepp = false,
@@ -71,110 +53,82 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   isSyncingGoogle = false,
   onOpenAISettings,
 }) => {
-  const [internalSubTab, setInternalSubTab] = useState<ProfileSubTab>(activeSubTab);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: profile.name || '',
-    birthdate: profile.birthdate || '',
-    height_cm: profile.height_cm || 0,
-    current_weight_kg:
-      profile.current_weight_kg !== undefined && profile.current_weight_kg !== null
-        ? String(profile.current_weight_kg)
-        : '',
-    target_weight_kg: profile.target_weight_kg || 0,
-    gender: profile.gender || 'Masculino',
-  });
+  const [internalSubTab, setInternalSubTab] = useState<ProfileSubTab>(() =>
+    activeSubTab || getStoredSubTab('profile')
+  );
 
   useEffect(() => {
     if (activeSubTab) {
       setInternalSubTab(activeSubTab);
+      setStoredSubTab(activeSubTab);
     }
   }, [activeSubTab]);
 
-  useEffect(() => {
-    setFormData({
-      name: profile.name || '',
-      birthdate: profile.birthdate || '',
-      height_cm: profile.height_cm || 0,
-      current_weight_kg:
-        profile.current_weight_kg !== undefined && profile.current_weight_kg !== null
-          ? String(profile.current_weight_kg)
-          : '',
-      target_weight_kg: profile.target_weight_kg || 0,
-      gender: profile.gender || 'Masculino',
-    });
-  }, [profile]);
-
   const handleSubTabChange = (tab: ProfileSubTab) => {
     setInternalSubTab(tab);
+    setStoredSubTab(tab);
     if (onSelectSubTab) {
       onSelectSubTab(tab);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload: any = { ...formData };
-    if (payload.current_weight_kg === '' || isNaN(Number(payload.current_weight_kg))) {
-      delete payload.current_weight_kg;
-    } else {
-      payload.current_weight_kg = Number(payload.current_weight_kg);
-    }
-    onUpdateProfile(payload);
-    setIsEditing(false);
-  };
-
-  const heightInMeters = formData.height_cm
-    ? (formData.height_cm / 100).toFixed(2)
-    : profile.height_cm
-    ? (profile.height_cm / 100).toFixed(2)
-    : '0.00';
-  const currentWeight = profile.current_weight_kg;
-
-  const inputClass =
-    'w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none';
-
   return (
     <div className="space-y-6">
-      {/* Seletor Segmentado de Sub-Áreas */}
-      <div className="flex items-center gap-1 sm:gap-2 p-1 bg-slate-100/90 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:w-fit overflow-x-auto no-scrollbar">
+      {/* Seletor Segmentado de Sub-Áreas com Semântica de Abas (U22-P1-67..70) */}
+      <div
+        role="tablist"
+        aria-label="Sub-navegação de Perfil e Configurações"
+        className="flex items-center gap-1 sm:gap-2 p-1 bg-slate-100/90 dark:bg-slate-900/80 rounded-radius-xl border border-slate-200 dark:border-slate-800 w-full sm:w-fit overflow-x-auto no-scrollbar"
+      >
         <button
           type="button"
+          role="tab"
+          id="tab-profile-personal"
+          aria-controls="panel-profile-personal"
+          aria-selected={internalSubTab === 'profile'}
           onClick={() => handleSubTabChange('profile')}
-          className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+          className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-radius-lg text-xs font-semibold transition shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
             internalSubTab === 'profile'
               ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <User className="h-3.5 w-3.5" />
+          <User className="h-3.5 w-3.5" aria-hidden="true" />
           <span>Meu Perfil</span>
         </button>
 
         <button
           type="button"
+          role="tab"
+          id="tab-profile-integrations"
+          aria-controls="panel-profile-integrations"
+          aria-selected={internalSubTab === 'integrations'}
           onClick={() => handleSubTabChange('integrations')}
-          className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+          className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-radius-lg text-xs font-semibold transition shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
             internalSubTab === 'integrations'
               ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <ShieldCheck className="h-3.5 w-3.5" />
+          <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
           <span>Integrações</span>
         </button>
 
         <button
           type="button"
+          role="tab"
+          id="tab-profile-system"
+          aria-controls="panel-profile-system"
+          aria-selected={internalSubTab === 'system'}
           onClick={() => handleSubTabChange('system')}
-          className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+          className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-radius-lg text-xs font-semibold transition shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
             internalSubTab === 'system'
               ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <Activity className="h-3.5 w-3.5" />
-          <span>Diagnóstico & Sistema</span>
+          <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Diagnóstico &amp; Sistema</span>
         </button>
       </div>
 
@@ -182,200 +136,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           1. SUB-ÁREA: MEU PERFIL (Dados Pessoais & Metas)
       ───────────────────────────────────────────────────────────── */}
       {internalSubTab === 'profile' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Banner Card Header */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 relative overflow-hidden shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-5">
-                {/* ds-exception: DSX-008 */}
-                <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold shadow-md">
-                  {profile.name ? profile.name[0].toUpperCase() : 'P'}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{profile.name}</h2>
-                    <StatusBadge variant="success" dot>
-                      Protocolo Ativo
-                    </StatusBadge>
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                    {profile.email} • Perfil do Longevidade Hub
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-                leftIcon={Edit3}
-              >
-                {isEditing ? 'Cancelar Edição' : 'Editar Perfil'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Main Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Idade */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Idade Cronológica
-                </span>
-                <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-                  <Calendar className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                {profile.chronological_age} <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">anos</span>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Nascimento: {profile.birthdate}</span>
-            </div>
-
-            {/* Altura */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Altura
-                </span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <Ruler className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                {profile.height_cm}{' '}
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                  cm ({heightInMeters} m)
-                </span>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Sexo: {profile.gender || 'Não informado'}</span>
-            </div>
-
-            {/* Peso Atual */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Peso Atual
-                </span>
-                <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-                  <Scale className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="text-3xl font-extrabold text-violet-700 dark:text-violet-300">
-                {currentWeight ? `${currentWeight} kg` : '(Sem dados)'}
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">
-                {profile.bmi ? `IMC: ${profile.bmi} kg/m²` : 'Sem IMC calculado'}
-              </span>
-            </div>
-
-            {/* Meta de Peso */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Meta de Peso
-                </span>
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Target className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">
-                {profile.target_weight_kg} <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">kg</span>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Meta Longevidade Protocol</span>
-            </div>
-          </div>
-
-          {/* Edit Profile Form */}
-          {isEditing && (
-            <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-dialog">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <Edit3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Editar Informações do Perfil
-              </h3>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <FormField id="profile-name" label="Nome Completo" required>
-                  <Input
-                    id="profile-name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </FormField>
-
-                <FormField id="profile-birthdate" label="Data de Nascimento">
-                  <Input
-                    id="profile-birthdate"
-                    type="date"
-                    value={formData.birthdate}
-                    onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                  />
-                </FormField>
-
-                <FormField id="profile-height" label="Altura (cm)">
-                  <Input
-                    id="profile-height"
-                    type="number"
-                    step="0.5"
-                    value={formData.height_cm}
-                    onChange={(e) => setFormData({ ...formData, height_cm: +e.target.value })}
-                  />
-                </FormField>
-
-                <FormField id="profile-current-weight" label="Peso Atual (kg)">
-                  <Input
-                    id="profile-current-weight"
-                    type="number"
-                    step="0.1"
-                    value={formData.current_weight_kg}
-                    onChange={(e) => setFormData({ ...formData, current_weight_kg: e.target.value })}
-                    placeholder="Ex: 87.0"
-                  />
-                </FormField>
-
-                <FormField id="profile-target-weight" label="Meta de Peso (kg)">
-                  <Input
-                    id="profile-target-weight"
-                    type="number"
-                    step="0.5"
-                    value={formData.target_weight_kg}
-                    onChange={(e) => setFormData({ ...formData, target_weight_kg: +e.target.value })}
-                  />
-                </FormField>
-
-                <FormField id="profile-gender" label="Sexo">
-                  <Select
-                    id="profile-gender"
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  >
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                  </Select>
-                </FormField>
-
-                <div className="md:col-span-2 flex justify-end gap-3 mt-4 border-t border-slate-200 dark:border-slate-800 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="sm"
-                  >
-                    Salvar Alterações
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )}
+        <div id="panel-profile-personal" role="tabpanel" aria-labelledby="tab-profile-personal">
+          <ProfilePersonalSection
+            profile={profile}
+            onUpdateProfile={onUpdateProfile}
+          />
         </div>
       )}
 
@@ -383,244 +148,30 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           2. SUB-ÁREA: INTEGRAÇÕES (Zepp OS, Google Health, Hevy)
       ───────────────────────────────────────────────────────────── */}
       {internalSubTab === 'integrations' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              Fontes de Dados & Wearables Conectados
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Conecte sensores e dispositivos para sincronizar métricas de frequência cardíaca, sono e recuperação.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Card Zepp OS */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                      <Activity className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Zepp OS (Amazfit)</h4>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                        ● Coleta de Sensores Ativa
-                      </span>
-                    </div>
-                  </div>
-                  <StatusBadge variant="success">Conectado</StatusBadge>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-                  Proveniência primária para Frequência Cardíaca de Repouso (RHR), Variabilidade (HRV), estágios de sono e passos.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                {onSyncZepp && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => onSyncZepp(false)}
-                    loading={isSyncingZepp}
-                    loadingText="Sincronizando..."
-                    leftIcon={RefreshCw}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
-                  >
-                    Sync Zepp
-                  </Button>
-                )}
-                {onSyncZepp && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => onSyncZepp(true)}
-                    disabled={isSyncingZepp}
-                  >
-                    Full Sync Zepp
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Card Google Health Connect */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                      <ShieldCheck className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Google Health API v4</h4>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Pixel Watch & Health Connect
-                      </span>
-                    </div>
-                  </div>
-                  {profile.google_connected ? (
-                    <StatusBadge variant="success">Conectado</StatusBadge>
-                  ) : (
-                    <StatusBadge variant="neutral">Não Conectado</StatusBadge>
-                  )}
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-                  Sincronização de biomarcadores adicionais, agregação de wearables Android e redundância de séries temporais.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                {profile.google_connected ? (
-                  <>
-                    {onSyncGoogleHealth && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={onSyncGoogleHealth}
-                        loading={isSyncingGoogle}
-                        loadingText="Sincronizando..."
-                        leftIcon={RefreshCw}
-                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
-                      >
-                        Sync Google
-                      </Button>
-                    )}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={onOpenGoogleHealthModal}
-                    >
-                      Configurações Google
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={onOpenGoogleHealthModal}
-                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
-                  >
-                    + Conectar Google Health
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Card Hevy */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between md:col-span-2">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-                      <Dumbbell className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Hevy (Treinos de Força)</h4>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Cargas, séries e volume muscular
-                      </span>
-                    </div>
-                  </div>
-                  <StatusBadge variant="info">API Ativa</StatusBadge>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-                  Importação contínua de treinos de musculação e hipertrofia para cálculo de carga crônica e manutenção da massa magra.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <span className="text-slate-500 dark:text-slate-400">Gerenciado nas Configurações Centrais</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Pronto para sincronização
-                </span>
-              </div>
-            </div>
-
-            {/* Card Inteligência Artificial & Modelos (BYOK) */}
-            <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between md:col-span-2">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                      <Sparkles className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Inteligência Artificial & Provedores LLM</h4>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        OpenAI, Anthropic, Gemini, Groq, Ollama (BYOK)
-                      </span>
-                    </div>
-                  </div>
-                  <StatusBadge variant="info">Configuração Local</StatusBadge>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-                  Gerencie chaves de API, escolha modelos locais ou de nuvem e defina o modo de privacidade estrito para análise de correlações e geração de insights clínicos.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <span className="text-slate-500 dark:text-slate-400">Chaves armazenadas localmente de forma segura</span>
-                {onOpenAISettings && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={onOpenAISettings}
-                    leftIcon={Settings}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
-                  >
-                    Configurar Provedores & Privacidade
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+        <div id="panel-profile-integrations" role="tabpanel" aria-labelledby="tab-profile-integrations">
+          <ProfileIntegrationsSection
+            profile={profile}
+            onOpenGoogleHealthModal={onOpenGoogleHealthModal}
+            onSyncZepp={onSyncZepp}
+            isSyncingZepp={isSyncingZepp}
+            onSyncGoogleHealth={onSyncGoogleHealth}
+            isSyncingGoogle={isSyncingGoogle}
+          />
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          3. SUB-ÁREA: DIAGNÓSTICO & SISTEMA (Qualidade & Pipeline)
+          3. SUB-ÁREA: DIAGNÓSTICO & SISTEMA (Qualidade, Pipeline, IA)
       ───────────────────────────────────────────────────────────── */}
       {internalSubTab === 'system' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Card de Infraestrutura Local-First */}
-          <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <Database className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Base de Dados SQLite Local</h4>
-                    <StatusBadge variant="success">Local-First OK</StatusBadge>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Banco de dados residente em <code>longevidade.db</code> com criptografia e isolamento local.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
-                <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Privacidade Soberana: Zero Telemetria Externa</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Auditoria de Qualidade e Cobertura dos Dados */}
-          <div>
-            <DataQualityPanel />
-          </div>
-
-          {/* Histórico de Sincronizações na parte de baixo do perfil */}
-          <div ref={historySectionRef}>
-            <PipelineStatusPanel
-              runs={pipelineRuns}
-              loading={pipelineLoading}
-              onRefresh={onRefreshPipeline}
-            />
-          </div>
+        <div id="panel-profile-system" role="tabpanel" aria-labelledby="tab-profile-system">
+          <ProfileSystemSection
+            pipelineRuns={pipelineRuns}
+            pipelineLoading={pipelineLoading}
+            onRefreshPipeline={onRefreshPipeline}
+            historySectionRef={historySectionRef}
+            onOpenAISettings={onOpenAISettings}
+          />
         </div>
       )}
     </div>

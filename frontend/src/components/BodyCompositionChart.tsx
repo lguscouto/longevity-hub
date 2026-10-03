@@ -229,18 +229,18 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
     const pt: TimelinePoint = payload[0].payload;
 
     return (
-      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 shadow-dialog text-xs space-y-2 max-w-xs z-50">
+      <div className="bg-slate-900 p-4 rounded-radius-lg border border-slate-700 shadow-dialog text-xs space-y-2 max-w-xs z-50">
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
           <div className="flex items-center gap-1.5 font-bold text-slate-200">
-            <Calendar className="h-3.5 w-3.5 text-cyan-400" />
+            <Calendar className="h-3.5 w-3.5 text-cyan-400" aria-hidden="true" />
             <span>{formatDateFull(pt.date)}</span>
           </div>
           {pt.is_physical_assessment ? (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30 text-xs">
-              <Camera className="h-3 w-3" /> Avaliação Oficial
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-radius-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30 text-xs">
+              <Camera className="h-3 w-3" aria-hidden="true" /> Avaliação Oficial
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium text-xs">
+            <span className="px-2 py-0.5 rounded-radius-full bg-slate-800 text-slate-400 font-medium text-xs">
               {pt.source || 'Wearable'}
             </span>
           )}
@@ -250,7 +250,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           {pt.weight_kg !== null && (
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" /> Peso:
+                <span className="h-2 w-2 rounded-radius-full bg-emerald-400" /> Peso:
               </span>
               <strong className="text-emerald-400 font-bold">{pt.weight_kg} kg</strong>
             </div>
@@ -259,7 +259,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           {pt.body_fat_pct !== null && (
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="h-2 w-2 rounded-full bg-amber-400" /> Gordura Corporal:
+                <span className="h-2 w-2 rounded-radius-full bg-amber-400" /> Gordura Corporal:
               </span>
               <strong className="text-amber-400 font-bold">{pt.body_fat_pct}%</strong>
             </div>
@@ -268,7 +268,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           {pt.lean_mass_kg !== null && (
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="h-2 w-2 rounded-full bg-cyan-400" /> Massa Magra:
+                <span className="h-2 w-2 rounded-radius-full bg-cyan-400" /> Massa Magra:
               </span>
               <strong className="text-cyan-400 font-bold">{pt.lean_mass_kg} kg</strong>
             </div>
@@ -277,7 +277,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           {pt.fat_mass_kg !== null && (
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="h-2 w-2 rounded-full bg-orange-400" /> Massa Gorda:
+                <span className="h-2 w-2 rounded-radius-full bg-orange-400" /> Massa Gorda:
               </span>
               <strong className="text-orange-400 font-bold">{pt.fat_mass_kg} kg</strong>
             </div>
@@ -314,7 +314,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
 
   if (loading && !data) {
     return (
-      <div className="glass-panel p-8 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+      <div className="surface-panel p-8 rounded-radius-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center">
         <LoadingIndicator label="Carregando evolução da composição corporal..." />
       </div>
     );
@@ -337,13 +337,13 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
   }
 
   return (
-    <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+    <div className="surface-panel p-5 sm:p-6 rounded-radius-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
       {/* Top Bar: Title & KPI Badges */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <Activity className="h-5 w-5" />
+            <div className="p-2 rounded-radius-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Activity className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
@@ -359,23 +359,23 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
         {/* KPI Chips */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {/* Peso Atual */}
-          <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-radius-md bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
             <span className="text-xs text-emerald-600 dark:text-emerald-400/90 font-medium">Peso:</span>
             <strong className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
               {formatMetricValueString(activeSummary?.latest_weight_kg, 'kg')}
             </strong>
             {activeSummary?.weight_delta !== null && activeSummary?.weight_delta !== undefined && (
               <span
-                className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded-radius-sm flex items-center gap-0.5 ${
                   activeSummary.weight_delta <= 0
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
                 }`}
               >
                 {activeSummary.weight_delta <= 0 ? (
-                  <TrendingDown className="h-3 w-3" />
+                  <TrendingDown className="h-3 w-3" aria-hidden="true" />
                 ) : (
-                  <TrendingUp className="h-3 w-3" />
+                  <TrendingUp className="h-3 w-3" aria-hidden="true" />
                 )}
                 {activeSummary.weight_delta > 0 ? `+${activeSummary.weight_delta}` : activeSummary.weight_delta} kg
               </span>
@@ -383,23 +383,23 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           </div>
 
           {/* Gordura Corporal */}
-          <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-radius-md bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
             <span className="text-xs text-amber-600 dark:text-amber-400/90 font-medium">Gordura:</span>
             <strong className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">
               {formatMetricValueString(activeSummary?.latest_body_fat_pct, '%')}
             </strong>
             {activeSummary?.body_fat_delta !== null && activeSummary?.body_fat_delta !== undefined && (
               <span
-                className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded-radius-sm flex items-center gap-0.5 ${
                   activeSummary.body_fat_delta <= 0
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
                 }`}
               >
                 {activeSummary.body_fat_delta <= 0 ? (
-                  <TrendingDown className="h-3 w-3" />
+                  <TrendingDown className="h-3 w-3" aria-hidden="true" />
                 ) : (
-                  <TrendingUp className="h-3 w-3" />
+                  <TrendingUp className="h-3 w-3" aria-hidden="true" />
                 )}
                 {activeSummary.body_fat_delta > 0 ? `+${activeSummary.body_fat_delta}` : activeSummary.body_fat_delta}%
               </span>
@@ -407,23 +407,23 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           </div>
 
           {/* Massa Magra */}
-          <div className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-radius-md bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2">
             <span className="text-xs text-cyan-600 dark:text-cyan-400/90 font-medium">Massa Magra:</span>
             <strong className="text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400">
               {formatMetricValueString(activeSummary?.latest_lean_mass_kg, 'kg')}
             </strong>
             {activeSummary?.lean_mass_delta !== null && activeSummary?.lean_mass_delta !== undefined && (
               <span
-                className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded-radius-sm flex items-center gap-0.5 ${
                   activeSummary.lean_mass_delta >= 0
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
                 }`}
               >
                 {activeSummary.lean_mass_delta >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
+                  <TrendingUp className="h-3 w-3" aria-hidden="true" />
                 ) : (
-                  <TrendingDown className="h-3 w-3" />
+                  <TrendingDown className="h-3 w-3" aria-hidden="true" />
                 )}
                 {activeSummary.lean_mass_delta > 0
                   ? `+${activeSummary.lean_mass_delta}`
@@ -435,8 +435,8 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
 
           {/* Meta de Peso (se configurada) */}
           {data?.target_weight_kg && (
-            <div className="px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center gap-1.5 text-violet-600 dark:text-violet-300">
-              <Target className="h-3.5 w-3.5 text-violet-400" />
+            <div className="px-3 py-1.5 rounded-radius-md bg-violet-500/10 border border-violet-500/20 flex items-center gap-1.5 text-violet-600 dark:text-violet-300">
+              <Target className="h-3.5 w-3.5 text-violet-400" aria-hidden="true" />
               <span className="text-xs font-medium">Meta:</span>
               <strong className="text-xs sm:text-sm font-bold">{data.target_weight_kg} kg</strong>
             </div>
@@ -447,36 +447,36 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
       {/* Controls Bar: View Mode Tabs + Time Range Pills */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-200/70 dark:border-slate-800/70">
         {/* View Mode Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-radius-lg border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setViewMode('weight_fat')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-radius-md text-xs font-semibold transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
               viewMode === 'weight_fat'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Scale className="h-3.5 w-3.5" /> Peso & % Gordura
+            <Scale className="h-3.5 w-3.5" aria-hidden="true" /> Peso & % Gordura
           </button>
           <button
             onClick={() => setViewMode('body_comp')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-radius-md text-xs font-semibold transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
               viewMode === 'body_comp'
                 ? 'bg-cyan-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Layers className="h-3.5 w-3.5" /> Massa Magra vs. Gorda
+            <Layers className="h-3.5 w-3.5" aria-hidden="true" /> Massa Magra vs. Gorda
           </button>
           <button
             onClick={() => setViewMode('measurements')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-radius-md text-xs font-semibold transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
               viewMode === 'measurements'
                 ? 'bg-purple-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Ruler className="h-3.5 w-3.5" /> Medidas (cm)
+            <Ruler className="h-3.5 w-3.5" aria-hidden="true" /> Medidas (cm)
           </button>
         </div>
 
@@ -680,11 +680,11 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
       <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 gap-2">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full border-2 border-cyan-400 bg-emerald-500" />
+            <span className="inline-block h-3 w-3 rounded-radius-full border-2 border-cyan-400 bg-emerald-500" aria-hidden="true" />
             Marcador com anel = Avaliação Física com fotos (clicável)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="inline-block h-2 w-2 rounded-radius-full bg-emerald-500" aria-hidden="true" />
             Ponto simples = Medição Wearable / Balança
           </span>
         </div>

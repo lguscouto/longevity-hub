@@ -36,7 +36,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
 
   if (!hasData) {
     return (
-      <div className="glass-card p-6 rounded-radius-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs flex flex-col justify-between">
+      <div className="surface-card p-6 rounded-radius-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs flex flex-col justify-between">
         <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div className="p-2 rounded-radius-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
             <Dumbbell className="h-5 w-5" aria-hidden="true" />
@@ -106,7 +106,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
   }
 
   return (
-    <div className="glass-card p-6 rounded-radius-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs">
+    <div className="surface-card p-6 rounded-radius-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-radius-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">

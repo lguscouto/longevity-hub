@@ -40,12 +40,15 @@ describe('Design Tokens & Reduced Motion Verification (UX-P2-02, UX-P2-03, UX-P2
     expect(colors?.data?.model).toBe('var(--data-model)');
   });
 
-  it('defines semantic CSS variables in index.css (UX_UI_48)', () => {
+  it('defines semantic CSS variables and utility classes in index.css (UX_UI_48, UX_UI_60)', () => {
     expect(cssContent).toContain('--surface-canvas:');
     expect(cssContent).toContain('--surface-card:');
     expect(cssContent).toContain('--border-subtle:');
     expect(cssContent).toContain('--text-primary:');
     expect(cssContent).toContain('--data-derived:');
+    expect(cssContent).toContain('.surface-panel');
+    expect(cssContent).toContain('.surface-card');
+    expect(cssContent).toContain('.surface-elevated');
   });
 
   it('defines canonical boxShadow elevation tokens in tailwind.config.js', () => {

@@ -47,14 +47,14 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
     setShowModal(false);
   };
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-radius-md p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none";
 
   return (
-    <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+    <div className="surface-panel rounded-radius-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" /> Experimentos N-of-1 (A/B Testing Pessoal)
+            <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true" /> Experimentos N-of-1 (A/B Testing Pessoal)
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400">Validação estatística rigorosa (14d Controle vs 14d Intervenção) com d de Cohen e p-value</p>
         </div>
@@ -88,24 +88,24 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           experiments.map((exp, idx) => {
             const isSig = Boolean(exp.statistically_significant);
             return (
-              <div key={idx} className="glass-card rounded-2xl p-5 border border-violet-500/20 bg-white dark:bg-slate-900 shadow-sm">
+              <div key={idx} className="surface-card rounded-radius-lg p-5 border border-violet-500/20 bg-white dark:bg-slate-900 shadow-sm">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <span className="text-xs uppercase font-bold text-violet-600 dark:text-violet-400 tracking-wider">Métrica: {exp.metric_key}</span>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{exp.title}</h4>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${isSig ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
+                  <span className={`px-2 py-0.5 rounded-radius-sm text-xs font-bold ${isSig ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
                     {isSig ? 'Significativo (p < 0.05)' : 'Em andamento'}
                   </span>
                 </div>
 
                 {exp.hypothesis && (
-                  <p className="text-xs text-slate-700 dark:text-slate-300 mb-4 bg-slate-100/90 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <p className="text-xs text-slate-700 dark:text-slate-300 mb-4 bg-slate-100/90 dark:bg-slate-950/60 p-2.5 rounded-radius-md border border-slate-200 dark:border-slate-800">
                     💡 <strong className="text-slate-900 dark:text-slate-200">Hipótese:</strong> {exp.hypothesis}
                   </p>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 text-center text-xs bg-slate-50 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="grid grid-cols-2 gap-2 text-center text-xs bg-slate-50 dark:bg-slate-900/80 p-3 rounded-radius-md border border-slate-200 dark:border-slate-800">
                   <div>
                     <span className="text-xs text-slate-500 dark:text-slate-400 block">Média Controle</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{exp.control_mean ?? '--'}</span>
@@ -153,8 +153,8 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
         title="Criar Experimento N-of-1"
         size="lg"
         icon={
-          <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
-            <FlaskConical className="h-5 w-5" />
+          <div className="p-2 rounded-radius-md bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
+            <FlaskConical className="h-5 w-5" aria-hidden="true" />
           </div>
         }
       >

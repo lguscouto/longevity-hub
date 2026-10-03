@@ -42,7 +42,7 @@ const FormattedAnalysis: React.FC<{ text: string }> = ({ text }) => {
   const flushTable = () => {
     if (tableRows.length > 0 || tableHeader.length > 0) {
       elements.push(
-        <div key={`table-${currentKey++}`} className="my-2.5 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/90">
+        <div key={`table-${currentKey++}`} className="my-2.5 overflow-x-auto rounded-radius-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/90">
           <table className="w-full text-xs border-collapse">
             <caption className="sr-only">Tabela do parecer estruturado da inteligência artificial</caption>
             {tableHeader.length > 0 && (
@@ -244,20 +244,20 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
     ? Math.round((takenIds.length / supplements.length) * 100)
     : 0;
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-radius-md p-2.5 text-slate-900 dark:text-white font-medium focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none";
 
   return (
-    <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+    <div className="surface-card p-6 rounded-radius-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-            <Pill className="h-5 w-5" />
+          <div className="h-10 w-10 rounded-radius-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+            <Pill className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">Pilha de Suplementos (Longevity Stack)</h3>
-              <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
+              <span className="px-2 py-0.5 rounded-radius-full text-xs font-extrabold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
                 {completionPct}% Cumprido
               </span>
             </div>
@@ -288,14 +288,14 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       </div>
 
       {loadError && (
-        <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-800 dark:text-rose-300">
+        <div role="alert" className="rounded-radius-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-800 dark:text-rose-300">
           {loadError}
         </div>
       )}
 
       {/* Análise de IA Formatada em Destaque */}
       {aiAnalysis && (
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-cyan-500/40 text-xs text-slate-800 dark:text-slate-200 space-y-3 relative shadow-dialog">
+        <div className="p-5 rounded-radius-lg bg-white dark:bg-slate-950 border border-cyan-500/40 text-xs text-slate-800 dark:text-slate-200 space-y-3 relative shadow-dialog">
           <IconButton
             variant="ghost"
             size="sm"
@@ -305,7 +305,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             className="absolute top-3 right-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           />
           <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300 font-extrabold text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
-            <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Parecer Estruturado da Inteligência Artificial
+            <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" aria-hidden="true" /> Parecer Estruturado da Inteligência Artificial
           </div>
           <div className="max-h-96 overflow-y-auto pr-2 space-y-1">
             <FormattedAnalysis text={aiAnalysis} />
@@ -320,7 +320,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
           return (
             <div
               key={supp.id}
-              className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-2 group ${
+              className={`p-3.5 rounded-radius-lg border transition flex items-center justify-between gap-2 group ${
                 isTaken
                   ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30 dark:border-emerald-500/40 text-slate-900 dark:text-white'
                   : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
