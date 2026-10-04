@@ -918,9 +918,9 @@ export default function App() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Longevidade Hub</span>
-                <span>v2.3.0</span>
+                <span>v2.4.0</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
-                <span>Local-first &amp; Soberania de Dados</span>
+                <span>Armazenamento local e privacidade de dados</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center sm:text-right">
                 Aviso Clínico: Este aplicativo organiza e analisa dados de saúde coletados pelo próprio usuário. Não substitui o diagnóstico, acompanhamento ou prescrição médica.
