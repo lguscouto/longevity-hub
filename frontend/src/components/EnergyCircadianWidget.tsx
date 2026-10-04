@@ -54,8 +54,8 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
             <BatteryCharging className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bateria Corporal & Ritmo Circadiano</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Recarga do sono, consumo e janelas de luz/cafeína</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Energia e ritmo circadiano</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Como seu sono, luz e cafeína influenciam sua energia ao longo do dia</p>
           </div>
         </div>
       </div>
@@ -64,7 +64,7 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
         {/* Nível da Bateria Corporal */}
         <div className="space-y-3 p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Energy Bank (Bateria Corporal)</span>
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Bateria Corporal</span>
             <span className="text-lg font-black text-slate-900 dark:text-white">
               {energy_bank?.current_level != null ? `${energy_bank.current_level}%` : 'Indisponível'}
             </span>
@@ -99,7 +99,7 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
 
         {/* Timeline Circadiana & Cafeína */}
         <div className="space-y-2.5 p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">Linha do Tempo Circadiana</span>
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">Ritmo do dia</span>
 
           <div className="flex items-center gap-2 text-xs">
             <Sun className="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" />
@@ -109,13 +109,13 @@ export const EnergyCircadianWidget: React.FC<EnergyCircadianWidgetProps> = ({ se
 
           <div className="flex items-center gap-2 text-xs">
             <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-            <span className="text-slate-500 dark:text-slate-400">Limite de Cafeína (Cutoff):</span>
+            <span className="text-slate-500 dark:text-slate-400">Horário limite para cafeína:</span>
             <span className="font-bold text-rose-600 dark:text-rose-400">{circadian?.caffeine_cutoff_time || '—'}</span>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
             <Moon className="h-4 w-4 text-indigo-500 shrink-0" aria-hidden="true" />
-            <span className="text-slate-500 dark:text-slate-400">Desaceleramento Noturno:</span>
+            <span className="text-slate-500 dark:text-slate-400">Hora de desacelerar:</span>
             <span className="font-bold text-slate-900 dark:text-white">{circadian?.wind_down_start_time || '—'}</span>
           </div>
 

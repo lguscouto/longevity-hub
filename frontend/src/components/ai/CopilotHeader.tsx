@@ -36,7 +36,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-radius-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
-              <Sparkles className="h-3 w-3" aria-hidden="true" /> Copiloto Longevidade AI
+              <Sparkles className="h-3 w-3" aria-hidden="true" /> Copiloto de IA
             </span>
             {/* Peso visual contido para o modelo (U22-P1-46) */}
             <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -48,8 +48,8 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
             Copiloto de Longevidade
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-            Análise integrativa de biomarcadores de sangue, idade biológica PhenoAge, HRV autonômica,
-            curva glicêmica, Linha do Tempo de Saúde e padrões fisiológicos aprendidos.
+            Visão integrada dos seus exames de sangue, estimativas de idade biológica, sono,
+            recuperação, glicemia e rotina diária.
           </p>
           <div
             role="status"
@@ -75,8 +75,8 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
           <IconButton
             icon={Settings}
             onClick={onOpenSettings}
-            aria-label="Configurar Chaves de API e Provedor"
-            title="Configurar Chaves de API e Provedor"
+            aria-label="Configurar chaves de API e provedores"
+            title="Configurar chaves de API e provedores"
             variant="secondary"
             size="md"
           />
@@ -92,7 +92,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
               loading={generatingWindow === 'today'}
               loadingText="Analisando..."
               leftIcon={generatingWindow !== 'today' ? RefreshCw : undefined}
-              title="Prontidão diária, recuperação do sono da última noite e treino de hoje"
+              title="Recuperação, sono da última noite e medições de hoje"
               className="text-xs font-bold min-h-0 h-auto py-1.5 px-3"
             >
               Hoje (24h)
@@ -107,7 +107,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
               loading={generatingWindow === '7d'}
               loadingText="Analisando..."
               leftIcon={generatingWindow !== '7d' ? RefreshCw : undefined}
-              title="Médias dos últimos 7 dias, microciclo, balanço de fadiga e carga aguda de treinos"
+              title="Médias dos últimos 7 dias, recuperação semanal e carga de treinos"
               className="text-xs font-bold min-h-0 h-auto py-1.5 px-3"
             >
               Semana (7d)
@@ -122,7 +122,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
               loading={generatingWindow === '30d'}
               loadingText="Analisando..."
               leftIcon={generatingWindow !== '30d' ? RefreshCw : undefined}
-              title="Visão geral de 30 dias com exames de sangue, idade biológica PhenoAge/KDM e hábitos"
+              title="Visão geral dos últimos 30 dias com exames de sangue, estimativas de idade biológica e rotina"
               className="text-xs font-bold min-h-0 h-auto py-1.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black shadow-xs"
             >
               Mês (30d)
@@ -136,8 +136,8 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
-              Nenhuma chave de API ativada para o provedor selecionado. Configure sua API Key para
-              desbloquear as análises da IA.
+              Nenhuma chave de API configurada para o provedor selecionado. Adicione sua chave para
+              habilitar as análises com IA.
             </span>
           </div>
           <Button
@@ -146,7 +146,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
             onClick={onOpenSettings}
             className="font-bold underline hover:text-slate-900 dark:hover:text-white p-0 min-h-0 h-auto"
           >
-            Configurar Agora
+            Configurar agora
           </Button>
         </div>
       )}

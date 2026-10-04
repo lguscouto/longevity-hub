@@ -194,7 +194,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     })
   })
 
-  it('renders Full Sync Zepp button in integrations tab and triggers onSyncZeppFull', async () => {
+  it('renders Sincronizar tudo button in integrations tab and triggers onSyncZeppFull', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     const onSyncZeppFull = vi.fn()
@@ -229,14 +229,14 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     expect(screen.getByText('Zepp / Amazfit')).toBeInTheDocument()
     expect(screen.getByText(/Reimportação Histórica Total/i)).toBeInTheDocument()
 
-    const fullSyncBtn = screen.getByRole('button', { name: /full sync zepp/i })
+    const fullSyncBtn = screen.getByRole('button', { name: /sincronizar tudo/i })
     expect(fullSyncBtn).toBeEnabled()
 
     await user.click(fullSyncBtn)
     expect(onSyncZeppFull).toHaveBeenCalledTimes(1)
   })
 
-  it('disables Full Sync Zepp button when isSyncingZepp is true', async () => {
+  it('disables Sincronizar tudo button when isSyncingZepp is true', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     const onSyncZeppFull = vi.fn()

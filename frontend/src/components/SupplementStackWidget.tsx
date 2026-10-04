@@ -44,7 +44,7 @@ const FormattedAnalysis: React.FC<{ text: string }> = ({ text }) => {
       elements.push(
         <div key={`table-${currentKey++}`} className="my-2.5 overflow-x-auto rounded-radius-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/90">
           <table className="w-full text-xs border-collapse">
-            <caption className="sr-only">Tabela do parecer estruturado da inteligência artificial</caption>
+            <caption className="sr-only">Tabela da análise por inteligência artificial</caption>
             {tableHeader.length > 0 && (
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold text-left">
@@ -163,7 +163,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       setTakenIds(resLogs || []);
       setLoadError(null);
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao carregar suplementos.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar os dados de suplementos.');
     }
   };
 
@@ -183,7 +183,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
         body: JSON.stringify({ supplement_id: id, date_ref: selectedDate })
       });
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao alternar suplemento.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível registrar a tomada do suplemento.');
       await loadData();
     }
   };
@@ -202,7 +202,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       setFormData({ name: '', dosage: '', frequency: 'Diário', timing: 'Manhã', notes: '' });
       await loadData();
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao cadastrar suplemento.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível adicionar o suplemento.');
     }
   };
 
@@ -217,7 +217,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       setDeleteConfirmSupp(null);
       await loadData();
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao remover suplemento.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível remover o suplemento.');
     }
   };
 
@@ -234,7 +234,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
         setAiAnalysis(res.analysis);
       }
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao analisar pilha com IA.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível analisar os suplementos com IA.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -256,12 +256,12 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Pilha de Suplementos (Longevity Stack)</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Suplementos e rotina</h3>
               <span className="px-2 py-0.5 rounded-radius-full text-xs font-extrabold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
-                {completionPct}% Cumprido
+                {completionPct}% concluído
               </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Rastreamento diário e horários de tomada</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Acompanhe seus horários e marque o que já tomou</p>
           </div>
         </div>
 
@@ -274,7 +274,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             loading={isAnalyzing}
             leftIcon={Sparkles}
           >
-            {isAnalyzing ? 'Analisando...' : '⚡ Otimizar Pilha com IA'}
+            {isAnalyzing ? 'Analisando...' : 'Analisar rotina com IA'}
           </Button>
 
           <IconButton
@@ -301,11 +301,11 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             size="sm"
             onClick={() => setAiAnalysis(null)}
             icon={X}
-            aria-label="Fechar Parecer"
+            aria-label="Fechar análise"
             className="absolute top-3 right-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           />
           <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300 font-extrabold text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
-            <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" aria-hidden="true" /> Parecer Estruturado da Inteligência Artificial
+            <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" aria-hidden="true" /> Análise com Inteligência Artificial
           </div>
           <div className="max-h-96 overflow-y-auto pr-2 space-y-1">
             <FormattedAnalysis text={aiAnalysis} />
@@ -384,11 +384,11 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
         size="md"
       >
         <form onSubmit={handleAddSupplement} className="space-y-4 text-xs">
-          <FormField id="stack-supp-name" label="Nome do Composto" required>
+          <FormField id="stack-supp-name" label="Nome" required>
             <Input
               id="stack-supp-name"
               type="text"
-              placeholder="Ex: NMN, Creatina, Ômega-3"
+              placeholder="Ex.: Creatina, CoQ10, Ômega-3"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
               required
@@ -420,7 +420,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             </FormField>
           </div>
 
-          <FormField id="stack-supp-timing" label="Horário / Cronobiologia">
+          <FormField id="stack-supp-timing" label="Horário do dia">
             <Select
               id="stack-supp-timing"
               value={formData.timing}
@@ -434,11 +434,11 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             </Select>
           </FormField>
 
-          <FormField id="stack-supp-notes" label="Notas / Objetivo (Opcional)">
+          <FormField id="stack-supp-notes" label="Observações (opcional)">
             <Input
               id="stack-supp-notes"
               type="text"
-              placeholder="Ex: Para otimização de NAD+"
+              placeholder="Ex.: Tomar com água"
               value={formData.notes}
               onChange={e => setFormData({ ...formData, notes: e.target.value })}
             />
@@ -467,15 +467,15 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       {/* Modal Confirmar Exclusão */}
       <ConfirmDialog
         isOpen={Boolean(deleteConfirmSupp)}
-        title="Excluir Suplemento da Pilha"
+        title="Excluir suplemento"
         description={
           deleteConfirmSupp ? (
             <span>
-              Tem certeza que deseja remover <strong className="text-slate-900 dark:text-white">{deleteConfirmSupp.name}</strong> da sua pilha ativa? Esta ação não pode ser desfeita.
+              Deseja remover <strong className="text-slate-900 dark:text-white">{deleteConfirmSupp.name}</strong> da sua rotina? Esta ação não pode ser desfeita.
             </span>
           ) : null
         }
-        confirmLabel="Excluir Suplemento"
+        confirmLabel="Excluir"
         cancelLabel="Cancelar"
         isDestructive
         onConfirm={handleDeleteSupplement}

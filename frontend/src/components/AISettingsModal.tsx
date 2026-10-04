@@ -284,8 +284,8 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Configurações & Chaves"
-      description="Gerenciador de Inteligência Artificial, Hevy e Wearables"
+      title="Configurações de IA"
+      description="Configurações de IA e integrações"
       icon={
         <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
           <Bot className="h-6 w-6" />
@@ -318,7 +318,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Dumbbell className="h-3.5 w-3.5 text-purple-500" /> Integrações & Hevy
+            <Dumbbell className="h-3.5 w-3.5 text-purple-500" /> Integrações e Hevy
           </button>
         </div>
 
@@ -365,7 +365,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
             {/* Provedor de IA */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-slate-800 dark:text-slate-300 font-bold">Provedor de LLM</label>
+                <label className="block text-slate-800 dark:text-slate-300 font-bold">Provedor de IA</label>
                 <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
                   Ativo: {activeMeta.label}
                 </span>
@@ -714,7 +714,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                   leftIcon={RefreshCw}
                   className="bg-purple-600 hover:bg-purple-500 text-white"
                 >
-                  {isSavingHevy ? 'Testando & Salvando...' : 'Testar & Salvar Hevy'}
+                  {isSavingHevy ? 'Testando e salvando...' : 'Testar e salvar Hevy'}
                 </Button>
               </div>
             </div>
@@ -754,7 +754,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                     leftIcon={RefreshCw}
                     className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs shrink-0"
                   >
-                    {isSyncingZepp ? 'Sincronizando...' : 'Full Sync Zepp'}
+                    {isSyncingZepp ? 'Sincronizando...' : 'Sincronizar tudo'}
                   </Button>
                 </div>
               )}

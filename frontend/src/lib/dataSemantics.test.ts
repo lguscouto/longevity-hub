@@ -64,11 +64,11 @@ describe('dataSemantics (UX_UI_43)', () => {
     });
 
     it('maps correctly to observed vs model vs inference', () => {
-      expect(getSourceConfig('observed').label).toBe('Dado Observado');
+      expect(getSourceConfig('observed').label).toBe('Dado medido');
       expect(getSourceConfig('model').label).toBe('Modelo Matemático');
-      expect(getSourceConfig('inference').label).toBe('Inferência de IA');
-      expect(getSourceConfig('clinical').label).toBe('Referência Clínica');
-      expect(getSourceConfig('warning').label).toBe('Atenção Clínica');
+      expect(getSourceConfig('inference').label).toBe('Interpretação por IA');
+      expect(getSourceConfig('clinical').label).toBe('Faixa de referência');
+      expect(getSourceConfig('warning').label).toBe('Atenção');
       expect(getSourceConfig('action').label).toBe('Ação Recomendada');
     });
   });
@@ -81,7 +81,7 @@ describe('dataSemantics (UX_UI_43)', () => {
     });
 
     it('returns "Atualizado hoje" for current date', () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = formatLocalDateKey(new Date());
       const freshness = formatDataFreshness(today);
       expect(freshness.text).toBe('Atualizado hoje');
       expect(freshness.isStale).toBe(false);
@@ -89,7 +89,9 @@ describe('dataSemantics (UX_UI_43)', () => {
     });
 
     it('returns "Atualizado ontem" for 1 day ago', () => {
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterday = formatLocalDateKey(yesterdayDate);
       const freshness = formatDataFreshness(yesterday);
       expect(freshness.text).toBe('Atualizado ontem');
       expect(freshness.isStale).toBe(false);
@@ -97,7 +99,9 @@ describe('dataSemantics (UX_UI_43)', () => {
     });
 
     it('returns "Atualizado há X dias" for 2 to 6 days ago', () => {
-      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const threeDaysAgoDate = new Date();
+      threeDaysAgoDate.setDate(threeDaysAgoDate.getDate() - 3);
+      const threeDaysAgo = formatLocalDateKey(threeDaysAgoDate);
       const freshness = formatDataFreshness(threeDaysAgo);
       expect(freshness.text).toBe('Atualizado há 3 dias');
       expect(freshness.isStale).toBe(false);
@@ -105,7 +109,9 @@ describe('dataSemantics (UX_UI_43)', () => {
     });
 
     it('identifies stale data (>= 7 days) correctly', () => {
-      const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const tenDaysAgoDate = new Date();
+      tenDaysAgoDate.setDate(tenDaysAgoDate.getDate() - 10);
+      const tenDaysAgo = formatLocalDateKey(tenDaysAgoDate);
       const freshness = formatDataFreshness(tenDaysAgo);
       expect(freshness.text).toBe('Dados desatualizados (há 10 dias)');
       expect(freshness.isStale).toBe(true);

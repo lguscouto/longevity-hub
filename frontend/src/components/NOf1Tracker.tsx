@@ -54,9 +54,9 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true" /> Experimentos N-of-1 (A/B Testing Pessoal)
+            <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true" /> Experimentos pessoais
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Validação estatística rigorosa (14d Controle vs 14d Intervenção) com d de Cohen e p-value</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Compare períodos diferentes para entender como uma mudança pode afetar seus indicadores.</p>
         </div>
 
         <Button
@@ -75,8 +75,8 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           <div className="col-span-2">
             <EmptyState
               icon={FlaskConical}
-              title="Nenhum experimento N-of-1 ativo"
-              description="Teste causalmente o efeito de um novo suplemento, treino ou rotina de sono sobre seus biomarcadores usando rigor estatístico N-of-1."
+              title="Nenhum experimento pessoal ativo"
+              description="Compare períodos com e sem uma mudança para identificar padrões nos seus dados."
               action={{
                 label: 'Criar Experimento',
                 onClick: () => setShowModal(true),
@@ -137,7 +137,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
                       leftIcon={Scale}
                       className="text-violet-700 dark:text-violet-300 text-xs py-1"
                     >
-                      Balanço de Confundidores
+                      Fatores de influência
                     </Button>
                   )}
                 </div>
@@ -150,7 +150,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title="Criar Experimento N-of-1"
+        title="Criar experimento pessoal"
         size="lg"
         icon={
           <div className="p-2 rounded-radius-md bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
@@ -245,7 +245,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
               size="sm"
               className="bg-violet-600 hover:bg-violet-500"
             >
-              Criar &amp; Analisar
+              Criar e analisar
             </Button>
           </div>
         </form>

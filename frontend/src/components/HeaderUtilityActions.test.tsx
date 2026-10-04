@@ -32,15 +32,15 @@ describe('HeaderUtilityActions Component', () => {
     const onOpenDoctorBriefing = vi.fn();
     renderActions({ onOpenManualEntry, onOpenDoctorBriefing });
 
-    const clinicalGroup = screen.getByRole('group', { name: 'Ações clínicas do dia' });
+    const clinicalGroup = screen.getByRole('group', { name: 'Ações do dia' });
     expect(clinicalGroup).toBeInTheDocument();
 
-    const manualBtn = screen.getByRole('button', { name: 'Registrar Métrica Manual' });
+    const manualBtn = screen.getByRole('button', { name: 'Registrar medição manual' });
     expect(manualBtn).toBeInTheDocument();
     fireEvent.click(manualBtn);
     expect(onOpenManualEntry).toHaveBeenCalledTimes(1);
 
-    const briefingBtn = screen.getByRole('button', { name: 'Doctor Briefing' });
+    const briefingBtn = screen.getByRole('button', { name: 'Resumo para consulta' });
     expect(briefingBtn).toBeInTheDocument();
     fireEvent.click(briefingBtn);
     expect(onOpenDoctorBriefing).toHaveBeenCalledTimes(1);
@@ -54,13 +54,13 @@ describe('HeaderUtilityActions Component', () => {
     const infraGroup = screen.getByRole('group', { name: 'Controle de sincronização e configurações' });
     expect(infraGroup).toBeInTheDocument();
 
-    const zeppBtn = screen.getByRole('button', { name: 'Sync Zepp' });
+    const zeppBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
     expect(zeppBtn).toBeInTheDocument();
     expect(screen.getByText('Sincronizado 08:45')).toBeInTheDocument();
     fireEvent.click(zeppBtn);
     expect(onSyncZepp).toHaveBeenCalledTimes(1);
 
-    const googleBtn = screen.getByRole('button', { name: 'Sync Google' });
+    const googleBtn = screen.getByRole('button', { name: 'Sincronizar Google Health' });
     expect(googleBtn).toBeInTheDocument();
     fireEvent.click(googleBtn);
     expect(onSyncGoogleHealth).toHaveBeenCalledTimes(1);
@@ -84,7 +84,7 @@ describe('HeaderUtilityActions Component', () => {
   it('disables sync buttons while syncing is active', () => {
     renderActions({ isSyncing: true, isSyncingGoogle: false });
 
-    const zeppBtn = screen.getByRole('button', { name: 'Sync Zepp' });
+    const zeppBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
     expect(zeppBtn).toBeDisabled();
     expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });

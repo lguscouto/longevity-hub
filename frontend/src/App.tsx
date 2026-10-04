@@ -214,7 +214,7 @@ export default function App() {
   const [aiChatMessages, setAiChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
     {
       sender: 'ai',
-      text: 'Olá! Sou o seu Copiloto de Inteligência de Longevidade. Como posso ajudar hoje?',
+      text: 'Olá! Sou o seu Copiloto. Como posso ajudar você hoje?',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ])
@@ -472,7 +472,7 @@ export default function App() {
           type: 'error',
           duration: 0,
           action: {
-            label: isExp ? 'Reautenticar' : 'Ver detalhes',
+            label: isExp ? 'Conectar novamente' : 'Ver detalhes',
             onClick: isExp ? () => setShowGoogleHealthModal(true) : () => setIsSyncModalOpen(true),
           },
         })
@@ -529,7 +529,7 @@ export default function App() {
         type: 'error',
         duration: 0,
         action: {
-          label: isExp ? 'Reautenticar' : 'Ver detalhes',
+          label: isExp ? 'Conectar novamente' : 'Ver detalhes',
           onClick: isExp ? () => setShowGoogleHealthModal(true) : () => setIsSyncModalOpen(true),
         },
       })
@@ -780,26 +780,26 @@ export default function App() {
 
                   {!loading && !hasMetric && (
                     <EmptyState
-                      title="Sem dados disponíveis para a data selecionada."
-                      description="Nenhuma medição foi capturada para este dia civil. Siga o fluxo clínico orientado para consolidar sua linha de base:"
+                      title="Ainda não há dados para este dia"
+                      description="Registre uma medição ou sincronize seus dispositivos para acompanhar sua evolução."
                       absenceKind="no_data"
-                      source="Sensores Vestíveis & Registros Clínicos"
+                      source="Dispositivos e registros"
                       lastSync={selectedDate}
-                      reason="Sem sincronização de dispositivo ou aferição manual para este dia civil"
+                      reason="Ainda não sincronizado para esta data"
                       pipelineSteps={[
-                        { step: 1, label: 'Perfil e Metas de Longevidade', done: true },
-                        { step: 2, label: 'Conectar Fontes (Zepp / Google Health)', active: true },
-                        { step: 3, label: 'Registrar Primeiros Dados (Manual ou CSV)' },
-                        { step: 4, label: 'Acompanhar Métricas (HRV, Sono e Passos)' },
-                        { step: 5, label: 'Análise Avançada (PhenoAge, KDM e Copiloto IA)' },
+                        { step: 1, label: 'Perfil e metas', done: true },
+                        { step: 2, label: 'Conectar dispositivos (Zepp / Google Health)', active: true },
+                        { step: 3, label: 'Registrar primeiros dados (manual ou CSV)' },
+                        { step: 4, label: 'Acompanhar seus dados (HRV, sono e passos)' },
+                        { step: 5, label: 'Análise de evolução (PhenoAge, KDM e Copiloto)' },
                       ]}
                       action={{
-                        label: 'Adicionar Métrica',
+                        label: 'Registrar medição',
                         onClick: () => setShowManualModal(true),
                         icon: PlusCircle,
                       }}
                       secondaryAction={{
-                        label: 'Configurar Integrações & Fontes',
+                        label: 'Configurar integrações',
                         onClick: () => setActiveTab('profile'),
                       }}
                       className="my-4"
@@ -818,8 +818,8 @@ export default function App() {
                 {/* Camada 2: Contexto Operacional & Recuperação */}
                 <OverviewSection
                   id="overview-context"
-                  title="Contexto & Recuperação"
-                  subtitle="Carga acumulada, prontidão circadiana e adesão a protocolos"
+                  title="Recuperação e contexto"
+                  subtitle="Treino, recuperação, energia e rotina"
                   icon={Heart}
                 >
                   <div className="grid gap-6 lg:grid-cols-2">
@@ -839,8 +839,8 @@ export default function App() {
                 {/* Camada 3: Análises Avançadas & Biomarcadores */}
                 <OverviewSection
                   id="overview-advanced"
-                  title="Análises Avançadas"
-                  subtitle="Idade epigenética (PhenoAge/KDM), CGM e histórico de treinos"
+                  title="Análises"
+                  subtitle="Idade biológica, glicose e histórico de treinos"
                   icon={Dna}
                   collapsible={true}
                   defaultCollapsed={true}

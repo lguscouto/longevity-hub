@@ -120,7 +120,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
           <div className="flex items-center gap-2">
             <Scale className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Avaliações Físicas & Fotos Corporais
+              Avaliações físicas e fotos corporais
             </h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">

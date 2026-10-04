@@ -55,8 +55,8 @@ export const DataQualityPanel: React.FC = () => {
             <ShieldCheck className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Auditoria de Qualidade & Cobertura dos Dados</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Proveniência dos sensores Zepp e integridade biométrica</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Qualidade e cobertura dos dados</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Verifique a origem e a qualidade dos dados coletados.</p>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export const DataQualityPanel: React.FC = () => {
             size="sm"
             onClick={() => void fetchQuality()}
             icon={RefreshCw}
-            aria-label="Atualizar auditoria"
+            aria-label="Atualizar dados"
             loading={loading}
           />
         </div>
@@ -81,7 +81,7 @@ export const DataQualityPanel: React.FC = () => {
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Status de Confiança</span>
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Confiança dos dados</span>
             <span className="text-lg font-black text-slate-900 dark:text-white">{formatConfidenceLabel(summary?.confidence, true)}</span>
             <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">
               {summary?.metrics_available ?? 0} de {summary?.metrics_expected ?? 7} métricas validadas
@@ -89,13 +89,13 @@ export const DataQualityPanel: React.FC = () => {
           </div>
 
           <div className="p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Cobertura Biométrica</span>
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Cobertura dos dados</span>
             <span className="text-lg font-black text-slate-900 dark:text-white">{summary?.coverage_pct ?? 0}%</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">Densidade de amostras por 24h</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">Quantidade de registros nas últimas 24h</span>
           </div>
 
           <div className="p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Fontes Ativas</span>
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Dispositivos conectados</span>
             <div className="flex items-center gap-1.5 mt-1">
               <Layers className="h-4 w-4 text-indigo-500" aria-hidden="true" />
               <span className="text-sm font-bold text-slate-900 dark:text-white">{(summary?.sources || []).join(', ') || 'Nenhuma'}</span>
@@ -108,7 +108,7 @@ export const DataQualityPanel: React.FC = () => {
         <div className="p-3 rounded-radius-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs space-y-1">
           <div className="flex items-center gap-1.5 font-bold">
             <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" />
-            <span>Alertas de Cobertura e Qualidade</span>
+            <span>Alertas sobre seus dados</span>
           </div>
           <ul className="list-disc list-inside space-y-0.5 opacity-90 pl-1">
             {(summary.warnings || []).map((w, idx) => (

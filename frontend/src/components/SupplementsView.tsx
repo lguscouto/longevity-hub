@@ -63,7 +63,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       setAuditLogs(resAudit || []);
       setLoadError(null);
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao carregar dados de suplementos.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar os dados de suplementos.');
     }
   };
 
@@ -86,7 +86,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       });
       showToast(isNowTaken ? `Dose${name} confirmada!` : `Dose${name} desmarcada!`, 'success');
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao alternar suplemento.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível registrar a tomada do item.');
       await loadData();
     }
   };
@@ -112,7 +112,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       });
       await loadData();
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao cadastrar suplemento.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível adicionar o item.');
     }
   };
 
@@ -134,7 +134,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       setEditingSupp(null);
       await loadData();
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao atualizar suplemento.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível atualizar o item.');
     }
   };
 
@@ -149,7 +149,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       setDeleteConfirmSupp(null);
       await loadData();
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao remover composto.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível remover o item.');
     }
   };
 
@@ -166,7 +166,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
         setAiAnalysis(res.analysis);
       }
     } catch (caught) {
-      setLoadError(caught instanceof ApiError ? caught.message : 'Erro ao analisar pilha com IA.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível analisar os suplementos com IA.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -194,17 +194,17 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                <Pill className="h-3.5 w-3.5" /> Módulo de Longevidade Médica
+                <Pill className="h-3.5 w-3.5" /> Rotina diária
               </span>
               <span className="text-xs text-slate-600 dark:text-slate-400">
-                Data Ativa: <strong className="text-slate-900 dark:text-white">{selectedDate}</strong>
+                Data ativa: <strong className="text-slate-900 dark:text-white">{selectedDate}</strong>
               </span>
             </div>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              Pilha de Suplementação & Hormônios
+              Suplementos e rotina
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-              Gerencie seus compostos ativos por janelas cronobiológicas, monitore adesão diária e audite alterações longitudinais.
+              Acompanhe seus suplementos e medicamentos por horário, marque o que já tomou e veja o histórico das suas alterações.
             </p>
           </div>
 
@@ -215,7 +215,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
               onClick={() => setShowAddModal(true)}
               leftIcon={Plus}
             >
-              Adicionar Composto
+              Adicionar item
             </Button>
             <Button
               variant="primary"
@@ -228,7 +228,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
               loading={isAnalyzing}
               leftIcon={Sparkles}
             >
-              Otimizar com IA
+              Analisar com IA
             </Button>
           </div>
         </div>
@@ -238,10 +238,10 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Compostos Ativos</span>
+            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Itens ativos</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-900 dark:text-white">{supplements.length}</span>
-              <span className="text-xs text-slate-500 font-medium">({countSuplemento} sup, {countHormonio} horm)</span>
+              <span className="text-xs text-slate-500 font-medium">({countSuplemento} sup., {countHormonio} horm.)</span>
             </div>
           </div>
           <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
@@ -251,7 +251,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Adesão do Dia ({selectedDate})</span>
+            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Adesão do dia ({selectedDate})</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{completionPct}%</span>
               <span className="text-xs text-slate-500 font-medium">({takenIds.length}/{supplements.length} doses)</span>
@@ -264,10 +264,10 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Registros na Auditoria</span>
+            <span className="text-xs uppercase font-bold text-slate-500 dark:text-slate-400 block">Alterações registradas</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{auditLogs.length}</span>
-              <span className="text-xs text-slate-500 font-medium">eventos imutáveis</span>
+              <span className="text-xs text-slate-500 font-medium">no histórico</span>
             </div>
           </div>
           <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
@@ -293,7 +293,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
           }`}
         >
           <Calendar className="h-4 w-4" />
-          Hoje (Rotina & Adesão)
+          Hoje (Rotina)
         </button>
 
         <button
@@ -305,7 +305,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
           }`}
         >
           <Layers className="h-4 w-4" />
-          Meu Protocolo ({supplements.length})
+          Minha rotina ({supplements.length})
         </button>
 
         <button
@@ -317,7 +317,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
           }`}
         >
           <History className="h-4 w-4" />
-          Histórico & Auditoria ({auditLogs.length})
+          Histórico de alterações ({auditLogs.length})
         </button>
 
         <button
@@ -329,7 +329,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ selectedDate }
           }`}
         >
           <Sparkles className="h-4 w-4" />
-          Análise & Interações (IA)
+          Análise com IA
         </button>
       </div>
 

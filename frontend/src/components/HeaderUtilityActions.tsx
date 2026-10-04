@@ -63,31 +63,31 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
       {/* 1. Cluster Clínico Operacional ("Ações do Dia") */}
       <div
         role="group"
-        aria-label="Ações clínicas do dia"
+        aria-label="Ações do dia"
         className="flex items-center flex-wrap justify-center sm:justify-start gap-1.5 sm:gap-2 max-w-full"
       >
         <button
           type="button"
           onClick={onOpenManualEntry}
-          title="Registrar métricas manuais (pressão arterial, peso, dinamometria, VO2 max)"
-          aria-label="Registrar Métrica Manual"
+          title="Registrar medição manual (pressão arterial, peso, dinamometria, VO2 max)"
+          aria-label="Registrar medição manual"
           className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[40px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
         >
           <PlusCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-          <span className="hidden sm:inline">Registrar Métrica</span>
+          <span className="hidden sm:inline">Registrar medição</span>
           <span className="sm:hidden font-medium">Registrar</span>
         </button>
 
         <button
           type="button"
           onClick={onOpenDoctorBriefing}
-          title="Gerar briefing clínico estruturado para consulta médica"
-          aria-label="Doctor Briefing"
+          title="Gerar um resumo dos seus dados para levar à consulta médica"
+          aria-label="Resumo para consulta"
           className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[40px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-lg text-xs font-semibold bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 shadow-xs transition shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
         >
           <Stethoscope className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
-          <span className="hidden sm:inline">Doctor Briefing</span>
-          <span className="sm:hidden font-medium">Briefing</span>
+          <span className="hidden sm:inline">Resumo para consulta</span>
+          <span className="sm:hidden font-medium">Resumo</span>
         </button>
       </div>
 
@@ -118,12 +118,12 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
           disabled={isSyncing || isSyncingGoogle}
           title={
             isSyncing
-              ? 'Sincronizando dados de wearables (Zepp OS)...'
+              ? 'Sincronizando dados de dispositivos conectados (Zepp OS)...'
               : lastSyncTime
               ? `Última sincronização às ${lastSyncTime}. Clique para atualizar.`
-              : 'Atualizar dados de wearables (Zepp OS)'
+              : 'Atualizar dados de dispositivos conectados (Zepp OS)'
           }
-          aria-label="Sync Zepp"
+          aria-label="Sincronizar Zepp"
           className="relative flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-md text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
         >
           <RefreshCw
@@ -137,9 +137,9 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
               ? 'Sincronizando...'
               : lastSyncTime
               ? `Sincronizado ${lastSyncTime}`
-              : 'Sync Zepp'}
+              : 'Sincronizar Zepp'}
           </span>
-          <span className="sm:hidden font-medium">Sync</span>
+          <span className="sm:hidden font-medium">Sincronizar</span>
         </button>
 
         {onSyncGoogleHealth && (
@@ -147,8 +147,8 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
             type="button"
             onClick={onSyncGoogleHealth}
             disabled={isSyncing || isSyncingGoogle}
-            title="Sincronizar Google Health API v4"
-            aria-label="Sync Google"
+            title="Sincronizar Google Health"
+            aria-label="Sincronizar Google Health"
             className="relative flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-md text-xs font-semibold hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-blue-700 dark:text-blue-400 transition disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             <RefreshCw

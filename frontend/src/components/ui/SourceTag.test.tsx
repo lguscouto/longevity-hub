@@ -6,10 +6,10 @@ import { SourceTag } from './SourceTag';
 describe('SourceTag (UX_UI_43)', () => {
   it('renders observed kind with full label and accessible note role', () => {
     render(<SourceTag kind="observed" />);
-    expect(screen.getByText('Dado Observado')).toBeInTheDocument();
-    const tag = screen.getByRole('note', { name: /natureza do dado: dado observado diretamente/i });
+    expect(screen.getByText('Dado medido')).toBeInTheDocument();
+    const tag = screen.getByRole('note', { name: /natureza do dado: medição direta/i });
     expect(tag).toBeInTheDocument();
-    expect(tag).toHaveAttribute('title', 'Dado medido diretamente por sensor ou laudo físico, sem modelagem estatística');
+    expect(tag).toHaveAttribute('title', 'Dado medido diretamente por dispositivo ou exame físico');
   });
 
   it('renders model kind in compact mode with shortLabel', () => {
@@ -26,14 +26,14 @@ describe('SourceTag (UX_UI_43)', () => {
         ariaLabel="Análise preditiva"
       />
     );
-    expect(screen.getByText('Inferência de IA')).toBeInTheDocument();
+    expect(screen.getByText('Interpretação por IA')).toBeInTheDocument();
     const tag = screen.getByRole('note', { name: 'Análise preditiva' });
     expect(tag).toHaveAttribute('title', 'Custom AI insight');
   });
 
   it('supports hiding icon', () => {
     const { container } = render(<SourceTag kind="clinical" showIcon={false} />);
-    expect(screen.getByText('Referência Clínica')).toBeInTheDocument();
+    expect(screen.getByText('Faixa de referência')).toBeInTheDocument();
     expect(container.querySelector('svg')).toBeNull();
   });
 });

@@ -311,9 +311,9 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
       {/* Navegação entre as 3 Tarefas Principais */}
       <div className="flex flex-wrap items-center p-1 rounded-radius-md bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 w-full sm:w-fit">
         {[
-          { key: 'analyze', label: 'Analisar Tendências', icon: Sparkles },
+          { key: 'analyze', label: 'Analisar tendências', icon: Sparkles },
           { key: 'chat', label: 'Conversar com Copiloto', icon: Bot },
-          { key: 'history', label: `Histórico de Relatórios (${reports.length})`, icon: History },
+          { key: 'history', label: `Histórico de análises (${reports.length})`, icon: History },
         ].map(({ key, label, icon: Icon }) => (
           <Button
             key={key}

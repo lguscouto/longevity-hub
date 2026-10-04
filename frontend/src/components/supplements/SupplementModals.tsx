@@ -69,16 +69,16 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
       <Modal
         isOpen={showAddModal}
         onClose={onCloseAddModal}
-        title="Adicionar Novo Composto"
+        title="Adicionar item à rotina"
         icon={<Pill className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />}
         size="md"
       >
         <form onSubmit={onAddSupplement} className="space-y-4 text-xs">
-          <FormField id="supp-name" label="Nome do Composto" required>
+          <FormField id="supp-name" label="Nome" required>
             <Input
               id="supp-name"
               type="text"
-              placeholder="Ex: Metformina, Testosterona, CoQ10"
+              placeholder="Ex.: Creatina, CoQ10, Vitamina D"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
@@ -123,7 +123,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               </Select>
             </FormField>
 
-            <FormField id="supp-timing" label="Horário / Cronobiologia">
+            <FormField id="supp-timing" label="Horário do dia">
               <Select
                 id="supp-timing"
                 value={formData.timing}
@@ -138,11 +138,11 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
             </FormField>
           </div>
 
-          <FormField id="supp-notes" label="Notas / Protocolo de Aplicação">
+          <FormField id="supp-notes" label="Notas de uso">
             <Input
               id="supp-notes"
               type="text"
-              placeholder="Ex: Tomar com refeição gordurosa"
+              placeholder="Ex.: Tomar com água ou refeição"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
@@ -162,7 +162,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               variant="primary"
               size="sm"
             >
-              Salvar Composto
+              Salvar item
             </Button>
           </div>
         </form>
@@ -173,7 +173,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
         isOpen={Boolean(editingSupp)}
         onClose={onCloseEditModal}
         title={editingSupp ? `Editar ${editingSupp.name}` : ''}
-        description="As alterações serão registradas no Audit Log de longevidade"
+        description="Esta alteração será registrada no seu histórico."
         icon={<Edit3 className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />}
         size="md"
       >
@@ -189,7 +189,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               />
             </FormField>
 
-            <FormField id="edit-supp-timing" label="Novo Horário / Cronobiologia">
+            <FormField id="edit-supp-timing" label="Novo horário do dia">
               <Select
                 id="edit-supp-timing"
                 value={editFormData.timing}
@@ -203,7 +203,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               </Select>
             </FormField>
 
-            <FormField id="edit-supp-notes" label="Notas / Observações">
+            <FormField id="edit-supp-notes" label="Observações">
               <Input
                 id="edit-supp-notes"
                 type="text"
@@ -236,11 +236,11 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
       {/* Diálogo de Confirmação para Remoção de Composto */}
       <ConfirmDialog
         isOpen={Boolean(deleteConfirmSupp)}
-        title="Remover Composto"
-        description={`Tem certeza que deseja remover ${
-          deleteConfirmSupp?.name || ''
-        } da sua pilha ativa? Esta alteração será registrada no histórico de auditoria imutável.`}
-        confirmLabel="Confirmar Remoção"
+        title="Remover item da rotina"
+        description={`Deseja remover ${
+          deleteConfirmSupp?.name || 'este item'
+        } da sua rotina? A alteração ficará registrada no seu histórico.`}
+        confirmLabel="Remover"
         cancelLabel="Cancelar"
         isDestructive
         onConfirm={onConfirmDelete}

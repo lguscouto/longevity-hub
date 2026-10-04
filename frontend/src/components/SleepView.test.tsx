@@ -85,8 +85,8 @@ describe('SleepView', () => {
     expect(screen.getByText('Setembro de 2026')).toBeInTheDocument();
     expect(screen.getByText('Agosto de 2026')).toBeInTheDocument();
 
-    expect(screen.getByText('Distribuição de Fases do Sono')).toBeInTheDocument();
-    expect(screen.getByText('Histórico Completo de Registros do Sono (4)')).toBeInTheDocument();
+    expect(screen.getByText('Fases do sono')).toBeInTheDocument();
+    expect(screen.getByText('Histórico de sono (4)')).toBeInTheDocument();
   });
 
   it('filters by month using the select dropdown and recalculates monthly KPIs', async () => {
@@ -114,7 +114,7 @@ describe('SleepView', () => {
     expect(screen.getAllByText('53 bpm').length).toBeGreaterThanOrEqual(1);
 
     // Table header updates to September
-    expect(screen.getByText(/Histórico de Registros do Sono - Setembro de 2026 \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Histórico de sono — Setembro de 2026 \(2\)/i)).toBeInTheDocument();
 
     // Only September rows should be visible in table
     expect(screen.getByText('02/09/2026')).toBeInTheDocument();
@@ -125,7 +125,7 @@ describe('SleepView', () => {
     const clearBtn = screen.getByText('Limpar filtro');
     fireEvent.click(clearBtn);
 
-    expect(screen.getByText('Histórico Completo de Registros do Sono (4)')).toBeInTheDocument();
+    expect(screen.getByText('Histórico de sono (4)')).toBeInTheDocument();
     expect(screen.getByText('08/08/2026')).toBeInTheDocument();
   });
 
@@ -145,7 +145,7 @@ describe('SleepView', () => {
     const agoPill = screen.getByRole('button', { name: /Ago\/26/i });
     fireEvent.click(agoPill);
 
-    expect(screen.getByText(/Histórico de Registros do Sono - Agosto de 2026 \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Histórico de sono — Agosto de 2026 \(2\)/i)).toBeInTheDocument();
     expect(screen.getByText('08/08/2026')).toBeInTheDocument();
     expect(screen.queryByText('02/09/2026')).not.toBeInTheDocument();
 
@@ -153,7 +153,7 @@ describe('SleepView', () => {
     const todosPill = screen.getByRole('button', { name: 'Todos' });
     fireEvent.click(todosPill);
 
-    expect(screen.getByText('Histórico Completo de Registros do Sono (4)')).toBeInTheDocument();
+    expect(screen.getByText('Histórico de sono (4)')).toBeInTheDocument();
   });
 
   it('filters by clicking row action in the monthly averages comparison table', async () => {
@@ -174,7 +174,7 @@ describe('SleepView', () => {
 
     fireEvent.click(filterButtons[0]); // First is newest (September)
 
-    expect(screen.getByText(/Histórico de Registros do Sono - Setembro de 2026 \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Histórico de sono — Setembro de 2026 \(2\)/i)).toBeInTheDocument();
   });
 
   it('toggles monthly comparison table visibility', async () => {
@@ -229,7 +229,7 @@ describe('SleepView', () => {
     render(<SleepView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Distribuição de Fases do Sono')).toBeInTheDocument();
+      expect(screen.getByText('Fases do sono')).toBeInTheDocument();
     });
 
     const btn30d = screen.getByRole('radio', { name: /30d/i });

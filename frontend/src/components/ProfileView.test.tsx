@@ -129,18 +129,18 @@ describe('ProfileView (UX_UI_59 — Profile / Settings Information Architecture)
 
     // Devices & Sensors
     expect(screen.getByText('Zepp OS (Amazfit)')).toBeInTheDocument();
-    expect(screen.getByText('Google Health API v4')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Google Health' })).toBeInTheDocument();
     expect(screen.getByText(/hevy/i)).toBeInTheDocument();
 
     // Trigger sync
-    await user.click(screen.getByRole('button', { name: /^sync zepp$/i }));
+    await user.click(screen.getByRole('button', { name: /sincronizar zepp/i }));
     expect(onSyncZeppMock).toHaveBeenCalledWith(false);
 
-    await user.click(screen.getByRole('button', { name: /^sync google$/i }));
+    await user.click(screen.getByRole('button', { name: /sincronizar google/i }));
     expect(onSyncGoogleMock).toHaveBeenCalled();
   });
 
-  it('switches to "Diagnóstico & Sistema" tab and provides AI & database controls', async () => {
+  it('switches to "Diagnóstico e Sistema" tab and provides AI & database controls', async () => {
     const user = userEvent.setup();
     const onOpenAISettingsMock = vi.fn();
 
@@ -152,14 +152,14 @@ describe('ProfileView (UX_UI_59 — Profile / Settings Information Architecture)
       />
     );
 
-    const systemTab = screen.getByRole('tab', { name: /diagnóstico & sistema/i });
+    const systemTab = screen.getByRole('tab', { name: /diagnóstico e sistema/i });
     await user.click(systemTab);
 
     expect(systemTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('Base de Dados SQLite Local')).toBeInTheDocument();
-    expect(screen.getByText(/inteligência artificial & provedores llm/i)).toBeInTheDocument();
+    expect(screen.getByText('Armazenamento local')).toBeInTheDocument();
+    expect(screen.getByText('IA e provedores')).toBeInTheDocument();
 
-    const configAIBtn = screen.getByRole('button', { name: /configurar provedores & privacidade/i });
+    const configAIBtn = screen.getByRole('button', { name: /configurar ia e privacidade/i });
     await user.click(configAIBtn);
     expect(onOpenAISettingsMock).toHaveBeenCalled();
   });

@@ -14,7 +14,7 @@ describe('SyncProgressModal', () => {
       />,
     )
 
-    expect(screen.queryByText('Sincronização Concluída!')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sincronização concluída!')).not.toBeInTheDocument()
     expect(screen.getByText(/falha de sincronização/i)).toBeInTheDocument()
   })
 
@@ -28,7 +28,7 @@ describe('SyncProgressModal', () => {
       />,
     )
 
-    expect(screen.queryByText('Sincronizando Fontes de Longevidade...')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sincronizando fontes de dados...')).not.toBeInTheDocument()
 
     rerender(
       <SyncProgressModal
@@ -39,7 +39,7 @@ describe('SyncProgressModal', () => {
       />,
     )
 
-    expect(screen.getByText('Sincronizando Fontes de Longevidade...')).toBeInTheDocument()
+    expect(screen.getByText('Sincronizando fontes de dados...')).toBeInTheDocument()
   })
 
   it('renders warning heading and message for 409 conflict results', () => {
@@ -55,10 +55,10 @@ describe('SyncProgressModal', () => {
       />,
     )
 
-    expect(screen.getByText('Sincronização em Andamento')).toBeInTheDocument()
+    expect(screen.getByText('Sincronização em andamento')).toBeInTheDocument()
     expect(screen.getByText(/já está em andamento/i)).toBeInTheDocument()
-    expect(screen.queryByText('Sincronização Concluída!')).not.toBeInTheDocument()
-    expect(screen.queryByText('Sincronização com erro')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sincronização concluída!')).not.toBeInTheDocument()
+    expect(screen.queryByText('Não foi possível sincronizar')).not.toBeInTheDocument()
   })
 
   it('renders partial success with counters and disclosure details', () => {
@@ -76,8 +76,8 @@ describe('SyncProgressModal', () => {
       />
     )
 
-    expect(screen.getByText('Sincronização Parcial')).toBeInTheDocument()
-    expect(screen.getByText(/32 importados · 4 não processados/i)).toBeInTheDocument()
+    expect(screen.getByText('Sincronização parcial')).toBeInTheDocument()
+    expect(screen.getByText(/32 registros importados · 4 ignorados/i)).toBeInTheDocument()
     expect(screen.getByText(/Ver detalhes/i)).toBeInTheDocument()
     expect(
       screen.getByText(/4 registros de sono com carimbo anterior a 2020 foram ignorados/i)
@@ -99,8 +99,8 @@ describe('SyncProgressModal', () => {
       />
     )
 
-    expect(screen.getByText('Token de Acesso Expirado')).toBeInTheDocument()
-    const reauthBtn = screen.getByRole('button', { name: /Reautenticar Fonte/i })
+    expect(screen.getByText('Conexão expirada')).toBeInTheDocument()
+    const reauthBtn = screen.getByRole('button', { name: /Conectar novamente/i })
     expect(reauthBtn).toBeInTheDocument()
   })
 
@@ -117,7 +117,7 @@ describe('SyncProgressModal', () => {
       />
     )
 
-    expect(screen.getByText('Dados Desatualizados (>24h)')).toBeInTheDocument()
+    expect(screen.getByText('Dados antigos (mais de 24h)')).toBeInTheDocument()
 
     rerender(
       <SyncProgressModal
@@ -131,7 +131,7 @@ describe('SyncProgressModal', () => {
       />
     )
 
-    expect(screen.getByText('Fonte de Wearable Desconectada')).toBeInTheDocument()
+    expect(screen.getByText('Dispositivo ou aplicativo desconectado')).toBeInTheDocument()
   })
 })
 

@@ -229,7 +229,7 @@ export const SleepView: React.FC = () => {
               <Moon className="h-6 w-6" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Monitoramento & Fases do Sono
+              Monitoramento e fases do sono
             </h2>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-sm">
@@ -243,7 +243,7 @@ export const SleepView: React.FC = () => {
             disabled={loading}
             className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all inline-flex items-center gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Sincronizar Dados
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Atualizar dados
           </button>
         </div>
       </div>

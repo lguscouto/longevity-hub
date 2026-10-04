@@ -90,7 +90,7 @@ const STATE_CONFIGS: Record<SyncState, StateConfig> = {
   },
   error: {
     label: 'Falha na sincronização',
-    badgeLabel: 'Erro de sync',
+    badgeLabel: 'Erro',
     icon: AlertCircle,
     containerClass:
       'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300',
@@ -100,13 +100,13 @@ const STATE_CONFIGS: Record<SyncState, StateConfig> = {
   },
   expired: {
     label: 'Token expirado',
-    badgeLabel: 'Reautenticar',
+    badgeLabel: 'Conectar',
     icon: KeyRound,
     containerClass:
       'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300',
     iconClass: 'text-rose-600 dark:text-rose-400',
     textClass: 'text-rose-800 dark:text-rose-300 font-semibold',
-    ariaDescription: 'Credenciais de integração expiraram e exigem nova autorização.',
+    ariaDescription: 'A autorização de acesso expirou. Conecte novamente para continuar sincronizando seus dados.',
   },
   disconnected: {
     label: 'Fonte desconectada',
@@ -116,7 +116,7 @@ const STATE_CONFIGS: Record<SyncState, StateConfig> = {
       'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300',
     iconClass: 'text-slate-500 dark:text-slate-400',
     textClass: 'text-slate-700 dark:text-slate-300',
-    ariaDescription: 'Nenhum dispositivo ou fonte de wearable está conectado.',
+    ariaDescription: 'Nenhum dispositivo ou aplicativo está conectado.',
   },
   stale: {
     label: `Dados antigos (>${STALE_THRESHOLDS.WEARABLE_HOURS}h)`,
@@ -126,7 +126,7 @@ const STATE_CONFIGS: Record<SyncState, StateConfig> = {
       'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300',
     iconClass: 'text-amber-600 dark:text-amber-400',
     textClass: 'text-amber-800 dark:text-amber-300 font-medium',
-    ariaDescription: `Dados de saúde não são atualizados há mais de ${STALE_THRESHOLDS.WEARABLE_HOURS} horas.`,
+    ariaDescription: `Seus dados não são atualizados há mais de ${STALE_THRESHOLDS.WEARABLE_HOURS} horas.`,
   },
 };
 
@@ -166,7 +166,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       <span className="flex items-center gap-1.5 min-w-0 truncate">
         {/* Mobile ou modo compacto */}
         <span className={`${compact ? 'inline' : 'inline sm:hidden'} ${config.textClass}`}>
-          {state === 'syncing' ? 'Sync...' : config.badgeLabel}
+          {state === 'syncing' ? 'Sincronizando' : config.badgeLabel}
         </span>
 
         {/* Desktop / Expansivo (apenas quando não compacto) */}

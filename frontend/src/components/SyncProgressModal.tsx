@@ -145,61 +145,61 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     (typeof syncResult?.zepp === 'object' ? syncResult?.zepp?.data_covered_until : undefined)
 
   const heading = useMemo(() => {
-    if (isSyncing) return 'Sincronizando Fontes de Longevidade...'
-    if (isExpired) return 'Token de Acesso Expirado'
-    if (isDisconnected) return 'Fonte de Wearable Desconectada'
-    if (isStale) return 'Dados Desatualizados (>24h)'
-    if (isPartial) return 'Sincronização Parcial'
+    if (isSyncing) return 'Sincronizando fontes de dados...'
+    if (isExpired) return 'Conexão expirada'
+    if (isDisconnected) return 'Dispositivo ou aplicativo desconectado'
+    if (isStale) return 'Dados antigos (mais de 24h)'
+    if (isPartial) return 'Sincronização parcial'
     if (isSuccess) {
       return importedTotal > 0
-        ? 'Sincronização Concluída!'
-        : 'Sincronização Concluída, sem novos registros'
+        ? 'Sincronização concluída!'
+        : 'Sincronização concluída (sem novos dados)'
     }
-    if (isWarning) return 'Sincronização em Andamento'
-    if (hasError) return 'Sincronização com erro'
-    return 'Concluir Sincronização'
+    if (isWarning) return 'Sincronização em andamento'
+    if (hasError) return 'Não foi possível sincronizar'
+    return 'Concluir sincronização'
   }, [hasError, importedTotal, isDisconnected, isExpired, isPartial, isStale, isSuccess, isSyncing, isWarning])
 
   const description = useMemo(() => {
-    if (isSyncing) return `Reconciliando Zepp + Google Health Hub (${elapsedSeconds}s)`
+    if (isSyncing) return `Atualizando Zepp e Google Health (${elapsedSeconds}s)`
     if (isExpired) {
       return (
         syncResult?.message ??
-        'A autorização com a fonte expirou. Por favor, reautentique para continuar a sincronizar dados.'
+        'A autorização de acesso expirou. Conecte novamente para continuar sincronizando seus dados.'
       )
     }
     if (isDisconnected) {
       return (
         syncResult?.message ??
-        'Nenhum dispositivo wearable ou conta de saúde está conectada. Vincule uma fonte nas configurações.'
+        'Nenhum dispositivo ou conta de saúde está conectado. Vincule uma fonte nas configurações.'
       )
     }
     if (isStale) {
       return (
         syncResult?.message ??
-        'A última sincronização ocorreu há mais de 24 horas. Dispare uma nova sincronização para métricas recentes.'
+        'A última sincronização foi há mais de 24 horas. Sincronize novamente para atualizar suas medições.'
       )
     }
     if (isPartial) {
-      return `${importedTotal} importados · ${unprocessableTotal || allWarnings.length} não processados. Verifique os avisos abaixo.`
+      return `${importedTotal} registros importados · ${unprocessableTotal || allWarnings.length} ignorados. Verifique os detalhes abaixo.`
     }
     if (isSuccess) {
       return importedTotal > 0
-        ? `As métricas sincronizadas foram persistidas com sucesso.${
-            dataCoveredUntil ? ` Dados cobertos até ${dataCoveredUntil}.` : ''
+        ? `Seus dados foram atualizados com sucesso.${
+            dataCoveredUntil ? ` Dados disponíveis até ${dataCoveredUntil}.` : ''
           }`
-        : 'A sincronização foi concluída, mas não havia novos registros para importar.'
+        : 'A sincronização terminou, mas não havia dados novos para importar.'
     }
     if (isWarning) {
       return (
         syncResult?.message ??
-        'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.'
+        'A sincronização com a nuvem já está em andamento. Aguarde alguns instantes.'
       )
     }
     if (hasError) {
-      return syncResult?.message ?? 'A sincronização encontrou um erro e não foi concluída.'
+      return syncResult?.message ?? 'Não foi possível concluir a sincronização dos dados.'
     }
-    return 'Aguardando atualização das fontes.'
+    return 'Aguardando atualização das fontes de dados.'
   }, [
     allWarnings.length,
     dataCoveredUntil,
@@ -326,7 +326,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
         >
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
             <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>Zepp / Amazfit Wearable (HRV, Sono, RHR)</span>
+            <span>Zepp / Amazfit (sono, frequência cardíaca, passos)</span>
           </div>
           <span
             className={
@@ -339,7 +339,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                 : 'text-emerald-600 dark:text-emerald-400 font-bold'
             }
           >
-            {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${zeppCount} recs`}
+            {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${zeppCount} registros`}
           </span>
         </div>
 
@@ -354,7 +354,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
         >
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
             <Shield className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-            <span>Google Health API (Passos, Sono, RHR, Peso)</span>
+            <span>Google Health (passos, sono, frequência cardíaca, peso)</span>
           </div>
           <span
             className={
@@ -367,7 +367,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                 : 'text-emerald-600 dark:text-emerald-400 font-bold'
             }
           >
-            {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${googleCount} recs`}
+            {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${googleCount} registros`}
           </span>
         </div>
       </div>
@@ -379,7 +379,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             <span>
               Ver detalhes ({unprocessableTotal > 0 ? `${unprocessableTotal} não processados` : ''}
               {unprocessableTotal > 0 && allWarnings.length > 0 ? ' · ' : ''}
-              {allWarnings.length > 0 ? `${allWarnings.length} avisos clínicos` : ''})
+              {allWarnings.length > 0 ? `${allWarnings.length} avisos` : ''})
             </span>
             <ChevronDown className="h-4 w-4 text-amber-600 transition-transform group-open:rotate-180" />
           </summary>
@@ -393,7 +393,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               ))
             ) : (
               <p className="text-slate-500 dark:text-slate-400">
-                Registros não processados devido a timestamp fora da janela ou formato incompatível.
+                Registros ignorados por data fora do intervalo ou formato não reconhecido.
               </p>
             )}
           </div>
@@ -414,7 +414,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               leftIcon={KeyRound}
               className="w-full bg-rose-600 hover:bg-rose-500 text-white"
             >
-              Reautenticar Fonte
+              Conectar novamente
             </Button>
           )}
 
@@ -430,7 +430,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               leftIcon={RefreshCw}
               className="w-full"
             >
-              Tentar Novamente
+              Tentar novamente
             </Button>
           )}
 
@@ -446,7 +446,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               leftIcon={Eye}
               className="w-full text-slate-800 dark:text-slate-200"
             >
-              Ver Histórico de Sincronizações
+              Ver histórico de sincronizações
             </Button>
           )}
 
@@ -457,7 +457,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             onClick={onClose}
             className="w-full"
           >
-            {isSuccess ? 'Fechar e Atualizar Dashboard' : 'Fechar'}
+            {isSuccess ? 'Fechar e atualizar painel' : 'Fechar'}
           </Button>
         </div>
       )}

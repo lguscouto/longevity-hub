@@ -91,7 +91,7 @@ describe('App', () => {
     expect(screen.queryByText('30 ms')).not.toBeInTheDocument()
     expect(screen.queryByText(/4h\s*30m/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/41\.08/)).not.toBeInTheDocument()
-    expect(await screen.findByText('Sem dados disponíveis para a data selecionada.')).toBeInTheDocument()
+    expect(await screen.findByText('Ainda não há dados para este dia')).toBeInTheDocument()
     expect(screen.getAllByText('Sem dados para a data').length).toBeGreaterThan(0)
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(6)
   })
@@ -116,7 +116,7 @@ describe('App', () => {
       expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    await user.click(screen.getByRole('button', { name: /registrar/i }))
+    await user.click(screen.getByRole('button', { name: 'Registrar medição manual' }))
 
     // Wait for lazy-loaded ManualEntryModal to resolve
     const dialog = await screen.findByRole('dialog', { name: /registrar métrica manual/i })
@@ -150,22 +150,22 @@ describe('App', () => {
       expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    // Click 'Saúde' tab (which activates labs / Exames & PhenoAge)
+    // Click 'Saúde' tab (which activates labs / Exames e PhenoAge)
     await user.click(screen.getByRole('button', { name: /^saúde$/i }))
-    expect(await screen.findByText(/exames laboratoriais & referências de longevidade/i)).toBeInTheDocument()
+    expect(await screen.findByText(/exames laboratoriais e referências/i)).toBeInTheDocument()
 
     // Click 'Intervenções' tab (which activates supplements)
     await user.click(screen.getByRole('button', { name: /^intervenções$/i }))
-    expect(await screen.findByText(/módulo de longevidade médica/i)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /suplementos e rotina/i })).toBeInTheDocument()
 
-    // Click 'IA & Copiloto' tab
-    await user.click(screen.getByRole('button', { name: /ia & copiloto/i }))
+    // Click 'IA e Copiloto' tab
+    await user.click(screen.getByRole('button', { name: /ia e copiloto/i }))
     expect(await screen.findByText(/copiloto de longevidade/i)).toBeInTheDocument()
 
-    // Click 'N-of-1 Tests' sub-tab under Intervenções
+    // Click 'Experimentos pessoais' sub-tab under Intervenções
     await user.click(screen.getByRole('button', { name: /^intervenções$/i }))
-    await user.click(screen.getByRole('button', { name: /n-of-1 tests/i }))
-    expect(await screen.findByText(/experimentos n-of-1/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /experimentos pessoais/i }))
+    expect(await screen.findByText(/experimentos pessoais/i)).toBeInTheDocument()
 
     // Click 'Perfil' tab
     await user.click(screen.getByRole('button', { name: /perfil/i }))
@@ -198,7 +198,7 @@ describe('App', () => {
       expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    expect(await screen.findByText(/módulo de longevidade médica/i, {}, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /suplementos e rotina/i }, { timeout: 5000 })).toBeInTheDocument()
   })
 
   it('navigates to Perfil sub-tabs (Integrações and Diagnóstico & Sistema) seamlessly', async () => {
@@ -216,14 +216,14 @@ describe('App', () => {
     // Clica na sub-aba Integrações (presente na sub-barra e no seletor interno)
     const integracoesBtns = screen.getAllByRole('button', { name: /^integrações$/i })
     await user.click(integracoesBtns[0])
-    expect(await screen.findByText(/fontes de dados & wearables conectados/i)).toBeInTheDocument()
+    expect(await screen.findByText(/fontes de dados e dispositivos conectados/i)).toBeInTheDocument()
     expect(screen.getByText(/zepp os \(amazfit\)/i)).toBeInTheDocument()
-    expect(screen.getByText(/google health api v4/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/google health/i).length).toBeGreaterThan(0)
 
-    // Clica na sub-aba Diagnóstico & Sistema
-    const sistemaBtns = screen.getAllByRole('button', { name: /diagnóstico & sistema/i })
+    // Clica na sub-aba Diagnóstico e Sistema
+    const sistemaBtns = screen.getAllByRole('button', { name: /diagnóstico e sistema/i })
     await user.click(sistemaBtns[0])
-    expect(await screen.findByText(/base de dados sqlite local/i)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /armazenamento local/i })).toBeInTheDocument()
   })
 
   it('supports direct deep link for #integrations and #system', async () => {
@@ -234,10 +234,10 @@ describe('App', () => {
       expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    expect(await screen.findByText(/fontes de dados & wearables conectados/i)).toBeInTheDocument()
+    expect(await screen.findByText(/fontes de dados e dispositivos conectados/i)).toBeInTheDocument()
   })
 
-  it('allows expanding and collapsing Análises Avançadas in Overview', async () => {
+  it('allows expanding and collapsing Análises in Overview', async () => {
     const user = userEvent.setup()
     renderApp()
 
@@ -245,12 +245,12 @@ describe('App', () => {
       expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    const toggleBtn = screen.getByRole('button', { name: /exibir detalhes de análises avançadas/i })
+    const toggleBtn = screen.getByRole('button', { name: /exibir detalhes de análises/i })
     expect(toggleBtn).toBeInTheDocument()
     expect(toggleBtn).toHaveAttribute('aria-expanded', 'false')
 
     await user.click(toggleBtn)
     expect(toggleBtn).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: /ocultar detalhes de análises avançadas/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /ocultar detalhes de análises/i })).toBeInTheDocument()
   })
 })

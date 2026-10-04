@@ -43,7 +43,7 @@ export const FormattedAnalysis: React.FC<{ text: string }> = ({ text }) => {
           className="my-2.5 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/90"
         >
           <table className="w-full text-xs border-collapse">
-            <caption className="sr-only">Tabela do parecer clínico de IA</caption>
+            <caption className="sr-only">Tabela da análise por inteligência artificial</caption>
             {tableHeader.length > 0 && (
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold text-left">
@@ -169,10 +169,10 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-cyan-500" />
-              Parecer Integrado do Copiloto de IA
+              Análise integrada do Copiloto
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-              Análise farmacodinâmica, sinergia entre compostos, janelas de absorção cronobiológica e potenciais interações da sua pilha ativa.
+              Avaliação de horários de uso, possíveis interações entre itens e sugestões práticas para sua rotina.
             </p>
           </div>
 
@@ -182,7 +182,7 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
             className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-md shrink-0"
           >
             <Sparkles className="h-4 w-4" />
-            {isAnalyzing ? 'Processando Análise...' : 'Gerar Nova Análise'}
+            {isAnalyzing ? 'Analisando...' : 'Gerar nova análise'}
           </button>
         </div>
 
@@ -190,7 +190,7 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
           <div className="py-12 text-center space-y-3">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-cyan-500 border-t-transparent" />
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              O Copiloto de IA está avaliando dosagens, timing e histórico clínico da sua pilha...
+              O Copiloto está avaliando seus horários, dosagens e possíveis interações...
             </p>
           </div>
         )}
@@ -199,13 +199,13 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
           <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-cyan-500/30 text-xs text-slate-800 dark:text-slate-200 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <span className="text-xs uppercase font-black tracking-wider text-cyan-600 dark:text-cyan-400">
-                Relatório Clínico Gerado para {selectedDate}
+                Análise gerada para {selectedDate}
               </span>
               <button
                 onClick={onHideAnalysis}
                 className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
-                Ocultar Relatório
+                Ocultar análise
               </button>
             </div>
             <div className="space-y-1">
@@ -217,9 +217,9 @@ export const SupplementAnalysisView: React.FC<SupplementAnalysisViewProps> = ({
         {!isAnalyzing && !aiAnalysis && (
           <EmptyState
             title="Nenhuma análise gerada recentemente"
-            description="Clique no botão acima para submeter a pilha ativa e o histórico de auditoria à inteligência clínica do sistema."
+            description="Clique no botão para analisar sua rotina atual de suplementos e verificar possíveis interações com o Copiloto."
             action={{
-              label: '⚡ Iniciar Análise com IA',
+              label: 'Iniciar análise com IA',
               onClick: onAnalyzeWithAI,
             }}
           />

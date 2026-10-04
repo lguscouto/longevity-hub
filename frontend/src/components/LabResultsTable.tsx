@@ -112,7 +112,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
   const panelColumns: DataColumn<PanelRow>[] = [
     {
       key: 'date',
-      header: 'Data do Laudo',
+      header: 'Data do exame',
       priority: 'primary',
       cellClassName: 'text-slate-900 dark:text-white font-mono font-bold',
       render: (row) => row.date,
@@ -124,13 +124,13 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       render: (row) => (
         <div className="flex items-center gap-2 flex-wrap">
           <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-          <span className="font-bold text-slate-800 dark:text-slate-200">Painel Completo de Sangue</span>
+          <span className="font-bold text-slate-800 dark:text-slate-200">Painel de exames</span>
           <span className="px-2 py-0.5 rounded-radius-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-semibold">
             {row.totalCount} exames
           </span>
           {row.nonClinicalCount > 0 && (
             <span className="px-2 py-0.5 rounded-radius-full text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
-              {row.nonClinicalCount} sem provenance clínica
+              {row.nonClinicalCount} sem origem verificável
             </span>
           )}
         </div>
@@ -199,7 +199,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
             onClick={() => setSelectedPanelDate(row.date)}
             leftIcon={Eye}
           >
-            Ver Laudo Completo
+            Ver exame completo
           </Button>
 
           <IconButton
@@ -207,8 +207,8 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
             size="sm"
             onClick={() => setDeleteConfirmDate(row.date)}
             icon={Trash2}
-            title="Excluir este laudo"
-            aria-label="Excluir este laudo"
+            title="Excluir este exame"
+            aria-label="Excluir este exame"
           />
         </div>
       ),
@@ -220,10 +220,10 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Dna className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Exames Laboratoriais & Referências de Longevidade
+            <Dna className="h-5 w-5 text-cyan-600 dark:text-cyan-400" /> Exames laboratoriais e referências
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            Histórico de laudos em ordem cronológica (mais recente ao mais antigo)
+            Histórico dos seus exames em ordem cronológica
           </p>
         </div>
 
@@ -242,7 +242,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
 
       {excludedLabsCount > 0 && (
         <div role="status" className="rounded-radius-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
-          {excludedLabsCount} registro(s) sem provenance clínica verificável estão visíveis para auditoria, mas foram excluídos de cálculos, razões e relatórios clínicos.
+          {excludedLabsCount} resultado(s) sem origem verificável continuam visíveis no histórico, mas não entram nos cálculos e análises porque a origem não pôde ser verificada.
         </div>
       )}
 
@@ -253,22 +253,22 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       {panelRows.length === 0 ? (
         <div className="py-4">
           <EmptyState
-            title="Nenhum laudo cadastrado"
-            description="Clique em 'Cadastrar Primeiro Laudo' para registrar seus biomarcadores de sangue."
+            title="Nenhum exame cadastrado"
+            description="Adicione seu primeiro exame para acompanhar seus marcadores ao longo do tempo."
             icon={FileText}
             action={{
-              label: 'Cadastrar Primeiro Laudo',
+              label: 'Adicionar primeiro exame',
               onClick: () => setShowBatchModal(true),
             }}
           />
         </div>
       ) : (
         <ResponsiveDataTable
-          caption={`Laudos laboratoriais cadastrados (${panelRows.length})`}
+          caption={`Exames cadastrados (${panelRows.length})`}
           columns={panelColumns}
           rows={panelRows}
           getRowKey={(row) => row.date}
-          getRowLabel={(row) => `Laudo de ${row.date} (${row.totalCount} exames)`}
+          getRowLabel={(row) => `Exame de ${row.date} (${row.totalCount} marcadores)`}
           onRowClick={(row) => setSelectedPanelDate(row.date)}
           stickyFirstColumn
         />
@@ -286,7 +286,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         isOpen={Boolean(deleteConfirmDate)}
         onClose={() => setDeleteConfirmDate(null)}
         onConfirm={handleConfirmDelete}
-        title="Confirmar Exclusão de Laudo"
+        title="Excluir exame?"
         description={
           deleteConfirmDate ? (
             <span>
@@ -294,12 +294,12 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               <strong className="text-slate-900 dark:text-white">
                 {groupedLabs[deleteConfirmDate]?.length || 0} exames
               </strong>{' '}
-              registrados no laudo do dia{' '}
-              <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>? Ação irreversível de banco de dados.
+              registrados no exame do dia{' '}
+              <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>? Esta ação não poderá ser desfeita.
             </span>
           ) : null
         }
-        confirmLabel="Confirmar Exclusão"
+        confirmLabel="Excluir exame"
         cancelLabel="Cancelar"
         isDestructive
         loading={isDeleting}

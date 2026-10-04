@@ -46,20 +46,20 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   const getGeneratingStage = (sec: number, win: TimeWindow = '30d') => {
     const windowName =
       win === 'today'
-        ? 'de prontidão de hoje (24h)'
+        ? 'de hoje (24h)'
         : win === '7d'
-        ? 'da média semanal (7d)'
-        : 'de 30 dias';
+        ? 'da semana (7d)'
+        : 'dos últimos 30 dias';
     if (sec < 5) {
       return {
         step: 1,
-        title: `Consolidando dados clínicos ${windowName}...`,
+        title: `Consolidando dados ${windowName}...`,
         detail:
           win === 'today'
-            ? 'Analisando sono da última noite, HRV basal, FC de repouso e prontidão fisiológica.'
+            ? 'Analisando sono da última noite, HRV, frequência cardíaca e medições de hoje.'
             : win === '7d'
-            ? 'Calculando médias semanais de HRV, sono, carga de treinos e balanço de fadiga.'
-            : 'Extraindo biomarcadores, exames laboratoriais, sono, HRV, CGM e 14 dias de linha do tempo.',
+            ? 'Calculando médias semanais de sono, HRV, treinos e recuperação.'
+            : 'Reunindo seus exames de sangue, sono, HRV, glicemia e linha do tempo.',
       };
     }
     if (sec < 18) {
@@ -67,31 +67,31 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         step: 2,
         title: `Analisando seus dados com ${selectedModel}...`,
         detail:
-          'Estabelecendo conexão segura via OpenRouter e preparando análise de longevidade.',
+          'Conectando com segurança e preparando a análise de longevidade.',
       };
     }
     if (sec < 45) {
       return {
         step: 3,
-        title: 'Raciocínio clínico profundo em andamento...',
+        title: 'Análise detalhada em andamento...',
         detail:
-          'O modelo está ponderando correlações cruzadas entre sono, estresse, HRV e biomarcadores.',
+          'O modelo está cruzando dados de sono, treinos, HRV e exames.',
       };
     }
     return {
       step: 4,
-      title: 'Sintetizando insights acionáveis e gerando relatório...',
+      title: 'Sintetizando recomendações e preparando a análise...',
       detail:
-        'Finalizando formulação de recomendações práticas e formatação estruturada dos insights.',
+        'Finalizando sugestões práticas e formatando os pontos principais.',
     };
   };
 
   const sampleCount =
     activeReportMeta?.time_window === 'today'
-      ? '1 noite de sono · HRV basal · glicemia 24h'
+      ? '1 noite de sono · HRV · glicemia 24h'
       : activeReportMeta?.time_window === '7d'
-      ? '7 noites de sono · médias de HRV · 4 treinos'
-      : 'Painel 30d · exames clínicos · HRV contínua';
+      ? '7 noites de sono · médias de HRV · treinos'
+      : 'Painel 30d · exames laboratoriais · HRV';
 
   return (
     <div className="space-y-6">
@@ -100,7 +100,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         <div className="flex flex-wrap items-center gap-2.5">
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />{' '}
-            Síntese de Tendências & Longevidade
+            Síntese de tendências de saúde
           </h3>
           {activeReportMeta?.created_at && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-radius-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -144,7 +144,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               leftIcon={History}
               title="Visualizar relatórios anteriores salvos"
             >
-              Ver Histórico ({reports.length})
+              Ver histórico ({reports.length})
             </Button>
           )}
         </div>
@@ -157,11 +157,11 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span className="text-xs font-bold text-slate-900 dark:text-white">
-                Transparência & Origem dos Dados Fisiológicos
+                Origem e transparência dos dados
               </span>
             </div>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-500/20">
-              Alta densidade amostral
+              Dados consolidados
             </span>
           </div>
 
@@ -170,7 +170,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  Dados Observados
+                  Dados medidos
                 </div>
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-radius-sm border border-emerald-500/20">
                   {activeReportMeta?.time_window === 'today'
@@ -193,14 +193,14 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 font-bold text-cyan-700 dark:text-cyan-400 text-xs">
                   <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
-                  Modelos & Estimativas
+                  Modelos e estimativas
                 </div>
                 <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-radius-sm border border-cyan-500/20">
                   PhenoAge + KDM
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Idade biológica calculada por Morgan Levine (2018), Klemera-Doubal e índices de risco cardiovascular ApoB/A1.
+                Estimativas de idade biológica (PhenoAge, KDM) e proporções de colesterol.
               </p>
             </div>
 
@@ -208,14 +208,14 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 font-bold text-indigo-700 dark:text-indigo-400 text-xs">
                   <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-                  Correlações & Tendências
+                  Tendências e hábitos
                 </div>
                 <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded-radius-sm border border-indigo-500/20">
                   N-of-1 Bayesiano
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Padrões aprendidos N-of-1, correlações fisiológicas e associações observadas com rotinas da Linha do Tempo.
+                Padrões observados entre sua rotina diária, qualidade do sono e recuperação.
               </p>
             </div>
           </div>
@@ -223,7 +223,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
             <Info className="h-4 w-4 text-amber-500 shrink-0" />
             <span>
-              Aviso Clínico: Projeções e sínteses algorítmicas de IA para apoio à tomada de decisão compartilhada com seu médico. Não substituem o diagnóstico ou prescrição médica.
+              Aviso: Análises geradas por inteligência artificial para apoio ao seu acompanhamento de saúde. Não substituem diagnóstico ou orientação médica.
             </span>
           </div>
         </div>
@@ -239,17 +239,17 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
       {/* Estado Vazio */}
       {!data && !isGenerating && (
         <EmptyState
-          title="Nenhuma Análise Ativa na Tela"
-          description="Clique em um dos botões acima (Hoje 24h, Semana 7d ou Mês 30d) para sintetizar seus exames de sangue, HRV, sono e curva de glicemia CGM usando a IA."
+          title="Nenhuma análise gerada recentemente"
+          description="Escolha um período acima (Hoje 24h, Semana 7d ou Mês 30d) para gerar uma análise integrada dos seus exames, sono, treinos e medições com o Copiloto."
           icon={Bot}
           action={{
-            label: 'Iniciar Síntese Mensal',
+            label: 'Iniciar análise mensal',
             onClick: () => onGenerateAnalysis('30d'),
           }}
           secondaryAction={
             reports.length > 0
               ? {
-                  label: `Carregar Relatório Mais Recente (${new Date(
+                  label: `Carregar análise mais recente (${new Date(
                     reports[0].created_at
                   ).toLocaleDateString([], { day: '2-digit', month: '2-digit' })})`,
                   onClick: () => onSelectReport(reports[0].id),
@@ -309,11 +309,11 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               <span className="text-xs text-slate-400 max-w-xs text-center flex items-center justify-center gap-1">
                 <Sparkles className="h-3 w-3 text-cyan-400 shrink-0 inline" />
                 <span>
-                  Modelos com raciocínio clínico analisam dezenas de variáveis e levam em média de 30 a 60 segundos.
+                  Modelos de IA analisam dezenas de medições e podem levar de 30 a 60 segundos.
                 </span>
               </span>
               <Button variant="outline" size="sm" onClick={onCancelAnalysis}>
-                Cancelar Análise
+                Cancelar análise
               </Button>
             </div>
           </div>
@@ -338,7 +338,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           {/* Botão de Transição para o Chat */}
           <div className="p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
             <div className="text-xs text-slate-600 dark:text-slate-400">
-              Deseja aprofundar algum ponto desta síntese ou tirar dúvidas sobre seus biomarcadores?
+              Deseja aprofundar algum ponto desta análise ou tirar dúvidas sobre seus resultados?
             </div>
             <Button
               variant="primary"
@@ -347,7 +347,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               leftIcon={Bot}
               className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shrink-0"
             >
-              Conversar no Chat com Copiloto
+              Conversar com o Copiloto
             </Button>
           </div>
         </div>

@@ -25,8 +25,8 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Relatório Clínico (Doctor Briefing)"
-      description="Documento formatado em Markdown para entrega em consultas médicas"
+      title="Resumo para consulta médica"
+      description="Resumo organizado para você revisar e levar à consulta."
       icon={
         <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
           <Stethoscope className="h-5 w-5" />
@@ -51,7 +51,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
             onClick={handleCopy}
             leftIcon={copied ? Check : Copy}
           >
-            {copied ? 'Copiado!' : 'Copiar MD'}
+            {copied ? 'Copiado!' : 'Copiar texto'}
           </Button>
         </div>
       }
@@ -89,13 +89,13 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
     >
       <div className="space-y-4">
         <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-900 dark:text-cyan-200 flex items-start gap-2.5">
-          <span className="font-bold shrink-0">Aviso Clínico:</span>
+          <span className="font-bold shrink-0">Aviso importante:</span>
           <span className="leading-relaxed">
-            Este relatório sintetiza dados registrados pelo próprio usuário para subsidiar a discussão em consulta médica. Não substitui o diagnóstico, acompanhamento ou prescrição profissional.
+            Este resumo organiza seus dados para apoiar sua conversa com o profissional de saúde. Ele não substitui avaliação, diagnóstico ou orientação médica.
           </span>
         </div>
         <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-          {markdownContent || 'Gerando relatório...'}
+          {markdownContent || 'Gerando resumo...'}
         </div>
       </div>
     </Modal>

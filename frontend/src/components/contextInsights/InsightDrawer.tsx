@@ -178,7 +178,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
             {loading ? (
               <div className="p-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-3">
                 <RefreshCw className="h-7 w-7 animate-spin text-emerald-500" />
-                <span>Processando baseline e fatores associados...</span>
+                <span>Comparando com sua linha de base e fatores associados...</span>
               </div>
             ) : error ? (
               <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
@@ -210,7 +210,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                         {data.observed_value} <span className="text-sm font-semibold text-slate-400">{data.unit}</span>
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Baseline pessoal (30d): <span className="font-semibold text-slate-700 dark:text-slate-300">{data.baseline_value} {data.unit}</span>
+                        Linha de base (30 dias): <span className="font-semibold text-slate-700 dark:text-slate-300">{data.baseline_value} {data.unit}</span>
                       </div>
                     </div>
 
@@ -241,11 +241,11 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                       Possíveis Fatores Associados
                     </span>
                     <span className="text-xs text-slate-400 font-medium">
-                      {data.factors.length} {data.factors.length === 1 ? 'fator encontrado' : 'fatores encontrados'}
+                      {(data.factors || []).length} {(data.factors || []).length === 1 ? 'fator encontrado' : 'fatores encontrados'}
                     </span>
                   </div>
 
-                  {data.factors.length > 0 ? (
+                  {data.factors && data.factors.length > 0 ? (
                     <div className="space-y-2.5">
                       {data.factors.map((f, idx) => (
                         <div
@@ -309,7 +309,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                       leftIcon={Sparkles}
                       className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 min-h-0 h-auto p-0"
                     >
-                      Aprofundar com Copiloto IA
+                      Aprofundar com o Copiloto
                     </Button>
                   </div>
 
@@ -327,14 +327,14 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                   )}
                 </div>
 
-                {/* 4. Confiança da Análise & Proveniência */}
+                {/* 4. Confiança da Análise e Origem dos Dados */}
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 text-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-500 dark:text-slate-400">Confiança da Análise:</span>
+                    <span className="font-semibold text-slate-500 dark:text-slate-400">Confiança da análise:</span>
                     {getConfidenceBadge(data.analysis_confidence)}
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                    <span>Cobertura do Histórico:</span>
+                    <span>Cobertura do histórico:</span>
                     <span className="font-medium">{data.data_coverage_days} de {data.total_baseline_days} dias</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">

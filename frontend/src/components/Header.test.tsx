@@ -36,7 +36,7 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     expect(screen.getByRole('button', { name: /Saúde/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Treinos/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Intervenções/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /IA & Copiloto/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /IA e Copiloto/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Perfil/i })).toBeInTheDocument();
   });
 
@@ -90,7 +90,7 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     renderHeader({ activeTab: 'labs', onSelectTab });
 
     expect(screen.getByRole('navigation', { name: 'Sub-navegação de Saúde' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Exames & PhenoAge/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Exames e PhenoAge/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Sono/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Linha do Tempo/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Avaliações Físicas/i })).toBeInTheDocument();
@@ -104,10 +104,10 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     renderHeader({ activeTab: 'supplements', onSelectTab });
 
     expect(screen.getByRole('navigation', { name: 'Sub-navegação de Intervenções' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Suplementos & Hormônios/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /N-of-1 Tests/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Suplementos e Hormônios/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Experimentos pessoais/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /N-of-1 Tests/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Experimentos pessoais/i }));
     expect(onSelectTab).toHaveBeenCalledWith('n-of-1');
   });
 
@@ -118,7 +118,7 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     expect(screen.getByRole('navigation', { name: 'Sub-navegação de Perfil' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Meu Perfil/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Integrações/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Diagnóstico & Sistema/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Diagnóstico e Sistema/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Integrações/i }));
     expect(onSelectTab).toHaveBeenCalledWith('integrations');
@@ -134,11 +134,11 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     expect(healthBtn).not.toHaveAttribute('aria-current');
   });
 
-  it('renders SyncStatusControl with Sync Zepp button and accessibility label', () => {
+  it('renders SyncStatusControl with Sincronizar Zepp button and accessibility label', () => {
     const onSyncZepp = vi.fn();
     renderHeader({ onSyncZepp });
 
-    const syncBtn = screen.getByRole('button', { name: 'Sync Zepp' });
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
     expect(syncBtn).toBeInTheDocument();
     expect(syncBtn).not.toBeDisabled();
 
@@ -155,7 +155,7 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
   it('displays syncing state and disables action when isSyncing is true', () => {
     renderHeader({ isSyncing: true });
 
-    const syncBtn = screen.getByRole('button', { name: 'Sync Zepp' });
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
     expect(syncBtn).toBeDisabled();
     expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });

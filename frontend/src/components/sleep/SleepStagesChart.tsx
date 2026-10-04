@@ -100,7 +100,7 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Moon className="h-5 w-5 text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Distribuição de Fases do Sono</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Fases do sono</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             Horas e minutos em Sono Profundo, REM, Leve e Acordado ({
@@ -181,26 +181,26 @@ export const SleepStagesChart: React.FC<SleepStagesChartProps> = ({
       {chartData.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 p-3 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 text-xs">
           <div>
-            <span className="text-slate-500 dark:text-slate-400 block font-medium">Duração Média</span>
+            <span className="text-slate-500 dark:text-slate-400 block font-medium">Duração média</span>
             <span className="text-sm font-bold text-slate-900 dark:text-white">
               {formatMinutesToHHMM(avgMetrics.total)}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400 block font-medium">Eficiência Média</span>
+            <span className="text-slate-500 dark:text-slate-400 block font-medium">Eficiência média</span>
             <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
               {avgMetrics.efficiency}%
             </span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400 block font-medium">Sono Profundo Médio</span>
+            <span className="text-slate-500 dark:text-slate-400 block font-medium">Sono profundo médio</span>
             <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
               {formatMinutesToHHMM(avgMetrics.deep)}{' '}
               <span className="text-xs font-normal opacity-80">({avgMetrics.deepPct}%)</span>
             </span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400 block font-medium">Sono REM Médio</span>
+            <span className="text-slate-500 dark:text-slate-400 block font-medium">Sono REM médio</span>
             <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
               {formatMinutesToHHMM(avgMetrics.rem)}{' '}
               <span className="text-xs font-normal opacity-80">({avgMetrics.remPct}%)</span>

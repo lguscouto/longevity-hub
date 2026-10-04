@@ -58,7 +58,7 @@ const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { id: 'health', label: 'Saúde', icon: ShieldCheck, targetTab: 'labs' },
   { id: 'workouts', label: 'Treinos', icon: Dumbbell, targetTab: 'workouts' },
   { id: 'interventions', label: 'Intervenções', icon: Pill, targetTab: 'supplements' },
-  { id: 'ai', label: 'IA & Copiloto', icon: Sparkles, targetTab: 'ai' },
+  { id: 'ai', label: 'IA e Copiloto', icon: Sparkles, targetTab: 'ai' },
   { id: 'profile', label: 'Perfil', icon: User, targetTab: 'profile' },
 ];
 
@@ -214,7 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
           <div className="relative">
             <nav aria-label="Sub-navegação de Saúde" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
-              {renderSubNavButton('labs', 'Exames & PhenoAge', Dna, activeTab === 'labs')}
+              {renderSubNavButton('labs', 'Exames e PhenoAge', Dna, activeTab === 'labs')}
               {renderSubNavButton('sleep', 'Sono', Moon, activeTab === 'sleep')}
               {renderSubNavButton('timeline', 'Linha do Tempo', History, activeTab === 'timeline')}
               {renderSubNavButton('physical-assessments', 'Avaliações Físicas', Camera, activeTab === 'physical-assessments')}
@@ -229,8 +229,8 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
           <div className="relative">
             <nav aria-label="Sub-navegação de Intervenções" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
-              {renderSubNavButton('supplements', 'Suplementos & Hormônios', Pill, activeTab === 'supplements')}
-              {renderSubNavButton('n-of-1', 'N-of-1 Tests', FlaskConical, activeTab === 'n-of-1')}
+              {renderSubNavButton('supplements', 'Suplementos e Hormônios', Pill, activeTab === 'supplements')}
+              {renderSubNavButton('n-of-1', 'Experimentos pessoais', FlaskConical, activeTab === 'n-of-1')}
             </nav>
             {/* ds-exception: DSX-006 */}
             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-radius-lg sm:hidden" />
@@ -244,7 +244,7 @@ export const Header: React.FC<HeaderProps> = ({
             <nav aria-label="Sub-navegação de Perfil" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
               {renderSubNavButton('profile', 'Meu Perfil', User, activeTab === 'profile' || !['integrations', 'system', 'diagnostics'].includes(activeTab))}
               {renderSubNavButton('integrations', 'Integrações', ShieldCheck, activeTab === 'integrations')}
-              {renderSubNavButton('system', 'Diagnóstico & Sistema', Activity, activeTab === 'system' || activeTab === 'diagnostics')}
+              {renderSubNavButton('system', 'Diagnóstico e Sistema', Activity, activeTab === 'system' || activeTab === 'diagnostics')}
             </nav>
             {/* ds-exception: DSX-007 */}
             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-radius-lg sm:hidden" />

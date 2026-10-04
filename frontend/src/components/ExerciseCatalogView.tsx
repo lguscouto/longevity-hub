@@ -14,22 +14,22 @@ import { ExerciseDetailModal, ExerciseMedia } from './ExerciseDetailModal'
 import { EmptyState, Input, Button } from './ui'
 
 const MUSCLE_FILTERS = [
-  { label: 'Todos os Músculos', value: '' },
+  { label: 'Todos os grupos musculares', value: '' },
   { label: 'Peitoral', value: 'chest', type: 'body_part' },
   { label: 'Costas', value: 'back', type: 'body_part' },
   { label: 'Ombros', value: 'shoulders', type: 'body_part' },
   { label: 'Braços', value: 'upper arms', type: 'body_part' },
-  { label: 'Pernas & Coxas', value: 'upper legs', type: 'body_part' },
+  { label: 'Pernas e coxas', value: 'upper legs', type: 'body_part' },
   { label: 'Panturrilhas', value: 'lower legs', type: 'body_part' },
-  { label: 'Abdômen & Core', value: 'waist', type: 'body_part' },
+  { label: 'Abdômen e core', value: 'waist', type: 'body_part' },
   { label: 'Cardio', value: 'cardio', type: 'body_part' },
 ]
 
 const EQUIPMENT_FILTERS = [
-  { label: 'Todos os Equipamentos', value: '' },
+  { label: 'Todos os equipamentos', value: '' },
   { label: 'Halteres', value: 'dumbbell' },
   { label: 'Barra', value: 'barbell' },
-  { label: 'Cabos & Polia', value: 'cable' },
+  { label: 'Cabos e polia', value: 'cable' },
   { label: 'Máquinas', value: 'leverage machine' },
   { label: 'Peso Corporal', value: 'body weight' },
   { label: 'Smith Machine', value: 'smith machine' },
@@ -124,7 +124,7 @@ export const ExerciseCatalogView: React.FC = () => {
                 setQuery(e.target.value)
                 setPage(1)
               }}
-              placeholder="Buscar por nome (ex: squat, bench press, curl)..."
+              placeholder="Buscar exercício (ex: agachamento, supino, rosca)..."
               leftIcon={<Search className="h-4 w-4" />}
             />
           </form>
@@ -195,7 +195,7 @@ export const ExerciseCatalogView: React.FC = () => {
         <EmptyState
           icon={Dumbbell}
           title="Nenhum exercício encontrado"
-          description="Tente buscar com outros termos ou selecione 'Todos os Músculos'."
+          description="Tente buscar com outros termos ou selecione 'Todos os grupos musculares'."
           action={{
             label: 'Limpar busca',
             onClick: () => {

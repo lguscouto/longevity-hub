@@ -201,7 +201,7 @@ describe('PhysicalAssessmentsView', () => {
     fireEvent.click(detailsBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Anotações Clínicas & Bioimpedância')).toBeInTheDocument();
+      expect(screen.getByText('Anotações e bioimpedância')).toBeInTheDocument();
     });
 
     expect(screen.getByText(/Bioimpedância Fitdays/)).toBeInTheDocument();
@@ -230,13 +230,13 @@ describe('PhysicalAssessmentsView', () => {
 
     // Advance to Step 2: Medidas
     fireEvent.click(screen.getByRole('button', { name: /Próxima Etapa/i }));
-    expect(screen.getByText(/Medidas Antropométricas & Circunferências/i)).toBeInTheDocument();
+    expect(screen.getByText(/Medidas corporais e circunferências/i)).toBeInTheDocument();
     const waistInput = screen.getByLabelText(/Cintura \(cm\)/i);
     fireEvent.change(waistInput, { target: { value: '84.0' } });
 
     // Advance to Step 3: Composição
     fireEvent.click(screen.getByRole('button', { name: /Próxima Etapa/i }));
-    expect(screen.getByText(/Composição Corporal & Percentual de Gordura/i)).toBeInTheDocument();
+    expect(screen.getByText(/Composição corporal e percentual de gordura/i)).toBeInTheDocument();
     const bodyFatInput = screen.getByLabelText(/Gordura Corporal \(%\)/i);
     fireEvent.change(bodyFatInput, { target: { value: '17.2' } });
 

@@ -24,21 +24,21 @@ export const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
         <div className="flex items-center gap-2">
           <History className="h-5 w-5 text-cyan-500" />
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Histórico de Relatórios de Longevidade
+            Histórico de análises
           </h3>
         </div>
         <span className="text-xs text-slate-500 dark:text-slate-400">
-          {reports.length} relatório(s) arquivado(s)
+          {reports.length} análise(s) salva(s)
         </span>
       </div>
 
       {reports.length === 0 ? (
         <EmptyState
-          title="Nenhum relatório salvo no histórico"
-          description="Gere sua primeira síntese de dados na aba 'Analisar Tendências' para arquivá-la aqui."
+          title="Nenhuma análise salva no histórico"
+          description="Gere sua primeira análise na aba 'Analisar tendências' para salvá-la aqui."
           icon={History}
           action={{
-            label: 'Ir para Analisar Tendências',
+            label: 'Ir para Analisar tendências',
             onClick: onGoToAnalyze,
           }}
         />
@@ -88,7 +88,7 @@ export const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
                     {isCurrent ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-radius-md bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-500/30">
                         <Check className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                        <span>Ativo no Painel</span>
+                        <span>Ativo no painel</span>
                       </span>
                     ) : (
                       <Button
@@ -97,7 +97,7 @@ export const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
                         onClick={() => onSelectReport(rep.id)}
                         className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
                       >
-                        Visualizar no Painel
+                        Visualizar no painel
                       </Button>
                     )}
                   </div>

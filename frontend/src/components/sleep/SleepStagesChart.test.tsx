@@ -40,11 +40,11 @@ describe('SleepStagesChart (UX_UI_57)', () => {
       />
     );
 
-    expect(screen.getByText('Distribuição de Fases do Sono')).toBeInTheDocument();
-    expect(screen.getByText('Duração Média')).toBeInTheDocument();
-    expect(screen.getByText('Eficiência Média')).toBeInTheDocument();
-    expect(screen.getByText('Sono Profundo Médio')).toBeInTheDocument();
-    expect(screen.getByText('Sono REM Médio')).toBeInTheDocument();
+    expect(screen.getByText('Fases do sono')).toBeInTheDocument();
+    expect(screen.getByText(/duração média/i)).toBeInTheDocument();
+    expect(screen.getByText(/eficiência média/i)).toBeInTheDocument();
+    expect(screen.getByText(/sono profundo médio/i)).toBeInTheDocument();
+    expect(screen.getByText(/sono rem médio/i)).toBeInTheDocument();
   });
 
   it('provides accessible keyboard focus on stacked bars (U22-P1-35 / U22-P1-64)', () => {

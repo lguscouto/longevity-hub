@@ -134,7 +134,7 @@ export const AssessmentDetails: React.FC<AssessmentDetailsProps> = ({
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                Anotações Clínicas & Bioimpedância
+                Anotações e bioimpedância
               </span>
               {selectedAssessment.notes.length > 180 && (
                 <button
@@ -177,7 +177,7 @@ export const AssessmentDetails: React.FC<AssessmentDetailsProps> = ({
           <EmptyState
             icon={Camera}
             title="Nenhuma foto anexada"
-            description="Nenhuma foto corporal foi anexada a esta avaliação clínica."
+            description="Nenhuma foto corporal foi anexada a esta avaliação física."
           />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -92,7 +92,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
     setError(null);
     try {
       const res = await fetch('/api/physical-assessments/timeline');
-      if (!res.ok) throw new Error('Falha ao carregar linha do tempo de composição corporal');
+      if (!res.ok) throw new Error('Não foi possível carregar a evolução da composição corporal.');
       const json: TimelineData = await res.json();
       setData(json);
     } catch (err: any) {
@@ -241,7 +241,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-radius-full bg-slate-800 text-slate-400 font-medium text-xs">
-              {pt.source || 'Wearable'}
+              {pt.source || 'Dispositivo conectado'}
             </span>
           )}
         </div>
@@ -323,7 +323,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
   if (error) {
     return (
       <ErrorState
-        title="Falha ao carregar composição corporal"
+        title="Não foi possível carregar a composição corporal"
         message={error}
         onRetry={fetchTimeline}
       />
@@ -350,7 +350,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
                 Evolução da Composição Corporal
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Histórico integrado de balança, wearables (Zepp/Google Health) e avaliações físicas.
+                Histórico integrado de balança, dispositivos conectados (Zepp/Google Health) e avaliações físicas.
               </p>
             </div>
           </div>
@@ -685,7 +685,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-radius-full bg-emerald-500" aria-hidden="true" />
-            Ponto simples = Medição Wearable / Balança
+            Ponto simples = Medição de dispositivo conectado ou balança
           </span>
         </div>
         <span>Fórmula: Massa Magra = Peso × (1 - (% Gordura / 100))</span>

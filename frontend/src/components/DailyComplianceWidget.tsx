@@ -29,14 +29,14 @@ const PILLARS: Array<{
   {
     key: 'sleep_schedule_ok',
     title: 'Janela de Sono',
-    description: 'Dormir & Acordar no horário',
+    description: 'Dormir e acordar no horário',
     icon: Moon,
     iconColor: 'text-indigo-600 dark:text-indigo-400',
   },
   {
     key: 'supplements_ok',
     title: 'Suplementação',
-    description: 'Pilha do dia completa',
+    description: 'Rotina do dia completa',
     icon: Pill,
     iconColor: 'text-cyan-600 dark:text-cyan-400',
   },
@@ -91,7 +91,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
       }
     } catch (caught) {
       setStatus('error');
-      setLoadError(caught instanceof ApiError ? caught.message : 'Falha ao carregar o score de disciplina.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar a adesão à rotina.');
     }
   };
 
@@ -123,7 +123,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
       console.error(caught);
       setCompliance(previousPillars);
       setStatus(previousStatus);
-      setLoadError(caught instanceof ApiError ? caught.message : 'Falha ao registrar conformidade.');
+      setLoadError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar a alteração.');
     } finally {
       setIsSaving(false);
     }
@@ -144,8 +144,8 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
             <Target className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Protocol Compliance Score</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Padrão de Longevidade ({selectedDate})</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Adesão à rotina</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Hábitos e metas ({selectedDate})</p>
           </div>
         </div>
 
@@ -163,7 +163,7 @@ export const DailyComplianceWidget: React.FC<DailyComplianceWidgetProps> = ({ se
               {scorePct}%
             </span>
           )}
-          <span className="text-xs text-slate-500 dark:text-slate-400 block uppercase font-bold">Conformidade</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 block uppercase font-bold">Adesão</span>
         </div>
       </div>
 

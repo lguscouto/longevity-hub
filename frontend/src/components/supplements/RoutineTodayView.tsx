@@ -28,10 +28,10 @@ export const RoutineTodayView: React.FC<RoutineTodayViewProps> = ({
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Activity className="h-4 w-4 text-emerald-500" />
-              Progresso de Doses para {selectedDate}
+              Progresso das doses para {selectedDate}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Clique na dose para marcar ou desmarcar a ingestão diária.
+              Marque os itens que você já tomou hoje.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -56,10 +56,10 @@ export const RoutineTodayView: React.FC<RoutineTodayViewProps> = ({
       {/* Se não houver suplementos */}
       {supplements.length === 0 ? (
         <EmptyState
-          title="Nenhum composto cadastrado"
-          description="Cadastre seus suplementos, peptídeos e hormônios para gerenciar sua rotina diária."
+          title="Nenhum item cadastrado"
+          description="Adicione seus suplementos, vitaminas e medicamentos para acompanhar sua rotina diária."
           action={{
-            label: 'Adicionar Composto',
+            label: 'Adicionar item',
             onClick: onOpenAddModal,
           }}
         />

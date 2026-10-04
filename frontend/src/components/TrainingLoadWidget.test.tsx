@@ -17,12 +17,12 @@ describe('TrainingLoadWidget (UX_UI_56)', () => {
 
     // Must not be empty
     expect(container.firstChild).not.toBeNull()
-    expect(screen.getByText('Carga de Treino & Recuperação')).toBeInTheDocument()
+    expect(screen.getByText('Carga de treino e recuperação')).toBeInTheDocument()
     expect(
-      screen.getByText('Sem registros de carga cardiovascular no período')
+      screen.getByText('Ainda não temos dados de carga cardiovascular')
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/Sincronize seu relógio Zepp OS/i)
+      screen.getByText(/Sincronize seu relógio/i)
     ).toBeInTheDocument()
   })
 
@@ -42,7 +42,7 @@ describe('TrainingLoadWidget (UX_UI_56)', () => {
     expect(screen.getByText('180')).toBeInTheDocument()
     expect(screen.getByText('150 - 250')).toBeInTheDocument()
     expect(screen.getByText(/4 treinos \(185m\)/i)).toBeInTheDocument()
-    expect(screen.getByTitle(/Carga na faixa ideal de estímulo/i)).toBeInTheDocument()
+    expect(screen.getByTitle(/Sua carga está dentro da faixa estimada/i)).toBeInTheDocument()
   })
 
   it('displays Abaixo da Faixa when rolling load is less than optimalMin', () => {

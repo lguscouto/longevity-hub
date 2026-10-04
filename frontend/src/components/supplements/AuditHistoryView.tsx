@@ -30,17 +30,17 @@ export const AuditHistoryView: React.FC<AuditHistoryViewProps> = ({ auditLogs })
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <History className="h-4 w-4 text-indigo-500" />
-              Rastreabilidade Imutável de Prescrição & Ajustes
+              Histórico de alterações na rotina
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Registro cronológico longitudinal auditado de inclusões, alterações de dosagens e descontinuações.
+              Histórico completo das alterações feitas na sua rotina de suplementos e compostos.
             </p>
           </div>
 
           <div className="w-full sm:w-64">
             <Input
               type="text"
-              placeholder="Filtrar eventos de auditoria..."
+              placeholder="Buscar no histórico..."
               value={auditSearchTerm}
               onChange={(e) => setAuditSearchTerm(e.target.value)}
               leftIcon={<Search className="h-4 w-4 text-slate-400" />}
@@ -50,8 +50,8 @@ export const AuditHistoryView: React.FC<AuditHistoryViewProps> = ({ auditLogs })
 
         {filteredAuditLogs.length === 0 ? (
           <EmptyState
-            title="Nenhum registro de auditoria encontrado"
-            description="Alterações em dosagens, compostos ou horários serão registradas automaticamente aqui com carimbo de data/hora."
+            title="Nenhuma alteração encontrada"
+            description="Quando você adicionar, editar ou remover itens da sua rotina, o histórico aparecerá aqui."
           />
         ) : (
           <div className="space-y-3">

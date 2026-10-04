@@ -208,7 +208,7 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
           <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Ruler className="h-5 w-5 text-cyan-500" /> Medidas Antropométricas & Circunferências
+              <Ruler className="h-5 w-5 text-cyan-500" /> Medidas corporais e circunferências
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Registre as circunferências em centímetros utilizando fita métrica flexível.
@@ -263,10 +263,10 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
           <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Percent className="h-5 w-5 text-indigo-500" /> Composição Corporal & Percentual de Gordura
+              <Percent className="h-5 w-5 text-indigo-500" /> Composição corporal e percentual de gordura
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Obtido por bioimpedância médica, adipômetro ou DXA.
+              Obtido por balança de bioimpedância, adipômetro ou densitometria (DXA).
             </p>
           </div>
 
@@ -410,14 +410,14 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
           <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <FileText className="h-5 w-5 text-cyan-500" /> Observações Pessoais & Protocolo
+                <FileText className="h-5 w-5 text-cyan-500" /> Observações e rotina
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Adicione anotações sobre horário de pesagem, refeições prévias ou dados de bioimpedância.
               </p>
             </div>
 
-            <FormField id="assessment-notes-input" label="Observações & Notas Clínicas">
+            <FormField id="assessment-notes-input" label="Observações e anotações">
               <Textarea
                 id="assessment-notes-input"
                 rows={3}

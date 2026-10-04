@@ -73,14 +73,14 @@ export const ProtocolCatalogView: React.FC<ProtocolCatalogViewProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Hormônios & Peptídeos ({countHormonio})
+            Hormônios e Peptídeos ({countHormonio})
           </button>
         </div>
 
         <div className="w-full sm:w-64">
           <Input
             type="text"
-            placeholder="Buscar composto..."
+            placeholder="Buscar suplemento ou composto..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             leftIcon={<Search className="h-4 w-4 text-slate-400" />}
@@ -91,10 +91,10 @@ export const ProtocolCatalogView: React.FC<ProtocolCatalogViewProps> = ({
       {/* Grid de Compostos */}
       {filteredSupplements.length === 0 ? (
         <EmptyState
-          title="Nenhum composto encontrado"
-          description="Nenhum composto cadastrado corresponde aos filtros de busca atuais."
+          title="Nenhum item encontrado"
+          description="Nenhum item corresponde aos filtros de busca atuais."
           action={{
-            label: 'Adicionar Composto',
+            label: 'Adicionar item',
             onClick: onOpenAddModal,
           }}
         />
@@ -165,8 +165,8 @@ export const ProtocolCatalogView: React.FC<ProtocolCatalogViewProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => onConfirmDelete({ id: supp.id, name: supp.name })}
-                      aria-label="Remover Composto"
-                      title="Remover Composto"
+                      aria-label="Remover item"
+                      title="Remover item"
                       className="hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
                     />
                   </div>

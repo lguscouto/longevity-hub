@@ -89,7 +89,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
       setWorkouts(Array.isArray(workoutsData) ? workoutsData : [])
       setSummary(summaryData)
     } catch (err: any) {
-      setError(err?.message || 'Erro ao carregar dados de treinos.')
+      setError(err?.message || 'Não foi possível carregar os dados de treinos.')
     } finally {
       setLoading(false)
     }
@@ -192,7 +192,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               <Dumbbell className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Treinos & Performance</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Treinos e desempenho</h2>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Histórico unificado de musculação e força (<span className="text-purple-600 dark:text-purple-400 font-bold">Hevy</span>) e atividades aeróbicas (<span className="text-emerald-600 dark:text-emerald-400 font-bold">Zepp</span>).
               </p>

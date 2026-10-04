@@ -27,11 +27,11 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
   isSyncingGoogle = false,
 }) => {
   return (
-    <div className="space-y-6 animate-fadeIn" role="region" aria-label="Integrações e Wearables">
+    <div className="space-y-6 animate-fadeIn" role="region" aria-label="Integrações e dispositivos">
       <div>
         <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-          Fontes de Dados & Wearables Conectados
+          Fontes de dados e dispositivos conectados
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
           Conecte sensores e dispositivos para sincronizar métricas de frequência cardíaca, sono e recuperação.
@@ -57,7 +57,7 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
               <StatusBadge variant="success">Conectado</StatusBadge>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-              Proveniência primária para Frequência Cardíaca de Repouso (RHR), Variabilidade (HRV), estágios de sono e passos.
+              Origem principal para frequência cardíaca de repouso, HRV, fases do sono e passos.
             </p>
           </div>
 
@@ -72,7 +72,7 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
                 leftIcon={RefreshCw}
                 className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
               >
-                Sync Zepp
+                Sincronizar Zepp
               </Button>
             )}
             {onSyncZepp && (
@@ -82,7 +82,7 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
                 onClick={() => onSyncZepp(true)}
                 disabled={isSyncingZepp}
               >
-                Full Sync Zepp
+                Sincronizar tudo
               </Button>
             )}
           </div>
@@ -97,9 +97,9 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
                   <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Google Health API v4</h4>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Google Health</h4>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Pixel Watch & Health Connect
+                    Pixel Watch e Health Connect · API v4
                   </span>
                 </div>
               </div>
@@ -110,7 +110,7 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
               )}
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-              Sincronização de biomarcadores adicionais, agregação de wearables Android e redundância de séries temporais.
+              Sincronização de biomarcadores adicionais, agregação de dispositivos e redundância dos dados.
             </p>
           </div>
 
@@ -127,7 +127,7 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
                     leftIcon={RefreshCw}
                     className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
                   >
-                    Sync Google
+                    Sincronizar Google Health
                   </Button>
                 )}
                 <Button
@@ -145,7 +145,7 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
                 onClick={onOpenGoogleHealthModal}
                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
               >
-                + Conectar Google Health
+                Conectar Google Health
               </Button>
             )}
           </div>

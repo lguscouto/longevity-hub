@@ -420,7 +420,7 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
                 Comparativo consolidado da arquitetura do sono e métricas autonômicas mês a mês.
               </p>
             </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Clique na linha para filtrar o painel</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Clique em uma linha para filtrar os dados</span>
           </div>
 
           <ResponsiveDataTable
@@ -444,13 +444,13 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Calendar className="h-5 w-5 text-cyan-500" />
               {selectedMonth !== 'all'
-                ? `Histórico de Registros do Sono - ${selectedLabel} (${tableData.length})`
-                : `Histórico Completo de Registros do Sono (${tableData.length})`}
+                ? `Histórico de sono — ${selectedLabel} (${tableData.length})`
+                : `Histórico de sono (${tableData.length})`}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {selectedMonth !== 'all'
                 ? `Exibindo apenas os registros de sono de ${selectedLabel}.`
-                : 'Todos os registros salvos localmente no dispositivo sem limitação.'}
+                : 'Todos os registros de sono salvos localmente.'}
             </p>
           </div>
 
@@ -459,7 +459,7 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
             <div className="flex-1 sm:flex-initial w-full sm:w-60">
               <Input
                 type="text"
-                placeholder="Filtrar por data (AAAA-MM-DD)..."
+                placeholder="Filtrar por data..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 leftIcon={<Search className="h-4 w-4 text-slate-400" />}
@@ -472,7 +472,7 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
               size="sm"
               onClick={() => setSortAsc(!sortAsc)}
               leftIcon={sortAsc ? ChevronUp : ChevronDown}
-              title="Inverter Ordem de Data"
+              title="Inverter ordem das datas"
               className="shrink-0"
             >
               {sortAsc ? 'Mais Antigos' : 'Mais Recentes'}

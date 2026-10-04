@@ -31,22 +31,22 @@ describe('EvidenceBlock (U22-P1-45, U22-P1-47)', () => {
     // Headline and category
     expect(screen.getByText('Queda consistente do HRV noturno após treinos intensos tardios')).toBeInTheDocument()
     expect(screen.getByText('recovery')).toBeInTheDocument()
-    expect(screen.getByText('Inferência de IA')).toBeInTheDocument()
+    expect(screen.getByText('Interpretação por IA')).toBeInTheDocument()
 
     // Tier 1: Dado Fisiológico Observado
     expect(screen.getByText('Dado Fisiológico Observado (Medido)')).toBeInTheDocument()
     expect(screen.getByText(/HRV médio reduziu de 62ms para 44ms/)).toBeInTheDocument()
 
-    // Tier 2: Interpretação & Inferência Clínica
-    expect(screen.getByText('Interpretação & Inferência Clínica')).toBeInTheDocument()
+    // Tier 2: Interpretação e correlação
+    expect(screen.getByText('Interpretação e correlação')).toBeInTheDocument()
     expect(screen.getByText(/estresse simpático residual tardio/)).toBeInTheDocument()
 
     // Tier 3: Ação Sugerida
-    expect(screen.getByText('Ação Sugerida (Conduta Prática)')).toBeInTheDocument()
+    expect(screen.getByText('Ação sugerida')).toBeInTheDocument()
     expect(screen.getByText(/Antecipar sessões intensas/)).toBeInTheDocument()
 
-    // Tier 4: Limitação da Inferência
-    expect(screen.getByText('Limitação da Inferência')).toBeInTheDocument()
+    // Tier 4: Limitação da análise
+    expect(screen.getByText('Limitação da análise')).toBeInTheDocument()
     expect(screen.getByText(/Amostra de 14 dias com 4 sessões/)).toBeInTheDocument()
 
     // Evidence Sources & Window (U22-P1-47)
@@ -69,6 +69,6 @@ describe('EvidenceBlock (U22-P1-45, U22-P1-47)', () => {
     // Default limitation
     expect(screen.getByText(/Associação observacional sem inferência causal direta/)).toBeInTheDocument()
     // Default sources
-    expect(screen.getByText(/Sono, HRV, RHR, CGM, Exames Clínicos/)).toBeInTheDocument()
+    expect(screen.getByText(/Sono, HRV, RHR, CGM, Exames laboratoriais/)).toBeInTheDocument()
   })
 })

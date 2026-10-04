@@ -91,7 +91,7 @@ describe('InsightDrawer', () => {
     )
 
     // Verifica loading inicial
-    expect(screen.getByText(/Processando baseline e fatores associados/i)).toBeInTheDocument()
+    expect(screen.getByText(/comparando com sua linha de base/i)).toBeInTheDocument()
 
     // Aguarda dados renderizarem
     await waitFor(() => {
@@ -174,10 +174,10 @@ describe('InsightDrawer', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Aprofundar com Copiloto IA')).toBeInTheDocument()
+      expect(screen.getByText('Aprofundar com o Copiloto')).toBeInTheDocument()
     })
 
-    const aiButton = screen.getByText('Aprofundar com Copiloto IA')
+    const aiButton = screen.getByText('Aprofundar com o Copiloto')
     await user.click(aiButton)
 
     await waitFor(() => {

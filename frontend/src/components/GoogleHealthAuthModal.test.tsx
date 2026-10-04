@@ -162,7 +162,7 @@ describe('GoogleHealthAuthModal', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Conectado & Ativo')).toBeInTheDocument()
+      expect(screen.getByText('Conectado e ativo')).toBeInTheDocument()
     })
 
     expect(screen.getByText(/Módulos Autorizados \(Consentimento\):/i)).toBeInTheDocument()

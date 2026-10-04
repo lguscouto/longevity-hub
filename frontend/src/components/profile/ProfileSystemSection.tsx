@@ -35,18 +35,18 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Base de Dados SQLite Local</h4>
-                <StatusBadge variant="success">Local-First OK</StatusBadge>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Armazenamento local</h4>
+                <StatusBadge variant="success">Armazenamento local ativo</StatusBadge>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Banco de dados residente em <code>longevidade.db</code> com integridade referencial e isolamento local.
+                Seus dados ficam salvos com segurança no seu dispositivo no arquivo <code>longevidade.db</code>.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800/80 px-3 py-2 rounded-radius-md border border-slate-200 dark:border-slate-700">
             <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-            <span>Privacidade Soberana: Zero Telemetria Externa Não Autorizada</span>
+            <span>Privacidade: seus dados não são enviados para serviços externos sem sua autorização.</span>
           </div>
         </div>
       </div>
@@ -60,7 +60,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
                 <Sparkles className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Inteligência Artificial & Provedores LLM</h4>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">IA e provedores</h4>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   OpenAI, Anthropic, Gemini, Groq, Ollama (BYOK)
                 </span>
@@ -69,7 +69,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
             <StatusBadge variant="info">Configuração Local</StatusBadge>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-            Gerencie chaves de API, escolha modelos locais ou de nuvem e defina o modo de privacidade estrito para análise de correlações e geração de insights clínicos.
+            Configure suas chaves de API, escolha provedores locais ou em nuvem e ajuste suas preferências de privacidade para as análises do Copiloto.
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
               leftIcon={Settings}
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
             >
-              Configurar Provedores & Privacidade
+              Configurar IA e privacidade
             </Button>
           )}
         </div>

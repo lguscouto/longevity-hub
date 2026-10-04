@@ -116,7 +116,7 @@ describe('ConfounderBalanceModal', () => {
 
   it('does not render when isOpen is false', () => {
     render(<ConfounderBalanceModal isOpen={false} onClose={vi.fn()} />)
-    expect(screen.queryByText('Balanço de Confundidores & Covariáveis')).not.toBeInTheDocument()
+    expect(screen.queryByText('Fatores que podem influenciar o resultado')).not.toBeInTheDocument()
   })
 
   it('renders severe confounding alert and imbalanced covariate rows', async () => {
@@ -131,11 +131,11 @@ describe('ConfounderBalanceModal', () => {
       />
     )
 
-    expect(screen.getByText('Balanço de Confundidores & Covariáveis')).toBeInTheDocument()
+    expect(screen.getByText('Fatores que podem influenciar o resultado')).toBeInTheDocument()
     expect(screen.getByText('Teste Magnésio Treonato')).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByText(/Possível Confundidor Detectado/i)).toBeInTheDocument()
+      expect(screen.getByText(/Fator de influência detectado/i)).toBeInTheDocument()
       expect(screen.getByText(/consumo de álcool \(-40\.0%\)/i)).toBeInTheDocument()
     })
 
@@ -144,7 +144,7 @@ describe('ConfounderBalanceModal', () => {
     expect(screen.getByText('Balanceado')).toBeInTheDocument()
 
     // Verifica salvaguarda clínica
-    expect(screen.getByText(/Princípio Clínico: Associação Temporal ≠ Causalidade/i)).toBeInTheDocument()
+    expect(screen.getByText(/Como interpretar este resultado/i)).toBeInTheDocument()
   })
 
   it('renders balanced state when has_severe_confounding is false', async () => {
@@ -156,7 +156,7 @@ describe('ConfounderBalanceModal', () => {
       />
     )
 
-    expect(screen.getByText(/Covariáveis Balanceadas \(Baixo Risco de Viés\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/Poucos fatores de influência detectados/i)).toBeInTheDocument()
     expect(screen.getByText('Balanceado')).toBeInTheDocument()
   })
 

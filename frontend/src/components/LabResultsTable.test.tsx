@@ -71,13 +71,13 @@ describe('LabResultsTable', () => {
     )
 
     expect(screen.getByText('(Sem TG/HDL)')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent(/excluídos de cálculos/i)
+    expect(screen.getByRole('status')).toHaveTextContent(/não entram nos cálculos/i)
   })
 
   it('renders EmptyState when no lab reports are available', () => {
     render(<LabResultsTable labs={[]} onAddBatchLabs={vi.fn()} />)
-    expect(screen.getByRole('heading', { name: /nenhum laudo cadastrado/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /cadastrar primeiro laudo/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /nenhum exame cadastrado/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /adicionar primeiro exame/i })).toBeInTheDocument()
   })
 
   it('opens accessible ConfirmDialog when deleting a lab date group', async () => {
@@ -91,12 +91,12 @@ describe('LabResultsTable', () => {
       />,
     )
 
-    const deleteBtn = screen.getByTitle(/excluir este laudo/i)
+    const deleteBtn = screen.getByTitle(/excluir este exame/i)
     await user.click(deleteBtn)
 
     const dialog = screen.getByRole('alertdialog')
     expect(dialog).toBeInTheDocument()
-    expect(screen.getByText(/confirmar exclusão de laudo/i)).toBeInTheDocument()
+    expect(screen.getByText(/excluir exame\?/i)).toBeInTheDocument()
 
     const cancelBtn = screen.getByRole('button', { name: /cancelar/i })
     await user.click(cancelBtn)

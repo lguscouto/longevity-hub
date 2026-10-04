@@ -154,19 +154,19 @@ describe('SupplementsView (UX-P1-19)', () => {
     render(<SupplementsView selectedDate="2026-10-02" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Pilha de Suplementação & Hormônios')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: /suplementos e rotina/i })).toBeInTheDocument();
     });
 
     // Check metric cards
-    expect(screen.getByText('Compostos Ativos')).toBeInTheDocument();
-    expect(screen.getByText('Adesão do Dia (2026-10-02)')).toBeInTheDocument();
-    expect(screen.getByText('Registros na Auditoria')).toBeInTheDocument();
+    expect(screen.getByText(/itens ativos/i)).toBeInTheDocument();
+    expect(screen.getByText(/adesão do dia/i)).toBeInTheDocument();
+    expect(screen.getByText(/alterações registradas/i)).toBeInTheDocument();
 
     // Check tabs
-    expect(screen.getByRole('button', { name: /Hoje \(Rotina & Adesão\)/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Meu Protocolo/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Histórico & Auditoria/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Análise & Interações \(IA\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /hoje \(rotina\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /minha rotina/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /histórico de alterações/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /análise com ia/i })).toBeInTheDocument();
   });
 
   it('organizes daily routine chronobiologically in Hoje tab and toggles supplement dose', async () => {
@@ -203,17 +203,17 @@ describe('SupplementsView (UX-P1-19)', () => {
     });
   });
 
-  it('switches to Meu Protocolo tab, filters by category and search term', async () => {
+  it('switches to Minha rotina tab, filters by category and search term', async () => {
     render(<SupplementsView selectedDate="2026-10-02" />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Meu Protocolo/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /minha rotina/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Meu Protocolo/i }));
+    fireEvent.click(screen.getByRole('button', { name: /minha rotina/i }));
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Buscar composto...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/buscar suplemento ou composto/i)).toBeInTheDocument();
     });
 
     // All compounds visible
@@ -221,13 +221,13 @@ describe('SupplementsView (UX-P1-19)', () => {
     expect(screen.getByText('Cipionato de Testosterona')).toBeInTheDocument();
 
     // Filter by Hormônio
-    fireEvent.click(screen.getByRole('button', { name: /Hormônios & Peptídeos/i }));
+    fireEvent.click(screen.getByRole('button', { name: /hormônios e peptídeos/i }));
     expect(screen.queryByText('Metformina')).not.toBeInTheDocument();
     expect(screen.getByText('Cipionato de Testosterona')).toBeInTheDocument();
 
     // Filter by search
-    fireEvent.click(screen.getByRole('button', { name: /Todos/i }));
-    const searchInput = screen.getByPlaceholderText('Buscar composto...');
+    fireEvent.click(screen.getByRole('button', { name: /todos/i }));
+    const searchInput = screen.getByPlaceholderText(/buscar suplemento ou composto/i);
     fireEvent.change(searchInput, { target: { value: 'Creatina' } });
 
     expect(screen.getByText('Creatina Monohidratada')).toBeInTheDocument();
@@ -239,25 +239,25 @@ describe('SupplementsView (UX-P1-19)', () => {
 
     // Go to Protocol tab
     await waitFor(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Meu Protocolo/i }));
+      fireEvent.click(screen.getByRole('button', { name: /minha rotina/i }));
     });
 
     await waitFor(() => {
-      expect(screen.getAllByTitle('Remover Composto').length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle('Remover item').length).toBeGreaterThan(0);
     });
 
     // Click delete on first compound (Metformina)
-    const deleteButtons = screen.getAllByTitle('Remover Composto');
+    const deleteButtons = screen.getAllByTitle('Remover item');
     fireEvent.click(deleteButtons[0]);
 
     // Check ConfirmDialog is open with accessible role alertdialog
     await waitFor(() => {
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
-      expect(screen.getByText(/Tem certeza que deseja remover Metformina/i)).toBeInTheDocument();
+      expect(screen.getByText(/deseja remover metformina/i)).toBeInTheDocument();
     });
 
     // Confirm deletion
-    const confirmBtn = screen.getByRole('button', { name: 'Confirmar Remoção' });
+    const confirmBtn = screen.getByRole('button', { name: 'Remover' });
     fireEvent.click(confirmBtn);
 
     await waitFor(() => {
@@ -271,15 +271,15 @@ describe('SupplementsView (UX-P1-19)', () => {
     });
   });
 
-  it('switches to Histórico & Auditoria tab and displays immutable longitudinal events', async () => {
+  it('switches to Histórico de alterações tab and displays immutable longitudinal events', async () => {
     render(<SupplementsView selectedDate="2026-10-02" />);
 
     await waitFor(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Histórico & Auditoria/i }));
+      fireEvent.click(screen.getByRole('button', { name: /histórico de alterações/i }));
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Rastreabilidade Imutável de Prescrição & Ajustes')).toBeInTheDocument();
+      expect(screen.getByText(/histórico de alterações na rotina/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText('ADICIONADO')).toBeInTheDocument();
@@ -287,26 +287,26 @@ describe('SupplementsView (UX-P1-19)', () => {
     expect(screen.getByText('HORARIO_ALTERADO')).toBeInTheDocument();
 
     // Filter audit logs
-    const auditSearch = screen.getByPlaceholderText('Filtrar eventos de auditoria...');
+    const auditSearch = screen.getByPlaceholderText(/buscar no histórico/i);
     fireEvent.change(auditSearch, { target: { value: 'Cipionato' } });
 
     expect(screen.getByText('Cipionato de Testosterona')).toBeInTheDocument();
     expect(screen.queryByText('Creatina Monohidratada')).not.toBeInTheDocument();
   });
 
-  it('switches to Análise & Interações (IA) tab and runs AI evaluation', async () => {
+  it('switches to Análise com IA tab and runs AI evaluation', async () => {
     render(<SupplementsView selectedDate="2026-10-02" />);
 
     await waitFor(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Análise & Interações \(IA\)/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^análise com ia$/i }));
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Parecer Integrado do Copiloto de IA')).toBeInTheDocument();
+      expect(screen.getByText(/análise integrada do copiloto/i)).toBeInTheDocument();
     });
 
     // Trigger AI analysis
-    const analyzeBtn = screen.getByRole('button', { name: /Gerar Nova Análise/i });
+    const analyzeBtn = screen.getByRole('button', { name: /gerar nova análise/i });
     fireEvent.click(analyzeBtn);
 
     await waitFor(() => {

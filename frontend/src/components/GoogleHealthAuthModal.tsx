@@ -234,11 +234,11 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Estado da Conexão:</span>
               {status.connected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Conectado & Ativo
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Conectado e ativo
                 </span>
               ) : status.reauthentication_required ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  <AlertCircle className="w-3.5 h-3.5" /> Reautenticação Necessária
+                  <AlertCircle className="w-3.5 h-3.5" /> Reconexão necessária
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">

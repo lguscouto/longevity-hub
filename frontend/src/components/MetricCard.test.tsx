@@ -110,8 +110,8 @@ describe('MetricCard (UX_UI_32)', () => {
       />
     );
 
-    expect(screen.getByText('Observado')).toBeInTheDocument();
-    expect(screen.getByRole('note', { name: /natureza do dado: dado observado diretamente/i })).toBeInTheDocument();
+    expect(screen.getByText('Medido')).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: /natureza do dado: medição direta/i })).toBeInTheDocument();
   });
 });
 

@@ -49,7 +49,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-radius-full bg-emerald-500 animate-pulse" aria-hidden="true" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Chat Conversacional com o Copiloto
+            Conversar com o Copiloto
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           leftIcon={Moon}
           className="rounded-radius-full text-xs font-normal bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 min-h-[32px] py-1 shrink-0"
         >
-          Sono & Recuperação
+          Sono e recuperação
         </Button>
         <Button
           variant="outline"
@@ -81,7 +81,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           leftIcon={Sparkles}
           className="rounded-radius-full text-xs font-normal bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 min-h-[32px] py-1 shrink-0"
         >
-          Padrões Aprendidos
+          Padrões encontrados
         </Button>
         <Button
           variant="outline"
@@ -90,7 +90,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           leftIcon={Dumbbell}
           className="rounded-radius-full text-xs font-normal bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 min-h-[32px] py-1 shrink-0"
         >
-          Carga de Treino & HRV
+          Carga de treino e HRV
         </Button>
         <Button
           variant="outline"
@@ -99,7 +99,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           leftIcon={Calendar}
           className="rounded-radius-full text-xs font-normal bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 min-h-[32px] py-1 shrink-0"
         >
-          Linha do Tempo & Hábitos
+          Linha do tempo e hábitos
         </Button>
         <Button
           variant="outline"
@@ -108,7 +108,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           leftIcon={Activity}
           className="rounded-radius-full text-xs font-normal bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 text-slate-700 dark:text-slate-300 min-h-[32px] py-1 shrink-0"
         >
-          Analisar ApoB & Labs
+          Exames e colesterol
         </Button>
       </div>
 
@@ -141,7 +141,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         ))}
         {isSendingChat && (
           <div className="flex items-center gap-2 text-slate-400 text-xs italic">
-            <Bot className="h-4 w-4 animate-pulse text-cyan-400" aria-hidden="true" /> Copiloto pensando...
+            <Bot className="h-4 w-4 animate-pulse text-cyan-400" aria-hidden="true" /> O Copiloto está analisando...
           </div>
         )}
         <div ref={chatBottomRef} />
@@ -155,8 +155,8 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
             type="text"
             placeholder={
               hasApiKey
-                ? 'Faça uma pergunta sobre seus exames, treinos ou eventos...'
-                : 'Configure a API Key para conversar...'
+                ? 'Faça uma pergunta sobre seus exames, treinos, sono ou rotina...'
+                : 'Configure sua chave de API para conversar...'
             }
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
@@ -167,7 +167,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           type="submit"
           variant="primary"
           size="sm"
-          aria-label="Enviar mensagem ao copiloto"
+          aria-label="Enviar mensagem ao Copiloto"
           disabled={!hasApiKey || isSendingChat || !chatInput.trim()}
           loading={isSendingChat}
           leftIcon={Send}

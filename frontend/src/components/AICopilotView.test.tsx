@@ -138,13 +138,13 @@ describe('AICopilotView external AI privacy consent', () => {
     expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({ prompt: 'Pergunta fake sem dados reais' })
   })
 
-  it('sends prompt when clicking contextual quick prompt button like Padrões Aprendidos', async () => {
+  it('sends prompt when clicking contextual quick prompt button like Padrões Encontrados', async () => {
     const user = userEvent.setup()
     mockAISettings()
 
     renderCopilot()
     await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
-    const btn = await screen.findByRole('button', { name: /padrões aprendidos/i })
+    const btn = await screen.findByRole('button', { name: /padrões encontrados/i })
     await user.click(btn)
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
@@ -302,8 +302,8 @@ describe('AICopilotView external AI privacy consent', () => {
     expect(await screen.findByText('HRV Noturna Elevada')).toBeInTheDocument()
     expect(screen.getByText(/Média de HRV de 78ms/)).toBeInTheDocument()
     expect(screen.getAllByText(/deepseek-v4-flash-0731/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/Histórico de Relatórios \(1\)/i)).toBeInTheDocument()
-    expect(screen.queryByText(/nenhuma análise ativa na tela/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Histórico de análises \(1\)/i)).toBeInTheDocument()
+    expect(screen.queryByText(/nenhuma análise gerada recentemente/i)).not.toBeInTheDocument()
   })
 
   it('switches between Analisar, Conversar, and Histórico tasks seamlessly', async () => {
@@ -360,24 +360,24 @@ describe('AICopilotView external AI privacy consent', () => {
     renderCopilot()
 
     // 1. Initial tab is Analisar Tendências with EmptyState
-    expect(await screen.findByRole('heading', { name: /síntese de tendências & longevidade/i })).toBeInTheDocument()
-    expect(screen.getByText(/nenhuma análise ativa na tela/i)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /síntese de tendências de saúde/i })).toBeInTheDocument()
+    expect(screen.getByText(/nenhuma análise gerada recentemente/i)).toBeInTheDocument()
 
     // 2. Switch to Conversar com Copiloto
     await user.click(screen.getByRole('button', { name: /conversar com copiloto/i }))
-    expect(await screen.findByRole('heading', { name: /chat conversacional com o copiloto/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /conversar com o copiloto/i })).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/faça uma pergunta sobre seus exames/i)).toBeInTheDocument()
 
-    // 3. Switch to Histórico de Relatórios
-    await user.click(screen.getByRole('button', { name: /histórico de relatórios \(1\)/i }))
-    expect(await screen.findByRole('heading', { name: /histórico de relatórios de longevidade/i })).toBeInTheDocument()
+    // 3. Switch to Histórico de Análises
+    await user.click(screen.getByRole('button', { name: /histórico de análises \(1\)/i }))
+    expect(await screen.findByRole('heading', { name: /histórico de análises/i })).toBeInTheDocument()
     expect(screen.getByText(/Histórico salvo para teste de alternância/)).toBeInTheDocument()
 
     // 4. Click "Visualizar no Painel" on the report
     await user.click(screen.getByRole('button', { name: /visualizar no painel/i }))
 
     // 5. Switches back to Analisar Tendências and displays the loaded report
-    expect(await screen.findByRole('heading', { name: /síntese de tendências & longevidade/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /síntese de tendências de saúde/i })).toBeInTheDocument()
     expect(screen.getByText('Glicemia Estável')).toBeInTheDocument()
     expect(screen.getByText(/Excelente controle pós-prandial/)).toBeInTheDocument()
   })
@@ -420,11 +420,11 @@ describe('AICopilotView external AI privacy consent', () => {
 
     renderCopilot()
 
-    expect(await screen.findByText(/Transparência & Origem dos Dados Fisiológicos/i)).toBeInTheDocument()
-    expect(screen.getByText(/Dados Observados/i)).toBeInTheDocument()
-    expect(screen.getByText(/Modelos & Estimativas/i)).toBeInTheDocument()
-    expect(screen.getByText(/Correlações & Tendências/i)).toBeInTheDocument()
-    expect(screen.getByText(/Alta densidade amostral/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Origem e transparência dos dados/i)).toBeInTheDocument()
+    expect(screen.getByText(/Dados medidos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Modelos e estimativas/i)).toBeInTheDocument()
+    expect(screen.getByText(/Tendências e hábitos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Dados consolidados/i)).toBeInTheDocument()
     expect(screen.getByText(/14 exames de sangue, 30 noites de sono, 12 treinos analisados/i)).toBeInTheDocument()
 
     // Assert buttons use clean text without festive emojis

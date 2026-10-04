@@ -43,7 +43,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Carga de Treino & Recuperação
+              Carga de treino e recuperação
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Carga cardiovascular acumulada Zepp
@@ -56,10 +56,10 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
             <Dumbbell className="h-5 w-5" aria-hidden="true" />
           </div>
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            Sem registros de carga cardiovascular no período
+            Ainda não temos dados de carga cardiovascular
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Sincronize seu relógio Zepp OS com telemetria cardíaca para acompanhar a carga de treino aguda (7 dias) e sua faixa ótima.
+            Sincronize seu relógio para acompanhar sua carga de treino dos últimos 7 dias e comparar com a faixa estimada para você.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
       statusBadge = (
         <span
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-radius-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20"
-          title="Carga na faixa ideal de estímulo atlético e recuperação sustentável"
+          title="Sua carga está dentro da faixa estimada."
         >
           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Faixa Ótima
         </span>
@@ -88,7 +88,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
       statusBadge = (
         <span
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-radius-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-500/20"
-          title="Carga abaixo do limite de manutenção (recuperação ou destreino gradual)"
+          title="Sua carga está abaixo da faixa estimada."
         >
           <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> Abaixo da Faixa
         </span>
@@ -97,7 +97,7 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
       statusBadge = (
         <span
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-radius-full bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs font-bold border border-rose-500/20"
-          title="Carga excessiva em relação à capacidade atual (risco de overreaching)"
+          title="Sua carga está acima da faixa estimada."
         >
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> Sobrecarga Aguda
         </span>
@@ -114,10 +114,10 @@ export const TrainingLoadWidget: React.FC<TrainingLoadWidgetProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Carga de Treino & Recuperação Sustentável
+              Carga de treino e recuperação
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Carga cardiovascular acumulada Zepp
+              Carga cardiovascular acumulada
             </p>
           </div>
         </div>
