@@ -160,7 +160,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title={`${data?.metric_name || metric} — Entender Mudança`}
+      title={`${data?.metric_name || metric} — Entender esta mudança`}
       badge={
         <div className="flex items-center gap-2">
           <span className="text-xs font-black tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
@@ -178,7 +178,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
             {loading ? (
               <div className="p-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-3">
                 <RefreshCw className="h-7 w-7 animate-spin text-emerald-500" />
-                <span>Comparando com sua linha de base e fatores associados...</span>
+                <span>Comparando com seu histórico e fatores relacionados...</span>
               </div>
             ) : error ? (
               <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
@@ -210,7 +210,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                         {data.observed_value} <span className="text-sm font-semibold text-slate-400">{data.unit}</span>
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Linha de base (30 dias): <span className="font-semibold text-slate-700 dark:text-slate-300">{data.baseline_value} {data.unit}</span>
+                        Média dos últimos 30 dias: <span className="font-semibold text-slate-700 dark:text-slate-300">{data.baseline_value} {data.unit}</span>
                       </div>
                     </div>
 
@@ -334,7 +334,7 @@ export const InsightDrawer: React.FC<InsightDrawerProps> = ({
                     {getConfidenceBadge(data.analysis_confidence)}
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                    <span>Cobertura do histórico:</span>
+                    <span>Cobertura dos dados:</span>
                     <span className="font-medium">{data.data_coverage_days} de {data.total_baseline_days} dias</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">

@@ -119,10 +119,10 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Registrar medição manual' }))
 
     // Wait for lazy-loaded ManualEntryModal to resolve
-    const dialog = await screen.findByRole('dialog', { name: /registrar métrica manual/i })
+    const dialog = await screen.findByRole('dialog', { name: /registrar medição/i })
 
-    await user.clear(screen.getByLabelText('Data de Referência'))
-    await user.type(screen.getByLabelText('Data de Referência'), '2026-07-29')
+    await user.clear(screen.getByLabelText('Data da medição'))
+    await user.type(screen.getByLabelText('Data da medição'), '2026-07-29')
     await user.clear(screen.getByLabelText('Peso (kg)'))
     await user.type(screen.getByLabelText('Peso (kg)'), '72.5')
 
@@ -138,7 +138,7 @@ describe('App', () => {
     })
 
     expect(requestJsonMock.mock.calls.some(([url]) => url === '/api/metrics/manual')).toBe(false)
-    expect(screen.getByRole('dialog', { name: /registrar métrica manual/i })).toBe(dialog)
+    expect(screen.getByRole('dialog', { name: /registrar medição/i })).toBe(dialog)
     expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível salvar o registro.')
   })
 

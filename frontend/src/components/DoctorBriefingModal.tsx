@@ -26,7 +26,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Resumo para consulta médica"
-      description="Resumo organizado para você revisar e levar à consulta."
+      description="Um resumo dos seus principais dados para você revisar e levar à consulta."
       icon={
         <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
           <Stethoscope className="h-5 w-5" />
@@ -89,7 +89,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
     >
       <div className="space-y-4">
         <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-900 dark:text-cyan-200 flex items-start gap-2.5">
-          <span className="font-bold shrink-0">Aviso importante:</span>
+          <span className="font-bold shrink-0">Importante:</span>
           <span className="leading-relaxed">
             Este resumo organiza seus dados para apoiar sua conversa com o profissional de saúde. Ele não substitui avaliação, diagnóstico ou orientação médica.
           </span>

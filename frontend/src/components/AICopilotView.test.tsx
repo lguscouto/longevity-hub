@@ -129,7 +129,7 @@ describe('AICopilotView external AI privacy consent', () => {
     await user.click(screen.getByRole('button', { name: /enviar mensagem ao copiloto/i }))
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+    await user.click(screen.getByRole('button', { name: /enviar e continuar/i }))
 
     await waitFor(() => {
       expect(postedTo('/api/ai/chat')).toBe(true)
@@ -148,7 +148,7 @@ describe('AICopilotView external AI privacy consent', () => {
     await user.click(btn)
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+    await user.click(screen.getByRole('button', { name: /enviar e continuar/i }))
 
     await waitFor(() => {
       expect(postedTo('/api/ai/chat')).toBe(true)
@@ -192,7 +192,7 @@ describe('AICopilotView external AI privacy consent', () => {
     await user.click(generateBtn)
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+    await user.click(screen.getByRole('button', { name: /enviar e continuar/i }))
 
     // Progress feedback and timer should be visible
     expect(await screen.findByText(/tempo decorrido:/i)).toBeInTheDocument()
@@ -219,7 +219,7 @@ describe('AICopilotView external AI privacy consent', () => {
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
     expect(screen.getByText(/média semanal \(últimos 7 dias\)/i)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+    await user.click(screen.getByRole('button', { name: /enviar e continuar/i }))
 
     await waitFor(() => {
       expect(postedTo('/api/ai/generate-insights')).toBe(true)
@@ -240,7 +240,7 @@ describe('AICopilotView external AI privacy consent', () => {
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
     expect(screen.getByText(/prontidão de hoje/i)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /confirmar envio/i }))
+    await user.click(screen.getByRole('button', { name: /enviar e continuar/i }))
 
     await waitFor(() => {
       expect(postedTo('/api/ai/generate-insights')).toBe(true)

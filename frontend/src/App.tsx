@@ -439,7 +439,7 @@ export default function App() {
           setSyncState('success')
           showToast({
             title: 'Sincronização concluída',
-            message: importedTotal > 0 ? `${importedTotal} novos registros sincronizados com sucesso.` : 'Sincronização concluída sem novos registros.',
+            message: importedTotal > 0 ? `${importedTotal} novos registros sincronizados com sucesso.` : 'Sincronização concluída. Não encontramos dados novos.',
             type: 'success',
           })
         }
@@ -451,11 +451,11 @@ export default function App() {
         setSyncState('syncing')
         setSyncResult({
           status: 'warning',
-          message: caught.message || 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.',
+          message: caught.message || 'A sincronização do Zepp já está em andamento. Aguarde a conclusão antes de iniciar outra.',
         })
         showToast({
           title: 'Sincronização em andamento',
-          message: 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão.',
+          message: 'A sincronização do Zepp já está em andamento. Aguarde a conclusão.',
           type: 'warning',
         })
       } else {
@@ -509,7 +509,7 @@ export default function App() {
         setSyncState('success')
         showToast({
           title: 'Google Health sincronizado',
-          message: 'Métricas de saúde integradas com sucesso.',
+          message: 'Dados de saúde sincronizados com sucesso.',
           type: 'success',
         })
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
@@ -568,7 +568,7 @@ export default function App() {
     })
     await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
     await fetchDashboardData()
-    showToast('Métricas manuais registradas com sucesso!')
+    showToast('Medição registrada com sucesso.')
   }
 
   const handleRecalculatePheno = async (inputData: any) => {
@@ -585,7 +585,7 @@ export default function App() {
         await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
         await fetchDashboardData()
       }
-      showToast('Cálculo de idade biológica atualizado com sucesso!')
+      showToast('Estimativa de idade biológica atualizada.')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível recalcular o PhenoAge.')
     }
@@ -600,7 +600,7 @@ export default function App() {
       })
       await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
-      showToast('Experimento N-of-1 criado com sucesso!')
+      showToast('Experimento pessoal criado com sucesso.')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível criar o experimento.')
     }
@@ -618,7 +618,7 @@ export default function App() {
       })
       await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
-      showToast('Exames laboratoriais registrados com sucesso!')
+      showToast('Exames registrados com sucesso.')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar os exames.')
     }
@@ -633,7 +633,7 @@ export default function App() {
       })
       await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
-      showToast('Perfil atualizado com sucesso!')
+      showToast('Perfil atualizado.')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível atualizar o perfil.')
     }
@@ -918,7 +918,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Longevidade Hub</span>
-                <span>v2.4.0</span>
+                <span>v2.4.2</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
                 <span>Armazenamento local e privacidade de dados</span>
               </div>

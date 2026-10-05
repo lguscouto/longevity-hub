@@ -30,7 +30,7 @@ export const AddPhotosModal: React.FC<AddPhotosModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Adicionar Fotos a esta Avaliação"
+      title="Adicionar fotos à avaliação"
       icon={<Camera className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />}
       size="2xl"
       footer={
@@ -73,7 +73,7 @@ export const AddPhotosModal: React.FC<AddPhotosModalProps> = ({
           />
           <label htmlFor="details-photo-upload" className="cursor-pointer block">
             <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Clique para selecionar novas fotos</p>
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Selecione as fotos que deseja adicionar</p>
           </label>
         </div>
 

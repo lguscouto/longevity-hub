@@ -290,12 +290,12 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         description={
           deleteConfirmDate ? (
             <span>
-              Tem certeza que deseja excluir todos os{' '}
+              Deseja excluir todos os{' '}
               <strong className="text-slate-900 dark:text-white">
                 {groupedLabs[deleteConfirmDate]?.length || 0} exames
               </strong>{' '}
               registrados no exame do dia{' '}
-              <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>? Esta ação não poderá ser desfeita.
+              <strong className="text-cyan-600 dark:text-cyan-400">{deleteConfirmDate}</strong>? Essa ação não pode ser desfeita.
             </span>
           ) : null
         }

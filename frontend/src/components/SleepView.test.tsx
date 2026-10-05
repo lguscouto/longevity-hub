@@ -268,10 +268,10 @@ describe('SleepView', () => {
     });
 
     // Circadian KPI cards
-    expect(screen.getByText('Média Dormir')).toBeInTheDocument();
-    expect(screen.getByText('Média Acordar')).toBeInTheDocument();
+    expect(screen.getByText('Horário médio para dormir')).toBeInTheDocument();
+    expect(screen.getByText('Horário médio para acordar')).toBeInTheDocument();
     expect(screen.getByText('Regularidade')).toBeInTheDocument();
-    expect(screen.getByText('Taxa Respiratória')).toBeInTheDocument();
+    expect(screen.getByText('Frequência respiratória')).toBeInTheDocument();
 
     // Table columns & cards
     expect(screen.getByText('Dormiu')).toBeInTheDocument();

@@ -195,7 +195,7 @@ export const ExerciseCatalogView: React.FC = () => {
         <EmptyState
           icon={Dumbbell}
           title="Nenhum exercício encontrado"
-          description="Tente buscar com outros termos ou selecione 'Todos os grupos musculares'."
+          description="Tente outro termo de busca ou selecione outro grupo muscular."
           action={{
             label: 'Limpar busca',
             onClick: () => {

@@ -53,7 +53,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Editar Avaliação Física"
+      title="Editar avaliação física"
       icon={<Pencil className="h-5 w-5 text-amber-500" />}
       size="2xl"
     >

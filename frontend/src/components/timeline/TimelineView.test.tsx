@@ -164,12 +164,12 @@ describe('TimelineView', () => {
     const addBtn = screen.getByRole('button', { name: /Adicionar Evento/i })
     await user.click(addBtn)
 
-    expect(screen.getByText('Adicionar Evento de Contexto')).toBeInTheDocument()
+    expect(screen.getByText('Registrar evento')).toBeInTheDocument()
     expect(screen.getByText('Selecione o Tipo de Evento')).toBeInTheDocument()
 
     const cancelBtn = screen.getByRole('button', { name: 'Cancelar' })
     await user.click(cancelBtn)
 
-    expect(screen.queryByText('Adicionar Evento de Contexto')).not.toBeInTheDocument()
+    expect(screen.queryByText('Registrar evento')).not.toBeInTheDocument()
   })
 })

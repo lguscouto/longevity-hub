@@ -123,7 +123,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               </Select>
             </FormField>
 
-            <FormField id="supp-timing" label="Horário do dia">
+            <FormField id="supp-timing" label="Horário de uso">
               <Select
                 id="supp-timing"
                 value={formData.timing}
@@ -189,7 +189,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               />
             </FormField>
 
-            <FormField id="edit-supp-timing" label="Novo horário do dia">
+            <FormField id="edit-supp-timing" label="Novo horário de uso">
               <Select
                 id="edit-supp-timing"
                 value={editFormData.timing}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import React from 'react';
 import { PhysicalAssessmentsView } from './PhysicalAssessmentsView';
 
@@ -146,7 +146,7 @@ describe('PhysicalAssessmentsView', () => {
     const editBtn = screen.getByTitle('Editar avaliação');
     fireEvent.click(editBtn);
 
-    expect(screen.getByText('Editar Avaliação Física')).toBeInTheDocument();
+    expect(screen.getByText('Editar avaliação física')).toBeInTheDocument();
 
     const weightInput = screen.getByPlaceholderText('Ex: 78.5');
     expect(weightInput).toHaveValue(78.5);
@@ -167,7 +167,7 @@ describe('PhysicalAssessmentsView', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText('Editar Avaliação Física')).not.toBeInTheDocument();
+      expect(screen.queryByText('Editar avaliação física')).not.toBeInTheDocument();
       expect(screen.getByText('79 kg')).toBeInTheDocument();
     });
   });
@@ -323,10 +323,11 @@ describe('PhysicalAssessmentsView', () => {
     // Confirm dialog should open
     await waitFor(() => {
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
-      expect(screen.getByText('Excluir Avaliação Física')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Excluir avaliação' })).toBeInTheDocument();
     });
 
-    const confirmBtn = screen.getByRole('button', { name: 'Excluir Definitivamente' });
+    const dialog = screen.getByRole('alertdialog');
+    const confirmBtn = within(dialog).getByRole('button', { name: 'Excluir avaliação' });
     fireEvent.click(confirmBtn);
 
     await waitFor(() => {

@@ -161,7 +161,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   }, [hasError, importedTotal, isDisconnected, isExpired, isPartial, isStale, isSuccess, isSyncing, isWarning])
 
   const description = useMemo(() => {
-    if (isSyncing) return `Atualizando Zepp e Google Health (${elapsedSeconds}s)`
+    if (isSyncing) return `Atualizando seus dados do Zepp e Google Health (${elapsedSeconds}s)`
     if (isExpired) {
       return (
         syncResult?.message ??
@@ -199,7 +199,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     if (hasError) {
       return syncResult?.message ?? 'Não foi possível concluir a sincronização dos dados.'
     }
-    return 'Aguardando atualização das fontes de dados.'
+    return 'Aguardando a atualização dos seus dados.'
   }, [
     allWarnings.length,
     dataCoveredUntil,
@@ -393,7 +393,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               ))
             ) : (
               <p className="text-slate-500 dark:text-slate-400">
-                Registros ignorados por data fora do intervalo ou formato não reconhecido.
+                Alguns registros ficaram de fora porque a data ou o formato não pôde ser reconhecido.
               </p>
             )}
           </div>
@@ -446,7 +446,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               leftIcon={Eye}
               className="w-full text-slate-800 dark:text-slate-200"
             >
-              Ver histórico de sincronizações
+              Ver histórico
             </Button>
           )}
 

@@ -51,14 +51,14 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Métricas Manuais"
-      ariaLabel="Registrar Métrica Manual"
+      title="Registrar medição"
+      ariaLabel="Registrar medição"
       icon={<PlusCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
       size="md"
       closeButtonAriaLabel="Fechar modal"
     >
       <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-        <FormField id="manual-entry-date" label="Data de Referência">
+        <FormField id="manual-entry-date" label="Data da medição">
           <Input
             id="manual-entry-date"
             type="date"
@@ -99,7 +99,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
               onChange={(event) => setFormData({ ...formData, waist_cm: +event.target.value })}
             />
           </FormField>
-          <FormField id="manual-entry-grip" label="Dinamometria / Grip (kg)">
+          <FormField id="manual-entry-grip" label="Força de preensão (kg)">
             <Input
               id="manual-entry-grip"
               type="number"
@@ -122,7 +122,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
               onChange={(event) => setFormData({ ...formData, weight_kg: +event.target.value })}
             />
           </FormField>
-          <FormField id="manual-entry-vo2" label="VO2 Max Estimado">
+          <FormField id="manual-entry-vo2" label="VO₂ máx. estimado">
             <Input
               id="manual-entry-vo2"
               type="number"
@@ -135,7 +135,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <FormField id="manual-entry-spo2" label="SpO2 Oxigenação (%)">
+          <FormField id="manual-entry-spo2" label="Saturação de oxigênio (SpO₂, %)">
             <Input
               id="manual-entry-spo2"
               type="number"
@@ -145,7 +145,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
               onChange={(event) => setFormData({ ...formData, spo2_avg_pct: +event.target.value })}
             />
           </FormField>
-          <FormField id="manual-entry-resp" label="Freq. Respiratória (rpm)">
+          <FormField id="manual-entry-resp" label="Frequência respiratória (rpm)">
             <Input
               id="manual-entry-resp"
               type="number"

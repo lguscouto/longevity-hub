@@ -135,7 +135,7 @@ describe('ConfounderBalanceModal', () => {
     expect(screen.getByText('Teste Magnésio Treonato')).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByText(/Fator de influência detectado/i)).toBeInTheDocument()
+      expect(screen.getByText(/Fator que pode influenciar o resultado/i)).toBeInTheDocument()
       expect(screen.getByText(/consumo de álcool \(-40\.0%\)/i)).toBeInTheDocument()
     })
 
@@ -156,7 +156,7 @@ describe('ConfounderBalanceModal', () => {
       />
     )
 
-    expect(screen.getByText(/Poucos fatores de influência detectados/i)).toBeInTheDocument()
+    expect(screen.getByText(/Poucos fatores que podem influenciar o resultado foram encontrados/i)).toBeInTheDocument()
     expect(screen.getByText('Balanceado')).toBeInTheDocument()
   })
 

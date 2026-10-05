@@ -23,8 +23,8 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
   <Modal
     isOpen={Boolean(date && results)}
     onClose={onClose}
-    title={date ? `Laudo Médico — ${date}` : ''}
-    description={date && results ? `Total de ${results.length} biomarcadores registrados nesta data` : undefined}
+    title={date ? `Exames — ${date}` : ''}
+    description={date && results ? `${results.length} exames registrados nesta data` : undefined}
     icon={<FileText className="h-6 w-6 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />}
     size="4xl"
     footer={
@@ -74,28 +74,28 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
                           {status === 'optimal' ? (
                             <span
                               className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5 shrink-0"
-                              title="Valor dentro da meta preventiva ideal de longevidade"
+                              title="Valor dentro da faixa de acompanhamento definida para este indicador"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Ótimo
                             </span>
                           ) : status === 'in_clinical_range' ? (
                             <span
                               className="text-xs text-cyan-700 dark:text-cyan-400 font-semibold flex items-center gap-0.5 shrink-0"
-                              title="Dentro da faixa de normalidade laboratorial padrão, porém fora do alvo preventivo ótimo"
+                              title="Dentro da faixa de referência do laboratório, mas fora da faixa de acompanhamento definida no app"
                             >
                               <Check className="h-3.5 w-3.5" aria-hidden="true" /> Na referência
                             </span>
                           ) : status === 'not_eligible' ? (
                             <span
                               className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-0.5 shrink-0"
-                              title="Fora do conjunto clínico validado para esta análise"
+                              title="Sem faixa de acompanhamento definida para este indicador"
                             >
                               <Info className="h-3 w-3" aria-hidden="true" /> Não clínico
                             </span>
                           ) : (
                             <span
                               className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-0.5 shrink-0"
-                              title="Valor fora dos intervalos de referência clínicos laboratoriais"
+                              title="Valor fora da faixa de referência informada pelo laboratório"
                             >
                               <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> Atenção clínica
                             </span>

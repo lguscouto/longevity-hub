@@ -42,7 +42,7 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
           </span>
           <span
             className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-            title="Síntese gerada por inteligência artificial a partir de dados fisiológicos"
+            title="Análise gerada por IA a partir dos seus dados"
           >
             <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
             <span>Interpretação por IA</span>
@@ -66,7 +66,7 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
         <div className="p-3 rounded-radius-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
             <Activity className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-            <span>Dado Fisiológico Observado (Medido)</span>
+            <span>Dado medido</span>
           </div>
           <p className="leading-relaxed pl-5 text-slate-800 dark:text-slate-200">{observationText}</p>
         </div>
@@ -76,7 +76,7 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
           <div className="p-3 rounded-radius-md bg-cyan-500/5 dark:bg-cyan-500/10 border border-cyan-500/20 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-cyan-800 dark:text-cyan-300">
               <Sparkles className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
-              <span>Interpretação e correlação</span>
+              <span>O que os dados sugerem</span>
             </div>
             <p className="leading-relaxed pl-5 text-slate-800 dark:text-slate-200">
               {associationText}
@@ -89,7 +89,7 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
           <div className="p-3 rounded-radius-md bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-              <span>Ação sugerida</span>
+              <span>Próximo passo possível</span>
             </div>
             <p className="leading-relaxed pl-5 text-emerald-900 dark:text-emerald-200">
               {actionableText}
@@ -101,7 +101,7 @@ export const EvidenceBlock: React.FC<EvidenceBlockProps> = ({ insight, sourceCon
         <div className="p-2.5 rounded-radius-md bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-slate-600 dark:text-slate-400 space-y-0.5">
           <div className="flex items-center gap-1.5 font-semibold text-amber-800 dark:text-amber-300 text-xs">
             <ShieldAlert className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-            <span>Limitação da análise</span>
+            <span>Limitações da análise</span>
           </div>
           <p className="text-xs leading-tight pl-4">{limitationText}</p>
         </div>

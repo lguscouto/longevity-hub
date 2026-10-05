@@ -91,11 +91,11 @@ describe('InsightDrawer', () => {
     )
 
     // Verifica loading inicial
-    expect(screen.getByText(/comparando com sua linha de base/i)).toBeInTheDocument()
+    expect(screen.getByText(/comparando com seu histórico/i)).toBeInTheDocument()
 
     // Aguarda dados renderizarem
     await waitFor(() => {
-      expect(screen.getByText('HRV (VFC) — Entender Mudança')).toBeInTheDocument()
+      expect(screen.getByText('HRV (VFC) — Entender esta mudança')).toBeInTheDocument()
     })
 
     // Valores observados e baseline
@@ -202,7 +202,7 @@ describe('InsightDrawer', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('HRV (VFC) — Entender Mudança')).toBeInTheDocument()
+      expect(screen.getByText('HRV (VFC) — Entender esta mudança')).toBeInTheDocument()
     })
 
     const closeBtn = screen.getByRole('button', { name: /fechar/i })

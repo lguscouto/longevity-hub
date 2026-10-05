@@ -105,13 +105,13 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-              Padrões Pessoais Aprendidos
+              Padrões da sua rotina
               <span className="text-xs bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">
-                N-of-1 Bayesiano
+                Análise estatística
               </span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Relações estatísticas empíricas individuais calibradas com seus hábitos e feedback.
+              Relações encontradas nos seus dados, ajustadas conforme seu histórico e feedback.
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
             loading={recomputing}
             loadingText="Recalcular"
             leftIcon={RefreshCw}
-            title="Recalcular correlações e regularização bayesiana"
+            title="Atualizar análise"
           >
             <span className="hidden sm:inline">Recalcular</span>
           </Button>
@@ -160,13 +160,13 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
       {loading ? (
         <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
           <RefreshCw className="h-5 w-5 animate-spin text-indigo-500" />
-          <span>Calculando correlações históricas...</span>
+          <span>Analisando seus padrões históricos...</span>
         </div>
       ) : associations.length === 0 ? (
         <EmptyState
           icon={Sparkles}
           title="Nenhuma associação com histórico suficiente encontrada"
-          description="Conforme você registrar eventos manuais e sincronizar treinos e sono, o motor aprenderá como seu corpo responde individualmente a cada fator."
+          description="Conforme você registrar eventos manuais e sincronizar treinos e sono, o sistema poderá identificar padrões entre seus hábitos e indicadores."
         />
       ) : (
         <div className="space-y-3">
@@ -198,7 +198,7 @@ export const PersonalAssociationsCard: React.FC<PersonalAssociationsCardProps> =
                 <span>•</span>
                 <span>Janela: {item.window_hours}h</span>
                 <span>•</span>
-                <span>Shrinkage Bayesiano: {(item.shrinkage_factor * 100).toFixed(0)}%</span>
+                <span>Ajuste estatístico: {(item.shrinkage_factor * 100).toFixed(0)}%</span>
                 {item.user_feedback_balance !== 0 && (
                   <>
                     <span>•</span>

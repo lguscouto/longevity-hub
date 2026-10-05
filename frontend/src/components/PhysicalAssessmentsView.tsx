@@ -325,11 +325,9 @@ export const PhysicalAssessmentsView: React.FC = () => {
       {/* CONFIRM DIALOG: EXCLUIR AVALIAÇÃO */}
       <ConfirmDialog
         isOpen={Boolean(deleteAssessmentConfirm)}
-        title="Excluir Avaliação Física"
-        description={`Tem certeza de que deseja excluir permanentemente a avaliação de ${
-          deleteAssessmentConfirm ? new Date(deleteAssessmentConfirm.date + 'T00:00:00').toLocaleDateString('pt-BR') : ''
-        } e todas as fotografias associadas? Esta ação é irreversível.`}
-        confirmLabel="Excluir Definitivamente"
+        title="Excluir avaliação"
+        description="Esta avaliação e as fotos vinculadas serão apagadas do armazenamento local. Essa ação não pode ser desfeita."
+        confirmLabel="Excluir avaliação"
         cancelLabel="Cancelar"
         isDestructive
         onConfirm={executeDeleteAssessment}
@@ -339,9 +337,9 @@ export const PhysicalAssessmentsView: React.FC = () => {
       {/* CONFIRM DIALOG: EXCLUIR FOTO AVULSA */}
       <ConfirmDialog
         isOpen={Boolean(deletePhotoConfirm)}
-        title="Remover Fotografia"
-        description="Deseja remover esta fotografia corporal permanentemente? O arquivo será deletado do armazenamento local."
-        confirmLabel="Remover Foto"
+        title="Remover foto"
+        description="Deseja remover esta foto? Ela será apagada do armazenamento local."
+        confirmLabel="Remover foto"
         cancelLabel="Cancelar"
         isDestructive
         onConfirm={executeDeleteSinglePhoto}

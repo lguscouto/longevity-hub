@@ -53,8 +53,8 @@ describe('PersonalAssociationsCard', () => {
 
     render(<PersonalAssociationsCard />)
 
-    expect(screen.getByText('Padrões Pessoais Aprendidos')).toBeInTheDocument()
-    expect(screen.getByText(/N-of-1 Bayesiano/i)).toBeInTheDocument()
+    expect(screen.getByText('Padrões da sua rotina')).toBeInTheDocument()
+    expect(screen.getByText(/Análise estatística/i)).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByText('Consumo de Álcool')).toBeInTheDocument()
@@ -63,7 +63,7 @@ describe('PersonalAssociationsCard', () => {
     expect(screen.getByText(/Consumo de Álcool associado a redução de 28.5% no HRV/i)).toBeInTheDocument()
     expect(screen.getByText(/n = 12 observações/i)).toBeInTheDocument()
     expect(screen.getByText(/Janela: 24h/i)).toBeInTheDocument()
-    expect(screen.getByText(/Shrinkage Bayesiano: 80%/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ajuste estatístico: 80%/i)).toBeInTheDocument()
     expect(screen.getByText(/Calibrado \(\+2\)/i)).toBeInTheDocument()
     expect(screen.getByText('Alta confiança')).toBeInTheDocument()
   })

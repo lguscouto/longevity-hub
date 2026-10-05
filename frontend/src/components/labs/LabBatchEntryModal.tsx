@@ -90,8 +90,8 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Painel Completo de Exames de Sangue"
-      description="Preencha apenas os marcadores realizados no seu laudo médico"
+      title="Registrar exames de sangue"
+      description="Preencha apenas os exames que aparecem no seu laudo."
       icon={<Dna className="h-6 w-6 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />}
       size="4xl"
       footer={

@@ -49,7 +49,7 @@ describe('SyncProgressModal', () => {
         isSyncing={false}
         syncResult={{
           status: 'warning',
-          message: 'Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.',
+          message: 'A sincronização do Zepp já está em andamento. Aguarde a conclusão antes de iniciar outra.',
         }}
         onClose={() => {}}
       />,

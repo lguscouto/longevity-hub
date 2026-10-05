@@ -198,8 +198,8 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
       <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Conexão Google Health API v4"
-      description="Pixel Watch e dispositivos compatíveis Google Health"
+      title="Conectar ao Google Health"
+      description="Sincronize dados de saúde de dispositivos compatíveis"
       icon={
         <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center shadow-xs">
           <Shield className="h-5 w-5" />
@@ -231,7 +231,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
         {status && (
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 mb-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Estado da Conexão:</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status da conexão:</span>
               {status.connected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Conectado e ativo
@@ -456,7 +456,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
         onClose={() => setShowDisconnectConfirm(false)}
         onConfirm={handleDisconnectConfirm}
         title="Desconectar Google Health"
-        description="Deseja realmente desconectar sua conta Google Health? As sincronizações automáticas e dados em tempo real serão interrompidos."
+        description="Deseja desconectar sua conta Google Health? A sincronização automática será interrompida."
         confirmLabel="Desconectar"
         cancelLabel="Cancelar"
         isDestructive={true}

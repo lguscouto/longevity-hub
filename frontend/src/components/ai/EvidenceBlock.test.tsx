@@ -34,19 +34,19 @@ describe('EvidenceBlock (U22-P1-45, U22-P1-47)', () => {
     expect(screen.getByText('Interpretação por IA')).toBeInTheDocument()
 
     // Tier 1: Dado Fisiológico Observado
-    expect(screen.getByText('Dado Fisiológico Observado (Medido)')).toBeInTheDocument()
+    expect(screen.getByText('Dado medido')).toBeInTheDocument()
     expect(screen.getByText(/HRV médio reduziu de 62ms para 44ms/)).toBeInTheDocument()
 
     // Tier 2: Interpretação e correlação
-    expect(screen.getByText('Interpretação e correlação')).toBeInTheDocument()
+    expect(screen.getByText('O que os dados sugerem')).toBeInTheDocument()
     expect(screen.getByText(/estresse simpático residual tardio/)).toBeInTheDocument()
 
     // Tier 3: Ação Sugerida
-    expect(screen.getByText('Ação sugerida')).toBeInTheDocument()
+    expect(screen.getByText('Próximo passo possível')).toBeInTheDocument()
     expect(screen.getByText(/Antecipar sessões intensas/)).toBeInTheDocument()
 
     // Tier 4: Limitação da análise
-    expect(screen.getByText('Limitação da análise')).toBeInTheDocument()
+    expect(screen.getByText('Limitações da análise')).toBeInTheDocument()
     expect(screen.getByText(/Amostra de 14 dias com 4 sessões/)).toBeInTheDocument()
 
     // Evidence Sources & Window (U22-P1-47)

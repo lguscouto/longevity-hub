@@ -56,7 +56,7 @@ describe('LabResultsTable', () => {
     await user.click(screen.getByRole('button', { name: /novo painel de exames/i }))
 
     expect(screen.queryByRole('button', { name: /9 marcadores phenoage/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/preencha apenas os marcadores realizados no seu laudo médico/i)).toBeInTheDocument()
+    expect(screen.getByText(/preencha apenas os exames que aparecem no seu laudo/i)).toBeInTheDocument()
   })
 
   it('does not calculate cardiovascular ratios from labs without clinical provenance', () => {

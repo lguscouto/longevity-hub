@@ -142,7 +142,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               size="sm"
               onClick={onGoToHistory}
               leftIcon={History}
-              title="Visualizar relatórios anteriores salvos"
+              title="Ver análises anteriores"
             >
               Ver histórico ({reports.length})
             </Button>
@@ -211,7 +211,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                   Tendências e hábitos
                 </div>
                 <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded-radius-sm border border-indigo-500/20">
-                  N-of-1 Bayesiano
+                  Análise do experimento
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -223,7 +223,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
             <Info className="h-4 w-4 text-amber-500 shrink-0" />
             <span>
-              Aviso: Análises geradas por inteligência artificial para apoio ao seu acompanhamento de saúde. Não substituem diagnóstico ou orientação médica.
+              Esta análise foi gerada por IA a partir dos dados disponíveis no seu histórico e serve como apoio para acompanhar sua saúde.
             </span>
           </div>
         </div>
@@ -243,13 +243,13 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           description="Escolha um período acima (Hoje 24h, Semana 7d ou Mês 30d) para gerar uma análise integrada dos seus exames, sono, treinos e medições com o Copiloto."
           icon={Bot}
           action={{
-            label: 'Iniciar análise mensal',
+            label: 'Gerar análise',
             onClick: () => onGenerateAnalysis('30d'),
           }}
           secondaryAction={
             reports.length > 0
               ? {
-                  label: `Carregar análise mais recente (${new Date(
+                  label: `Abrir análise mais recente (${new Date(
                     reports[0].created_at
                   ).toLocaleDateString([], { day: '2-digit', month: '2-digit' })})`,
                   onClick: () => onSelectReport(reports[0].id),

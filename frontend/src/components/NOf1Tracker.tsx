@@ -56,7 +56,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true" /> Experimentos pessoais
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Compare períodos diferentes para entender como uma mudança pode afetar seus indicadores.</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Compare períodos diferentes para observar se uma mudança coincide com alterações nos seus indicadores.</p>
         </div>
 
         <Button
@@ -115,7 +115,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
                     <span className="font-bold text-violet-700 dark:text-violet-300">{exp.treatment_mean ?? '--'}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 block">Efeito (Cohen's d)</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block">Tamanho do efeito</span>
                     <span className="font-bold text-cyan-700 dark:text-cyan-400">{exp.cohens_d ?? '--'}</span>
                   </div>
                   <div>
@@ -188,7 +188,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
               <option value="sleep_deep_min">Sono Profundo (minutos)</option>
               <option value="sleep_rem_min">Sono REM (minutos)</option>
               <option value="rhr_bpm">Frequência Cardíaca de Repouso (RHR)</option>
-              <option value="readiness_score">Readiness Score</option>
+              <option value="readiness_score">Prontidão</option>
             </Select>
           </FormField>
 

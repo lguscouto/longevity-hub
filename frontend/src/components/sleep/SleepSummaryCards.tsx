@@ -176,7 +176,7 @@ export const SleepSummaryCards: React.FC<SleepSummaryCardsProps> = ({
         {/* Horário Médio de Dormir */}
         <div className="glass-panel p-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 text-xs font-semibold">
-            <span>Média Dormir</span>
+            <span>Horário médio para dormir</span>
             <Moon className="h-4 w-4 text-indigo-400" />
           </div>
           <div className="mt-2">
@@ -192,7 +192,7 @@ export const SleepSummaryCards: React.FC<SleepSummaryCardsProps> = ({
         {/* Horário Médio de Acordar */}
         <div className="glass-panel p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 text-xs font-semibold">
-            <span>Média Acordar</span>
+            <span>Horário médio para acordar</span>
             <Sun className="h-4 w-4 text-amber-400" />
           </div>
           <div className="mt-2">
@@ -267,7 +267,7 @@ export const SleepSummaryCards: React.FC<SleepSummaryCardsProps> = ({
         {/* Taxa Respiratória Média */}
         <div className="glass-panel p-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-cyan-600 dark:text-cyan-400 text-xs font-semibold">
-            <span>Taxa Respiratória</span>
+            <span>Frequência respiratória</span>
             <Wind className="h-4 w-4 text-cyan-400" />
           </div>
           <div className="mt-2">

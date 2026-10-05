@@ -417,7 +417,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
               >
                 {activeProvider === 'openrouter' && (
                   <>
-                    <option value="deepseek/deepseek-v4-flash-0731">DeepSeek v4 Flash (Recomendado - Raciocínio Clínico)</option>
+                    <option value="deepseek/deepseek-v4-flash-0731">DeepSeek v4 Flash (Recomendado - Análise avançada)</option>
                     <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash (Ultra Rápido)</option>
                     <option value="deepseek/deepseek-r1">DeepSeek R1 (Raciocínio Profundo)</option>
                     <option value="anthropic/claude-3.5-sonnet">Anthropic Claude 3.5 Sonnet (via OpenRouter)</option>
@@ -450,7 +450,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
                   onChange={(event) => setPrivacyMode(normalizePrivacyMode(event.target.value))}
                 >
                   <option value="minimal">Mínimo (padrão)</option>
-                  <option value="full">Completo (opt-in)</option>
+                  <option value="full">Completo (opcional)</option>
                 </Select>
               </FormField>
               <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
@@ -459,7 +459,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
               {privacyMode === 'full' && (
                 <div role="alert" className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                  <span>Modo completo é opt-in: revise antes de enviar, pois pode incluir contexto ampliado nas chamadas de IA externa.</span>
+                  <span>O modo completo envia mais informações do seu perfil e histórico. Revise o que será compartilhado antes de continuar.</span>
                 </div>
               )}
             </div>

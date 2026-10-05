@@ -420,7 +420,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
             </FormField>
           </div>
 
-          <FormField id="stack-supp-timing" label="Horário do dia">
+          <FormField id="stack-supp-timing" label="Horário de uso">
             <Select
               id="stack-supp-timing"
               value={formData.timing}

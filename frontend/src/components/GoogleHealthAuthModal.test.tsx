@@ -62,7 +62,7 @@ describe('GoogleHealthAuthModal', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Conexão Google Health API v4')).toBeInTheDocument()
+      expect(screen.getByText('Conectar ao Google Health')).toBeInTheDocument()
     })
 
     // Check friendly credentials link and explicit URL

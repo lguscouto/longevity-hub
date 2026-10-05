@@ -182,8 +182,8 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Adicionar Evento de Contexto"
-      description="Como você está se sentindo? Registre sintomas, refeições ou eventos do dia a dia."
+      title="Registrar evento"
+      description="Registre algo que possa ajudar a entender seu dia: sintomas, refeições, treino, sono ou outros acontecimentos."
       icon={
         <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
           <PlusCircle className="h-5 w-5" />
@@ -461,7 +461,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
                   <Input
                     id="custom-description"
                     type="text"
-                    placeholder="Descrição breve..."
+                    placeholder="Adicione uma breve descrição..."
                     value={customDescription}
                     onChange={e => setCustomDescription(e.target.value)}
                   />
@@ -475,7 +475,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
             <Textarea
               id="event-notes"
               rows={2}
-              placeholder="Adicione detalhes contextuais que possam ajudar a entender seu organismo..."
+              placeholder="Adicione detalhes que possam ajudar a entender seus dados e sua rotina..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
               className="resize-none"

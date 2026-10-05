@@ -28,14 +28,18 @@ export const AIPrivacyDialog: React.FC<AIPrivacyDialogProps> = ({
       isOpen={Boolean(pendingConfirm)}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Confirmar Envio para IA Externa"
+      title="Confirmar envio para a IA"
       description={
         pendingConfirm ? (
           <div className="space-y-3 text-xs">
             <p>
-              Antes de <strong>{pendingConfirm.actionLabel}</strong>, confirme o envio de dados para o
-              provedor de IA:
+              Alguns dos seus dados poderão ser enviados ao serviço de IA escolhido para gerar esta análise. Revise o que será compartilhado antes de continuar.
             </p>
+            {pendingConfirm.actionLabel && (
+              <p className="text-slate-600 dark:text-slate-400">
+                Ação: <strong>{pendingConfirm.actionLabel}</strong>
+              </p>
+            )}
             <div className="p-3 rounded-radius-sm bg-slate-100 dark:bg-slate-800 space-y-1 font-mono text-xs">
               <div>
                 <strong>Provedor:</strong> {activeProvider.toUpperCase()}
@@ -51,7 +55,7 @@ export const AIPrivacyDialog: React.FC<AIPrivacyDialogProps> = ({
           </div>
         ) : undefined
       }
-      confirmLabel="Confirmar Envio"
+      confirmLabel="Enviar e continuar"
       cancelLabel="Cancelar"
     />
   );

@@ -282,7 +282,7 @@ export const TimelineView: React.FC = () => {
         </div>
       ) : error ? (
         <ErrorState
-          title="Falha ao carregar Linha do Tempo"
+          title="Não foi possível carregar a linha do tempo"
           message={error}
           onRetry={loadData}
         />
@@ -363,18 +363,18 @@ export const TimelineView: React.FC = () => {
           setDeleteError(null)
         }}
         onConfirm={handleConfirmDelete}
-        title="Remover Evento de Saúde"
+        title="Remover evento"
         description={
           deleteError ? (
             <div className="space-y-2">
-              <p>Tem certeza de que deseja remover este evento manual?</p>
+              <p>Deseja remover este evento? Essa ação não pode ser desfeita.</p>
               <InlineError message={deleteError} />
             </div>
           ) : (
-            'Tem certeza de que deseja remover este evento manual? Esta ação não pode ser desfeita.'
+            'Deseja remover este evento? Essa ação não pode ser desfeita.'
           )
         }
-        confirmLabel="Remover Evento"
+        confirmLabel="Remover evento"
         cancelLabel="Cancelar"
         isDestructive={true}
         loading={deletingEvent}
