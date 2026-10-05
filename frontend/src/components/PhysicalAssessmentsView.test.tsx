@@ -323,7 +323,7 @@ describe('PhysicalAssessmentsView', () => {
     // Confirm dialog should open
     await waitFor(() => {
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'Excluir avaliação' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Excluir avaliação?' })).toBeInTheDocument();
     });
 
     const dialog = screen.getByRole('alertdialog');

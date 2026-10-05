@@ -143,7 +143,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
         }
       } else {
         if (!customTitle.trim()) {
-          throw new Error('Informe o título do evento.')
+          throw new Error('Informe um título para o evento.')
         }
         payload = {
           date_ref: dateRef,
@@ -162,7 +162,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
       onSuccess()
       onClose()
     } catch (err: any) {
-      setError(err?.message || 'Falha ao registrar evento.')
+      setError(err?.message || 'Não foi possível registrar o evento. Confira os dados e tente novamente.')
     } finally {
       setSubmitting(false)
     }
@@ -499,7 +499,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
               loading={submitting}
               loadingText="Salvando..."
             >
-              Salvar Evento
+              Salvar evento
             </Button>
           </div>
         </form>

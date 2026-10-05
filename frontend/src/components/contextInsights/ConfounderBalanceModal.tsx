@@ -58,7 +58,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
           setReport(res.confounder_report)
         }
       } catch (err: any) {
-        setError(err.message || 'Falha ao carregar balanço de covariáveis.')
+        setError(err.message || 'Não foi possível analisar os fatores que podem influenciar o resultado.')
       } finally {
         setLoading(false)
       }
@@ -146,7 +146,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
         {loading && (
             <div className="py-16 text-center text-slate-500 space-y-2">
               <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
-              <p className="text-xs font-medium">Analisando os fatores que podem influenciar o resultado...</p>
+              <p className="text-xs font-medium">Analisando sua rotina em busca de fatores que podem influenciar o resultado...</p>
             </div>
           )}
 
@@ -189,7 +189,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-950/30 text-amber-950 dark:text-amber-200 space-y-1.5">
                   <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-amber-800 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <span>Fator que pode influenciar o resultado ({report.imbalanced_factors_count} fator{report.imbalanced_factors_count > 1 ? 'es' : ''})</span>
+                    <span>Encontramos {report.imbalanced_factors_count} fator(es) que podem influenciar o resultado</span>
                   </div>
                   <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
                     {report.warning_summary}
@@ -199,7 +199,7 @@ export const ConfounderBalanceModal: React.FC<ConfounderBalanceModalProps> = ({
                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 space-y-1.5">
                   <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-emerald-800 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span>Poucos fatores que podem influenciar o resultado foram encontrados</span>
+                    <span>Poucos fatores que podem influenciar o resultado foram encontrados.</span>
                   </div>
                   <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
                     {report.warning_summary}

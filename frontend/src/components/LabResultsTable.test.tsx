@@ -96,7 +96,7 @@ describe('LabResultsTable', () => {
 
     const dialog = screen.getByRole('alertdialog')
     expect(dialog).toBeInTheDocument()
-    expect(screen.getByText(/excluir exame\?/i)).toBeInTheDocument()
+    expect(screen.getByText(/excluir exames\?/i)).toBeInTheDocument()
 
     const cancelBtn = screen.getByRole('button', { name: /cancelar/i })
     await user.click(cancelBtn)

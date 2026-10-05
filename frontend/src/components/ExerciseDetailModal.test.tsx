@@ -118,7 +118,7 @@ describe('ExerciseDetailModal (UX_UI_56)', () => {
     )
 
     expect(
-      screen.getByText('Nenhuma demonstração visual vinculada')
+      screen.getByText('Ainda não há uma demonstração visual para este exercício.')
     ).toBeInTheDocument()
   })
 })

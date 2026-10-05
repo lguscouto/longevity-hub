@@ -458,7 +458,7 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
               variant="primary"
               size="sm"
             >
-              Salvar Suplemento
+              Salvar
             </Button>
           </div>
         </form>
@@ -467,11 +467,11 @@ export const SupplementStackWidget: React.FC<SupplementStackWidgetProps> = ({ se
       {/* Modal Confirmar Exclusão */}
       <ConfirmDialog
         isOpen={Boolean(deleteConfirmSupp)}
-        title="Excluir suplemento"
+        title="Excluir suplemento?"
         description={
           deleteConfirmSupp ? (
             <span>
-              Deseja remover <strong className="text-slate-900 dark:text-white">{deleteConfirmSupp.name}</strong> da sua rotina? Esta ação não pode ser desfeita.
+              Deseja excluir <strong className="text-slate-900 dark:text-white">{deleteConfirmSupp.name}</strong> da sua rotina? Essa ação não pode ser desfeita.
             </span>
           ) : null
         }

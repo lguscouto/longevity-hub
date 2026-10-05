@@ -86,7 +86,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
         setShowConfig(true)
       }
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Falha ao obter status do Google Health.')
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível verificar o status da conexão com o Google Health.')
     } finally {
       setLoading(false)
     }
@@ -101,11 +101,11 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
   useEffect(() => {
     const handleAuthMessage = (event: MessageEvent) => {
       if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
-        setSuccessMsg('Conta Google conectada com sucesso!')
+        setSuccessMsg('Conta Google conectada com sucesso.')
         void fetchStatus()
         if (onSyncSuccess) onSyncSuccess()
       } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
-        setError(`Erro de autorização: ${event.data.error || 'Acesso cancelado.'}`)
+        setError(`Não foi possível concluir a autorização. ${event.data.error || 'O acesso foi cancelado.'}`)
       }
     }
 
@@ -130,7 +130,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
           }),
         })
       } catch (caught) {
-        setError(caught instanceof ApiError ? caught.message : 'Falha ao salvar credenciais.')
+        setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar as credenciais.')
         return
       }
     }
@@ -148,10 +148,10 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
           `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no`
         )
       } else {
-        setError(res.message || 'Informe o Google Client ID e Secret antes de conectar.')
+        setError(res.message || 'Informe o Client ID e o Client Secret antes de conectar.')
       }
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Falha ao iniciar autenticação.')
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível iniciar a conexão com o Google Health.')
     }
   }
 
@@ -169,7 +169,7 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
       void fetchStatus()
       if (onSyncSuccess) onSyncSuccess()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Falha ao sincronizar com Google Health.')
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível sincronizar os dados com o Google Health.')
     } finally {
       setSyncing(false)
     }
@@ -183,11 +183,11 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
     setDisconnecting(true)
     try {
       await requestJson('/api/google-health/disconnect', { method: 'POST' })
-      setSuccessMsg('Conta Google Health desconectada.')
+      setSuccessMsg('Conta Google Health desconectada com sucesso.')
       setShowDisconnectConfirm(false)
       void fetchStatus()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Falha ao desconectar.')
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível desconectar o Google Health.')
     } finally {
       setDisconnecting(false)
     }
@@ -455,8 +455,8 @@ export const GoogleHealthAuthModal: React.FC<GoogleHealthAuthModalProps> = ({
         isOpen={showDisconnectConfirm}
         onClose={() => setShowDisconnectConfirm(false)}
         onConfirm={handleDisconnectConfirm}
-        title="Desconectar Google Health"
-        description="Deseja desconectar sua conta Google Health? A sincronização automática será interrompida."
+        title="Desconectar Google Health?"
+        description="Deseja desconectar sua conta Google Health? A sincronização automática será interrompida até você conectar novamente."
         confirmLabel="Desconectar"
         cancelLabel="Cancelar"
         isDestructive={true}

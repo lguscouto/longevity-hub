@@ -103,7 +103,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     await user.selectOptions(privacySelect, 'full')
 
     expect(screen.getByRole('alert')).toHaveTextContent(/modo completo/i)
-    expect(screen.getByRole('alert')).toHaveTextContent(/revise o que será compartilhado antes de continuar/i)
+    expect(screen.getByRole('alert')).toHaveTextContent(/confira o que será enviado antes de continuar/i)
   })
 
   it('renders Aparência section and switches theme immediately when clicking Claro or Escuro', async () => {

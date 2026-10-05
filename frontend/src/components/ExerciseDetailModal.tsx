@@ -132,7 +132,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
       })
 
       if (!res.ok) {
-        throw new Error('Falha ao salvar vínculo do exercício.')
+        throw new Error('Não foi possível salvar o vínculo deste exercício.')
       }
 
       const data = await res.json()
@@ -143,13 +143,13 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
       setUseFallback(false)
       setIsPaused(false)
       setShowReLinkSearch(false)
-      setLinkFeedback({ type: 'success', message: 'Exercício vinculado com sucesso!' })
+      setLinkFeedback({ type: 'success', message: 'Exercício vinculado com sucesso.' })
 
       if (onReLinkSuccess) {
         onReLinkSuccess(newLinked)
       }
     } catch (err: any) {
-      setLinkFeedback({ type: 'error', message: err?.message || 'Erro ao vincular exercício.' })
+      setLinkFeedback({ type: 'error', message: err?.message || 'Não foi possível vincular este exercício.' })
     } finally {
       setIsSubmittingLink(false)
     }
@@ -258,7 +258,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100 dark:bg-slate-950 z-10">
                     <RefreshCw className="h-7 w-7 text-purple-600 dark:text-purple-400 animate-spin" aria-hidden="true" />
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Carregando animação...
+                      Carregando demonstração...
                     </span>
                   </div>
                 )}
@@ -296,7 +296,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
               <div className="py-12 px-4 text-center">
                 <Dumbbell className="h-12 w-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Nenhuma demonstração visual vinculada
+                  Ainda não há uma demonstração visual para este exercício.
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
                   Você pode pesquisar e vincular este movimento com qualquer um dos 1.300+ exercícios da biblioteca.

@@ -145,61 +145,59 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     (typeof syncResult?.zepp === 'object' ? syncResult?.zepp?.data_covered_until : undefined)
 
   const heading = useMemo(() => {
-    if (isSyncing) return 'Sincronizando fontes de dados...'
-    if (isExpired) return 'Conexão expirada'
-    if (isDisconnected) return 'Dispositivo ou aplicativo desconectado'
-    if (isStale) return 'Dados antigos (mais de 24h)'
-    if (isPartial) return 'Sincronização parcial'
+    if (isSyncing) return 'Sincronizando seus dados...'
+    if (isExpired) return 'Sua conexão expirou'
+    if (isDisconnected) return 'Fonte de dados desconectada'
+    if (isStale) return 'Dados desatualizados'
+    if (isPartial) return 'Sincronização concluída com alguns avisos'
     if (isSuccess) {
-      return importedTotal > 0
-        ? 'Sincronização concluída!'
-        : 'Sincronização concluída (sem novos dados)'
+      return 'Sincronização concluída'
     }
     if (isWarning) return 'Sincronização em andamento'
-    if (hasError) return 'Não foi possível sincronizar'
-    return 'Concluir sincronização'
-  }, [hasError, importedTotal, isDisconnected, isExpired, isPartial, isStale, isSuccess, isSyncing, isWarning])
+    if (hasError) return 'Não foi possível concluir a sincronização'
+    return 'Sincronização'
+  }, [hasError, isDisconnected, isExpired, isPartial, isStale, isSuccess, isSyncing, isWarning])
 
   const description = useMemo(() => {
     if (isSyncing) return `Atualizando seus dados do Zepp e Google Health (${elapsedSeconds}s)`
     if (isExpired) {
       return (
         syncResult?.message ??
-        'A autorização de acesso expirou. Conecte novamente para continuar sincronizando seus dados.'
+        'Sua autorização expirou. Conecte a conta novamente para continuar sincronizando seus dados.'
       )
     }
     if (isDisconnected) {
       return (
         syncResult?.message ??
-        'Nenhum dispositivo ou conta de saúde está conectado. Vincule uma fonte nas configurações.'
+        'Nenhuma fonte de saúde está conectada. Conecte um dispositivo ou uma conta nas configurações.'
       )
     }
     if (isStale) {
       return (
         syncResult?.message ??
-        'A última sincronização foi há mais de 24 horas. Sincronize novamente para atualizar suas medições.'
+        'Sua última sincronização foi há mais de 24 horas. Sincronize novamente para atualizar seus dados.'
       )
     }
     if (isPartial) {
-      return `${importedTotal} registros importados · ${unprocessableTotal || allWarnings.length} ignorados. Verifique os detalhes abaixo.`
+      return `${importedTotal} registros importados · ${unprocessableTotal || allWarnings.length} não puderam ser processados. Veja os detalhes abaixo.`
     }
     if (isSuccess) {
       return importedTotal > 0
         ? `Seus dados foram atualizados com sucesso.${
             dataCoveredUntil ? ` Dados disponíveis até ${dataCoveredUntil}.` : ''
           }`
-        : 'A sincronização terminou, mas não havia dados novos para importar.'
+        : 'A sincronização terminou, mas não encontramos dados novos.'
     }
     if (isWarning) {
       return (
         syncResult?.message ??
-        'A sincronização com a nuvem já está em andamento. Aguarde alguns instantes.'
+        'A sincronização já está em andamento. Aguarde a conclusão antes de iniciar outra.'
       )
     }
     if (hasError) {
-      return syncResult?.message ?? 'Não foi possível concluir a sincronização dos dados.'
+      return syncResult?.message ?? 'Não foi possível concluir a sincronização. Verifique sua conexão e tente novamente.'
     }
-    return 'Aguardando a atualização dos seus dados.'
+    return 'Aguardando a atualização dos seus dados...'
   }, [
     allWarnings.length,
     dataCoveredUntil,
@@ -393,7 +391,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               ))
             ) : (
               <p className="text-slate-500 dark:text-slate-400">
-                Alguns registros ficaram de fora porque a data ou o formato não pôde ser reconhecido.
+                Alguns registros não foram importados porque a data ou o formato não pôde ser reconhecido.
               </p>
             )}
           </div>

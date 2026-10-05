@@ -50,7 +50,7 @@ export const AddPhotosModal: React.FC<AddPhotosModalProps> = ({
             onClick={onUpload}
             disabled={detailsPhotoDrafts.length === 0}
             loading={submitting}
-            loadingText="Enviando..."
+            loadingText="Enviando fotos..."
           >
             Enviar {detailsPhotoDrafts.length} {detailsPhotoDrafts.length === 1 ? 'Foto' : 'Fotos'}
           </Button>

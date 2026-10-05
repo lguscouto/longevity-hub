@@ -108,7 +108,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
         setOpenrouterKey(res.openrouter_api_key_masked || '')
       })
       .catch((caught) => {
-        setSaveError(caught instanceof ApiError ? caught.message : 'Falha ao carregar as configurações de IA.')
+        setSaveError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar as configurações de IA.')
       })
 
     // Carrega status da API do Hevy
@@ -199,12 +199,12 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
 
       setTestResult({
         success: Boolean(res.success),
-        message: res.message || (res.success ? 'Conexão estabelecida com sucesso!' : 'Falha ao validar chave.'),
+        message: res.message || (res.success ? 'Conexão testada com sucesso.' : 'Não foi possível validar a chave.'),
       })
     } catch (caught) {
       setTestResult({
         success: false,
-        message: caught instanceof ApiError ? caught.message : 'Erro de rede ao comunicar com o servidor backend.',
+        message: caught instanceof ApiError ? caught.message : 'Não foi possível falar com o servidor. Verifique sua conexão e tente novamente.',
       })
     } finally {
       setIsTesting(false)
@@ -233,7 +233,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
       onRefreshSettings?.()
       onClose()
     } catch (caught) {
-      setSaveError(caught instanceof ApiError ? caught.message : 'Falha ao salvar as configurações.')
+      setSaveError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar as configurações.')
     } finally {
       setIsSaving(false)
     }
@@ -242,7 +242,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
   // Testar ou Salvar Chave Hevy
   const handleSaveHevy = async () => {
     if (!hevyKey.trim()) {
-      setHevyFeedback({ type: 'error', message: 'Por favor, informe uma chave de API válida.' })
+      setHevyFeedback({ type: 'error', message: 'Informe uma chave de API válida para continuar.' })
       return
     }
 
@@ -261,7 +261,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
 
       setHevyFeedback({
         type: 'success',
-        message: `Conexão bem-sucedida! Conta conectada: ${res.user?.name || 'Usuário Hevy'} (${res.user?.id || ''})`,
+        message: `Hevy conectado com sucesso. Conta: ${res.user?.name || 'Usuário Hevy'}.`,
       })
       setHevyKey(res.masked_api_key)
       setHevyStatus({
@@ -273,7 +273,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
     } catch (err: any) {
       setHevyFeedback({
         type: 'error',
-        message: err?.message || 'Falha ao validar a chave da API do Hevy.',
+        message: err?.message || 'Não foi possível validar a chave da API do Hevy.',
       })
     } finally {
       setIsSavingHevy(false)
@@ -459,7 +459,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
               {privacyMode === 'full' && (
                 <div role="alert" className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                  <span>O modo completo envia mais informações do seu perfil e histórico. Revise o que será compartilhado antes de continuar.</span>
+                  <span>O modo completo compartilha mais informações do seu perfil e histórico com a IA. Confira o que será enviado antes de continuar.</span>
                 </div>
               )}
             </div>

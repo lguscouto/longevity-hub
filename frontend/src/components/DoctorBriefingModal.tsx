@@ -91,7 +91,7 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
         <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-900 dark:text-cyan-200 flex items-start gap-2.5">
           <span className="font-bold shrink-0">Importante:</span>
           <span className="leading-relaxed">
-            Este resumo organiza seus dados para apoiar sua conversa com o profissional de saúde. Ele não substitui avaliação, diagnóstico ou orientação médica.
+            Este resumo organiza seus dados para facilitar sua conversa com o profissional de saúde. Ele não substitui avaliação, diagnóstico ou orientação médica.
           </span>
         </div>
         <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">

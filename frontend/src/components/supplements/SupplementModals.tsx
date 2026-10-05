@@ -162,7 +162,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
               variant="primary"
               size="sm"
             >
-              Salvar item
+              Salvar
             </Button>
           </div>
         </form>
@@ -173,7 +173,7 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
         isOpen={Boolean(editingSupp)}
         onClose={onCloseEditModal}
         title={editingSupp ? `Editar ${editingSupp.name}` : ''}
-        description="Esta alteração será registrada no seu histórico."
+        description="Essa alteração será registrada no seu histórico."
         icon={<Edit3 className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />}
         size="md"
       >
@@ -236,10 +236,10 @@ export const SupplementModals: React.FC<SupplementModalsProps> = ({
       {/* Diálogo de Confirmação para Remoção de Composto */}
       <ConfirmDialog
         isOpen={Boolean(deleteConfirmSupp)}
-        title="Remover item da rotina"
+        title="Remover item da rotina?"
         description={`Deseja remover ${
           deleteConfirmSupp?.name || 'este item'
-        } da sua rotina? A alteração ficará registrada no seu histórico.`}
+        } da sua rotina? Essa ação será registrada no seu histórico.`}
         confirmLabel="Remover"
         cancelLabel="Cancelar"
         isDestructive

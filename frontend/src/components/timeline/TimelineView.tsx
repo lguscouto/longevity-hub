@@ -363,7 +363,7 @@ export const TimelineView: React.FC = () => {
           setDeleteError(null)
         }}
         onConfirm={handleConfirmDelete}
-        title="Remover evento"
+        title="Remover evento?"
         description={
           deleteError ? (
             <div className="space-y-2">

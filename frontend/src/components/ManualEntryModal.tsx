@@ -41,7 +41,7 @@ export const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
       await onSaveMetric(formData)
       onClose()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar o registro.')
+      setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar a medição. Confira os dados e tente novamente.')
     } finally {
       setIsSaving(false)
     }

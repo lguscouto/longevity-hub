@@ -918,7 +918,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Longevidade Hub</span>
-                <span>v2.4.2</span>
+                <span>v2.4.3</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
                 <span>Armazenamento local e privacidade de dados</span>
               </div>
