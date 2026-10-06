@@ -64,7 +64,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
               className="h-20 w-20 rounded-radius-xl object-cover border border-slate-200 dark:border-slate-700 shadow-md"
             />
           ) : (
-            <div className="h-20 w-20 rounded-radius-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-extrabold shadow-md shrink-0">
+            <div className="h-20 w-20 rounded-radius-xl bg-emerald-600 dark:bg-emerald-500 flex items-center justify-center text-white text-3xl font-extrabold shadow-md shrink-0">
               {initial}
             </div>
           )}
@@ -91,7 +91,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
             {/* Metas Prioritárias de Longevidade */}
             {goals.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">
                   Foco:
                 </span>
                 {goals.map((goalKey) => {
@@ -103,7 +103,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
                   return (
                     <span
                       key={goalKey}
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-radius-md text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-radius-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
                     >
                       <IconComponent className="h-3 w-3" aria-hidden="true" />
                       <span>{item.label}</span>

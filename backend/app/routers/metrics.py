@@ -94,9 +94,17 @@ def get_sync_status():
     return status
 
 
-@router.post("/sync/all")
 @router.post("/sync/zepp")
+def sync_zepp_data(days: Optional[int] = Query(None), full: bool = Query(False)):
+    return _execute_sync(days=days, full=full, include_hevy=False)
+
+
+@router.post("/sync/all")
 def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False)):
+    return _execute_sync(days=days, full=full, include_hevy=True)
+
+
+def _execute_sync(days: Optional[int] = None, full: bool = False, include_hevy: bool = True):
     if not _zepp_sync_lock.acquire(blocking=False):
         raise HTTPException(
             status_code=409,
@@ -137,33 +145,34 @@ def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False
         # 3. Importa treinos do Hevy (Musculação, volume e cargas)
         hevy_result = None
         hevy_count = 0
-        try:
-            from longevidade.ingestion.hevy_client import (
-                HevyClient,
-                HevyCredentials,
-                sync_hevy_workouts,
-            )
-
-            if HevyCredentials.get_api_key():
-                hevy_client = HevyClient()
-                hevy_result = sync_hevy_workouts(repo=repo, client=hevy_client, max_pages=100)
-                hevy_count = (
-                    hevy_result.get("records_inserted", 0)
-                    if isinstance(hevy_result, dict)
-                    else 0
+        if include_hevy:
+            try:
+                from longevidade.ingestion.hevy_client import (
+                    HevyClient,
+                    HevyCredentials,
+                    sync_hevy_workouts,
                 )
-            else:
+
+                if HevyCredentials.get_api_key():
+                    hevy_client = HevyClient()
+                    hevy_result = sync_hevy_workouts(repo=repo, client=hevy_client, max_pages=100)
+                    hevy_count = (
+                        hevy_result.get("records_inserted", 0)
+                        if isinstance(hevy_result, dict)
+                        else 0
+                    )
+                else:
+                    hevy_result = {
+                        "status": "skipped",
+                        "reason": "Chave da API do Hevy não configurada.",
+                        "records_inserted": 0,
+                    }
+            except Exception as h_err:
                 hevy_result = {
-                    "status": "skipped",
-                    "reason": "Chave da API do Hevy não configurada.",
+                    "status": "error",
                     "records_inserted": 0,
+                    "summary": f"Erro na coleta Hevy: {h_err}",
                 }
-        except Exception as h_err:
-            hevy_result = {
-                "status": "error",
-                "records_inserted": 0,
-                "summary": f"Erro na coleta Hevy: {h_err}",
-            }
 
         zepp_count = (
             zepp_result.get("records_inserted", 0)

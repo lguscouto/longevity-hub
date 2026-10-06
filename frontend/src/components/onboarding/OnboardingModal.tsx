@@ -399,7 +399,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               }`}
             >
               <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${
                   isActive
                     ? 'bg-emerald-600 text-white'
                     : isDone
@@ -498,7 +498,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80">
               {calculatedAge !== null && (
                 <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Idade Calculada:</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Idade Calculada:</span>
                   <div className="text-sm font-bold text-slate-900 dark:text-white">
                     {calculatedAge} anos
                   </div>
@@ -506,7 +506,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               )}
               {calculatedBmi !== null && (
                 <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">IMC Estimado:</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">IMC Estimado:</span>
                   <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                     {calculatedBmi} kg/m²
                   </div>
@@ -536,7 +536,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   >
                     <div>
                       <div className="text-xs font-bold">{g.label}</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{g.desc}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{g.desc}</div>
                     </div>
                     <div
                       className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
@@ -545,7 +545,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           : 'border-slate-300 dark:border-slate-700'
                       }`}
                     >
-                      {isSelected && <span className="text-[10px]">✓</span>}
+                      {isSelected && <span className="text-xs">✓</span>}
                     </div>
                   </button>
                 )
@@ -578,7 +578,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">Zepp OS (Amazfit)</h4>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       Frequência Cardíaca, Sono Profundo/REM, HRV e Passos
                     </span>
                   </div>
@@ -616,7 +616,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+              <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
                 <span className="text-slate-500">Host padrão: {zeppHost}</span>
                 <Button
                   size="sm"
@@ -639,7 +639,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">Hevy (Musculação & Carga)</h4>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       Séries, repetições, volume de treino e exercícios
                     </span>
                   </div>
@@ -692,7 +692,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">Google Health Connect</h4>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     Redundância de passos, sono e Pixel Watch via OAuth2
                   </span>
                 </div>
@@ -762,11 +762,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-bold">{p.label}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
                       {p.badge}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{p.desc}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{p.desc}</span>
                 </button>
               )
             })}
@@ -864,7 +864,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Card Perfil */}
             <div className="p-3.5 rounded-radius-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Perfil</div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Perfil</div>
               <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
                 {name.trim() || 'Paciente'}
               </div>
@@ -880,7 +880,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
             {/* Card Provedores */}
             <div className="p-3.5 rounded-radius-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Provedores</div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Provedores</div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600 dark:text-slate-400">Zepp (Amazfit):</span>
@@ -905,14 +905,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
             {/* Card IA */}
             <div className="p-3.5 rounded-radius-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Copiloto IA</div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Copiloto IA</div>
               <div className="text-sm font-bold text-cyan-600 dark:text-cyan-400 capitalize">
                 {activeProviderAI}
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate" title={selectedModel}>
                 {selectedModel}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
+              <div className="text-xs text-slate-400 mt-1">
                 Privacidade: {privacyMode === 'full' ? 'Completa' : 'Mínima'}
               </div>
             </div>

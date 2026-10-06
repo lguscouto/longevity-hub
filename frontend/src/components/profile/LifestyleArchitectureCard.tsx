@@ -52,7 +52,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                 Arquitetura de Estilo de Vida & Rotina
-                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-radius-sm">
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-radius-sm">
                   Hábitos
                 </span>
               </h3>
@@ -71,7 +71,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
               <Utensils className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Janela de Jejum
               </span>
               <span className="font-bold text-slate-900 dark:text-white">
@@ -86,7 +86,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
               <Moon className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Cronotipo Circadiano
               </span>
               <span className="font-bold text-slate-900 dark:text-white">
@@ -101,7 +101,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
               <Droplets className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Meta de Hidratação
               </span>
               <span className="font-bold text-cyan-600 dark:text-cyan-400">
@@ -116,7 +116,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
               <Moon className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Meta de Sono Noturno
               </span>
               <span className="font-bold text-violet-600 dark:text-violet-400">
@@ -131,7 +131,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
               <Target className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Meta de Gordura Alvo
               </span>
               <span className="font-bold text-slate-900 dark:text-white">
@@ -146,7 +146,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
               <Pill className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Stack de Suplementos
               </span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">
@@ -159,7 +159,7 @@ export const LifestyleArchitectureCard: React.FC<LifestyleArchitectureCardProps>
         </div>
       </div>
 
-      <div className="pt-3 mt-4 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+      <div className="pt-3 mt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
         <span>Parâmetros de base para o Copiloto de IA</span>
         <span className="text-emerald-600 dark:text-emerald-400 font-semibold">● Protocolo Ativo</span>
       </div>

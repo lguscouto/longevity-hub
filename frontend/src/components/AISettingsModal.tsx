@@ -306,7 +306,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
               <Sparkles className="h-4 w-4" />
               <span>Assistente de Onboarding</span>
             </div>
-            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
               Deseja reconfigurar perfil, dispositivos ou modelos de IA? Inicie o assistente guiado de primeiro uso.
             </p>
           </div>

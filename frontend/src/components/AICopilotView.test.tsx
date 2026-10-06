@@ -73,9 +73,11 @@ describe('AICopilotView external AI privacy consent', () => {
     renderCopilot()
 
     const notice = await screen.findByRole('status', { name: /envio para ia externa/i })
-    expect(notice).toHaveTextContent(/ANTHROPIC/)
-    expect(notice).toHaveTextContent(/claude-3-5-sonnet-20241022/)
-    expect(notice).toHaveTextContent(/privacidade completa/i)
+    await waitFor(() => {
+      expect(notice).toHaveTextContent(/ANTHROPIC/)
+      expect(notice).toHaveTextContent(/claude-3-5-sonnet-20241022/)
+      expect(notice).toHaveTextContent(/privacidade completa/i)
+    })
   })
 
   it('does not post 30-day insights when the user cancels the external AI confirmation', async () => {

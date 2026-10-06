@@ -66,7 +66,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
   return (
     <span
-      className="relative inline-flex items-center group cursor-help focus:outline-none"
+      className="relative inline-flex items-center group cursor-help focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500 rounded-radius-sm"
       tabIndex={0}
       role="button"
       aria-label={`Informações sobre ${title}`}
@@ -78,30 +78,30 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
       {/* Popover flutuante */}
       <span
-        className={`absolute bottom-full mb-2 hidden group-hover:flex group-focus:flex flex-col w-72 p-3 bg-slate-900/95 dark:bg-slate-950/95 text-white text-xs rounded-radius-lg shadow-xl border border-slate-700/80 backdrop-blur-xs z-50 pointer-events-none transition-all duration-150 animate-in fade-in zoom-in-95 text-left font-normal normal-case ${alignClass}`}
+        className={`absolute bottom-full mb-2 hidden group-hover:flex group-focus:flex flex-col w-72 p-3 bg-slate-900 dark:bg-slate-950 text-white text-xs rounded-radius-lg shadow-xl border border-slate-700/80 z-50 pointer-events-none transition-all duration-150 animate-in fade-in zoom-in-95 text-left font-normal normal-case ${alignClass}`}
       >
         <span className="font-bold text-slate-100 flex items-center justify-between pb-1 border-b border-slate-800">
           <span>{title}</span>
         </span>
 
-        <span className="text-slate-300 text-[11px] leading-relaxed mt-1.5 block">
+        <span className="text-slate-300 text-xs leading-relaxed mt-1.5 block">
           {description}
         </span>
 
         {currentCalculation && (
-          <span className="mt-2 p-1.5 rounded bg-slate-800/80 font-mono text-[10px] text-amber-300 block">
+          <span className="mt-2 p-1.5 rounded-radius-sm bg-slate-800/80 font-mono text-xs text-amber-300 block">
             {currentCalculation}
           </span>
         )}
 
         {formula && (
-          <span className="mt-1 text-[10px] text-slate-400 block">
+          <span className="mt-1 text-xs text-slate-400 block">
             <strong className="text-slate-300">Fórmula:</strong> {formula}
           </span>
         )}
 
         {optimalTarget && (
-          <span className="mt-1.5 pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+          <span className="mt-1.5 pt-1 border-t border-slate-800/80 flex items-center justify-between text-xs">
             <span className="text-slate-400">Alvo Ótimo:</span>
             <span className="font-bold text-emerald-400">{optimalTarget}</span>
           </span>
@@ -139,7 +139,7 @@ export const GoldenBiomarkersGrid: React.FC<GoldenBiomarkersGridProps> = ({
           </p>
         </div>
         {metrics.date_ref && (
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Última medição: {metrics.date_ref}
           </span>
         )}
@@ -176,7 +176,7 @@ export const GoldenBiomarkersGrid: React.FC<GoldenBiomarkersGridProps> = ({
             </div>
 
             {metrics.vo2_max_percentile && (
-              <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <div className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
                 <span>{metrics.vo2_max_percentile}</span>
               </div>
@@ -222,7 +222,7 @@ export const GoldenBiomarkersGrid: React.FC<GoldenBiomarkersGridProps> = ({
               </span>
             </div>
 
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+            <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
               Variabilidade Cardíaca Basal
             </span>
           </div>
@@ -267,20 +267,20 @@ export const GoldenBiomarkersGrid: React.FC<GoldenBiomarkersGridProps> = ({
             </div>
 
             {metrics.body_fat_date ? (
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
                 Última pesagem: {formatShortDate(metrics.body_fat_date)}
                 {metrics.body_fat_source && metrics.body_fat_source.toLowerCase().includes('google')
                   ? ' (Google Health)'
                   : ''}
               </span>
             ) : metrics.target_body_fat_pct ? (
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
                 Meta de Gordura: {metrics.target_body_fat_pct}%
               </span>
             ) : null}
 
             {metrics.body_fat_date && metrics.target_body_fat_pct ? (
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+              <span className="text-xs text-slate-400 dark:text-slate-500 block">
                 Meta: {metrics.target_body_fat_pct}%
               </span>
             ) : null}
@@ -367,7 +367,7 @@ export const GoldenBiomarkersGrid: React.FC<GoldenBiomarkersGridProps> = ({
               </span>
             </div>
 
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+            <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
               Dinamometria de Preensão
             </span>
           </div>
