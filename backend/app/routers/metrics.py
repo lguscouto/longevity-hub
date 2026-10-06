@@ -75,9 +75,26 @@ def add_or_update_metric(input_data: DailyMetricInput):
 
 @router.get("/sync/status")
 def get_sync_status():
-    return dict(_zepp_sync_state)
+    status = dict(_zepp_sync_state)
+    if not status.get("last_sync"):
+        try:
+            db_path = get_db_path()
+            if db_path.exists():
+                repo = LongevityRepository(db_path)
+                runs = repo.get_pipeline_runs(limit=1)
+                if runs:
+                    status["last_sync"] = runs[0].get("run_at")
+                    status["last_status"] = (
+                        "success"
+                        if runs[0].get("status") in ("SUCESSO", "ok")
+                        else "partial"
+                    )
+        except Exception:
+            pass
+    return status
 
 
+@router.post("/sync/all")
 @router.post("/sync/zepp")
 def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False)):
     if not _zepp_sync_lock.acquire(blocking=False):
@@ -110,12 +127,43 @@ def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False
             from longevidade.ingestion.google_importer import sync_google_health_api
 
             gh_client = GoogleHealthClient()
-            if gh_client.is_authenticated():
+            if gh_client.is_authenticated() and not gh_client.is_reauthentication_required():
                 google_result = sync_google_health_api(repo=repo, days=days or 90, client=gh_client)
             else:
                 google_result = import_google_health_data(GOOGLE_DATA_DIR, repo)
         except Exception:
             google_result = import_google_health_data(GOOGLE_DATA_DIR, repo)
+
+        # 3. Importa treinos do Hevy (Musculação, volume e cargas)
+        hevy_result = None
+        hevy_count = 0
+        try:
+            from longevidade.ingestion.hevy_client import (
+                HevyClient,
+                HevyCredentials,
+                sync_hevy_workouts,
+            )
+
+            if HevyCredentials.get_api_key():
+                hevy_client = HevyClient()
+                hevy_result = sync_hevy_workouts(repo=repo, client=hevy_client, max_pages=100)
+                hevy_count = (
+                    hevy_result.get("records_inserted", 0)
+                    if isinstance(hevy_result, dict)
+                    else 0
+                )
+            else:
+                hevy_result = {
+                    "status": "skipped",
+                    "reason": "Chave da API do Hevy não configurada.",
+                    "records_inserted": 0,
+                }
+        except Exception as h_err:
+            hevy_result = {
+                "status": "error",
+                "records_inserted": 0,
+                "summary": f"Erro na coleta Hevy: {h_err}",
+            }
 
         zepp_count = (
             zepp_result.get("records_inserted", 0)
@@ -133,17 +181,51 @@ def sync_all_sources(days: Optional[int] = Query(None), full: bool = Query(False
         except Exception:
             pass
 
+        try:
+            import logging
+            from scripts.run_scheduled_sync import recalculate_kdm_silently
+
+            recalculate_kdm_silently(repo, logging.getLogger("backend.app.routers.metrics"))
+        except Exception:
+            pass
+
+        warnings = []
+        if isinstance(zepp_result, dict) and zepp_result.get("warnings"):
+            warnings.extend(zepp_result["warnings"])
+        if isinstance(google_result, dict) and google_result.get("warnings"):
+            warnings.extend(google_result["warnings"])
+        if isinstance(hevy_result, dict) and hevy_result.get("warnings"):
+            warnings.extend(hevy_result["warnings"])
+
+        data_covered_until = None
+        if isinstance(zepp_result, dict) and zepp_result.get("data_covered_until"):
+            data_covered_until = zepp_result["data_covered_until"]
+
         _zepp_sync_state["last_sync"] = datetime.now(timezone.utc).isoformat()
         _zepp_sync_state["last_status"] = "success"
         _zepp_sync_state["last_error"] = None
+
+        try:
+            repo.log_pipeline_run(
+                source="SyncAll",
+                records_inserted=zepp_count + google_count + hevy_count,
+                status="SUCESSO",
+                logs=f"Sincronização unificada: Zepp ({zepp_count}), Google ({google_count}), Hevy ({hevy_count})",
+            )
+        except Exception:
+            pass
 
         return {
             "status": "ok",
             "zepp": zepp_result,
             "google_health": google_result,
+            "hevy": hevy_result,
             "zepp_records_imported": zepp_count,
             "google_health_records_imported": google_count,
-            "total_sources": 2,
+            "hevy_records_imported": hevy_count,
+            "total_sources": 3,
+            "warnings": warnings,
+            "data_covered_until": data_covered_until,
         }
     except HTTPException as exc:
         _zepp_sync_state["last_status"] = "error"

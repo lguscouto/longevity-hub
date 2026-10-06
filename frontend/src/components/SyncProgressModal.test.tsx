@@ -133,5 +133,28 @@ describe('SyncProgressModal', () => {
 
     expect(screen.getByText('Fonte de dados desconectada')).toBeInTheDocument()
   })
+
+  it('renders all three sources: Zepp, Google Health, and Hevy', () => {
+    render(
+      <SyncProgressModal
+        isOpen
+        isSyncing={false}
+        syncResult={{
+          status: 'ok',
+          zepp_records_imported: 10,
+          google_health_records_imported: 5,
+          hevy_records_imported: 3,
+        }}
+        onClose={() => {}}
+      />
+    )
+
+    expect(screen.getByText(/Zepp \/ Amazfit/i)).toBeInTheDocument()
+    expect(screen.getByText('10 registros')).toBeInTheDocument()
+    expect(screen.getByText(/Google Health/i)).toBeInTheDocument()
+    expect(screen.getByText('5 registros')).toBeInTheDocument()
+    expect(screen.getByText(/Hevy/i)).toBeInTheDocument()
+    expect(screen.getByText('3 treinos')).toBeInTheDocument()
+  })
 })
 

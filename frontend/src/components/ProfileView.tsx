@@ -52,6 +52,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onSyncGoogleHealth,
   isSyncingGoogle = false,
   onOpenAISettings,
+  onOpenDoctorBriefing,
 }) => {
   const [internalSubTab, setInternalSubTab] = useState<ProfileSubTab>(() =>
     activeSubTab || getStoredSubTab('profile')
@@ -140,6 +141,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <ProfilePersonalSection
             profile={profile}
             onUpdateProfile={onUpdateProfile}
+            onOpenDoctorBriefing={onOpenDoctorBriefing}
           />
         </div>
       )}

@@ -266,5 +266,32 @@ describe('AISettingsModal privacy and key-vault settings', () => {
     const fullSyncBtn = screen.getByRole('button', { name: /sincronizando\.\.\./i })
     expect(fullSyncBtn).toBeDisabled()
   })
+
+  it('renders Assistente de Onboarding button and triggers callback on click', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const onOpenOnboarding = vi.fn()
+
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path === '/api/ai/settings') return { active_provider: 'openrouter' }
+      if (path === '/api/workouts/hevy/status') return { is_configured: false }
+      throw new Error(`Unexpected request in test: ${path}`)
+    })
+
+    renderModal({
+      isOpen: true,
+      onClose,
+      onOpenOnboarding,
+    })
+
+    const onboardingBtn = screen.getByRole('button', { name: /assistente de onboarding/i })
+    expect(onboardingBtn).toBeInTheDocument()
+
+    await user.click(onboardingBtn)
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onOpenOnboarding).toHaveBeenCalledTimes(1)
+  })
 })
+
 

@@ -55,6 +55,21 @@ CREATE TABLE IF NOT EXISTS user_profile (
     gender TEXT,
     avatar_url TEXT,
     timezone TEXT DEFAULT 'America/Sao_Paulo',
+    blood_type TEXT,
+    allergies TEXT,
+    family_history TEXT,
+    chronic_conditions TEXT,
+    emergency_contact_name TEXT,
+    emergency_contact_phone TEXT,
+    primary_physician TEXT,
+    longevity_goals TEXT,
+    protocol_start_date TEXT,
+    fasting_window TEXT,
+    chronotype TEXT,
+    daily_water_target_ml INTEGER,
+    target_sleep_hours REAL,
+    target_body_fat_pct REAL,
+    onboarding_completed INTEGER DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

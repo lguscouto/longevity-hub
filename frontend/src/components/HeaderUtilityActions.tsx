@@ -13,7 +13,8 @@ import { SyncStatusBadge, SyncState } from './ui/SyncStatusBadge';
 export interface HeaderUtilityActionsProps {
   onOpenManualEntry: () => void;
   onOpenDoctorBriefing: () => void;
-  onSyncZepp: () => void;
+  onSync?: () => void;
+  onSyncZepp?: () => void;
   onSyncGoogleHealth?: () => void;
   onOpenAISettings: () => void;
   isSyncing: boolean;
@@ -28,12 +29,13 @@ export interface HeaderUtilityActionsProps {
  * Componente modular de ações utilitárias do cabeçalho.
  * Agrupa semanticamente:
  * 1. Ações clínicas operacionais ("Ações do dia"): Registrar Métrica e Doctor Briefing
- * 2. Infraestrutura e Sincronização: Wearables Zepp e Google Health
+ * 2. Infraestrutura e Sincronização Unificada: Wearables e Treinos (Zepp, Google Health e Hevy)
  * 3. Preferências e Configurações: Configuração de IA e Alternador de Tema
  */
 export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
   onOpenManualEntry,
   onOpenDoctorBriefing,
+  onSync,
   onSyncZepp,
   onSyncGoogleHealth,
   onOpenAISettings,
@@ -45,6 +47,8 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
   onOpenSyncStatus,
 }) => {
   const { theme, toggleTheme } = useTheme();
+
+  const handleSyncTrigger = onSync || onSyncZepp;
 
   const effectiveSyncState: SyncState =
     syncState ||
@@ -96,7 +100,7 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
         aria-hidden="true"
       />
 
-      {/* 2. Cluster Técnico / Infraestrutura e Preferências */}
+      {/* 2. Cluster Técnico / Infraestrutura e Preferências (Botão Único Unificado) */}
       <div
         role="group"
         aria-label="Controle de sincronização e configurações"
@@ -104,7 +108,7 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
       >
         <SyncStatusBadge
           state={effectiveSyncState}
-          sourceLabel="Zepp"
+          sourceLabel="Fontes de saúde"
           lastSyncTime={lastSyncTime}
           dataCoveredUntil={dataCoveredUntil}
           onClick={onOpenSyncStatus}
@@ -114,52 +118,33 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
 
         <button
           type="button"
-          onClick={() => onSyncZepp()}
+          onClick={() => handleSyncTrigger?.()}
           disabled={isSyncing || isSyncingGoogle}
           title={
-            isSyncing
-              ? 'Sincronizando dados de dispositivos conectados (Zepp OS)...'
+            isSyncing || isSyncingGoogle
+              ? 'Sincronizando dados de Zepp, Google Health e Hevy...'
               : lastSyncTime
-              ? `Última sincronização às ${lastSyncTime}. Clique para atualizar.`
-              : 'Atualizar dados de dispositivos conectados (Zepp OS)'
+              ? `Última sincronização: ${lastSyncTime}. Clique para atualizar.`
+              : 'Nenhuma sincronização anterior registrada. Clique para sincronizar Zepp, Google Health e Hevy.'
           }
-          aria-label="Sincronizar Zepp"
+          aria-label="Sincronizar"
           className="relative flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-md text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
         >
           <RefreshCw
             className={`h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 ${
-              isSyncing ? 'animate-spin' : ''
+              isSyncing || isSyncingGoogle ? 'animate-spin' : ''
             }`}
             aria-hidden="true"
           />
           <span className="hidden sm:inline">
-            {isSyncing
+            {isSyncing || isSyncingGoogle
               ? 'Sincronizando...'
               : lastSyncTime
               ? `Sincronizado ${lastSyncTime}`
-              : 'Sincronizar Zepp'}
+              : 'Sincronizar'}
           </span>
           <span className="sm:hidden font-medium">Sincronizar</span>
         </button>
-
-        {onSyncGoogleHealth && (
-          <button
-            type="button"
-            onClick={onSyncGoogleHealth}
-            disabled={isSyncing || isSyncingGoogle}
-            title="Sincronizar Google Health"
-            aria-label="Sincronizar Google Health"
-            className="relative flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-md text-xs font-semibold hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-blue-700 dark:text-blue-400 transition disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isSyncingGoogle ? 'animate-spin' : ''}`}
-              aria-hidden="true"
-            />
-            <span className="hidden md:inline">
-              {isSyncingGoogle ? 'Google...' : 'Google'}
-            </span>
-          </button>
-        )}
 
         <button
           type="button"

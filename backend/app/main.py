@@ -35,6 +35,7 @@ from backend.app.routers import (
     supplements,
     timeline,
     workouts,
+    zepp,
 )
 
 
@@ -118,8 +119,10 @@ app.include_router(daily_guidance.router)
 app.include_router(energy_circadian.router)
 app.include_router(correlations.router)
 app.include_router(workouts.router)
+app.include_router(zepp.router)
 
 # Aliases para integrações externas e scripts legados
+app.add_api_route("/api/sync/all", metrics.sync_all_sources, methods=["POST"], tags=["Sync"])
 app.add_api_route("/api/v1/sync/zepp", metrics.sync_all_sources, methods=["POST"], tags=["Sync"])
 app.add_api_route("/api/sync/status", metrics.get_sync_status, methods=["GET"], tags=["Sync"])
 

@@ -688,6 +688,33 @@ MIGRATIONS: Sequence[Migration] = (
             "ALTER TABLE daily_metrics ADD COLUMN sleep_end TEXT;",
         ),
     ),
+    Migration(
+        version=17,
+        name="add_clinical_and_lifestyle_to_user_profile",
+        statements=(
+            "ALTER TABLE user_profile ADD COLUMN blood_type TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN allergies TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN family_history TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN chronic_conditions TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN emergency_contact_name TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN emergency_contact_phone TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN primary_physician TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN longevity_goals TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN protocol_start_date TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN fasting_window TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN chronotype TEXT;",
+            "ALTER TABLE user_profile ADD COLUMN daily_water_target_ml INTEGER;",
+            "ALTER TABLE user_profile ADD COLUMN target_sleep_hours REAL;",
+            "ALTER TABLE user_profile ADD COLUMN target_body_fat_pct REAL;",
+        ),
+    ),
+    Migration(
+        version=18,
+        name="add_onboarding_completed_to_user_profile",
+        statements=(
+            "ALTER TABLE user_profile ADD COLUMN onboarding_completed INTEGER DEFAULT 0;",
+        ),
+    ),
 )
 
 

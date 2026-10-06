@@ -28,14 +28,16 @@ export const ProfileIntegrationsSection: React.FC<ProfileIntegrationsSectionProp
 }) => {
   return (
     <div className="space-y-6 animate-fadeIn" role="region" aria-label="Integrações e dispositivos">
-      <div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-          Fontes de dados e dispositivos conectados
-        </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Conecte sensores e dispositivos para sincronizar métricas de frequência cardíaca, sono e recuperação.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+            Fontes de dados e dispositivos conectados
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Conecte sensores e dispositivos para sincronizar métricas de frequência cardíaca, sono e recuperação.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

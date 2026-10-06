@@ -66,7 +66,8 @@ export interface HeaderProps {
   activeTab: string;
   setActiveTab?: (tab: string) => void;
   onSelectTab?: (tab: string) => void;
-  onSyncZepp: () => void;
+  onSync?: () => void;
+  onSyncZepp?: () => void;
   onSyncGoogleHealth?: () => void;
   onOpenManualEntry: () => void;
   onOpenDoctorBriefing: () => void;
@@ -83,6 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   onSelectTab,
+  onSync,
   onSyncZepp,
   onSyncGoogleHealth,
   onOpenManualEntry,
@@ -173,6 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
         <HeaderUtilityActions
           onOpenManualEntry={onOpenManualEntry}
           onOpenDoctorBriefing={onOpenDoctorBriefing}
+          onSync={onSync || onSyncZepp}
           onSyncZepp={onSyncZepp}
           onSyncGoogleHealth={onSyncGoogleHealth}
           onOpenAISettings={onOpenAISettings}

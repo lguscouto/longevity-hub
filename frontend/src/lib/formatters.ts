@@ -179,3 +179,45 @@ export function formatMinutesToHoursAndMinutes(
   if (m === 0) return `${h}h`;
   return `${h}h ${m}m`;
 }
+
+/**
+ * Formata a data/hora da última sincronização para exibição amigável em tooltips e botões.
+ * Ex: "hoje às 09:20", "ontem às 18:30" ou "05/10 às 14:20".
+ */
+export function formatLastSyncDisplay(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return '';
+  try {
+    let d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    if (typeof dateInput === 'string' && dateInput.includes(' ') && !dateInput.includes('T')) {
+      d = new Date(dateInput.replace(' ', 'T'));
+    }
+    if (isNaN(d.getTime())) return String(dateInput);
+
+    const now = new Date();
+    const isToday =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+
+    const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) {
+      return `hoje às ${timeStr}`;
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      d.getDate() === yesterday.getDate() &&
+      d.getMonth() === yesterday.getMonth() &&
+      d.getFullYear() === yesterday.getFullYear();
+
+    if (isYesterday) {
+      return `ontem às ${timeStr}`;
+    }
+
+    const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return `${dateStr} às ${timeStr}`;
+  } catch {
+    return String(dateInput);
+  }
+}

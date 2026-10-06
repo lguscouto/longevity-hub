@@ -13,6 +13,7 @@ import {
   Key,
   ExternalLink,
   ShieldCheck,
+  Settings,
 } from 'lucide-react'
 
 import { ApiError, requestJson } from '../lib/api'
@@ -26,6 +27,7 @@ interface AISettingsModalProps {
   onRefreshSettings?: () => void
   onSyncZeppFull?: () => void
   isSyncingZepp?: boolean
+  onOpenOnboarding?: () => void
 }
 
 type Provider = 'openai' | 'anthropic' | 'openrouter'
@@ -59,6 +61,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
   onRefreshSettings,
   onSyncZeppFull,
   isSyncingZepp = false,
+  onOpenOnboarding,
 }) => {
   const { theme, setTheme } = useTheme()
   const [modalTab, setModalTab] = useState<ModalTab>('ai')
@@ -284,17 +287,43 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Configurações de IA"
-      description="Configurações de IA e integrações"
+      title="Configurações"
+      description="Preferências do sistema, integrações, IA e assistente guiado"
       icon={
         <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
-          <Bot className="h-6 w-6" />
+          <Settings className="h-6 w-6" />
         </div>
       }
       size="lg"
       closeButtonAriaLabel="Fechar"
       contentClassName="space-y-5"
     >
+      {/* Botão e Card do Assistente de Onboarding */}
+      {onOpenOnboarding && (
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+              <Sparkles className="h-4 w-4" />
+              <span>Assistente de Onboarding</span>
+            </div>
+            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+              Deseja reconfigurar perfil, dispositivos ou modelos de IA? Inicie o assistente guiado de primeiro uso.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onClose()
+              onOpenOnboarding()
+            }}
+            className="text-xs shrink-0 font-bold border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 self-start sm:self-auto"
+          >
+            Assistente de Onboarding
+          </Button>
+        </div>
+      )}
 
         {/* Alternador de Abas */}
         <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">

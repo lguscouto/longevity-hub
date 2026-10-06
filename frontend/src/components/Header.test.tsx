@@ -134,16 +134,16 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     expect(healthBtn).not.toHaveAttribute('aria-current');
   });
 
-  it('renders SyncStatusControl with Sincronizar Zepp button and accessibility label', () => {
-    const onSyncZepp = vi.fn();
-    renderHeader({ onSyncZepp });
+  it('renders SyncStatusControl with Sincronizar button and accessibility label', () => {
+    const onSync = vi.fn();
+    renderHeader({ onSync });
 
-    const syncBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar' });
     expect(syncBtn).toBeInTheDocument();
     expect(syncBtn).not.toBeDisabled();
 
     fireEvent.click(syncBtn);
-    expect(onSyncZepp).toHaveBeenCalledTimes(1);
+    expect(onSync).toHaveBeenCalledTimes(1);
   });
 
   it('renders timestamp when lastSyncTime is provided', () => {
@@ -155,7 +155,7 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
   it('displays syncing state and disables action when isSyncing is true', () => {
     renderHeader({ isSyncing: true });
 
-    const syncBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar' });
     expect(syncBtn).toBeDisabled();
     expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });

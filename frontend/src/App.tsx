@@ -26,6 +26,7 @@ const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthMo
 const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => ({ default: m.WorkoutsTable })))
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
+import { OnboardingModal } from './components/onboarding/OnboardingModal'
 
 
 import { EmptyState, LoadingIndicator, useToast } from './components/ui'
@@ -36,7 +37,7 @@ import { DailyCheckinCard } from './components/DailyCheckinCard'
 import { TrainingLoadWidget } from './components/TrainingLoadWidget'
 import { EnergyCircadianWidget } from './components/EnergyCircadianWidget'
 import { ApiError, requestJson } from './lib/api'
-import { formatLocalDateKey } from './lib/formatters'
+import { formatLocalDateKey, formatLastSyncDisplay } from './lib/formatters'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 import type { SyncState } from './components/ui/SyncStatusBadge'
 import type { SyncResult } from './components/SyncProgressModal'
@@ -195,6 +196,7 @@ export default function App() {
   const [showDoctorModal, setShowDoctorModal] = useState(false)
   const [showAISettings, setShowAISettings] = useState(false)
   const [showGoogleHealthModal, setShowGoogleHealthModal] = useState(false)
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const [doctorBriefingMd, setDoctorBriefingMd] = useState('')
 
   const [isSyncing, setIsSyncing] = useState(false)
@@ -329,7 +331,7 @@ export default function App() {
     setError(null)
 
     try {
-      const [requiredData, nextKdmRecord] = await Promise.all([
+      const [requiredData, nextKdmRecord, syncStatus] = await Promise.all([
         Promise.all([
           requestJson<DailyMetric[]>(`/api/metrics?days=${daysRange}`),
           requestJson<any[]>('/api/labs'),
@@ -339,11 +341,23 @@ export default function App() {
           requestJson<any>('/api/profile'),
         ]),
         requestJson<any>('/api/kdm/latest').catch(() => null),
+        requestJson<{ last_sync?: string | null; last_status?: string | null }>('/api/metrics/sync/status').catch(() => null),
       ])
 
       const [nextMetrics, nextLabs, nextPhenoHistory, nextExperiments, nextCgmSummaries, nextProfile] = requiredData
 
       if (sequence !== refreshSequence.current) return
+
+      if (syncStatus?.last_sync) {
+        setLastSyncTime(formatLastSyncDisplay(syncStatus.last_sync))
+        if (syncStatus.last_status === 'success' || syncStatus.last_status === 'ok') {
+          setSyncState('success')
+        } else if (syncStatus.last_status === 'partial') {
+          setSyncState('partial')
+        } else if (syncStatus.last_status === 'error') {
+          setSyncState('error')
+        }
+      }
 
       setMetrics(Array.isArray(nextMetrics) ? nextMetrics : [])
       setLabs(Array.isArray(nextLabs) ? nextLabs : [])
@@ -353,7 +367,12 @@ export default function App() {
       setLatestKdmRecord(Array.isArray(nextKdmRecord) ? nextKdmRecord[0] ?? nestedKdmFromPheno : nextKdmRecord ?? nestedKdmFromPheno)
       setExperiments(Array.isArray(nextExperiments) ? nextExperiments : [])
       setCgmSummaries(Array.isArray(nextCgmSummaries) ? nextCgmSummaries : [])
-      if (nextProfile) setProfile(nextProfile)
+      if (nextProfile) {
+        setProfile(nextProfile)
+        if (nextProfile.onboarding_completed === false) {
+          setShowOnboardingModal(true)
+        }
+      }
     } catch (caught) {
       if (sequence !== refreshSequence.current) return
       setMetrics([])
@@ -387,7 +406,7 @@ export default function App() {
 
     try {
       const isFull = full === true
-      const endpoint = isFull ? '/api/metrics/sync/zepp?full=true' : '/api/metrics/sync/zepp'
+      const endpoint = isFull ? '/api/sync/all?full=true' : '/api/sync/all'
       const result = await requestJson<SyncResult>(endpoint, { method: 'POST' })
       setSyncResult(result)
 
@@ -403,15 +422,24 @@ export default function App() {
           : typeof result.google_health === 'number'
           ? result.google_health
           : result.google_health_records_imported ?? 0
-      const importedTotal = zeppCount + googleCount
+      const hevyCount =
+        typeof result.hevy === 'object'
+          ? (result.hevy as { records_inserted?: number }).records_inserted ?? 0
+          : typeof result.hevy === 'number'
+          ? result.hevy
+          : result.hevy_records_imported ?? 0
+      const importedTotal = zeppCount + googleCount + hevyCount
 
       const zeppSkipped =
         typeof result.zepp === 'object' ? result.zepp.records_skipped ?? 0 : 0
       const googleSkipped =
         typeof result.google_health === 'object' ? result.google_health.records_skipped ?? 0 : 0
-      const unprocessable = (result.unprocessable_records ?? 0) + zeppSkipped + googleSkipped
+      const hevySkipped =
+        typeof result.hevy === 'object' ? (result.hevy as { records_skipped?: number }).records_skipped ?? 0 : 0
+      const unprocessable = (result.unprocessable_records ?? 0) + zeppSkipped + googleSkipped + hevySkipped
       const warningsList = (result.warnings ?? []).concat(
-        typeof result.zepp === 'object' ? result.zepp.warnings ?? [] : []
+        typeof result.zepp === 'object' ? result.zepp.warnings ?? [] : [],
+        typeof result.hevy === 'object' ? (result.hevy as { warnings?: string[] }).warnings ?? [] : []
       )
 
       const coveredUntil =
@@ -421,7 +449,7 @@ export default function App() {
 
       if (result.status === 'ok') {
         const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        setLastSyncTime(timeNow)
+        setLastSyncTime(`hoje às ${timeNow}`)
 
         if (unprocessable > 0 || warningsList.length > 0) {
           setSyncState('partial')
@@ -439,7 +467,7 @@ export default function App() {
           setSyncState('success')
           showToast({
             title: 'Sincronização concluída',
-            message: importedTotal > 0 ? `${importedTotal} novos registros sincronizados com sucesso.` : 'Sincronização concluída. Não encontramos dados novos.',
+            message: importedTotal > 0 ? `${importedTotal} novos registros sincronizados (Zepp, Google e Hevy).` : 'Sincronização concluída. Não encontramos dados novos.',
             type: 'success',
           })
         }
@@ -505,7 +533,7 @@ export default function App() {
       setSyncResult(result)
       if (result.status === 'ok') {
         const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        setLastSyncTime(timeNow)
+        setLastSyncTime(`hoje às ${timeNow}`)
         setSyncState('success')
         showToast({
           title: 'Google Health sincronizado',
@@ -667,6 +695,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(normalizeTab(tab))}
         onSelectTab={(tab) => setActiveTab(normalizeTab(tab))}
+        onSync={handleSyncZepp}
         onSyncZepp={handleSyncZepp}
         onSyncGoogleHealth={handleSyncGoogleHealth}
         onOpenManualEntry={() => setShowManualModal(true)}
@@ -910,6 +939,7 @@ export default function App() {
                 onSyncGoogleHealth={handleSyncGoogleHealth}
                 isSyncingGoogle={isSyncingGoogle}
                 onOpenAISettings={() => setShowAISettings(true)}
+                onOpenDoctorBriefing={handleOpenDoctorBriefing}
               />
             )}
           </main>
@@ -918,7 +948,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Longevidade Hub</span>
-                <span>v2.4.3</span>
+                <span>v2.4.5</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
                 <span>Armazenamento local e privacidade de dados</span>
               </div>
@@ -937,6 +967,10 @@ export default function App() {
               void handleSyncZepp(true)
             }}
             isSyncingZepp={isSyncing}
+            onOpenOnboarding={() => {
+              setShowAISettings(false)
+              setShowOnboardingModal(true)
+            }}
           />
           <GoogleHealthAuthModal
             isOpen={showGoogleHealthModal}
@@ -956,6 +990,27 @@ export default function App() {
             onRetrySync={() => void handleSyncZepp()}
           />
           <DoctorBriefingModal isOpen={showDoctorModal} onClose={() => setShowDoctorModal(false)} markdownContent={doctorBriefingMd} />
+          <OnboardingModal
+            isOpen={showOnboardingModal}
+            onClose={() => setShowOnboardingModal(false)}
+            profile={profile}
+            onOpenGoogleHealthModal={() => {
+              setShowOnboardingModal(false)
+              setShowGoogleHealthModal(true)
+            }}
+            onComplete={(updatedProfile, startSync) => {
+              if (updatedProfile) setProfile(updatedProfile)
+              setShowOnboardingModal(false)
+              showToast({
+                title: 'Bem-vindo ao Longevidade Hub!',
+                message: 'Configurações iniciais salvas com sucesso.',
+                type: 'success',
+              })
+              if (startSync) {
+                void handleSyncZepp(false)
+              }
+            }}
+          />
         </Suspense>
       </ErrorBoundary>
     </div>

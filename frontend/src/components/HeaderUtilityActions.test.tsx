@@ -46,24 +46,18 @@ describe('HeaderUtilityActions Component', () => {
     expect(onOpenDoctorBriefing).toHaveBeenCalledTimes(1);
   });
 
-  it('renders infrastructure group with Zepp sync and Google sync buttons', () => {
-    const onSyncZepp = vi.fn();
-    const onSyncGoogleHealth = vi.fn();
-    renderActions({ onSyncZepp, onSyncGoogleHealth, lastSyncTime: '08:45' });
+  it('renders infrastructure group with unified sync button for Zepp, Google, and Hevy', () => {
+    const onSync = vi.fn();
+    renderActions({ onSync, lastSyncTime: '08:45' });
 
     const infraGroup = screen.getByRole('group', { name: 'Controle de sincronização e configurações' });
     expect(infraGroup).toBeInTheDocument();
 
-    const zeppBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
-    expect(zeppBtn).toBeInTheDocument();
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar' });
+    expect(syncBtn).toBeInTheDocument();
     expect(screen.getByText('Sincronizado 08:45')).toBeInTheDocument();
-    fireEvent.click(zeppBtn);
-    expect(onSyncZepp).toHaveBeenCalledTimes(1);
-
-    const googleBtn = screen.getByRole('button', { name: 'Sincronizar Google Health' });
-    expect(googleBtn).toBeInTheDocument();
-    fireEvent.click(googleBtn);
-    expect(onSyncGoogleHealth).toHaveBeenCalledTimes(1);
+    fireEvent.click(syncBtn);
+    expect(onSync).toHaveBeenCalledTimes(1);
   });
 
   it('renders settings and theme buttons in the controls group', () => {
@@ -84,8 +78,8 @@ describe('HeaderUtilityActions Component', () => {
   it('disables sync buttons while syncing is active', () => {
     renderActions({ isSyncing: true, isSyncingGoogle: false });
 
-    const zeppBtn = screen.getByRole('button', { name: 'Sincronizar Zepp' });
-    expect(zeppBtn).toBeDisabled();
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar' });
+    expect(syncBtn).toBeDisabled();
     expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });
 
@@ -97,7 +91,7 @@ describe('HeaderUtilityActions Component', () => {
       onOpenSyncStatus,
     });
 
-    const statusBadge = screen.getByRole('button', { name: /Zepp: Sincronizado com pendências/i });
+    const statusBadge = screen.getByRole('button', { name: /Sincronizado com pendências/i });
     expect(statusBadge).toBeInTheDocument();
     fireEvent.click(statusBadge);
     expect(onOpenSyncStatus).toHaveBeenCalledTimes(1);

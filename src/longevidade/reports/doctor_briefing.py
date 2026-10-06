@@ -57,6 +57,23 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
         f"**Data de Emissão**: {today_str}",
         f"**Paciente**: {name} ({age_str})",
         f"**Idade Biológica PhenoAge**: {pheno_txt}",
+    ]
+
+    medical_items = []
+    if user_prof.get("blood_type"):
+        medical_items.append(f"**Tipo Sanguíneo**: `{user_prof['blood_type']}`")
+    if user_prof.get("allergies"):
+        medical_items.append(f"**Alergias**: `{user_prof['allergies']}`")
+    if user_prof.get("emergency_contact_name") or user_prof.get("emergency_contact_phone"):
+        ice_contact = f"{user_prof.get('emergency_contact_name', '')} {user_prof.get('emergency_contact_phone', '')}".strip()
+        medical_items.append(f"**ICE**: `{ice_contact}`")
+    if user_prof.get("primary_physician"):
+        medical_items.append(f"**Médico de Ref.**: `{user_prof['primary_physician']}`")
+
+    if medical_items:
+        lines.append(f"**Ficha Médica**: {' • '.join(medical_items)}")
+
+    lines.extend([
         "",
         "---",
         "",
@@ -76,8 +93,8 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
         "## 2. Marcadores Sanguíneos & Comparativo com Alvos de Longevidade",
         "",
         "| Marcador | Valor Recente | Faixa de Ref. Laboratorial | Alvo Ótimo Longevidade | Status |",
-        "| :--- | :---: | :---: | :---: | :---: |"
-    ]
+        "| :--- | :---: | :---: | :---: | :---: |",
+    ])
 
     if not latest_labs:
         lines.append("| (Sem dados laboratoriais registrados) | - | - | - | - |")

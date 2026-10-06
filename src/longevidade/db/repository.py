@@ -61,8 +61,27 @@ class LongevityRepository:
                         res["chronological_age"] = float(today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day)))
                     except Exception:
                         pass
+
+                goals = res.get("longevity_goals")
+                if isinstance(goals, str):
+                    try:
+                        res["longevity_goals"] = json.loads(goals)
+                    except Exception:
+                        res["longevity_goals"] = []
+                elif goals is None:
+                    res["longevity_goals"] = []
+
+                res["onboarding_completed"] = bool(res.get("onboarding_completed", 0))
                 return res
-            return {"id": 1, "name": "Paciente", "chronological_age": None, "height_cm": None, "target_weight_kg": None}
+            return {
+                "id": 1,
+                "name": "Paciente",
+                "chronological_age": None,
+                "height_cm": None,
+                "target_weight_kg": None,
+                "longevity_goals": [],
+                "onboarding_completed": False,
+            }
 
     def upsert_user_profile(self, data: Dict[str, Any]) -> None:
         data = dict(data)
@@ -75,9 +94,20 @@ class LongevityRepository:
             except Exception:
                 pass
 
+        if "longevity_goals" in data and isinstance(data["longevity_goals"], (list, dict)):
+            data["longevity_goals"] = json.dumps(data["longevity_goals"], ensure_ascii=False)
+
+        if "onboarding_completed" in data and data["onboarding_completed"] is not None:
+            data["onboarding_completed"] = int(bool(data["onboarding_completed"]))
+
         fields = [
             "name", "email", "birthdate", "chronological_age",
-            "height_cm", "current_weight_kg", "target_weight_kg", "gender", "avatar_url"
+            "height_cm", "current_weight_kg", "target_weight_kg", "gender", "avatar_url",
+            "blood_type", "allergies", "family_history", "chronic_conditions",
+            "emergency_contact_name", "emergency_contact_phone", "primary_physician",
+            "longevity_goals", "protocol_start_date",
+            "fasting_window", "chronotype", "daily_water_target_ml",
+            "target_sleep_hours", "target_body_fat_pct", "onboarding_completed"
         ]
         columns = [f for f in fields if f in data]
         if not columns:
@@ -175,6 +205,216 @@ class LongevityRepository:
         new_weight = float(latest["weight_kg"])
         self.upsert_user_profile({"current_weight_kg": new_weight})
         return new_weight
+
+    def get_profile_golden_metrics(self) -> Dict[str, Any]:
+        """
+        Retorna os valores mais recentes dos biomarcadores padrão-ouro de longevidade
+        (VO2 Max, HRV, RHR, % Gordura, Cintura, Força de Preensão, SpO2).
+        Cada biomarcador possui cadência própria de medição (ex: balança Fitdays vs relógio),
+        portanto consolidamos a medição válida mais recente individualmente.
+        """
+        res: Dict[str, Any] = {
+            "date_ref": None,
+            "vo2_max": None,
+            "vo2_max_date": None,
+            "rhr_bpm": None,
+            "rhr_date": None,
+            "hrv_ms": None,
+            "hrv_date": None,
+            "body_fat_pct": None,
+            "body_fat_date": None,
+            "body_fat_source": None,
+            "waist_cm": None,
+            "waist_date": None,
+            "grip_strength_kg": None,
+            "grip_date": None,
+            "respiratory_rate_rpm": None,
+            "spo2_avg_pct": None,
+        }
+
+        with self._get_connection() as conn:
+            try:
+                # 1. VO2 Max
+                row = conn.execute(
+                    "SELECT vo2_max, date_ref FROM daily_metrics WHERE vo2_max IS NOT NULL AND vo2_max > 0 ORDER BY date_ref DESC LIMIT 1;"
+                ).fetchone()
+                if row:
+                    res["vo2_max"] = row["vo2_max"]
+                    res["vo2_max_date"] = row["date_ref"]
+
+                # 2. Frequência Cardíaca de Repouso (RHR)
+                row = conn.execute(
+                    "SELECT rhr_bpm, date_ref FROM daily_metrics WHERE rhr_bpm IS NOT NULL AND rhr_bpm > 0 ORDER BY date_ref DESC LIMIT 1;"
+                ).fetchone()
+                if row:
+                    res["rhr_bpm"] = row["rhr_bpm"]
+                    res["rhr_date"] = row["date_ref"]
+
+                # 3. Variabilidade Cardíaca (HRV)
+                row = conn.execute(
+                    "SELECT hrv_ms, date_ref FROM daily_metrics WHERE hrv_ms IS NOT NULL AND hrv_ms > 0 ORDER BY date_ref DESC LIMIT 1;"
+                ).fetchone()
+                if row:
+                    res["hrv_ms"] = row["hrv_ms"]
+                    res["hrv_date"] = row["date_ref"]
+
+                # 4. SpO2 e Frequência Respiratória
+                row = conn.execute(
+                    "SELECT spo2_avg_pct, respiratory_rate_rpm, date_ref FROM daily_metrics WHERE spo2_avg_pct IS NOT NULL ORDER BY date_ref DESC LIMIT 1;"
+                ).fetchone()
+                if row:
+                    res["spo2_avg_pct"] = row["spo2_avg_pct"]
+                    res["respiratory_rate_rpm"] = row["respiratory_rate_rpm"]
+
+                # 5. Força de Preensão Manual
+                row = conn.execute(
+                    "SELECT grip_strength_kg, date_ref FROM daily_metrics WHERE grip_strength_kg IS NOT NULL AND grip_strength_kg > 0 ORDER BY date_ref DESC LIMIT 1;"
+                ).fetchone()
+                if row:
+                    res["grip_strength_kg"] = row["grip_strength_kg"]
+                    res["grip_date"] = row["date_ref"]
+
+                # 6. Gordura Corporal (% Body Fat):
+                # Consolidação cronológica entre daily_metrics, physical_assessments e health_data_points
+                bf_candidates = []
+                try:
+                    for r in conn.execute(
+                        "SELECT body_fat_pct AS val, date_ref AS dt, source FROM daily_metrics WHERE body_fat_pct IS NOT NULL AND body_fat_pct > 0 ORDER BY date_ref DESC LIMIT 5;"
+                    ).fetchall():
+                        bf_candidates.append({"val": float(r["val"]), "dt": str(r["dt"]), "source": r["source"] or "daily_metrics"})
+                except Exception:
+                    pass
+
+                try:
+                    for r in conn.execute(
+                        "SELECT body_fat_percentage AS val, assessment_date AS dt, 'physical_assessments' AS source FROM physical_assessments WHERE body_fat_percentage IS NOT NULL AND body_fat_percentage > 0 ORDER BY assessment_date DESC LIMIT 5;"
+                    ).fetchall():
+                        bf_candidates.append({"val": float(r["val"]), "dt": str(r["dt"]), "source": "physical_assessments"})
+                except Exception:
+                    pass
+
+                try:
+                    for r in conn.execute(
+                        "SELECT value AS val, COALESCE(start_time, recorded_at) AS dt, source FROM health_data_points WHERE data_type IN ('body-fat', 'body_fat') AND value IS NOT NULL AND value > 0 ORDER BY dt DESC LIMIT 5;"
+                    ).fetchall():
+                        bf_candidates.append({"val": float(r["val"]), "dt": str(r["dt"])[:10], "source": r["source"] or "GoogleHealth"})
+                except Exception:
+                    pass
+
+                if bf_candidates:
+                    bf_candidates.sort(key=lambda x: x["dt"], reverse=True)
+                    top_bf = bf_candidates[0]
+                    res["body_fat_pct"] = top_bf["val"]
+                    res["body_fat_date"] = top_bf["dt"]
+                    res["body_fat_source"] = top_bf["source"]
+
+                # 7. Circunferência da Cintura (waist_cm):
+                # Consolidação cronológica entre daily_metrics e physical_assessments
+                waist_candidates = []
+                try:
+                    for r in conn.execute(
+                        "SELECT waist_cm AS val, date_ref AS dt FROM daily_metrics WHERE waist_cm IS NOT NULL AND waist_cm > 0 ORDER BY date_ref DESC LIMIT 5;"
+                    ).fetchall():
+                        waist_candidates.append({"val": float(r["val"]), "dt": str(r["dt"])})
+                except Exception:
+                    pass
+
+                try:
+                    for r in conn.execute(
+                        "SELECT waist_cm AS val, assessment_date AS dt FROM physical_assessments WHERE waist_cm IS NOT NULL AND waist_cm > 0 ORDER BY assessment_date DESC LIMIT 5;"
+                    ).fetchall():
+                        waist_candidates.append({"val": float(r["val"]), "dt": str(r["dt"])})
+                except Exception:
+                    pass
+
+                if waist_candidates:
+                    waist_candidates.sort(key=lambda x: x["dt"], reverse=True)
+                    top_waist = waist_candidates[0]
+                    res["waist_cm"] = top_waist["val"]
+                    res["waist_date"] = top_waist["dt"]
+
+                # Data de referência mais recente dentre todas as métricas disponíveis
+                all_dates = [d for d in [res["vo2_max_date"], res["rhr_date"], res["hrv_date"], res["body_fat_date"], res["waist_date"], res["grip_date"]] if d]
+                res["date_ref"] = max(all_dates) if all_dates else None
+
+            except Exception:
+                pass
+
+        return res
+
+    def get_profile_biological_age_snapshot(self) -> Optional[Dict[str, Any]]:
+        """
+        Recupera o registro mais recente de idade biológica (PhenoAge ou KDM Age).
+        Garante que valores incompletos ou ausentes retornem None sem inventar dados.
+        """
+        sql_pheno = """
+        SELECT calculated_at, chronological_age, pheno_age, age_delta, record_origin
+        FROM phenoage_records
+        ORDER BY calculated_at DESC, id DESC
+        LIMIT 1;
+        """
+        with self._get_connection() as conn:
+            try:
+                row = conn.execute(sql_pheno).fetchone()
+                if row:
+                    r = dict(row)
+                    age_delta = round(float(r["age_delta"]), 1) if r.get("age_delta") is not None else None
+                    chrono_age = round(float(r["chronological_age"]), 1) if r.get("chronological_age") is not None else None
+                    pheno_age = round(float(r["pheno_age"]), 1) if r.get("pheno_age") is not None else None
+                    pace = None
+                    if chrono_age and chrono_age > 0 and pheno_age is not None:
+                        pace = round(pheno_age / chrono_age, 2)
+                    status = "Otimização Celular Favorável" if age_delta is not None and age_delta <= 0 else "Atenção Preventiva"
+                    return {
+                        "calculated_at": r.get("calculated_at"),
+                        "biological_age": pheno_age,
+                        "chronological_age": chrono_age,
+                        "age_delta": age_delta,
+                        "pace_of_aging": pace,
+                        "status": status,
+                        "record_origin": r.get("record_origin", "unverified"),
+                    }
+            except Exception:
+                pass
+
+            # Fallback para KDM se phenoage não estiver disponível
+            try:
+                sql_kdm = """
+                SELECT calculated_at, chronological_age, kdm_age, kdm_delta
+                FROM kdm_records
+                ORDER BY calculated_at DESC, id DESC
+                LIMIT 1;
+                """
+                row_kdm = conn.execute(sql_kdm).fetchone()
+                if row_kdm:
+                    r = dict(row_kdm)
+                    kdm_delta = round(float(r["kdm_delta"]), 1) if r.get("kdm_delta") is not None else None
+                    chrono_age = round(float(r["chronological_age"]), 1) if r.get("chronological_age") is not None else None
+                    kdm_age = round(float(r["kdm_age"]), 1) if r.get("kdm_age") is not None else None
+                    pace = round(kdm_age / chrono_age, 2) if chrono_age and chrono_age > 0 and kdm_age is not None else None
+                    status = "Otimização Celular Favorável" if kdm_delta is not None and kdm_delta <= 0 else "Atenção Preventiva"
+                    return {
+                        "calculated_at": r.get("calculated_at"),
+                        "biological_age": kdm_age,
+                        "chronological_age": chrono_age,
+                        "age_delta": kdm_delta,
+                        "pace_of_aging": pace,
+                        "status": status,
+                        "record_origin": "kdm",
+                    }
+            except Exception:
+                pass
+
+        return None
+
+    def get_active_supplements_count(self) -> int:
+        """Retorna o total de suplementos com status ativo no banco."""
+        sql = "SELECT COUNT(*) FROM supplement_stack WHERE is_active = 1;"
+        with self._get_connection() as conn:
+            try:
+                return int(conn.execute(sql).fetchone()[0])
+            except Exception:
+                return 0
 
     # --- DAILY METRICS ---
     def upsert_daily_metric(self, data: Dict[str, Any]) -> None:

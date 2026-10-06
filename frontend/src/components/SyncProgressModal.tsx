@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Activity,
   Shield,
+  Dumbbell,
   Eye,
   KeyRound,
   Clock,
@@ -29,9 +30,11 @@ export interface SyncResult {
   message?: string
   zepp_records_imported?: number
   google_health_records_imported?: number
+  hevy_records_imported?: number
   total_sources?: number
   zepp?: SyncSourceDetail | number
   google_health?: SyncSourceDetail | number
+  hevy?: SyncSourceDetail | number | { status?: string; reason?: string; records_inserted?: number; warnings?: string[] }
   warnings?: string[]
   unprocessable_records?: number
   data_covered_until?: string
@@ -95,11 +98,24 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     syncResult?.google_health,
     syncResult?.google_health_records_imported
   )
+  const hevyCount = getRecordCount(syncResult?.hevy, syncResult?.hevy_records_imported)
   const zeppSkipped = getSkippedCount(syncResult?.zepp)
   const googleSkipped = getSkippedCount(syncResult?.google_health)
+  const hevySkippedCount = getSkippedCount(syncResult?.hevy)
+  const hevySkipped =
+    Boolean(syncResult?.hevy &&
+    typeof syncResult.hevy === 'object' &&
+    'status' in syncResult.hevy &&
+    (syncResult.hevy as { status?: string }).status === 'skipped')
+  const hevyError =
+    Boolean(syncResult?.hevy &&
+    typeof syncResult.hevy === 'object' &&
+    'status' in syncResult.hevy &&
+    (syncResult.hevy as { status?: string }).status === 'error')
+
   const unprocessableTotal =
-    (syncResult?.unprocessable_records ?? 0) + zeppSkipped + googleSkipped
-  const importedTotal = zeppCount + googleCount
+    (syncResult?.unprocessable_records ?? 0) + zeppSkipped + googleSkipped + hevySkippedCount
+  const importedTotal = zeppCount + googleCount + hevyCount
 
   const allWarnings = useMemo(() => {
     const list: string[] = []
@@ -119,6 +135,14 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
       Array.isArray(syncResult.google_health.warnings)
     ) {
       list.push(...syncResult.google_health.warnings)
+    }
+    if (
+      syncResult?.hevy &&
+      typeof syncResult.hevy === 'object' &&
+      'warnings' in syncResult.hevy &&
+      Array.isArray((syncResult.hevy as SyncSourceDetail).warnings)
+    ) {
+      list.push(...((syncResult.hevy as SyncSourceDetail).warnings || []))
     }
     return list
   }, [syncResult])
@@ -159,7 +183,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   }, [hasError, isDisconnected, isExpired, isPartial, isStale, isSuccess, isSyncing, isWarning])
 
   const description = useMemo(() => {
-    if (isSyncing) return `Atualizando seus dados do Zepp e Google Health (${elapsedSeconds}s)`
+    if (isSyncing) return `Atualizando seus dados do Zepp, Google Health e Hevy (${elapsedSeconds}s)`
     if (isExpired) {
       return (
         syncResult?.message ??
@@ -366,6 +390,44 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             }
           >
             {isSyncing ? 'Processando...' : isWarning ? 'Em andamento' : `${googleCount} registros`}
+          </span>
+        </div>
+
+        <div
+          className={`flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border text-xs ${
+            hasError || hevyError
+              ? 'border-rose-500/30'
+              : isPartial || isWarning
+              ? 'border-amber-500/30'
+              : 'border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
+            <Dumbbell className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <span>Hevy (musculação, séries, volume)</span>
+          </div>
+          <span
+            className={
+              isSyncing
+                ? 'text-cyan-600 dark:text-cyan-400 font-semibold animate-pulse'
+                : hasError || hevyError
+                ? 'text-rose-600 dark:text-rose-400 font-bold'
+                : isWarning
+                ? 'text-amber-600 dark:text-amber-400 font-bold'
+                : hevySkipped
+                ? 'text-slate-500 dark:text-slate-400 font-medium'
+                : 'text-purple-600 dark:text-purple-400 font-bold'
+            }
+          >
+            {isSyncing
+              ? 'Processando...'
+              : isWarning
+              ? 'Em andamento'
+              : hevySkipped
+              ? 'Não configurado'
+              : hevyError
+              ? 'Falha'
+              : `${hevyCount} treinos`}
           </span>
         </div>
       </div>

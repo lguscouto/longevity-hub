@@ -90,3 +90,13 @@ export interface HevyStatus {
   user?: HevyUser | null
   error?: string | null
 }
+
+export interface ZeppStatus {
+  configured: boolean
+  connected?: boolean
+  user_id?: string | null
+  host?: string
+  masked_app_token?: string | null
+  has_app_token?: boolean
+  error?: string | null
+}

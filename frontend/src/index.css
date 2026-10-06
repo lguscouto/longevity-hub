@@ -158,3 +158,30 @@
     animation: none !important;
   }
 }
+
+/* Estilos de Impressão para Ficha de Longevidade e Relatório Clínico (Fase 4) */
+@media print {
+  nav,
+  header,
+  [role="tablist"],
+  button,
+  footer {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .shadow-xs,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  [role="region"] {
+    break-inside: avoid;
+  }
+}
+

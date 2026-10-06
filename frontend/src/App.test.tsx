@@ -57,15 +57,17 @@ describe('App', () => {
           height_cm: 170,
           current_weight_kg: 72.5,
           target_weight_kg: 75,
+          onboarding_completed: true,
         }
       }
       if (path.startsWith('/api/compliance/history')) return []
-      if (path === '/api/metrics/sync/zepp' && init?.method === 'POST') {
+      if ((path.startsWith('/api/sync/all') || path === '/api/metrics/sync/zepp') && init?.method === 'POST') {
         return {
           status: 'ok',
           zepp_records_imported: 0,
           google_health_records_imported: 0,
-          total_sources: 0,
+          hevy_records_imported: 0,
+          total_sources: 3,
         }
       }
       if (path === '/api/metrics' && init?.method === 'POST') {
@@ -252,5 +254,40 @@ describe('App', () => {
     await user.click(toggleBtn)
     expect(toggleBtn).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('button', { name: /ocultar detalhes de análises/i })).toBeInTheDocument()
+  })
+
+  it('opens onboarding wizard automatically when profile has onboarding_completed = false', async () => {
+    requestJsonMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input)
+      if (path === '/api/profile') {
+        return {
+          name: 'Paciente',
+          onboarding_completed: false,
+        }
+      }
+      if (path.startsWith('/api/metrics?')) return []
+      if (path === '/api/labs') return []
+      if (path === '/api/supplements') return []
+      if (path.startsWith('/api/supplements/logs/')) return []
+      if (path === '/api/supplements/audit-logs') return []
+      if (path === '/api/ai/settings') return { active_provider: 'openrouter', selected_model: 'deepseek/deepseek-v4-flash-0731', privacy_mode: 'minimal' }
+      if (path === '/api/ai/history') return []
+      if (path === '/api/phenoage/history') return []
+      if (path === '/api/kdm/latest') return { status: 'incomplete', missing_biomarkers: ['rhr_bpm'] }
+      if (path === '/api/n-of-1') return []
+      if (path === '/api/cgm/summary') return []
+      if (path.startsWith('/api/compliance/history')) return []
+      if (path === '/api/zepp/status') return { configured: false }
+      if (path === '/api/workouts/hevy/status') return { connected: false }
+      if (path === '/api/google-health/status') return { connected: false }
+      return {}
+    })
+
+    renderApp()
+
+    await waitFor(() => {
+      expect(screen.getByText('Bem-vindo ao Longevidade Hub')).toBeInTheDocument()
+      expect(screen.getByText('Dados Pessoais e Parâmetros Clínicos')).toBeInTheDocument()
+    }, { timeout: 3000 })
   })
 })
