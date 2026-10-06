@@ -96,14 +96,14 @@ def build_patient_clinical_context(
     if profile.get('bmi'):
         lines.append(f"IMC: {profile.get('bmi')} kg/m²")
 
-    # 1.1 Algoritmos Determinísticos & Trava de Segurança (Hoje)
-    lines.append("\n=== ALGORITMOS DETERMINÍSTICOS E TRAVAS DE SEGURANÇA (HOJE) ===")
+    # 1.1 Algoritmos Determinísticos e Prontidão (Hoje)
+    lines.append("\n=== ALGORITMOS DETERMINÍSTICOS E PRONTIDÃO (HOJE) ===")
     if rhr_projected and resolved_today and resolved_today.get("rhr_bpm") is not None:
         lines.append(f"- Observação de RHR: O RHR de hoje ({resolved_today['rhr_bpm']:.0f} bpm) é uma projeção do dia anterior (D-1) enquanto aguarda consolidação do wearable.")
     lines.append(f"- Orientação Diária (Daily Guidance): estado='{guidance_res.get('state')}', score={guidance_res.get('score')}, confiança='{guidance_res.get('confidence')}'")
     lines.append(f"  Ação Recomendada: {guidance_res.get('primary_action')}")
     if guidance_res.get("limitations"):
-        lines.append(f"  Limitações/Guardrails: {'; '.join(guidance_res['limitations'])}")
+        lines.append(f"  Limitações observadas: {'; '.join(guidance_res['limitations'])}")
 
     lines.append(f"- Bateria Corporal (Energy Bank): nível={energy_res.get('current_level')}%, status='{energy_res.get('status')}', recarga={energy_res.get('recharge')}, consumo={energy_res.get('drain')}")
     lines.append(f"  Recomendação: {energy_res.get('recommendation')}")

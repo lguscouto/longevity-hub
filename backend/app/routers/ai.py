@@ -202,42 +202,6 @@ def generate_insights(input_data: Optional[GenerateInsightsInput] = None):
     model = settings.get("selected_model", "deepseek/deepseek-v4-flash-0731")
     privacy_mode = _normalize_privacy_mode(settings.get("privacy_mode"))
 
-    safety = _current_training_safety(repo)
-    if safety.restricted and safety.reason_code == "guidance_insufficient_data":
-        parsed_json = build_restricted_insights(safety)
-        insight = parsed_json["insights"][0]
-        _save_deterministic_guardrail_insight(
-            repo,
-            category=str(insight["category"]),
-            headline=str(insight["headline"]),
-            insight_text=str(insight["insight_text"]),
-            actionable_steps=str(insight["actionable_steps"]),
-            audit_prompt=f"Análise local limitada pela política de segurança ({time_window}) (privacy_mode={privacy_mode})",
-        )
-        report_id = repo.save_ai_report(
-            {
-                "provider": DETERMINISTIC_SAFETY_PROVIDER,
-                "model": DETERMINISTIC_SAFETY_MODEL,
-                "privacy_mode": privacy_mode,
-                "time_window": time_window,
-                "summary": parsed_json.get("summary", ""),
-                "report_json": parsed_json,
-                "guardrail_applied": True,
-                "safety_reason": safety.reason_code,
-            }
-        )
-        return {
-            "status": "ok",
-            "id": report_id,
-            "provider": DETERMINISTIC_SAFETY_PROVIDER,
-            "model": DETERMINISTIC_SAFETY_MODEL,
-            "privacy_mode": privacy_mode,
-            "time_window": time_window,
-            "guardrail_applied": True,
-            "safety_reason": safety.reason_code,
-            "result": parsed_json,
-        }
-
     api_key = _require_provider_secret(
         repo,
         provider,
@@ -247,18 +211,7 @@ def generate_insights(input_data: Optional[GenerateInsightsInput] = None):
     context_text = build_patient_clinical_context(db_path, privacy_mode=privacy_mode, time_window=time_window)
     system_prompt = settings.get("system_prompt_custom") or DEFAULT_LONGEVITY_SYSTEM_PROMPT
     structured_prompt = build_structured_insights_prompt(time_window=time_window)
-
-    if safety.restricted:
-        safety_notice = (
-            f"\n\n[DIRETRIZ DE SEGURANÇA DETERMINÍSTICA ATIVA]:\n"
-            f"Atenção: Os dados fisiológicos de hoje possuem limitações de cobertura ({safety.reason_code}). "
-            f"Você deve sintetizar e analisar o histórico ({time_window}) normalmente, "
-            f"porém é TERMINANTEMENTE PROIBIDO prescrever aumento de intensidade ou treinos extenuantes para o dia de hoje. "
-            f"Em relação ao treino de hoje, oriente explicitamente foco em recuperação ativa e aguardar a consolidação dos dados."
-        )
-        user_prompt = f"{context_text}{safety_notice}\n\n{structured_prompt}"
-    else:
-        user_prompt = f"{context_text}\n\n{structured_prompt}"
+    user_prompt = f"{context_text}\n\n{structured_prompt}"
 
     raw_response, err = generate_llm_response(
         provider=provider,
@@ -292,16 +245,6 @@ def generate_insights(input_data: Optional[GenerateInsightsInput] = None):
             ],
         }
 
-    # Se a política do dia estiver restrita, injeta um card prioritário de segurança no relatório
-    if safety.restricted and parsed_json and isinstance(parsed_json.get("insights"), list):
-        safety_card = {
-            "category": "segurança",
-            "headline": "Atenção ao Treino de Hoje: Dados de Recuperação Incompletos",
-            "insight_text": f"Seu relatório ({time_window}) foi gerado com sucesso, porém os sinais fisiológicos de recuperação de hoje estão parciais. Priorize moderação na atividade física de hoje.",
-            "actionable_steps": safe_training_action(safety),
-        }
-        parsed_json["insights"].insert(0, safety_card)
-
     report_id = repo.save_ai_report(
         {
             "provider": provider,
@@ -310,8 +253,8 @@ def generate_insights(input_data: Optional[GenerateInsightsInput] = None):
             "time_window": time_window,
             "summary": parsed_json.get("summary", ""),
             "report_json": parsed_json,
-            "guardrail_applied": safety.restricted,
-            "safety_reason": safety.reason_code if safety.restricted else None,
+            "guardrail_applied": False,
+            "safety_reason": None,
         }
     )
 
@@ -336,8 +279,8 @@ def generate_insights(input_data: Optional[GenerateInsightsInput] = None):
         "model": model,
         "privacy_mode": privacy_mode,
         "time_window": time_window,
-        "guardrail_applied": safety.restricted,
-        "safety_reason": safety.reason_code if safety.restricted else None,
+        "guardrail_applied": False,
+        "safety_reason": None,
         "result": parsed_json,
     }
 
@@ -352,38 +295,6 @@ def chat_copilot(input_data: AIChatInput):
     model = settings.get("selected_model", "deepseek/deepseek-v4-flash-0731")
     privacy_mode = _normalize_privacy_mode(settings.get("privacy_mode"))
 
-    safety = _current_training_safety(repo)
-    if safety.restricted:
-        prompt_lower = input_data.prompt.lower()
-        is_training_inquiry = any(
-            kw in prompt_lower
-            for kw in (
-                "trein", "exerc", "corr", "malh", "carga", "intens",
-                "workout", "vo2", "academia", "força", "esforço", "muscul",
-                "máxim", "sprint"
-            )
-        )
-        if is_training_inquiry or safety.reason_code == "guidance_insufficient_data":
-            reply = build_restricted_chat_reply(safety)
-            audit_prompt = input_data.prompt if privacy_mode == "full" else "[prompt omitido por privacy_mode=minimal]"
-            _save_deterministic_guardrail_insight(
-                repo,
-                category="chat",
-                headline="Resposta limitada pela política de segurança",
-                insight_text=reply,
-                actionable_steps=None,
-                audit_prompt=audit_prompt,
-            )
-            return {
-                "status": "ok",
-                "provider": DETERMINISTIC_SAFETY_PROVIDER,
-                "model": DETERMINISTIC_SAFETY_MODEL,
-                "privacy_mode": privacy_mode,
-                "guardrail_applied": True,
-                "safety_reason": safety.reason_code,
-                "reply": reply,
-            }
-
     api_key = _require_provider_secret(
         repo,
         provider,
@@ -392,12 +303,20 @@ def chat_copilot(input_data: AIChatInput):
 
     context_text = build_patient_clinical_context(db_path, privacy_mode=privacy_mode)
     system_prompt = settings.get("system_prompt_custom") or DEFAULT_LONGEVITY_SYSTEM_PROMPT
-    if safety.restricted:
-        system_prompt += (
-            f"\n\n[AVISO CLÍNICO]: Os dados fisiológicos de hoje possuem limitações ({safety.reason_code}). "
-            "Se o paciente perguntar sobre atividade física ou intensidade hoje, oriente moderação e descanso."
-        )
-    user_prompt = f"DADOS DO PACIENTE:\n{context_text}\n\nPERGUNTA DO PACIENTE:\n{input_data.prompt}"
+
+    user_prompt = (
+        f"--- PRONTUÁRIO CLÍNICO E DADOS DO PACIENTE (CONSULTA DE REFERÊNCIA) ---\n"
+        f"{context_text}\n"
+        f"--- FIM DO PRONTUÁRIO ---\n\n"
+        f"MENSAGEM DO USUÁRIO NO CHAT:\n{input_data.prompt}\n\n"
+        f"INSTRUÇÕES OBRIGATÓRIAS:\n"
+        f"1. IDIOMA: Responda 100% em português do Brasil (pt-BR). É expressamente PROIBIDO usar espanhol ou misturar vocábulos em espanhol (como 'sueño', 'entrenamiento', 'días', 'debajo', 'recuperación', 'estás', 'mañana', 'después', '¿').\n"
+        f"2. Se a mensagem do usuário for apenas um cumprimento ou saudação (ex: 'boa tarde', 'olá', 'bom dia', 'tudo bem?'), "
+        f"responda de forma cordial, acolhedora, breve e natural em português (1 a 2 frases), cumprimentando pelo nome se disponível e colocando-se à disposição. "
+        f"NÃO apresente relatórios, dados ou resumos em resposta a uma simples saudação.\n"
+        f"3. Se houver uma dúvida ou solicitação específica, responda diretamente ao que foi perguntado, consultando os dados clínicos acima apenas no que for pertinente.\n"
+        f"4. Somente apresente um resumo geral de todas as métricas se o usuário pedir expressamente um relatório ou panorama geral."
+    )
 
     reply, err = generate_llm_response(
         provider=provider,
@@ -428,6 +347,8 @@ def chat_copilot(input_data: AIChatInput):
         "provider": provider,
         "model": model,
         "privacy_mode": privacy_mode,
+        "guardrail_applied": False,
+        "safety_reason": None,
         "reply": reply,
     }
 

@@ -290,4 +290,70 @@ def test_generate_insights_with_time_windows(client, monkeypatch):
         assert saved_report["time_window"] == "7d"
 
 
+def test_ai_chat_greeting_formatting_and_language(client, monkeypatch):
+    from backend.app.routers import ai as ai_router
+    from longevidade.ai.safety_policy import TrainingSafetyDecision
+
+    secret_store = MemorySecretsStore()
+    secret_store.set("openrouter", "mock-openrouter-key")
+    monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
+    monkeypatch.setattr(
+        ai_router,
+        "_current_training_safety",
+        lambda repo: TrainingSafetyDecision(
+            restricted=False,
+            reason_code=None,
+            guidance={"state": "green", "confidence": "high"},
+            energy={"status": "optimal"},
+        ),
+    )
+
+    with patch("backend.app.routers.ai.generate_llm_response") as mock_llm:
+        mock_llm.return_value = ("Boa tarde! Como posso ajudar você hoje com seus dados de saúde?", None)
+
+        res = client.post("/api/ai/chat", json={"prompt": "boa tarde"})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert "Boa tarde" in data["reply"]
+
+        call_kwargs = mock_llm.call_args[1]
+        system_prompt = call_kwargs["system_prompt"]
+        user_prompt = call_kwargs["user_prompt"]
+
+        assert "português do Brasil (pt-BR)" in system_prompt
+        assert "português do Brasil (pt-BR)" in user_prompt
+        assert "NÃO apresente relatórios, dados ou resumos em resposta a uma simples saudação" in user_prompt
+        assert "PRONTUÁRIO CLÍNICO E DADOS DO PACIENTE" in user_prompt
+
+
+def test_ai_chat_no_guardrail_blocking(client, monkeypatch):
+    from backend.app.routers import ai as ai_router
+
+    secret_store = MemorySecretsStore()
+    secret_store.set("openrouter", "mock-openrouter-key")
+    monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
+
+    with patch("backend.app.routers.ai.generate_llm_response") as mock_llm:
+        mock_llm.return_value = ("Resposta direta do modelo sem bloqueios.", None)
+
+        # 1. Saudação vai diretamente para o LLM
+        res_greeting = client.post("/api/ai/chat", json={"prompt": "boa tarde"})
+        assert res_greeting.status_code == 200
+        greeting_data = res_greeting.json()
+        assert greeting_data["status"] == "ok"
+        assert greeting_data.get("guardrail_applied") is False
+        assert mock_llm.call_count == 1
+
+        # 2. Dúvida de treino NÃO é bloqueada por trava determinística e também vai direto para o LLM
+        res_training = client.post("/api/ai/chat", json={"prompt": "Posso fazer treino máximo hoje?"})
+        assert res_training.status_code == 200
+        training_data = res_training.json()
+        assert training_data["status"] == "ok"
+        assert training_data.get("guardrail_applied") is False
+        assert training_data.get("safety_reason") is None
+        assert mock_llm.call_count == 2
+
+
+
 
