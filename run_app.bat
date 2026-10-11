@@ -39,10 +39,10 @@ IF NOT EXIST "frontend\dist" (
 )
 
 echo [INFO] Servidor Longevidade Hub iniciando na porta 8887...
-set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887"
+set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887,http://localhost:8886,http://localhost:8887,http://192.168.100.250:8887"
 echo [INFO] O navegador sera aberto automaticamente assim que o servidor estiver pronto...
 start /b "" "%PYTHON_EXE%" "%~dp0scripts\open_browser_when_ready.py" --url http://127.0.0.1:8887
 
-"%PYTHON_EXE%" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8887 --reload
+"%PYTHON_EXE%" -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8887 --reload
 
 pause

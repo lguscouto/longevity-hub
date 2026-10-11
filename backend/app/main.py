@@ -66,6 +66,9 @@ def _parse_cors_origins() -> Tuple[str, ...]:
 
 
 LOCAL_ALLOWED_ORIGINS = _parse_cors_origins()
+LOCAL_ALLOWED_ORIGIN_REGEX = (
+    r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$"
+)
 
 
 @asynccontextmanager
@@ -91,6 +94,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(LOCAL_ALLOWED_ORIGINS),
+    allow_origin_regex=LOCAL_ALLOWED_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
