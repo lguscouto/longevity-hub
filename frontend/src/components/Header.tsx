@@ -3,6 +3,7 @@ import {
   Activity,
   ShieldCheck,
   Dna,
+  Footprints,
   Moon,
   History,
   Camera,
@@ -21,6 +22,7 @@ export type PrimaryTab = 'today' | 'health' | 'workouts' | 'interventions' | 'ai
 export function resolvePrimaryTab(tab: string): PrimaryTab {
   switch (tab) {
     case 'labs':
+    case 'steps':
     case 'sleep':
     case 'timeline':
     case 'physical-assessments':
@@ -218,6 +220,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <nav aria-label="Sub-navegação de Saúde" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
               {renderSubNavButton('labs', 'Exames e PhenoAge', Dna, activeTab === 'labs')}
+              {renderSubNavButton('steps', 'Passos Diários', Footprints, activeTab === 'steps')}
               {renderSubNavButton('sleep', 'Sono', Moon, activeTab === 'sleep')}
               {renderSubNavButton('timeline', 'Linha do Tempo', History, activeTab === 'timeline')}
               {renderSubNavButton('physical-assessments', 'Avaliações Físicas', Camera, activeTab === 'physical-assessments')}

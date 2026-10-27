@@ -22,6 +22,7 @@ const ManualEntryModal = lazy(() => import('./components/ManualEntryModal').then
 const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWidget').then(m => ({ default: m.DailyComplianceWidget })))
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
 const SleepView = lazy(() => import('./components/SleepView').then(m => ({ default: m.SleepView })))
+const DailyStepsView = lazy(() => import('./components/steps/DailyStepsView').then(m => ({ default: m.DailyStepsView })))
 const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthModal').then(m => ({ default: m.GoogleHealthAuthModal })))
 const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => ({ default: m.WorkoutsTable })))
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
@@ -29,7 +30,7 @@ const TimelineView = lazy(() => import('./components/timeline/TimelineView').the
 import { OnboardingModal } from './components/onboarding/OnboardingModal'
 
 
-import { EmptyState, LoadingIndicator, useToast } from './components/ui'
+import { Button, EmptyState, LoadingIndicator, useToast } from './components/ui'
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
 import { DailyGuidanceCard } from './components/DailyGuidanceCard'
@@ -48,6 +49,7 @@ type Tab =
   | 'timeline'
   | 'workouts'
   | 'labs'
+  | 'steps'
   | 'health'
   | 'supplements'
   | 'interventions'
@@ -106,6 +108,7 @@ const VALID_TABS: Tab[] = [
   'timeline',
   'workouts',
   'labs',
+  'steps',
   'health',
   'supplements',
   'interventions',
@@ -917,7 +920,52 @@ export default function App() {
                 <WorkoutsView onSyncZepp={handleSyncZepp} isSyncingZepp={isSyncing} />
               </Suspense>
             )}
-            {activeTab === 'labs' && <LabResultsTable labs={labs} onAddBatchLabs={handleAddBatchLabs} onRefreshData={fetchDashboardData} />}
+            {(activeTab === 'labs' || activeTab === 'steps') && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-1.5 p-1 rounded-radius-lg bg-slate-200/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 w-fit">
+                  <Button
+                    type="button"
+                    variant={activeTab === 'labs' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveTab('labs')}
+                    leftIcon={Dna}
+                    className="text-xs min-h-[36px]"
+                  >
+                    Exames e Biomarcadores
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={activeTab === 'steps' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveTab('steps')}
+                    leftIcon={Footprints}
+                    className="text-xs min-h-[36px]"
+                  >
+                    Passos Diários (Zepp)
+                  </Button>
+                </div>
+
+                {activeTab === 'labs' && (
+                  <LabResultsTable
+                    labs={labs}
+                    onAddBatchLabs={handleAddBatchLabs}
+                    onRefreshData={fetchDashboardData}
+                  />
+                )}
+
+                {activeTab === 'steps' && (
+                  <Suspense
+                    fallback={
+                      <div className="py-12 flex justify-center">
+                        <LoadingIndicator label="Carregando histórico e análises de passos..." size="md" />
+                      </div>
+                    }
+                  >
+                    <DailyStepsView onSyncZepp={handleSyncZepp} isSyncingZepp={isSyncing} />
+                  </Suspense>
+                )}
+              </div>
+            )}
             {activeTab === 'supplements' && <SupplementsView selectedDate={selectedDate} />}
             {activeTab === 'sleep' && <SleepView />}
             {activeTab === 'ai' && <AICopilotView onOpenSettings={() => setShowAISettings(true)} chatMessages={aiChatMessages} setChatMessages={setAiChatMessages} />}

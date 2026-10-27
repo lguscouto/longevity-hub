@@ -91,9 +91,13 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
 
     expect(screen.getByRole('navigation', { name: 'Sub-navegação de Saúde' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Exames e PhenoAge/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Passos Diários/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Sono/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Linha do Tempo/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Avaliações Físicas/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Passos Diários/i }));
+    expect(onSelectTab).toHaveBeenCalledWith('steps');
 
     fireEvent.click(screen.getByRole('button', { name: /Sono/i }));
     expect(onSelectTab).toHaveBeenCalledWith('sleep');
