@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -22,6 +23,7 @@ def test_hevy_credentials_save_and_get(tmp_path: Path, monkeypatch):
 
     HevyCredentials.delete_api_key(token_path=token_file)
     assert not token_file.exists()
+    assert HevyCredentials.get_api_key(token_path=token_file) is None
 
 
 def test_normalize_hevy_workout():
@@ -81,11 +83,15 @@ def test_sync_hevy_workouts(tmp_path: Path):
     mock_client = MagicMock(spec=HevyClient)
     mock_client.is_configured.return_value = True
 
+    now = datetime.now(timezone.utc)
+    start_time = (now - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_time = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     sample_workout = {
         "id": "hevy_test_01",
         "title": "Treino Pernas",
-        "start_time": "2026-09-18T10:00:00Z",
-        "end_time": "2026-09-18T11:15:00Z",
+        "start_time": start_time,
+        "end_time": end_time,
         "exercises": [
             {
                 "title": "Agachamento Livre",

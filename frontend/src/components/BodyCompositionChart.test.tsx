@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { BodyCompositionChart, TimelineData } from './BodyCompositionChart';
@@ -71,6 +71,12 @@ const mockTimelineData: TimelineData = {
 describe('BodyCompositionChart', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-07-05T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders loading state and then chart with KPIs', async () => {

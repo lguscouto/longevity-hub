@@ -26,7 +26,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { TimeRangeControl, TimeRangeOption, LoadingIndicator, ErrorState } from './ui';
-import { formatMetricValueString } from '../lib/formatters';
+import { formatLocalDateKey, formatMetricValueString } from '../lib/formatters';
 
 export interface TimelinePoint {
   date: string;
@@ -120,7 +120,7 @@ export const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({
     const days = daysMap[timeRange];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    const cutoffStr = formatLocalDateKey(cutoff);
 
     const subset = data.points.filter((p) => p.date >= cutoffStr);
     return subset.length > 0 ? subset : data.points;
