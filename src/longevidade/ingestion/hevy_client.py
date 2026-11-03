@@ -21,7 +21,6 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 HEVY_BASE_URL = "https://api.hevyapp.com/v1"
-DEFAULT_HEVY_KEY = "c10ddad3-e147-496b-ba35-8a4db071708a"
 
 
 def get_default_hevy_token_path() -> Path:
@@ -68,8 +67,7 @@ class HevyCredentials:
             except Exception:
                 pass
 
-        # 4. Chave padrão do projeto fornecida pelo usuário
-        return DEFAULT_HEVY_KEY
+        return None
 
     @classmethod
     def save_api_key(cls, api_key: str, token_path: Optional[Path] = None) -> None:

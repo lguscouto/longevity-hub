@@ -17,7 +17,6 @@ const SupplementsView = lazy(() => import('./components/SupplementsView').then(m
 const DoctorBriefingModal = lazy(() => import('./components/DoctorBriefingModal').then(m => ({ default: m.DoctorBriefingModal })))
 const AISettingsModal = lazy(() => import('./components/AISettingsModal').then(m => ({ default: m.AISettingsModal })))
 const SyncProgressModal = lazy(() => import('./components/SyncProgressModal').then(m => ({ default: m.SyncProgressModal })))
-const PipelineStatusPanel = lazy(() => import('./components/PipelineStatusPanel').then(m => ({ default: m.PipelineStatusPanel })))
 const ManualEntryModal = lazy(() => import('./components/ManualEntryModal').then(m => ({ default: m.ManualEntryModal })))
 const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWidget').then(m => ({ default: m.DailyComplianceWidget })))
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
@@ -27,7 +26,7 @@ const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthMo
 const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => ({ default: m.WorkoutsTable })))
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
-import { OnboardingModal } from './components/onboarding/OnboardingModal'
+const OnboardingModal = lazy(() => import('./components/onboarding/OnboardingModal').then(m => ({ default: m.OnboardingModal })))
 
 
 import { Button, EmptyState, LoadingIndicator, useToast } from './components/ui'
@@ -156,7 +155,7 @@ function getInitialTab(): Tab {
 export default function App() {
   const { showToast } = useToast()
   const [activeTab, setActiveTab] = useState<Tab>(getInitialTab)
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDateKey(new Date()))
   const [daysRange, setDaysRange] = useState<number>(30)
 
   useEffect(() => {
@@ -326,8 +325,6 @@ export default function App() {
     },
   ]
 
-  const metricCards = [...primaryMetricCards, ...secondaryMetricCards]
-
   const fetchDashboardData = async () => {
     const sequence = ++refreshSequence.current
     setLoading(true)
@@ -337,10 +334,10 @@ export default function App() {
       const [requiredData, nextKdmRecord, syncStatus] = await Promise.all([
         Promise.all([
           requestJson<DailyMetric[]>(`/api/metrics?days=${daysRange}`),
-          requestJson<any[]>('/api/labs'),
-          requestJson<any[]>('/api/phenoage/history'),
-          requestJson<any[]>('/api/n-of-1'),
-          requestJson<any[]>('/api/cgm/summary'),
+          requestJson<any[]>('/api/labs').catch(() => []),
+          requestJson<any[]>('/api/phenoage/history').catch(() => []),
+          requestJson<any[]>('/api/n-of-1').catch(() => []),
+          requestJson<any[]>('/api/cgm/summary').catch(() => []),
           requestJson<any>('/api/profile'),
         ]),
         requestJson<any>('/api/kdm/latest').catch(() => null),
@@ -395,7 +392,7 @@ export default function App() {
   }, [daysRange])
 
   useEffect(() => {
-    if (activeTab === 'profile') {
+    if (activeTab === 'profile' || activeTab === 'system') {
       void fetchPipelineRuns()
     }
   }, [activeTab])
@@ -689,7 +686,6 @@ export default function App() {
 
   const handleCheckinUpdated = () => {
     setGuidanceRevision((prev) => prev + 1)
-    void fetchDashboardData()
   }
 
   return (
@@ -922,27 +918,29 @@ export default function App() {
             )}
             {(activeTab === 'labs' || activeTab === 'steps') && (
               <div className="space-y-4">
-                <div className="flex items-center gap-1.5 p-1 rounded-radius-lg bg-slate-200/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 w-fit">
-                  <Button
-                    type="button"
-                    variant={activeTab === 'labs' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setActiveTab('labs')}
-                    leftIcon={Dna}
-                    className="text-xs min-h-[36px]"
-                  >
-                    Exames e Biomarcadores
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={activeTab === 'steps' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setActiveTab('steps')}
-                    leftIcon={Footprints}
-                    className="text-xs min-h-[36px]"
-                  >
-                    Passos Diários (Zepp)
-                  </Button>
+                <div className="w-full overflow-x-auto no-scrollbar py-0.5">
+                  <div className="flex items-center gap-1.5 p-1 rounded-radius-lg bg-slate-200/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 w-max">
+                    <Button
+                      type="button"
+                      variant={activeTab === 'labs' ? 'primary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveTab('labs')}
+                      leftIcon={Dna}
+                      className="text-xs min-h-[36px] shrink-0"
+                    >
+                      Exames e Biomarcadores
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={activeTab === 'steps' ? 'primary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveTab('steps')}
+                      leftIcon={Footprints}
+                      className="text-xs min-h-[36px] shrink-0"
+                    >
+                      Passos Diários (Zepp)
+                    </Button>
+                  </div>
                 </div>
 
                 {activeTab === 'labs' && (
@@ -996,7 +994,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Longevidade Hub</span>
-                <span>v2.4.5</span>
+                <span>v2.4.6</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
                 <span>Armazenamento local e privacidade de dados</span>
               </div>
@@ -1006,59 +1004,71 @@ export default function App() {
             </div>
           </footer>
 
-          <AISettingsModal
-            isOpen={showAISettings}
-            onClose={() => setShowAISettings(false)}
-            onRefreshSettings={fetchDashboardData}
-            onSyncZeppFull={() => {
-              setShowAISettings(false)
-              void handleSyncZepp(true)
-            }}
-            isSyncingZepp={isSyncing}
-            onOpenOnboarding={() => {
-              setShowAISettings(false)
-              setShowOnboardingModal(true)
-            }}
-          />
-          <GoogleHealthAuthModal
-            isOpen={showGoogleHealthModal}
-            onClose={() => setShowGoogleHealthModal(false)}
-            onSyncSuccess={() => {
-              void fetchDashboardData()
-              void fetchPipelineRuns()
-            }}
-          />
-          <SyncProgressModal
-            isOpen={isSyncModalOpen}
-            onClose={() => setIsSyncModalOpen(false)}
-            isSyncing={isSyncing || isSyncingGoogle}
-            syncResult={syncResult}
-            onViewHistory={handleViewPipelineHistory}
-            onReauthenticate={() => setShowGoogleHealthModal(true)}
-            onRetrySync={() => void handleSyncZepp()}
-          />
-          <DoctorBriefingModal isOpen={showDoctorModal} onClose={() => setShowDoctorModal(false)} markdownContent={doctorBriefingMd} />
-          <OnboardingModal
-            isOpen={showOnboardingModal}
-            onClose={() => setShowOnboardingModal(false)}
-            profile={profile}
-            onOpenGoogleHealthModal={() => {
-              setShowOnboardingModal(false)
-              setShowGoogleHealthModal(true)
-            }}
-            onComplete={(updatedProfile, startSync) => {
-              if (updatedProfile) setProfile(updatedProfile)
-              setShowOnboardingModal(false)
-              showToast({
-                title: 'Bem-vindo ao Longevidade Hub!',
-                message: 'Configurações iniciais salvas com sucesso.',
-                type: 'success',
-              })
-              if (startSync) {
-                void handleSyncZepp(false)
-              }
-            }}
-          />
+          <Suspense fallback={null}>
+            {showAISettings && (
+              <AISettingsModal
+                isOpen={showAISettings}
+                onClose={() => setShowAISettings(false)}
+                onRefreshSettings={fetchDashboardData}
+                onSyncZeppFull={() => {
+                  setShowAISettings(false)
+                  void handleSyncZepp(true)
+                }}
+                isSyncingZepp={isSyncing}
+                onOpenOnboarding={() => {
+                  setShowAISettings(false)
+                  setShowOnboardingModal(true)
+                }}
+              />
+            )}
+            {showGoogleHealthModal && (
+              <GoogleHealthAuthModal
+                isOpen={showGoogleHealthModal}
+                onClose={() => setShowGoogleHealthModal(false)}
+                onSyncSuccess={() => {
+                  void fetchDashboardData()
+                  void fetchPipelineRuns()
+                }}
+              />
+            )}
+            {isSyncModalOpen && (
+              <SyncProgressModal
+                isOpen={isSyncModalOpen}
+                onClose={() => setIsSyncModalOpen(false)}
+                isSyncing={isSyncing || isSyncingGoogle}
+                syncResult={syncResult}
+                onViewHistory={handleViewPipelineHistory}
+                onReauthenticate={() => setShowGoogleHealthModal(true)}
+                onRetrySync={() => void handleSyncZepp()}
+              />
+            )}
+            {showDoctorModal && (
+              <DoctorBriefingModal isOpen={showDoctorModal} onClose={() => setShowDoctorModal(false)} markdownContent={doctorBriefingMd} />
+            )}
+            {showOnboardingModal && (
+              <OnboardingModal
+                isOpen={showOnboardingModal}
+                onClose={() => setShowOnboardingModal(false)}
+                profile={profile}
+                onOpenGoogleHealthModal={() => {
+                  setShowOnboardingModal(false)
+                  setShowGoogleHealthModal(true)
+                }}
+                onComplete={(updatedProfile, startSync) => {
+                  if (updatedProfile) setProfile(updatedProfile)
+                  setShowOnboardingModal(false)
+                  showToast({
+                    title: 'Bem-vindo ao Longevidade Hub!',
+                    message: 'Configurações iniciais salvas com sucesso.',
+                    type: 'success',
+                  })
+                  if (startSync) {
+                    void handleSyncZepp(false)
+                  }
+                }}
+              />
+            )}
+          </Suspense>
         </Suspense>
       </ErrorBoundary>
     </div>
