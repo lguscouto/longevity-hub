@@ -279,7 +279,13 @@ export const PhysicalAssessmentsView: React.FC = () => {
       {/* ACCESSIBLE PHOTO LIGHTBOX */}
       <PhotoLightbox
         photo={lightboxPhoto}
-        photos={selectedAssessment?.photos || []}
+        photos={
+          activeMode === 'compare' && comparisonManifest
+            ? comparisonManifest.matched_photos.flatMap(m =>
+                [m.previous_photo, m.current_photo].filter((p): p is Photo => Boolean(p))
+              )
+            : selectedAssessment?.photos || []
+        }
         onClose={() => setLightboxPhoto(null)}
         onSelectPhoto={setLightboxPhoto}
       />

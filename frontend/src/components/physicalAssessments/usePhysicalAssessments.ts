@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../ui';
+import { formatLocalDateKey } from '../../lib/formatters';
 import {
   Photo,
   PhysicalAssessment,
@@ -31,7 +32,7 @@ export function usePhysicalAssessments() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Form State
-  const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [formDate, setFormDate] = useState<string>(() => formatLocalDateKey(new Date()));
   const [formTitle, setFormTitle] = useState<string>('');
   const [formWeight, setFormWeight] = useState<string>('');
   const [formBodyFat, setFormBodyFat] = useState<string>('');
@@ -115,7 +116,7 @@ export function usePhysicalAssessments() {
     } catch {
       // noop
     }
-    setFormDate(new Date().toISOString().split('T')[0]);
+    setFormDate(formatLocalDateKey(new Date()));
     setFormTitle('');
     setFormWeight('');
     setFormBodyFat('');
@@ -427,7 +428,7 @@ export function usePhysicalAssessments() {
     }
   };
 
-  const handleRunComparison = async () => {
+  const handleRunComparison = useCallback(async () => {
     if (!comparePrevId || !compareCurrId) return;
     setCompareLoading(true);
     setCompareError(null);
@@ -444,7 +445,13 @@ export function usePhysicalAssessments() {
     } finally {
       setCompareLoading(false);
     }
-  };
+  }, [comparePrevId, compareCurrId]);
+
+  useEffect(() => {
+    if (activeMode === 'compare' && comparePrevId && compareCurrId) {
+      handleRunComparison();
+    }
+  }, [activeMode, comparePrevId, compareCurrId, handleRunComparison]);
 
   const selectedAssessment = assessments.find(a => a.id === selectedAssessmentId);
 

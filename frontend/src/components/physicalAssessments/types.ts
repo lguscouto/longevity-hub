@@ -47,6 +47,7 @@ export interface ComparisonManifest {
   };
   matched_photos: {
     angle: string;
+    body_state?: string | null;
     previous_photo?: Photo | null;
     current_photo?: Photo | null;
   }[];

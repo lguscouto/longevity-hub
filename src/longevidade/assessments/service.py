@@ -116,9 +116,10 @@ class PhysicalAssessmentService:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
     def _assessment_dir(self, assessment_id: str) -> Path:
+        base_resolved = self.storage_dir.resolve()
         target = (self.storage_dir / assessment_id).resolve()
         # Proteção contra path traversal
-        if not str(target).startswith(str(self.storage_dir.resolve())):
+        if not target.is_relative_to(base_resolved) or target == base_resolved:
             raise ValueError("Tentativa de navegação fora do diretório de armazenamento permitido (path traversal)")
         return target
 
@@ -261,7 +262,7 @@ class PhysicalAssessmentService:
         target_dir = self._assessment_dir(assessment_id)
         file_path = (target_dir / photo["stored_filename"]).resolve()
 
-        if not str(file_path).startswith(str(self.storage_dir.resolve())):
+        if not file_path.is_relative_to(self.storage_dir.resolve()):
             raise ValueError("Path traversal detectado no acesso à foto")
 
         if not file_path.is_file():
@@ -328,15 +329,76 @@ class PhysicalAssessmentService:
             curr_photos_by_angle.setdefault(c["angle"], []).append(c)
 
         for angle in ("front", "back", "left_side", "right_side", "other"):
-            prev_list = prev_photos_by_angle.get(angle, [])
-            curr_list = curr_photos_by_angle.get(angle, [])
-            max_len = max(len(prev_list), len(curr_list))
-            for i in range(max_len):
+            prev_remaining = list(prev_photos_by_angle.get(angle, []))
+            curr_remaining = list(curr_photos_by_angle.get(angle, []))
+
+            angle_pairs: List[Dict[str, Any]] = []
+            while prev_remaining or curr_remaining:
+                if prev_remaining and curr_remaining:
+                    p = prev_remaining[0]
+                    p_state = p.get("body_state") or "unspecified"
+
+                    exact_idx = next(
+                        (
+                            idx
+                            for idx, c in enumerate(curr_remaining)
+                            if (c.get("body_state") or "unspecified") == p_state
+                        ),
+                        None,
+                    )
+                    if exact_idx is not None:
+                        c = curr_remaining.pop(exact_idx)
+                        prev_remaining.pop(0)
+                        angle_pairs.append((p, c))
+                        continue
+
+                    c0 = curr_remaining[0]
+                    c0_state = c0.get("body_state") or "unspecified"
+                    c0_has_match_in_prev = any(
+                        (pr.get("body_state") or "unspecified") == c0_state
+                        for pr in prev_remaining[1:]
+                    )
+                    if not c0_has_match_in_prev and (
+                        p_state == "unspecified" or c0_state == "unspecified"
+                    ):
+                        prev_remaining.pop(0)
+                        curr_remaining.pop(0)
+                        angle_pairs.append((p, c0))
+                    elif c0_has_match_in_prev:
+                        prev_remaining.pop(0)
+                        angle_pairs.append((p, None))
+                    else:
+                        curr_remaining.pop(0)
+                        angle_pairs.append((None, c0))
+                elif prev_remaining:
+                    angle_pairs.append((prev_remaining.pop(0), None))
+                else:
+                    angle_pairs.append((None, curr_remaining.pop(0)))
+
+            state_rank = {"relaxed": 0, "flexed": 1, "unspecified": 2}
+            for p_photo, c_photo in angle_pairs:
+                c_state = (c_photo or {}).get("body_state")
+                p_state = (p_photo or {}).get("body_state")
+                resolved_state = (
+                    (c_state if c_state not in (None, "unspecified") else None)
+                    or (p_state if p_state not in (None, "unspecified") else None)
+                    or c_state
+                    or p_state
+                    or "unspecified"
+                )
                 matched_photos.append({
                     "angle": angle,
-                    "previous_photo": prev_list[i] if i < len(prev_list) else None,
-                    "current_photo": curr_list[i] if i < len(curr_list) else None,
+                    "body_state": resolved_state,
+                    "previous_photo": p_photo,
+                    "current_photo": c_photo,
+                    "_rank": state_rank.get(resolved_state, 2),
                 })
+
+        # Mantém a ordem dos ângulos e ordena relaxado -> contraído dentro de cada ângulo
+        angle_order = {"front": 0, "back": 1, "left_side": 2, "right_side": 3, "other": 4}
+        matched_photos.sort(key=lambda item: (angle_order.get(item["angle"], 99), item["_rank"]))
+        for item in matched_photos:
+            item.pop("_rank", None)
 
         return {
             "previous_assessment": {
@@ -392,7 +454,8 @@ class PhysicalAssessmentService:
                         continue
 
                     angle = photo.get("angle") or "foto"
-                    orig_name = photo.get("original_filename") or photo.get("stored_filename", f"foto_{idx}.jpg")
+                    raw_orig_name = photo.get("original_filename") or photo.get("stored_filename", f"foto_{idx}.jpg")
+                    orig_name = Path(str(raw_orig_name)).name or f"foto_{idx}.jpg"
                     base_name = f"{idx:02d}_{angle}_{orig_name}"
 
                     clean_name = base_name

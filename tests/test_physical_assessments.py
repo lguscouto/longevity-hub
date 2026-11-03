@@ -15,7 +15,6 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from backend.app.config import get_db_path
-from backend.app.main import app
 from longevidade.assessments.service import PhysicalAssessmentService
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
@@ -151,19 +150,30 @@ class TestPhysicalAssessmentService:
         img_prev = _make_dummy_image("JPEG")
         img_curr = _make_dummy_image("JPEG")
 
-        service.save_photo(prev["id"], img_prev, "prev_front.jpg", angle="front")
-        service.save_photo(curr["id"], img_curr, "curr_front.jpg", angle="front")
+        service.save_photo(prev["id"], img_prev, "prev_front.jpg", angle="front", body_state="relaxed")
+        service.save_photo(curr["id"], img_curr, "curr_front_flexed.jpg", angle="front", body_state="flexed")
+        service.save_photo(curr["id"], img_curr, "curr_front_relaxed.jpg", angle="front", body_state="relaxed")
 
         manifest = service.compare_assessments(prev["id"], curr["id"])
 
         assert manifest["days_between"] == 30
         assert manifest["deltas"]["weight_kg"] == -2.5
         assert manifest["deltas"]["body_fat_percentage"] == -2.0
-        assert len(manifest["matched_photos"]) >= 1
+        assert len(manifest["matched_photos"]) >= 2
 
-        front_match = next(m for m in manifest["matched_photos"] if m["angle"] == "front")
-        assert front_match["previous_photo"] is not None
-        assert front_match["current_photo"] is not None
+        front_relaxed = next(
+            m for m in manifest["matched_photos"]
+            if m["angle"] == "front" and m["body_state"] == "relaxed"
+        )
+        assert front_relaxed["previous_photo"] is not None
+        assert front_relaxed["current_photo"] is not None
+
+        front_flexed = next(
+            m for m in manifest["matched_photos"]
+            if m["angle"] == "front" and m["body_state"] == "flexed"
+        )
+        assert front_flexed["previous_photo"] is None
+        assert front_flexed["current_photo"] is not None
 
     def test_export_photos_zip(self, temp_env):
         repo, service, _ = temp_env
@@ -192,15 +202,6 @@ class TestPhysicalAssessmentService:
 
 
 class TestPhysicalAssessmentEndpoints:
-    @pytest.fixture
-    def client(self, tmp_path: Path, monkeypatch):
-        db_path = tmp_path / "test_api_assessments.sqlite3"
-        initialize_db(db_path)
-        monkeypatch.setenv("LONGEVIDADE_DB_PATH", str(db_path))
-
-        with TestClient(app) as test_client:
-            yield test_client
-
     def test_api_assessment_flow(self, client: TestClient):
         # 1. Create Assessment
         res = client.post("/api/physical-assessments", json={
