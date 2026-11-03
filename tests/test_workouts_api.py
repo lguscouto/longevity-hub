@@ -308,7 +308,10 @@ def test_get_workout_details_and_search(client):
 def test_hevy_status_and_credentials_endpoints(client):
     from unittest.mock import patch
 
-    with patch("longevidade.ingestion.hevy_client.HevyClient.get_user_info", return_value=({"data": {"id": "u1", "name": "Gustavo"}}, None)):
+    with (
+        patch("longevidade.ingestion.hevy_client.HevyCredentials.get_api_key", return_value="test_key_123"),
+        patch("longevidade.ingestion.hevy_client.HevyClient.get_user_info", return_value=({"data": {"id": "u1", "name": "Gustavo"}}, None)),
+    ):
         res = client.get("/api/workouts/hevy/status")
         assert res.status_code == 200
         data = res.json()
