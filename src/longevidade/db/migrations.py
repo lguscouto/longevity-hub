@@ -715,6 +715,40 @@ MIGRATIONS: Sequence[Migration] = (
             "ALTER TABLE user_profile ADD COLUMN onboarding_completed INTEGER DEFAULT 0;",
         ),
     ),
+    Migration(
+        version=19,
+        name="add_derived_metrics_and_clinical_context",
+        statements=(
+            "ALTER TABLE user_profile ADD COLUMN diabetes INTEGER;",
+            "ALTER TABLE user_profile ADD COLUMN hypertension INTEGER;",
+            "ALTER TABLE user_profile ADD COLUMN current_smoker INTEGER;",
+            "ALTER TABLE user_profile ADD COLUMN antihypertensive_treatment INTEGER;",
+            "ALTER TABLE user_profile ADD COLUMN lipid_lowering_treatment INTEGER;",
+            "ALTER TABLE user_profile ADD COLUMN prior_cvd INTEGER;",
+            "ALTER TABLE lab_results ADD COLUMN raw_value REAL;",
+            "ALTER TABLE lab_results ADD COLUMN raw_unit TEXT;",
+            """
+            CREATE TABLE IF NOT EXISTS derived_metric_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                metric_id TEXT NOT NULL,
+                algorithm_version TEXT NOT NULL,
+                cohort_variant TEXT,
+                status TEXT NOT NULL,
+                value REAL,
+                unit TEXT,
+                measured_at TEXT NOT NULL,
+                input_snapshot_json TEXT,
+                missing_inputs_json TEXT,
+                limitations_json TEXT,
+                source_url TEXT,
+                calculated_at TEXT NOT NULL,
+                UNIQUE(metric_id, algorithm_version, cohort_variant, measured_at)
+            );
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_derived_metrics_date ON derived_metric_records(measured_at);",
+            "CREATE INDEX IF NOT EXISTS idx_derived_metrics_metric ON derived_metric_records(metric_id);",
+        ),
+    ),
 )
 
 
@@ -724,12 +758,12 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
     cursor = conn.execute("PRAGMA user_version;")
     current_version = cursor.fetchone()[0]
 
-    # Diagnóstico de integridade: se o banco possui user_version >= 11 mas tabelas essenciais da Timeline estão ausentes
-    tables_cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    existing_tables = {row[0] for row in tables_cursor.fetchall()}
-    if ("health_events" not in existing_tables or "health_events_backfill_state" not in existing_tables) and current_version >= 11:
-        current_version = 10
-        conn.execute("PRAGMA user_version = 10;")
+    max_supported = max(m.version for m in MIGRATIONS)
+    if current_version > max_supported:
+        raise RuntimeError(
+            f"Versão do banco de dados ({current_version}) é superior à versão suportada pela aplicação ({max_supported}). "
+            f"Atualize o Longevidade Hub antes de abrir esta base."
+        )
 
     for migration in MIGRATIONS:
         if migration.version > current_version:
@@ -740,24 +774,22 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
                     except sqlite3.OperationalError as exc:
                         # Permite colunas já existentes se banco baseline for legado ou tabelas ausentes em fixtures sintéticas
                         err_msg = str(exc).lower()
-                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg or "user_profile" in err_msg or "ai_settings" in err_msg)):
+                        if "duplicate column name" in err_msg or ("no such table" in err_msg and ("daily_metrics" in err_msg or "health_data_points" in err_msg or "user_profile" in err_msg or "ai_settings" in err_msg or "lab_results" in err_msg)):
                             continue
                         raise exc
                 conn.execute(f"PRAGMA user_version = {migration.version};")
             current_version = migration.version
 
-    # Garante que user_version não ultrapassa a versão máxima suportada pelas migrações conhecidas
-    max_supported = max(m.version for m in MIGRATIONS)
-    if current_version > max_supported:
-        conn.execute(f"PRAGMA user_version = {max_supported};")
-        current_version = max_supported
-
     return current_version
 
 
 
+_CACHED_EXERCISE_ROWS: list[tuple] | None = None
+
+
 def seed_exercise_catalog(conn: sqlite3.Connection) -> int:
     """Popula exercise_catalog com o snapshot em exercises_catalog.json se a tabela estiver vazia."""
+    global _CACHED_EXERCISE_ROWS
     import json
     from pathlib import Path
 
@@ -765,28 +797,30 @@ def seed_exercise_catalog(conn: sqlite3.Connection) -> int:
         count = conn.execute("SELECT COUNT(*) FROM exercise_catalog;").fetchone()[0]
         if count > 0:
             return count
-        json_path = Path(__file__).resolve().parent.parent / "data" / "exercises_catalog.json"
-        if not json_path.exists():
-            return 0
-        with open(json_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        rows = [
-            (
-                str(item.get("id")),
-                item.get("name", ""),
-                item.get("category", ""),
-                item.get("body_part", ""),
-                item.get("equipment", ""),
-                item.get("target", ""),
-                item.get("muscle_group", ""),
-                json.dumps(item.get("secondary_muscles", []), ensure_ascii=False),
-                json.dumps(item.get("instructions", {}), ensure_ascii=False),
-                item.get("image", ""),
-                item.get("gif_url", ""),
-                item.get("media_id", ""),
-            )
-            for item in data
-        ]
+        if _CACHED_EXERCISE_ROWS is None:
+            json_path = Path(__file__).resolve().parent.parent / "data" / "exercises_catalog.json"
+            if not json_path.exists():
+                return 0
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            _CACHED_EXERCISE_ROWS = [
+                (
+                    str(item.get("id")),
+                    item.get("name", ""),
+                    item.get("category", ""),
+                    item.get("body_part", ""),
+                    item.get("equipment", ""),
+                    item.get("target", ""),
+                    item.get("muscle_group", ""),
+                    json.dumps(item.get("secondary_muscles", []), ensure_ascii=False),
+                    json.dumps(item.get("instructions", {}), ensure_ascii=False),
+                    item.get("image", ""),
+                    item.get("gif_url", ""),
+                    item.get("media_id", ""),
+                )
+                for item in data
+            ]
+        rows = _CACHED_EXERCISE_ROWS
         with conn:
             conn.executemany(
                 """

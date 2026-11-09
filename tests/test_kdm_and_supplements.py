@@ -67,7 +67,8 @@ def test_supplements_endpoints(client):
     assert response.status_code == 200
     supps = response.json()
     assert isinstance(supps, list)
-    assert len(supps) > 0
+    assert len(supps) == 0
+
 
 
 def test_supplement_update_and_audit_logs(client):

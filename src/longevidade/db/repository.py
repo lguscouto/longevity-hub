@@ -10,7 +10,7 @@ from collections.abc import Collection
 import json
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -37,8 +37,9 @@ class LongevityRepository:
     def _get_connection(self):
         if not self.db_path.exists():
             raise FileNotFoundError(f"Banco de dados SQLite não encontrado em {self.db_path}. A aplicação deve ser inicializada primeiro.")
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA busy_timeout = 30000")
         conn.row_factory = sqlite3.Row
         try:
             yield conn
@@ -72,6 +73,18 @@ class LongevityRepository:
                     res["longevity_goals"] = []
 
                 res["onboarding_completed"] = bool(res.get("onboarding_completed", 0))
+
+                # Contexto clínico opcional (None = desconhecido, True = presente, False = ausente)
+                for clinical_field in [
+                    "diabetes", "hypertension", "current_smoker",
+                    "antihypertensive_treatment", "lipid_lowering_treatment", "prior_cvd"
+                ]:
+                    val = res.get(clinical_field)
+                    if val is None:
+                        res[clinical_field] = None
+                    else:
+                        res[clinical_field] = bool(val)
+
                 return res
             return {
                 "id": 1,
@@ -81,6 +94,12 @@ class LongevityRepository:
                 "target_weight_kg": None,
                 "longevity_goals": [],
                 "onboarding_completed": False,
+                "diabetes": None,
+                "hypertension": None,
+                "current_smoker": None,
+                "antihypertensive_treatment": None,
+                "lipid_lowering_treatment": None,
+                "prior_cvd": None,
             }
 
     def upsert_user_profile(self, data: Dict[str, Any]) -> None:
@@ -100,6 +119,18 @@ class LongevityRepository:
         if "onboarding_completed" in data and data["onboarding_completed"] is not None:
             data["onboarding_completed"] = int(bool(data["onboarding_completed"]))
 
+        # Converte contexto clínico para INTEGER nullable (NULL, 1, 0)
+        for clinical_field in [
+            "diabetes", "hypertension", "current_smoker",
+            "antihypertensive_treatment", "lipid_lowering_treatment", "prior_cvd"
+        ]:
+            if clinical_field in data:
+                c_val = data[clinical_field]
+                if c_val is None:
+                    data[clinical_field] = None
+                else:
+                    data[clinical_field] = 1 if bool(c_val) else 0
+
         fields = [
             "name", "email", "birthdate", "chronological_age",
             "height_cm", "current_weight_kg", "target_weight_kg", "gender", "avatar_url",
@@ -107,7 +138,9 @@ class LongevityRepository:
             "emergency_contact_name", "emergency_contact_phone", "primary_physician",
             "longevity_goals", "protocol_start_date",
             "fasting_window", "chronotype", "daily_water_target_ml",
-            "target_sleep_hours", "target_body_fat_pct", "onboarding_completed"
+            "target_sleep_hours", "target_body_fat_pct", "onboarding_completed",
+            "diabetes", "hypertension", "current_smoker",
+            "antihypertensive_treatment", "lipid_lowering_treatment", "prior_cvd"
         ]
         columns = [f for f in fields if f in data]
         if not columns:
@@ -530,9 +563,15 @@ class LongevityRepository:
     # --- LAB RESULTS ---
     def add_lab_result(self, data: Dict[str, Any]) -> int:
         record_origin = normalize_lab_record_origin(data.get("record_origin"))
+        raw_val = data.get("raw_value")
+        if raw_val is None:
+            raw_val = data.get("value")
+        raw_u = data.get("raw_unit")
+        if raw_u is None:
+            raw_u = data.get("unit", "")
         sql = """
-        INSERT INTO lab_results (collected_at, metric_key, metric_name, value, unit, ref_min, ref_max, optimal_target, category, notes, record_origin)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO lab_results (collected_at, metric_key, metric_name, value, unit, ref_min, ref_max, optimal_target, category, notes, record_origin, raw_value, raw_unit)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         values = (
             data["collected_at"],
@@ -546,6 +585,8 @@ class LongevityRepository:
             data.get("category", "Geral"),
             data.get("notes"),
             record_origin,
+            raw_val,
+            raw_u,
         )
         with self._get_connection() as conn:
             cursor = conn.execute(sql, values)
@@ -556,29 +597,128 @@ class LongevityRepository:
         self,
         limit: int = 200,
         record_origins: Collection[str] | None = None,
+        collected_at: str | None = None,
     ) -> List[Dict[str, Any]]:
         origins = tuple(normalize_lab_record_origin(origin) for origin in record_origins) if record_origins is not None else ()
         if record_origins is not None and not origins:
             return []
-        origin_filter = ""
+        conditions = []
+        params: list[Any] = []
         if origins:
             placeholders = ", ".join("?" for _ in origins)
-            origin_filter = f" WHERE record_origin IN ({placeholders})"
-        sql = f"SELECT * FROM lab_results{origin_filter} ORDER BY collected_at DESC, id DESC LIMIT ?;"
+            conditions.append(f"record_origin IN ({placeholders})")
+            params.extend(origins)
+        if collected_at:
+            conditions.append("(collected_at = ? OR DATE(collected_at) = DATE(?))")
+            params.extend([collected_at, collected_at])
+        where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+        sql = f"SELECT * FROM lab_results{where_clause} ORDER BY collected_at DESC, id DESC LIMIT ?;"
+        params.append(limit)
         with self._get_connection() as conn:
-            rows = conn.execute(sql, (*origins, limit)).fetchall()
+            rows = conn.execute(sql, tuple(params)).fetchall()
             return [dict(row) for row in rows]
 
     def delete_lab_results_by_date(self, collected_at: str) -> int:
         sql_labs = "DELETE FROM lab_results WHERE collected_at = ? OR DATE(collected_at) = DATE(?);"
         sql_pheno = "DELETE FROM phenoage_records WHERE calculated_at = ? OR DATE(calculated_at) = DATE(?);"
         sql_kdm = "DELETE FROM kdm_records WHERE calculated_at = ? OR DATE(calculated_at) = DATE(?);"
+        sql_derived = "DELETE FROM derived_metric_records WHERE measured_at = ? OR DATE(measured_at) = DATE(?);"
         with self._get_connection() as conn:
             cursor = conn.execute(sql_labs, (collected_at, collected_at))
             conn.execute(sql_pheno, (collected_at, collected_at))
             conn.execute(sql_kdm, (collected_at, collected_at))
+            try:
+                conn.execute(sql_derived, (collected_at, collected_at))
+            except Exception:
+                pass
             conn.commit()
             return cursor.rowcount
+
+    def save_derived_metric_records(self, records: List[Dict[str, Any]]) -> int:
+        """Persiste registros de métricas derivadas (tabela derived_metric_records)."""
+        if not records:
+            return 0
+        from datetime import timezone
+        sql = """
+        INSERT OR REPLACE INTO derived_metric_records (
+            metric_id, algorithm_version, cohort_variant, status, value, unit,
+            measured_at, input_snapshot_json, missing_inputs_json, limitations_json,
+            source_url, calculated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        rows = []
+        for r in records:
+            rows.append((
+                r["metric_id"],
+                r.get("algorithm_version", "v1"),
+                r.get("cohort_variant"),
+                r["status"],
+                r.get("value"),
+                r.get("unit"),
+                r.get("measured_at") or date.today().isoformat(),
+                json.dumps(r.get("input_snapshot") or {}, ensure_ascii=False),
+                json.dumps(r.get("missing_input_keys") or [], ensure_ascii=False),
+                json.dumps(r.get("limitations") or [], ensure_ascii=False),
+                r.get("source_url"),
+                r.get("calculated_at") or datetime.now(timezone.utc).isoformat(),
+            ))
+        with self._get_connection() as conn:
+            conn.executemany(sql, rows)
+            conn.commit()
+            return len(rows)
+
+    def get_derived_metric_records(
+        self,
+        measured_at: Optional[str] = None,
+        metric_id: Optional[str] = None,
+        cohort_variant: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Recupera registros persistidos de métricas derivadas com filtros opcionais."""
+        conditions = []
+        params = []
+        if measured_at:
+            conditions.append("(measured_at = ? OR DATE(measured_at) = DATE(?))")
+            params.extend([measured_at, measured_at])
+        if metric_id:
+            conditions.append("metric_id = ?")
+            params.append(metric_id)
+        if cohort_variant:
+            conditions.append("(cohort_variant = ? OR cohort_variant IS NULL)")
+            params.append(cohort_variant)
+
+        where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+        sql = f"SELECT * FROM derived_metric_records{where_clause} ORDER BY measured_at DESC, id DESC;"
+        with self._get_connection() as conn:
+            try:
+                rows = conn.execute(sql, params).fetchall()
+                result = []
+                for row in rows:
+                    item = dict(row)
+                    item["input_snapshot"] = json.loads(item.get("input_snapshot_json") or "{}")
+                    item["missing_input_keys"] = json.loads(item.get("missing_inputs_json") or "[]")
+                    item["limitations"] = json.loads(item.get("limitations_json") or "[]")
+                    result.append(item)
+                return result
+            except (sqlite3.OperationalError, Exception):
+                return []
+
+    def get_distinct_lab_dates(
+        self,
+        record_origins: Collection[str] | None = None,
+    ) -> List[str]:
+        """Retorna todas as datas distintas (YYYY-MM-DD) com exames registrados."""
+        origins = tuple(normalize_lab_record_origin(origin) for origin in record_origins) if record_origins is not None else ()
+        origin_filter = ""
+        if origins:
+            placeholders = ", ".join("?" for _ in origins)
+            origin_filter = f" WHERE record_origin IN ({placeholders})"
+        sql = f"SELECT DISTINCT SUBSTR(collected_at, 1, 10) AS dt FROM lab_results{origin_filter} ORDER BY dt DESC;"
+        with self._get_connection() as conn:
+            try:
+                rows = conn.execute(sql, origins).fetchall()
+                return [row["dt"] for row in rows if row["dt"]]
+            except (sqlite3.OperationalError, Exception):
+                return []
 
     def get_latest_labs_by_key(
         self,
@@ -592,14 +732,25 @@ class LongevityRepository:
             placeholders = ", ".join("?" for _ in origins)
             origin_filter = f"WHERE record_origin IN ({placeholders})"
         sql = f"""
-        SELECT * FROM lab_results
-        WHERE id IN (
-            SELECT MAX(id) FROM lab_results {origin_filter} GROUP BY metric_key
-        );
+        SELECT * FROM (
+            SELECT *,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY metric_key
+                       ORDER BY collected_at DESC, id DESC
+                   ) AS _rn
+            FROM lab_results
+            {origin_filter}
+        )
+        WHERE _rn = 1;
         """
         with self._get_connection() as conn:
             rows = conn.execute(sql, origins).fetchall()
-            return {row["metric_key"]: dict(row) for row in rows}
+            result: Dict[str, Dict[str, Any]] = {}
+            for row in rows:
+                d = dict(row)
+                d.pop("_rn", None)
+                result[row["metric_key"]] = d
+            return result
 
     def count_lab_results_excluded_from_clinical_use(self) -> int:
         from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
@@ -1292,11 +1443,25 @@ class LongevityRepository:
         params.extend([limit, offset])
         with self._get_connection() as conn:
             rows = conn.execute(sql, params).fetchall()
-            results = []
-            for r in rows:
-                rec = dict(r)
-                rec["photos"] = self.list_physical_assessment_photos(rec["id"])
-                results.append(rec)
+            if not rows:
+                return []
+            results = [dict(r) for r in rows]
+            assessment_ids = [rec["id"] for rec in results]
+            placeholders = ", ".join(["?"] * len(assessment_ids))
+            photos_sql = f"""
+            SELECT * FROM physical_assessment_photos
+            WHERE assessment_id IN ({placeholders})
+            ORDER BY display_order ASC, created_at ASC;
+            """
+            photo_rows = conn.execute(photos_sql, assessment_ids).fetchall()
+            photos_by_assessment: Dict[str, List[Dict[str, Any]]] = {aid: [] for aid in assessment_ids}
+            for pr in photo_rows:
+                p_dict = dict(pr)
+                aid = p_dict["assessment_id"]
+                if aid in photos_by_assessment:
+                    photos_by_assessment[aid].append(p_dict)
+            for rec in results:
+                rec["photos"] = photos_by_assessment.get(rec["id"], [])
             return results
 
     def update_physical_assessment(self, assessment_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -2033,5 +2198,69 @@ class LongevityRepository:
             conn.commit()
         return len(rows)
 
+    # --- DAILY CHECKINS ---
+    def get_daily_checkin(self, date_ref: str) -> Optional[Dict[str, Any]]:
+        """Retorna o check-in diário para uma data específica ou None."""
+        sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
+        with self._get_connection() as conn:
+            row = conn.execute(sql, (date_ref,)).fetchone()
+            if not row:
+                return None
+            item = dict(row)
+            item["tags"] = json.loads(item.get("tags_json") or "[]")
+            return item
 
+    def upsert_daily_checkin(self, data: Dict[str, Any]) -> None:
+        """Cria ou atualiza um registro de check-in diário."""
+        sql = """
+        INSERT INTO daily_checkins (
+            date_ref, energy_score, mood_score, perceived_stress, soreness_score, pain_score,
+            symptom_severity, illness, alcohol_units, caffeine_last_at, bedtime_target_met, notes, tags_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(date_ref) DO UPDATE SET
+            energy_score = excluded.energy_score,
+            mood_score = excluded.mood_score,
+            perceived_stress = excluded.perceived_stress,
+            soreness_score = excluded.soreness_score,
+            pain_score = excluded.pain_score,
+            symptom_severity = excluded.symptom_severity,
+            illness = excluded.illness,
+            alcohol_units = excluded.alcohol_units,
+            caffeine_last_at = excluded.caffeine_last_at,
+            bedtime_target_met = excluded.bedtime_target_met,
+            notes = excluded.notes,
+            tags_json = excluded.tags_json,
+            updated_at = CURRENT_TIMESTAMP;
+        """
+        tags = data.get("tags")
+        tags_json = data.get("tags_json") if data.get("tags_json") is not None else json.dumps(tags or [])
+        values = (
+            data["date_ref"],
+            data.get("energy_score"),
+            data.get("mood_score"),
+            data.get("perceived_stress"),
+            data.get("soreness_score"),
+            data.get("pain_score"),
+            data.get("symptom_severity"),
+            data.get("illness") or 0,
+            data.get("alcohol_units") or 0.0,
+            data.get("caffeine_last_at"),
+            data.get("bedtime_target_met"),
+            data.get("notes"),
+            tags_json,
+        )
+        with self._get_connection() as conn:
+            conn.execute(sql, values)
+            conn.commit()
 
+    def list_daily_checkins(self, days: int = 90) -> List[Dict[str, Any]]:
+        """Lista os check-ins diários mais recentes."""
+        sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (days,)).fetchall()
+            result = []
+            for r in rows:
+                item = dict(r)
+                item["tags"] = json.loads(item.get("tags_json") or "[]")
+                result.append(item)
+            return result
