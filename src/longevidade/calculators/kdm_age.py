@@ -379,6 +379,7 @@ def calculate_kdm_biological_age(
         )
 
     bae_n = 0.0
+    bae_d = 0.0
     for model in models:
         marker = str(model["bm"])
         value = current_values.get(marker)
@@ -388,8 +389,7 @@ def calculate_kdm_biological_age(
         k = float(model["k"])
         s = float(model["s"])
         bae_n += (value - q) * (k / (s**2))
-
-    bae_d = sum(float(model["n2"]) for model in models)
+        bae_d += float(model["n2"])
     s_ba2_value = _finite_float(fit.get("s_ba2"))
     if bae_d <= 0 or s_ba2_value is None or s_ba2_value <= 0:
         return _incomplete_result(
@@ -511,3 +511,48 @@ def latest_kdm_biomarker_values(
             if value is not None and marker not in values:
                 values[marker] = value
     return values
+
+
+def recalculate_kdm_silently(repo: Any, logger: Any = None) -> dict[str, Any]:
+    """Recalcula o KDM Biological Age com base nas métricas frescas inseridas."""
+    import json
+    from longevidade.lab_provenance import CLINICALLY_ELIGIBLE_LAB_ORIGINS
+
+    try:
+        profile = repo.get_user_profile()
+        chronological_age = float(profile.get("chronological_age") or 40.0)
+        lab_results = repo.get_lab_results(
+            limit=1000,
+            record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+        )
+        daily_metrics = repo.get_daily_metrics(days=365)
+
+        latest_values = latest_kdm_biomarker_values(lab_results, daily_metrics)
+        historical_rows = build_kdm_history_rows(lab_results, daily_metrics, chronological_age)
+        result = calculate_kdm_biological_age(
+            chronological_age,
+            latest_values,
+            historical_data=historical_rows,
+        )
+
+        if result.get("status") == "complete":
+            repo.save_kdm_record({
+                "calculated_at": date.today().isoformat(),
+                "chronological_age": result["chronological_age"],
+                "kdm_age": result["kdm_age"],
+                "kdm_delta": result["kdm_delta"],
+                "biomarkers_used": json.dumps(result.get("biomarkers_used", []), ensure_ascii=False),
+                "notes": f"KDM recalculado automaticamente via sync; fit_observations={result.get('fit_observations')}",
+            })
+            if logger:
+                logger.info(f"KDM recalculado com sucesso: KDM Age {result.get('kdm_age')} (delta: {result.get('kdm_delta')})")
+            return {"status": "ok", "kdm_age": result.get("kdm_age")}
+        else:
+            missing = result.get("missing_biomarkers", [])
+            if logger:
+                logger.info(f"KDM incompleto (faltam biomarcadores: {', '.join(missing) if missing else 'dados insuficientes'})")
+            return {"status": "incomplete", "missing": missing}
+    except Exception as exc:
+        if logger:
+            logger.warning(f"Erro ao recalcular KDM: {exc}")
+        return {"status": "error", "error": str(exc)}

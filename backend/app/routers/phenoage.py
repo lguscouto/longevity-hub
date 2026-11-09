@@ -50,13 +50,13 @@ def _clinical_panel_origin(panel: PhenoAgeLabPanel) -> str:
     return PATIENT_LAB_ORIGIN
 
 
-def _profile_chronological_age(repo: LongevityRepository) -> float:
+def _profile_chronological_age(repo: LongevityRepository) -> float | None:
     try:
         profile = repo.get_user_profile()
         value = profile.get("chronological_age")
-        return float(value) if value is not None else 40.0
+        return float(value) if value is not None else None
     except (TypeError, ValueError):
-        return 40.0
+        return None
 
 
 @router.get("/history", response_model=List[Dict[str, Any]])
@@ -79,8 +79,24 @@ def calculate_and_save_phenoage(req: PhenoAgeCalculateRequest):
     chronological_age = payload.pop("chronological_age", None)
     has_manual_marker_overrides = bool(payload)
     panel = None if has_manual_marker_overrides else _latest_complete_phenoage_panel(repo)
+
+    if chronological_age is None:
+        profile = repo.get_user_profile()
+        if profile.get("birthdate") and panel and panel.collected_at:
+            try:
+                b_dt = date.fromisoformat(str(profile["birthdate"])[:10])
+                c_dt = date.fromisoformat(str(panel.collected_at)[:10])
+                age_calc = (c_dt - b_dt).days / 365.2425
+                if age_calc > 0:
+                    chronological_age = round(age_calc, 2)
+            except Exception:
+                pass
+        if chronological_age is None:
+            chronological_age = _profile_chronological_age(repo)
+
     data_input: PhenoAgeInput = dict(payload) if has_manual_marker_overrides else dict(panel.values if panel else {})
-    data_input["chronological_age"] = chronological_age if chronological_age is not None else _profile_chronological_age(repo)
+    if chronological_age is not None:
+        data_input["chronological_age"] = chronological_age
 
     res = calculate_phenoage(data_input)
     if res.get("status") != "complete":

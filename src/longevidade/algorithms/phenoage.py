@@ -3,7 +3,7 @@ Algoritmo de Morgan Levine (PhenoAge) para estimativa de idade biológica
 baseado em 9 marcadores de exames de sangue.
 
 Referência: Levine, M. E., et al. (2018). An epigenetic biomarker of aging for
-lifespan and healthspan. Aging Cell, 17(4), e12784.
+lifespan and healthspan. Aging (Albany NY), 10(4), 573–591. DOI: 10.18632/aging.101414.
 """
 
 from __future__ import annotations
@@ -62,7 +62,8 @@ def _incomplete_phenoage(data: PhenoAgeInput, missing: list[str], used: list[str
 def calculate_phenoage(data: PhenoAgeInput) -> dict[str, Any]:
     """Calcula a PhenoAge ou retorna estado incompleto explícito.
 
-    A função não preenche biomarcadores laboratoriais nem idade cronológica com defaults fictícios.
+    Aplica a equação clínica Gompertz oficial de Levine et al. (2018) / BioAge.
+    Rejeita valores não positivos (<= 0) sem truncamento silencioso.
     """
     validation = validate_phenoage_inputs(data)
     chrono_val = data.get("chronological_age")
@@ -79,39 +80,74 @@ def calculate_phenoage(data: PhenoAgeInput) -> dict[str, Any]:
     values = validation["values"]
     chrono_age = float(chrono_val)
 
-    # Conversão de unidades padrão da literatura
-    glucose = float(values["glucose_mgdl"]) * 0.0555
-    creatinine = float(values["creatinine_mgdl"]) * 88.4
-    albumin = float(values["albumin_gdl"]) * 10.0
-    hscrp_mgdl = max(0.001, float(values["hscrp_mgl"]) / 10.0)
+    # Validação estrita de domínio: nenhum biomarcador nem idade pode ser <= 0
+    raw_vals = [
+        chrono_age,
+        values.get("glucose_mgdl"),
+        values.get("creatinine_mgdl"),
+        values.get("albumin_gdl"),
+        values.get("hscrp_mgl"),
+        values.get("lymphocyte_pct"),
+        values.get("mcv_fl"),
+        values.get("rdw_pct"),
+        values.get("alk_phos_ul"),
+        values.get("wbc_1000ul"),
+    ]
+    if any(v is None or float(v) <= 0 for v in raw_vals):
+        return {
+            "status": "incomplete",
+            "reason": "invalid_biomarker_domain",
+            "pheno_age": None,
+            "chronological_age": round(chrono_age, 2),
+            "age_delta": None,
+            "mortality_risk_10yr_pct": None,
+            "missing_biomarkers": [],
+            "missing": [],
+            "biomarkers_used": list(PHENOAGE_REQUIRED_MARKERS),
+            "required_biomarkers": list(PHENOAGE_REQUIRED_MARKERS),
+            "algorithm_version": "levine-2018-gompertz-v1",
+        }
+
+    # Conversão de unidades padrão da literatura oficial (Levine 2018)
+    glucose = float(values["glucose_mgdl"]) * 0.0555       # mmol/L
+    creatinine = float(values["creatinine_mgdl"]) * 88.4   # µmol/L
+    albumin = float(values["albumin_gdl"]) * 10.0          # g/L
+    hscrp_mgdl = float(values["hscrp_mgl"]) / 10.0         # mg/dL (para ln(CRP))
     lymph = float(values["lymphocyte_pct"])
     mcv = float(values["mcv_fl"])
     rdw = float(values["rdw_pct"])
     alk_phos = float(values["alk_phos_ul"])
     wbc = float(values["wbc_1000ul"])
 
-    ln_crp = math.log(hscrp_mgdl)
-    ref_ln_crp = math.log(_REF_CRP_MGDL)
-
-    # Desvio relativo de risco (delta_xb) em relação ao baseline de referência.
-    delta_xb = (
-        + 0.02688 * (mcv - _REF_MCV_FL)
-        + 0.3306 * (rdw - _REF_RDW_PCT)
-        + 0.00188 * (alk_phos - _REF_ALP_UL)
-        + 0.0554 * (wbc - _REF_WBC_1000UL)
-        - 0.0120 * (lymph - _REF_LYMPH_PCT)
-        + 0.1953 * (glucose - _REF_GLUCOSE_MMOL)
-        - 0.0336 * (albumin - _REF_ALBUMIN_GL)
-        + 0.0095 * (creatinine - _REF_CREATININE_UMOL)
-        + 0.0954 * (ln_crp - ref_ln_crp)
+    # Equação clínica Gompertz oficial de Morgan Levine (Levine et al., 2018 / BioAge)
+    xb = (
+        -19.90667
+        - 0.03359355 * albumin
+        + 0.009506491 * creatinine
+        + 0.1953192 * glucose
+        + 0.09536762 * math.log(hscrp_mgdl)
+        - 0.01199984 * lymph
+        + 0.02676401 * mcv
+        + 0.3306156 * rdw
+        + 0.001868778 * alk_phos
+        + 0.05542406 * wbc
+        + 0.08035356 * chrono_age
     )
 
-    # Coeficiente de avanço biológico por unidade de desvio de risco.
-    pheno_age = chrono_age + (delta_xb / 0.09165)
+    # Risco de mortalidade em 10 anos sob distribuição Gompertz (gamma = 0.007692696)
+    gamma = 0.007692696
+    exp_term = (-1.51714 * math.exp(xb)) / gamma
+    clamped_exp_term = max(-100.0, min(100.0, exp_term))
+    m = 1.0 - math.exp(clamped_exp_term)
+
+    # Inversão para PhenoAge:
+    # pheno_age = 141.50225 + ln(-0.0055305 * ln(1 - m)) / 0.090165
+    # Como -0.0055305 * (-1.51714 * exp(xb) / gamma) = 1.0907155007815204 * exp(xb):
+    # ln(1.0907155007815204 * exp(xb)) = math.log(1.0907155007815204) + xb
+    pheno_age = 141.50225 + (math.log(1.0907155007815204) + xb) / 0.090165
     age_delta = pheno_age - chrono_age
 
-    # Risco de mortalidade estimado proporcional.
-    mortality_risk_pct = max(0.1, min(99.0, 5.0 * math.exp(delta_xb)))
+    mortality_risk_pct = max(0.01, min(99.99, m * 100.0))
 
     return {
         "status": "complete",
@@ -124,4 +160,5 @@ def calculate_phenoage(data: PhenoAgeInput) -> dict[str, Any]:
         "missing": [],
         "biomarkers_used": list(PHENOAGE_REQUIRED_MARKERS),
         "required_biomarkers": list(PHENOAGE_REQUIRED_MARKERS),
+        "algorithm_version": "levine-2018-gompertz-v1",
     }

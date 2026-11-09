@@ -19,11 +19,16 @@ from longevidade.lab_provenance import (
     UNVERIFIED_LAB_ORIGIN,
     normalize_lab_record_origin,
 )
+from longevidade.metrics.unit_conversion import (
+    INPUT_KEY_TO_CANONICAL,
+    normalize_clinical_inputs,
+)
 from longevidade.ingestion.lab_normalization import (
     LAB_MARKER_LABELS,
     build_phenoage_input,
     normalize_lab_key,
     normalize_lab_record,
+    parse_numeric_or_censored,
     validate_phenoage_inputs,
 )
 
@@ -69,7 +74,8 @@ OPTIMAL_LONGEVITY_TARGETS = {
     "creatinine": {"name": "Creatinina Sanguínea", "unit": "mg/dL", "ref_min": 0.7, "ref_max": 1.2, "optimal": 0.9, "category": "Renal"},
     "cystatin_c": {"name": "Cistatina C", "unit": "mg/L", "ref_min": 0.6, "ref_max": 1.0, "optimal": 0.75, "category": "Renal"},
     "egfr": {"name": "Taxa de Filtração Glomerular (eGFR)", "unit": "mL/min", "ref_min": 90, "ref_max": 120, "optimal": 105.0, "category": "Renal"},
-    "urea": {"name": "Ureia Sanguínea", "unit": "mg/dL", "ref_min": 15, "ref_max": 45, "optimal": 25.0, "category": "Renal"},
+    "urea": {"name": "Ureia Sanguínea", "unit": "mg/dL", "ref_min": 15.0, "ref_max": 40.0, "optimal": 25.0, "category": "Renal"},
+    "bun": {"name": "Nitrogênio Ureico no Sangue (BUN)", "unit": "mg/dL", "ref_min": 7.0, "ref_max": 20.0, "optimal": 12.0, "category": "Renal"},
 
     # Tireoide & Vitaminas
     "tsh": {"name": "TSH (Tireoestimulante)", "unit": "uIU/mL", "ref_min": 0.4, "ref_max": 4.0, "optimal": 1.5, "category": "Tireoide"},
@@ -83,6 +89,10 @@ OPTIMAL_LONGEVITY_TARGETS = {
     "mcv": {"name": "Volume Corpuscular Médio (MCV)", "unit": "fL", "ref_min": 80, "ref_max": 100, "optimal": 89.0, "category": "Hematologia"},
     "rdw": {"name": "Amplitude de Distribuição (RDW)", "unit": "%", "ref_min": 11.5, "ref_max": 14.5, "optimal": 12.2, "category": "Hematologia"},
     "hemoglobin": {"name": "Hemoglobina", "unit": "g/dL", "ref_min": 13.5, "ref_max": 17.5, "optimal": 15.0, "category": "Hematologia"},
+    "hematocrit": {"name": "Hematócrito", "unit": "%", "ref_min": 38.0, "ref_max": 50.0, "optimal": 45.0, "category": "Hematologia"},
+    "neutrophils": {"name": "Neutrófilos Absolutos", "unit": "10^3/uL", "ref_min": 1.8, "ref_max": 7.0, "optimal": 3.5, "category": "Imunidade"},
+    "lymphocytes_abs": {"name": "Linfócitos Absolutos", "unit": "10^3/uL", "ref_min": 1.0, "ref_max": 3.0, "optimal": 2.0, "category": "Imunidade"},
+    "monocytes": {"name": "Monócitos Absolutos", "unit": "10^3/uL", "ref_min": 0.2, "ref_max": 0.8, "optimal": 0.4, "category": "Imunidade"},
     "platelets": {"name": "Plaquetas", "unit": "10^3/uL", "ref_min": 150, "ref_max": 450, "optimal": 220.0, "category": "Hematologia"}
 }
 
@@ -97,7 +107,6 @@ _CANONICAL_TARGET_SOURCE_KEYS = {
     "wbc_1000ul": "wbc",
     "hdl_cholesterol": "hdl",
     "ldl_cholesterol": "ldl",
-    "bun": "urea",
 }
 
 for canonical_key, source_key in _CANONICAL_TARGET_SOURCE_KEYS.items():
@@ -119,10 +128,10 @@ OPTIMAL_LONGEVITY_TARGETS.setdefault(
 def ingest_lab_records(
     records: List[Dict[str, Any]],
     repo: LongevityRepository,
-    chronological_age: float = 40.0,
+    chronological_age: float | None = None,
     record_origin: str = UNVERIFIED_LAB_ORIGIN,
 ) -> Dict[str, Any]:
-    """Ingere exames, normaliza aliases e só calcula PhenoAge se o painel estiver completo."""
+    """Ingere exames, normaliza aliases e unidades e só calcula PhenoAge se o painel estiver completo."""
     normalized_origin = normalize_lab_record_origin(record_origin)
     inserted = 0
     latest_values: Dict[str, float] = {}
@@ -131,22 +140,38 @@ def ingest_lab_records(
     for rec in records:
         normalized_rec = normalize_lab_record(rec)
         key = normalize_lab_key(normalized_rec.get("metric_key"))
-        val = float(normalized_rec.get("value", 0))
+        raw_val_input = rec.get("raw_value") if rec.get("raw_value") is not None else normalized_rec.get("value")
+        raw_unit_input = rec.get("raw_unit") or normalized_rec.get("unit") or ""
         dt = str(normalized_rec.get("collected_at", date.today().isoformat()))
 
         target_info = OPTIMAL_LONGEVITY_TARGETS.get(key, {})
+
+        # Normalização determinística de unidades canônicas clínicas
+        norm_result = normalize_clinical_inputs({key: {"value": raw_val_input, "unit": raw_unit_input}}, measured_at=dt)
+        if norm_result:
+            canonical_target = INPUT_KEY_TO_CANONICAL.get(key) or INPUT_KEY_TO_CANONICAL.get(normalize_lab_key(key), key)
+            norm_item = norm_result.get(canonical_target) or next(iter(norm_result.values()))
+            val = float(norm_item.value)
+            unit = norm_item.canonical_unit or target_info.get("unit") or ""
+        else:
+            num_val, is_censored, censored_op, raw_str = parse_numeric_or_censored(raw_val_input)
+            val = num_val if num_val is not None else 0.0
+            unit = raw_unit_input or target_info.get("unit") or ""
+
         entry = {
             "collected_at": dt,
             "metric_key": key,
             "metric_name": normalized_rec.get("metric_name") or target_info.get("name") or LAB_MARKER_LABELS.get(key) or key.upper(),
             "value": val,
-            "unit": normalized_rec.get("unit") or target_info.get("unit") or "",
+            "unit": unit,
             "ref_min": normalized_rec.get("ref_min") if normalized_rec.get("ref_min") is not None else target_info.get("ref_min"),
             "ref_max": normalized_rec.get("ref_max") if normalized_rec.get("ref_max") is not None else target_info.get("ref_max"),
             "optimal_target": normalized_rec.get("optimal_target") if normalized_rec.get("optimal_target") is not None else target_info.get("optimal"),
             "category": normalized_rec.get("category") or target_info.get("category") or "Geral",
             "notes": normalized_rec.get("notes"),
             "record_origin": normalized_origin,
+            "raw_value": raw_val_input,
+            "raw_unit": raw_unit_input or rec.get("raw_unit") or normalized_rec.get("unit") or target_info.get("unit") or "",
         }
         repo.add_lab_result(entry)
         inserted += 1
@@ -178,7 +203,39 @@ def ingest_lab_records(
         return {"status": "ok", "inserted": inserted, "phenoage": pheno_result}
 
     if pheno_validation["status"] == "complete":
-        pheno_input: PhenoAgeInput = build_phenoage_input(panel.values, chronological_age)  # type: ignore[assignment]
+        effective_age: float | None = None
+        profile = repo.get_user_profile() if hasattr(repo, "get_user_profile") else {}
+
+        # 1. Data de nascimento + data da coleta
+        if profile and profile.get("birthdate") and panel.collected_at:
+            try:
+                bdate = date.fromisoformat(str(profile["birthdate"])[:10])
+                cdate = date.fromisoformat(str(panel.collected_at)[:10])
+                age_calc = (cdate - bdate).days / 365.2425
+                if age_calc > 0:
+                    effective_age = round(age_calc, 2)
+            except Exception:
+                pass
+
+        # 2. Idade explícita enviada no lote
+        if effective_age is None and chronological_age is not None:
+            effective_age = float(chronological_age)
+
+        # 3. Idade cadastrada no perfil
+        if effective_age is None and profile and profile.get("chronological_age") is not None:
+            effective_age = float(profile["chronological_age"])
+
+        # 4. Se ausente: não inventar 40.0; retornar incomplete com missing: ["chronological_age"]
+        if effective_age is None:
+            pheno_result["status"] = "incomplete"
+            pheno_result["reason"] = (
+                "A idade cronológica é necessária para o cálculo do PhenoAge e não foi encontrada na requisição nem no perfil do usuário."
+            )
+            pheno_result["missing"] = ["chronological_age"]
+            pheno_result["missing_biomarkers"] = ["chronological_age"]
+            return {"status": "ok", "inserted": inserted, "phenoage": pheno_result}
+
+        pheno_input: PhenoAgeInput = build_phenoage_input(panel.values, effective_age)  # type: ignore[assignment]
         p_res = calculate_phenoage(pheno_input)
         if p_res.get("status") == "complete":
             repo.add_phenoage_record({

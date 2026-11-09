@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from datetime import date
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter
+from pydantic import BaseModel, ConfigDict
 
 from backend.app.config import get_db_path
 from longevidade.calculators.kdm_age import (
@@ -71,11 +72,44 @@ def get_kdm_history(limit: int = 30) -> list[Dict[str, Any]]:
     return history
 
 
+class KdmCalculateRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    chronological_age: Optional[float] = None
+
+
 @router.post("/calculate", response_model=Dict[str, Any])
-def calculate_and_save_kdm() -> Dict[str, Any]:
+def calculate_and_save_kdm(payload: Optional[KdmCalculateRequest] = None) -> Dict[str, Any]:
     repo = _repo()
     profile = repo.get_user_profile()
-    chronological_age = float(profile.get("chronological_age") or 40.0)
+    chrono_val = payload.chronological_age if (payload and payload.chronological_age is not None) else profile.get("chronological_age")
+    if chrono_val is None and profile.get("birthdate"):
+        try:
+            b_dt = date.fromisoformat(str(profile["birthdate"])[:10])
+            today = date.today()
+            chrono_val = float(today.year - b_dt.year - ((today.month, today.day) < (b_dt.month, b_dt.day)))
+        except Exception:
+            pass
+
+    if chrono_val is None:
+        return {
+            "status": "incomplete",
+            "result": {
+                "status": "incomplete",
+                "reason": "missing_chronological_age",
+                "kdm_age": None,
+                "chronological_age": None,
+                "missing_biomarkers": ["chronological_age"],
+            },
+            "kdm": None,
+            "biomarkers_used": [],
+            "missing_biomarkers": ["chronological_age"],
+            "historical_rows": 0,
+            "saved": False,
+            "id": None,
+            "calculated_at": None,
+        }
+
+    chronological_age = float(chrono_val)
     lab_results = repo.get_lab_results(
         limit=1000,
         record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,

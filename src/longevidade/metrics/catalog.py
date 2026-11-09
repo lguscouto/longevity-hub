@@ -138,3 +138,16 @@ METRICS_CATALOG: Dict[str, MetricDefinition] = {
 def get_metric_definition(key: str) -> Optional[MetricDefinition]:
     """Retorna a definição da métrica pelo nome de sua chave."""
     return METRICS_CATALOG.get(key)
+
+
+# Re-exportações do catálogo de métricas derivadas (§1 item 3 / §12)
+from longevidade.metrics.derived_catalog import (
+    DerivedMetricSpec,
+    DERIVED_METRICS_CATALOG,
+    get_derived_metrics_by_category,
+)
+
+
+def get_derived_metric_definition(metric_id: str) -> Optional[DerivedMetricSpec]:
+    """Retorna a especificação de um indicador derivado do catálogo."""
+    return DERIVED_METRICS_CATALOG.get(metric_id)
