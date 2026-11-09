@@ -324,4 +324,68 @@ describe('DerivedBiomarkersPanel', () => {
       expect(screen.getByText(/Falha ao carregar biomarcadores derivados/i)).toBeInTheDocument();
     });
   });
+
+  it('renders all attention metrics consistently across categories including direct biomarkers', async () => {
+    const multiCategoryAttentionMock = {
+      collected_at: '2026-11-07',
+      available_dates: ['2026-11-07'],
+      cohort: 'nhanes',
+      context: { chronological_age: 33, biological_sex: 'male' },
+      metrics_by_category: {
+        body_composition: [
+          {
+            metric_id: 'bmi',
+            display_name: 'Índice de Massa Corporal (IMC / BMI)',
+            category: 'body_composition',
+            status: 'calculated',
+            value: 26.02,
+            unit: 'kg/m²',
+            algorithm_version: 'who-bmi-v1',
+            source: 'WHO',
+            missing_inputs: [],
+          },
+        ],
+        direct_biomarkers: [
+          {
+            metric_id: 'hs_crp',
+            display_name: 'Proteína C-Reativa Ultrassensível (PCR-us)',
+            category: 'direct_biomarkers',
+            status: 'calculated',
+            value: 1.34,
+            unit: 'mg/L',
+            algorithm_version: 'direct-biomarker-v1',
+            source: 'Ridker et al., 2003',
+            missing_inputs: [],
+          },
+        ],
+      },
+      direct_biomarkers_series: {
+        hs_crp: [{ collected_at: '2026-11-07', value: 1.34, unit: 'mg/L' }],
+      },
+    };
+
+    mockedRequestJson.mockResolvedValueOnce(multiCategoryAttentionMock as any);
+
+    render(<DerivedBiomarkersPanel currentSelectedDate="2026-11-07" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Índice de Massa Corporal (IMC / BMI)')).toBeInTheDocument();
+      expect(screen.getByText('Proteína C-Reativa Ultrassensível (PCR-us)')).toBeInTheDocument();
+    });
+
+    // Check Hero Bar KPI shows 2 in Atenção
+    const attentionCard = screen.getByText('Atenção').closest('div[role="button"]')!;
+    expect(attentionCard).toHaveTextContent('2');
+
+    // Click "Atenção & Alerta" filter
+    const attentionFilterBtn = screen.getByRole('button', { name: /Atenção & Alerta/i });
+    fireEvent.click(attentionFilterBtn);
+
+    // Verify both metrics are visible in the DOM
+    expect(screen.getByText('Índice de Massa Corporal (IMC / BMI)')).toBeInTheDocument();
+    expect(screen.getByText('Proteína C-Reativa Ultrassensível (PCR-us)')).toBeInTheDocument();
+    expect(screen.getByText('Sobrepeso')).toBeInTheDocument();
+    expect(screen.getByText('Risco Moderado')).toBeInTheDocument();
+    expect(screen.getByText(/Série histórica \(1 medições\)/i)).toBeInTheDocument();
+  });
 });

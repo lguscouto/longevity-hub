@@ -886,9 +886,10 @@ def build_observation_context_for_date(
         target_dt = date.today()
 
     # 1. Medidas de avaliações físicas
-    if hasattr(repo, "get_physical_assessments"):
+    get_ass_fn = getattr(repo, "get_physical_assessments", None) or getattr(repo, "list_physical_assessments", None)
+    if get_ass_fn:
         try:
-            assessments = repo.get_physical_assessments(limit=50)
+            assessments = get_ass_fn(limit=50)
             closest_ass: Any = None
             closest_diff = 9999
             for ass in assessments:

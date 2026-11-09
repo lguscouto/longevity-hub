@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Sparkles,
   User,
+  UserCheck,
 } from 'lucide-react';
 import { HeaderUtilityActions } from './HeaderUtilityActions';
 import { useScrollActiveIntoView } from '../hooks/useScrollActiveIntoView';
@@ -29,6 +30,7 @@ export function resolvePrimaryTab(tab: string): PrimaryTab {
     case 'health':
       return 'health';
     case 'workouts':
+    case 'personal':
       return 'workouts';
     case 'supplements':
     case 'n-of-1':
@@ -227,6 +229,17 @@ export const Header: React.FC<HeaderProps> = ({
             </nav>
             {/* ds-exception: DSX-005 */}
             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-200/90 dark:from-slate-950/90 to-transparent pointer-events-none rounded-r-radius-lg sm:hidden" />
+          </div>
+        </div>
+      )}
+
+      {primaryTab === 'workouts' && (
+        <div className="max-w-7xl mx-auto pt-0.5 animate-fadeIn">
+          <div className="relative">
+            <nav aria-label="Sub-navegação de Treinos" className="flex items-center gap-1 sm:gap-1.5 bg-slate-200/50 dark:bg-slate-950/40 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
+              {renderSubNavButton('workouts', 'Sessões de Treino', Dumbbell, activeTab === 'workouts')}
+              {renderSubNavButton('personal', 'Portal do Personal', UserCheck, activeTab === 'personal')}
+            </nav>
           </div>
         </div>
       )}

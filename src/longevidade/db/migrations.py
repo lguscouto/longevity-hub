@@ -749,6 +749,34 @@ MIGRATIONS: Sequence[Migration] = (
             "CREATE INDEX IF NOT EXISTS idx_derived_metrics_metric ON derived_metric_records(metric_id);",
         ),
     ),
+    Migration(
+        version=20,
+        name="add_personal_trainer_accounts",
+        statements=(
+            """
+            CREATE TABLE IF NOT EXISTS personal_trainer_accounts (
+                username TEXT PRIMARY KEY,
+                password_hash TEXT NOT NULL,
+                name TEXT,
+                role TEXT DEFAULT 'personal_trainer',
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP
+            );
+            """,
+            """
+            INSERT OR IGNORE INTO personal_trainer_accounts (
+                username, password_hash, name, role, is_active
+            ) VALUES (
+                'willian',
+                'longevidade_salt_pt:7a9653805a58e701d328238b2551cf673dae0fd405709214c84c0547873410f2',
+                'Willian',
+                'personal_trainer',
+                1
+            );
+            """,
+        ),
+    ),
 )
 
 

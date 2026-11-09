@@ -7,8 +7,12 @@ import {
   ShieldCheck,
   AlertCircle,
   RefreshCw,
+  Dumbbell,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
-import { ConfirmDialog } from './ui';
+import { ConfirmDialog, useToast } from './ui';
 import {
   Photo,
   PhysicalAssessment,
@@ -112,6 +116,41 @@ export const PhysicalAssessmentsView: React.FC = () => {
     executeDeleteSinglePhoto,
   } = usePhysicalAssessments();
 
+  const { showToast } = useToast();
+  const [copiedPersonalLink, setCopiedPersonalLink] = React.useState(false);
+
+  // Se veio do Portal do Personal clicando em "Nova Avaliação", abre o wizard automaticamente
+  React.useEffect(() => {
+    if (sessionStorage.getItem('longevidade_open_new_assessment') === 'true') {
+      sessionStorage.removeItem('longevidade_open_new_assessment');
+      setActiveMode('create');
+    }
+  }, [setActiveMode]);
+
+  const handleCopyPersonalLink = async () => {
+    try {
+      const shareUrl = `${window.location.origin}${window.location.pathname}#personal`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+      setCopiedPersonalLink(true);
+      showToast({
+        title: 'Link copiado!',
+        message: 'Link para o Portal do Personal copiado para a área de transferência.',
+        type: 'success',
+      });
+      setTimeout(() => setCopiedPersonalLink(false), 2500);
+    } catch {
+      showToast({
+        title: 'Não foi possível copiar',
+        message: 'Acesse diretamente pelo endereço: #personal',
+        type: 'error',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header & Context Actions */}
@@ -167,7 +206,53 @@ export const PhysicalAssessmentsView: React.FC = () => {
             >
               <ArrowLeftRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Comparar Períodos
             </button>
+            <button
+              onClick={() => {
+                window.location.hash = 'personal';
+              }}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30"
+              title="Abrir página dedicada para o personal trainer"
+            >
+              <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Portal do Personal
+            </button>
           </div>
+        </div>
+      </div>
+
+      {/* Banner de Divulgação do Portal do Personal */}
+      <div className="glass-panel p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-2 rounded-lg bg-cyan-600 dark:bg-cyan-500 text-white shrink-0">
+            <Dumbbell className="h-4 w-4" />
+          </div>
+          <div>
+            <strong className="text-slate-900 dark:text-white font-bold block">
+              Página dedicada para o seu Personal Trainer
+            </strong>
+            <span className="text-slate-600 dark:text-slate-400">
+              Visualização focada com galeria de poses, comparativo antes & depois e medidas para o seu treinador.
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleCopyPersonalLink}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+          >
+            {copiedPersonalLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            <span>{copiedPersonalLink ? 'Link copiado!' : 'Copiar Link'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = 'personal';
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-700 text-white shadow-xs transition-all cursor-pointer"
+          >
+            <span>Abrir Portal</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 

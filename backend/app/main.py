@@ -38,6 +38,7 @@ from backend.app.routers import (
     zepp,
     steps,
     biomarkers,
+    personal_auth,
 )
 
 
@@ -47,6 +48,12 @@ DEFAULT_LOCAL_ALLOWED_ORIGINS: Tuple[str, ...] = (
     "http://localhost:8886",
     "http://127.0.0.1:8887",
     "http://localhost:8887",
+    "http://whitexp.ddns.net:8887",
+    "https://whitexp.ddns.net:8887",
+    "http://whitexp.ddns.net:8886",
+    "https://whitexp.ddns.net:8886",
+    "http://whitexp.ddns.net",
+    "https://whitexp.ddns.net",
 )
 
 
@@ -68,7 +75,7 @@ def _parse_cors_origins() -> Tuple[str, ...]:
 
 
 LOCAL_ALLOWED_ORIGINS = _parse_cors_origins()
-LOCAL_ALLOWED_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+LOCAL_ALLOWED_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1|whitexp\.ddns\.net|192\.168\.\d+\.\d+)(:\d+)?$"
 
 
 @asynccontextmanager
@@ -117,6 +124,7 @@ app.include_router(compliance.router)
 app.include_router(interventions.router)
 app.include_router(pipeline.router)
 app.include_router(physical_assessments.router)
+app.include_router(personal_auth.router)
 app.include_router(quality.router)
 app.include_router(checkins.router)
 app.include_router(daily_guidance.router)

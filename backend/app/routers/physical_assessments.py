@@ -211,6 +211,65 @@ def get_composition_timeline(
         }
 
 
+@router.get("/athlete-profile", response_model=Dict[str, Any])
+def get_athlete_profile() -> Dict[str, Any]:
+    """Retorna o perfil físico higienizado do atleta (sem exames, suplementos ou dados médicos)."""
+    db_path = get_db_path()
+    try:
+        repo = LongevityRepository(db_path)
+        profile = repo.get_user_profile() if hasattr(repo, "get_user_profile") else {}
+        latest_meas = (
+            repo.get_latest_weight_measurement()
+            if hasattr(repo, "get_latest_weight_measurement")
+            else None
+        )
+    except FileNotFoundError:
+        profile = {}
+        latest_meas = None
+
+    current_weight = profile.get("current_weight_kg")
+    if latest_meas and latest_meas.get("weight_kg") is not None:
+        current_weight = latest_meas["weight_kg"]
+
+    height_cm = profile.get("height_cm")
+    bmi = None
+    if current_weight and height_cm and height_cm > 0:
+        height_m = height_cm / 100.0
+        bmi = round(current_weight / (height_m * height_m), 1)
+
+    birthdate_str = profile.get("birthdate")
+    chrono_age = None
+    if birthdate_str:
+        try:
+            bdate = datetime.fromisoformat(str(birthdate_str)[:10]).date()
+            today = datetime.now().date()
+            chrono_age = float(
+                today.year
+                - bdate.year
+                - ((today.month, today.day) < (bdate.month, bdate.day))
+            )
+        except Exception:
+            chrono_age = (
+                float(profile["chronological_age"])
+                if profile.get("chronological_age") is not None
+                else None
+            )
+    elif profile.get("chronological_age") is not None:
+        chrono_age = float(profile["chronological_age"])
+
+    return {
+        "name": profile.get("name") or "Atleta",
+        "birthdate": birthdate_str,
+        "chronological_age": chrono_age,
+        "biological_sex": profile.get("biological_sex"),
+        "height_cm": height_cm,
+        "current_weight_kg": current_weight,
+        "target_weight_kg": profile.get("target_weight_kg"),
+        "target_body_fat_pct": profile.get("target_body_fat_pct"),
+        "bmi": bmi,
+    }
+
+
 @router.get("/{assessment_id}", response_model=Dict[str, Any])
 def get_physical_assessment(assessment_id: str) -> Dict[str, Any]:
     service = _service()

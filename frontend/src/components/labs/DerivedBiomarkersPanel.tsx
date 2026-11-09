@@ -159,9 +159,7 @@ export const DerivedBiomarkersPanel: React.FC<{
   const [selectedCohort, setSelectedCohort] = useState<string>('nhanes');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('all');
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({
-    direct_biomarkers: true,
-  });
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
   const fetchDerivedMetrics = async (date?: string, cohort?: string) => {
     setLoading(true);
@@ -363,25 +361,8 @@ export const DerivedBiomarkersPanel: React.FC<{
 
   const hasAnyVisibleMetrics = useMemo(() => {
     if (!data) return false;
-    return categories.some((catKey) => {
-      if (catKey === 'direct_biomarkers') {
-        if (statusFilter !== 'all' && statusFilter !== 'calculated') return false;
-        if (searchQuery.trim()) {
-          const q = normalizeSearchText(searchQuery);
-          const config = CATEGORY_CONFIG[catKey];
-          const matchesCategory =
-            normalizeSearchText(config.title).includes(q) ||
-            normalizeSearchText(config.description).includes(q);
-          const matchesAnyKey = Object.keys(data.direct_biomarkers_series || {}).some((k) =>
-            normalizeSearchText(k).includes(q)
-          );
-          return matchesCategory || matchesAnyKey;
-        }
-        return Object.keys(data.direct_biomarkers_series || {}).length > 0;
-      }
-      return (filteredMetricsByCategory[catKey] || []).length > 0;
-    });
-  }, [data, categories, statusFilter, searchQuery, filteredMetricsByCategory]);
+    return categories.some((catKey) => (filteredMetricsByCategory[catKey] || []).length > 0);
+  }, [data, categories, filteredMetricsByCategory]);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-radius-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-xs">
@@ -710,11 +691,9 @@ export const DerivedBiomarkersPanel: React.FC<{
           {categories.map((catKey) => {
             const config = CATEGORY_CONFIG[catKey];
             const metrics = filteredMetricsByCategory[catKey] || [];
-            const isDirectSeries = catKey === 'direct_biomarkers';
-            const seriesKeys = Object.keys(data.direct_biomarkers_series || {});
 
             // Se busca/filtro está ativo e não há métricas correspondentes, oculta categoria
-            if (isFilteringActive && !isDirectSeries && metrics.length === 0) {
+            if (isFilteringActive && metrics.length === 0) {
               return null;
             }
 
@@ -724,90 +703,6 @@ export const DerivedBiomarkersPanel: React.FC<{
               : !!collapsedCategories[catKey];
 
             const Icon = config.icon;
-
-            // Se for direct_biomarkers, exibe visualização longitudinal
-            if (isDirectSeries) {
-              if (statusFilter !== 'all' && statusFilter !== 'calculated') return null;
-              if (searchQuery.trim()) {
-                const q = normalizeSearchText(searchQuery);
-                const matchesCategory =
-                  normalizeSearchText(config.title).includes(q) ||
-                  normalizeSearchText(config.description).includes(q);
-                const matchesAnyKey = seriesKeys.some((k) => normalizeSearchText(k).includes(q));
-                if (!matchesCategory && !matchesAnyKey) return null;
-              }
-
-              return (
-                <div
-                  key={catKey}
-                  className="border border-slate-200 dark:border-slate-800 rounded-radius-lg overflow-hidden bg-slate-50/50 dark:bg-slate-950/40"
-                >
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => toggleCategory(catKey)}
-                    className="w-full flex items-center justify-between p-3.5 bg-slate-100/70 dark:bg-slate-900/80 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-left rounded-none min-h-0 h-auto font-normal text-slate-800 dark:text-slate-200 border-0"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
-                          {config.title}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {config.description}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-0.5 rounded-radius-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
-                        {seriesKeys.length} marcadores
-                      </span>
-                      {isCollapsed ? (
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                      )}
-                    </div>
-                  </Button>
-
-                  {!isCollapsed && (
-                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {seriesKeys.map((metricKey) => {
-                        const history = data.direct_biomarkers_series[metricKey] || [];
-                        const latest = history[history.length - 1];
-                        return (
-                          <div
-                            key={metricKey}
-                            className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-l-4 border-l-indigo-500 rounded-radius-lg space-y-2 shadow-xs"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                                {metricKey.replace(/_/g, ' ').toUpperCase()}
-                              </span>
-                              <StatusBadge variant="info" size="sm">
-                                Série Direta
-                              </StatusBadge>
-                            </div>
-                            <div className="flex items-baseline justify-between">
-                              <span className="text-lg font-extrabold text-slate-900 dark:text-white">
-                                {latest ? `${latest.value} ${latest.unit || ''}` : '—'}
-                              </span>
-                              <span className="text-xs font-mono text-slate-400">
-                                {latest ? latest.collected_at : 'Sem dados'}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800">
-                              {history.length} ponto(s) na série temporal
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
 
             return (
               <div
@@ -848,6 +743,14 @@ export const DerivedBiomarkersPanel: React.FC<{
                 {!isCollapsed && (
                   <div className="p-4 space-y-3">
                     {/* Disclaimers contextuais específicos */}
+                    {catKey === 'direct_biomarkers' && (
+                      <div className="flex items-start gap-2 p-2.5 rounded-radius-md bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-900 dark:text-indigo-300">
+                        <Info className="h-4 w-4 shrink-0 mt-0.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>
+                          <strong>Biomarcadores Primários Chave:</strong> Marcadores medidos diretamente em laudo clínico com relevância de primeira ordem para longevidade, metabolismo e resposta sistêmica.
+                        </span>
+                      </div>
+                    )}
                     {catKey === 'inflammation_immune_nutrition' && (
                       <div className="flex items-start gap-2 p-2.5 rounded-radius-md bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
                         <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -999,7 +902,18 @@ export const DerivedBiomarkersPanel: React.FC<{
                             )}
 
                             {/* Detalhes de Insumos Faltantes ou Limitações */}
-                            <div className="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60 pt-2 space-y-1">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60 pt-2 space-y-1.5">
+                              {data.direct_biomarkers_series?.[metric.metric_id]?.length > 0 && (
+                                <div className="flex items-center justify-between text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 px-2 py-1 rounded-radius-md border border-indigo-200/50 dark:border-indigo-800/40">
+                                  <span className="flex items-center gap-1 font-medium">
+                                    <TrendingUp className="h-3 w-3 shrink-0 text-indigo-500" />
+                                    Série histórica ({data.direct_biomarkers_series[metric.metric_id].length} medições)
+                                  </span>
+                                  <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                                    Última: {data.direct_biomarkers_series[metric.metric_id].slice(-1)[0]?.collected_at}
+                                  </span>
+                                </div>
+                              )}
                               {missing.length > 0 && (
                                 <p
                                   className="text-xs text-amber-700 dark:text-amber-400 truncate font-medium"

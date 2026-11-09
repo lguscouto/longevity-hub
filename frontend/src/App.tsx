@@ -20,6 +20,7 @@ const SyncProgressModal = lazy(() => import('./components/SyncProgressModal').th
 const ManualEntryModal = lazy(() => import('./components/ManualEntryModal').then(m => ({ default: m.ManualEntryModal })))
 const DailyComplianceWidget = lazy(() => import('./components/DailyComplianceWidget').then(m => ({ default: m.DailyComplianceWidget })))
 const PhysicalAssessmentsView = lazy(() => import('./components/PhysicalAssessmentsView').then(m => ({ default: m.PhysicalAssessmentsView })))
+const PersonalTrainerView = lazy(() => import('./components/PersonalTrainerView').then(m => ({ default: m.PersonalTrainerView })))
 const SleepView = lazy(() => import('./components/SleepView').then(m => ({ default: m.SleepView })))
 const DailyStepsView = lazy(() => import('./components/steps/DailyStepsView').then(m => ({ default: m.DailyStepsView })))
 const GoogleHealthAuthModal = lazy(() => import('./components/GoogleHealthAuthModal').then(m => ({ default: m.GoogleHealthAuthModal })))
@@ -27,6 +28,7 @@ const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => 
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 const OnboardingModal = lazy(() => import('./components/onboarding/OnboardingModal').then(m => ({ default: m.OnboardingModal })))
+import { PersonalTrainerUnlockModal } from './components/personalTrainer/PersonalTrainerUnlockModal'
 
 
 import { Button, EmptyState, LoadingIndicator, useToast } from './components/ui'
@@ -56,6 +58,7 @@ type Tab =
   | 'ai'
   | 'n-of-1'
   | 'physical-assessments'
+  | 'personal'
   | 'profile'
   | 'integrations'
   | 'system'
@@ -115,6 +118,7 @@ const VALID_TABS: Tab[] = [
   'ai',
   'n-of-1',
   'physical-assessments',
+  'personal',
   'profile',
   'integrations',
   'system',
@@ -123,11 +127,12 @@ const VALID_TABS: Tab[] = [
 
 function normalizeTab(rawTab: string | null | undefined): Tab {
   if (!rawTab) return 'overview'
-  const clean = rawTab.replace('#', '').trim()
+  const clean = rawTab.replace(/^#/, '').trim().split(/[?&#/]/)[0].toLowerCase()
   if (clean === 'today') return 'overview'
   if (clean === 'health') return 'labs'
   if (clean === 'interventions') return 'supplements'
   if (clean === 'diagnostics') return 'system'
+  if (clean === 'trainer' || clean === 'treinador' || clean === 'personal-trainer') return 'personal'
   if (VALID_TABS.includes(clean as Tab)) {
     return clean as Tab
   }
@@ -158,6 +163,38 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDateKey(new Date()))
   const [daysRange, setDaysRange] = useState<number>(30)
 
+  // Trava de isolamento do Portal do Personal Trainer
+  const [isTrainerLocked, setIsTrainerLocked] = useState<boolean>(() => getInitialTab() === 'personal')
+  const [showTrainerUnlockModal, setShowTrainerUnlockModal] = useState(false)
+  const [pendingTabAfterUnlock, setPendingTabAfterUnlock] = useState<Tab | null>(null)
+  const prevActiveTabRef = useRef(activeTab)
+  const isTrainerLockedRef = useRef(isTrainerLocked)
+  isTrainerLockedRef.current = isTrainerLocked
+  const activeTabRef = useRef(activeTab)
+  activeTabRef.current = activeTab
+
+  const handleSelectTab = (targetTab: string) => {
+    const normalized = normalizeTab(targetTab)
+    if (isTrainerLockedRef.current && activeTabRef.current === 'personal' && normalized !== 'personal') {
+      setPendingTabAfterUnlock(normalized)
+      setShowTrainerUnlockModal(true)
+      return
+    }
+    if (normalized === 'personal') {
+      setIsTrainerLocked(true)
+    }
+    setActiveTab(normalized)
+  }
+
+  const handleUnlockTrainerMode = () => {
+    setIsTrainerLocked(false)
+    setShowTrainerUnlockModal(false)
+    const nextTab = pendingTabAfterUnlock || 'overview'
+    setPendingTabAfterUnlock(null)
+    setActiveTab(nextTab)
+    window.location.hash = nextTab
+  }
+
   useEffect(() => {
     try {
       localStorage.setItem('longevidade_active_tab', activeTab)
@@ -172,11 +209,27 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const normalized = normalizeTab(window.location.hash)
+      if (isTrainerLockedRef.current && activeTabRef.current === 'personal' && normalized !== 'personal') {
+        window.location.hash = 'personal'
+        setPendingTabAfterUnlock(normalized)
+        setShowTrainerUnlockModal(true)
+        return
+      }
+      if (normalized === 'personal') {
+        setIsTrainerLocked(true)
+      }
       setActiveTab(normalized)
     }
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
+
+  useEffect(() => {
+    if (prevActiveTabRef.current === 'personal' && activeTab !== 'personal') {
+      void fetchDashboardData()
+    }
+    prevActiveTabRef.current = activeTab
+  }, [activeTab])
 
   const [metrics, setMetrics] = useState<DailyMetric[]>([])
   const [labs, setLabs] = useState<any[]>([])
@@ -331,6 +384,22 @@ export default function App() {
     setLoading(true)
     setError(null)
     const errorsMap: Record<string, string> = {}
+
+    // Modo isolado: quando no Portal do Personal, não busca dados médicos privados
+    if (activeTab === 'personal') {
+      try {
+        const nextProfile = await requestJson<any>('/api/physical-assessments/athlete-profile')
+          .catch(() => requestJson<any>('/api/profile').catch(() => null))
+        if (sequence !== refreshSequence.current) return
+        if (nextProfile) setProfile(nextProfile)
+        setLoading(false)
+        return
+      } catch {
+        if (sequence !== refreshSequence.current) return
+        setLoading(false)
+        return
+      }
+    }
 
     try {
       const [requiredData, nextKdmRecord, syncStatus] = await Promise.all([
@@ -699,23 +768,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
-      <Header
-        activeTab={activeTab}
-        setActiveTab={(tab) => setActiveTab(normalizeTab(tab))}
-        onSelectTab={(tab) => setActiveTab(normalizeTab(tab))}
-        onSync={handleSyncZepp}
-        onSyncZepp={handleSyncZepp}
-        onSyncGoogleHealth={handleSyncGoogleHealth}
-        onOpenManualEntry={() => setShowManualModal(true)}
-        onOpenDoctorBriefing={handleOpenDoctorBriefing}
-        onOpenAISettings={() => setShowAISettings(true)}
-        isSyncing={isSyncing}
-        isSyncingGoogle={isSyncingGoogle}
-        lastSyncTime={lastSyncTime}
-        syncState={syncState}
-        dataCoveredUntil={dataCoveredUntil}
-        onOpenSyncStatus={() => setIsSyncModalOpen(true)}
-      />
+      {activeTab !== 'personal' && (
+        <Header
+          activeTab={activeTab}
+          setActiveTab={handleSelectTab}
+          onSelectTab={handleSelectTab}
+          onSync={handleSyncZepp}
+          onSyncZepp={handleSyncZepp}
+          onSyncGoogleHealth={handleSyncGoogleHealth}
+          onOpenManualEntry={() => setShowManualModal(true)}
+          onOpenDoctorBriefing={handleOpenDoctorBriefing}
+          onOpenAISettings={() => setShowAISettings(true)}
+          isSyncing={isSyncing}
+          isSyncingGoogle={isSyncingGoogle}
+          lastSyncTime={lastSyncTime}
+          syncState={syncState}
+          dataCoveredUntil={dataCoveredUntil}
+          onOpenSyncStatus={() => setIsSyncModalOpen(true)}
+        />
+      )}
 
       <ErrorBoundary>
         <Suspense
@@ -760,7 +831,7 @@ export default function App() {
               </div>
             )}
 
-            {showManualModal && <ManualEntryModal isOpen={showManualModal} onClose={closeManualEntry} onSaveMetric={handleSaveMetric} />}
+            {showManualModal && activeTab !== 'personal' && <ManualEntryModal isOpen={showManualModal} onClose={closeManualEntry} onSaveMetric={handleSaveMetric} />}
 
             {activeTab === 'overview' && (
               <>
@@ -998,6 +1069,20 @@ export default function App() {
             {activeTab === 'ai' && <AICopilotView onOpenSettings={() => setShowAISettings(true)} chatMessages={aiChatMessages} setChatMessages={setAiChatMessages} />}
             {activeTab === 'n-of-1' && <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />}
             {activeTab === 'physical-assessments' && <PhysicalAssessmentsView />}
+            {activeTab === 'personal' && (
+              <Suspense
+                fallback={
+                  <div className="py-12 flex justify-center">
+                    <LoadingIndicator label="Carregando portal do personal..." size="md" />
+                  </div>
+                }
+              >
+                <PersonalTrainerView
+                  isIsolated={true}
+                  onRequestUnlock={() => setShowTrainerUnlockModal(true)}
+                />
+              </Suspense>
+            )}
             {['profile', 'integrations', 'system'].includes(activeTab) && (
               <ProfileView
                 profile={profile}
@@ -1034,7 +1119,16 @@ export default function App() {
           </footer>
 
           <Suspense fallback={null}>
-            {showAISettings && (
+            <PersonalTrainerUnlockModal
+              isOpen={showTrainerUnlockModal}
+              onClose={() => {
+                setShowTrainerUnlockModal(false)
+                setPendingTabAfterUnlock(null)
+              }}
+              onUnlockSuccess={handleUnlockTrainerMode}
+            />
+
+            {activeTab !== 'personal' && showAISettings && (
               <AISettingsModal
                 isOpen={showAISettings}
                 onClose={() => setShowAISettings(false)}
@@ -1050,7 +1144,7 @@ export default function App() {
                 }}
               />
             )}
-            {showGoogleHealthModal && (
+            {activeTab !== 'personal' && showGoogleHealthModal && (
               <GoogleHealthAuthModal
                 isOpen={showGoogleHealthModal}
                 onClose={() => setShowGoogleHealthModal(false)}
@@ -1060,7 +1154,7 @@ export default function App() {
                 }}
               />
             )}
-            {isSyncModalOpen && (
+            {activeTab !== 'personal' && isSyncModalOpen && (
               <SyncProgressModal
                 isOpen={isSyncModalOpen}
                 onClose={() => setIsSyncModalOpen(false)}
@@ -1071,10 +1165,10 @@ export default function App() {
                 onRetrySync={() => void handleSyncZepp()}
               />
             )}
-            {showDoctorModal && (
+            {activeTab !== 'personal' && showDoctorModal && (
               <DoctorBriefingModal isOpen={showDoctorModal} onClose={() => setShowDoctorModal(false)} markdownContent={doctorBriefingMd} />
             )}
-            {showOnboardingModal && (
+            {activeTab !== 'personal' && showOnboardingModal && (
               <OnboardingModal
                 isOpen={showOnboardingModal}
                 onClose={() => setShowOnboardingModal(false)}

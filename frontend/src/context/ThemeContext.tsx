@@ -10,7 +10,7 @@ export interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function getSanitizedInitialTheme(): ThemePreference {
   try {

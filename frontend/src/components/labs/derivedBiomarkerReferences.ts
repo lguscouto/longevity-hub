@@ -1436,6 +1436,153 @@ export function evaluateDerivedMetric(
       };
     }
 
+    case 'total_testosterone': {
+      // Homens vs Mulheres
+      if (!isFemale) {
+        if (value < 300) {
+          return {
+            status: 'attention',
+            badgeLabel: 'Baixa',
+            clinicalNote: 'Níveis abaixo do limiar basal masculino; investigar causas de hipogonadismo e fadiga.',
+            referenceText: '300 a 890 ng/dL',
+            optimalText: '500 a 750 ng/dL',
+            gaugePercent: clamp((value / 1200) * 100, 5, 25),
+            borderAccentClass: 'border-l-amber-500',
+            badgeVariant: 'warning',
+          };
+        }
+        if (value > 1000) {
+          return {
+            status: 'normal',
+            badgeLabel: 'Suprafisiológico',
+            clinicalNote: 'Níveis elevados compatíveis com terapia de reposição hormonal (TRT); monitorar hematócrito e perfil lipídico.',
+            referenceText: '300 a 890 ng/dL',
+            optimalText: '500 a 750 ng/dL',
+            gaugePercent: 90,
+            borderAccentClass: 'border-l-blue-500',
+            badgeVariant: 'info',
+          };
+        }
+        return {
+          status: 'normal',
+          badgeLabel: 'Normal',
+          clinicalNote: 'Níveis basais de testosterona dentro do intervalo de referência clínico.',
+          referenceText: '300 a 890 ng/dL',
+          optimalText: '500 a 750 ng/dL',
+          gaugePercent: clamp((value / 1200) * 100, 26, 75),
+          borderAccentClass: 'border-l-blue-500',
+          badgeVariant: 'info',
+        };
+      }
+      // Mulheres
+      if (value > 70) {
+        return {
+          status: 'attention',
+          badgeLabel: 'Elevada',
+          clinicalNote: 'Níveis androgênicos femininos elevados; considerar investigação de SOP.',
+          referenceText: '15 a 70 ng/dL',
+          optimalText: '20 a 45 ng/dL',
+          gaugePercent: 85,
+          borderAccentClass: 'border-l-amber-500',
+          badgeVariant: 'warning',
+        };
+      }
+      return {
+        status: 'normal',
+        badgeLabel: 'Normal',
+        clinicalNote: 'Níveis androgênicos femininos fisiológicos.',
+        referenceText: '15 a 70 ng/dL',
+        optimalText: '20 a 45 ng/dL',
+        gaugePercent: 50,
+        borderAccentClass: 'border-l-blue-500',
+        badgeVariant: 'info',
+      };
+    }
+
+    case 'hematocrit': {
+      const minRef = isFemale ? 36.0 : 40.0;
+      const maxRef = isFemale ? 48.0 : 52.0;
+      const minOpt = isFemale ? 38.0 : 42.0;
+      const maxOpt = isFemale ? 44.0 : 48.0;
+
+      if (value < minRef) {
+        return {
+          status: 'attention',
+          badgeLabel: 'Baixo',
+          clinicalNote: 'Hematócrito reduzido; compatível com anemia ou hemodiluição.',
+          referenceText: `${minRef.toFixed(1)} a ${maxRef.toFixed(1)}%`,
+          optimalText: `${minOpt.toFixed(1)} a ${maxOpt.toFixed(1)}%`,
+          gaugePercent: 20,
+          borderAccentClass: 'border-l-amber-500',
+          badgeVariant: 'warning',
+        };
+      }
+      if (value > maxRef + 2.0) {
+        return {
+          status: 'alert',
+          badgeLabel: 'Elevado / Risco',
+          clinicalNote: 'Policitemia / hemoconcentração acentuada; risco aumentado de viscosidade e trombose.',
+          referenceText: `${minRef.toFixed(1)} a ${maxRef.toFixed(1)}%`,
+          optimalText: `${minOpt.toFixed(1)} a ${maxOpt.toFixed(1)}%`,
+          gaugePercent: 95,
+          borderAccentClass: 'border-l-rose-500',
+          badgeVariant: 'error',
+        };
+      }
+      return {
+        status: 'normal',
+        badgeLabel: 'Adequado',
+        clinicalNote: 'Concentração eritrocitária e viscosidade sanguínea normais.',
+        referenceText: `${minRef.toFixed(1)} a ${maxRef.toFixed(1)}%`,
+        optimalText: `${minOpt.toFixed(1)} a ${maxOpt.toFixed(1)}%`,
+        gaugePercent: clamp(((value - minRef) / (maxRef - minRef)) * 100, 30, 70),
+        borderAccentClass: 'border-l-blue-500',
+        badgeVariant: 'info',
+      };
+    }
+
+    case 'hemoglobin': {
+      const minRef = isFemale ? 12.0 : 13.5;
+      const maxRef = isFemale ? 15.5 : 17.5;
+      const minOpt = isFemale ? 13.0 : 14.5;
+      const maxOpt = isFemale ? 15.0 : 16.5;
+
+      if (value < minRef) {
+        return {
+          status: 'attention',
+          badgeLabel: 'Anemia / Baixa',
+          clinicalNote: 'Hemoglobina diminuída; avaliar ferritina, saturação de transferrina e perfil hematimétrico.',
+          referenceText: `${minRef.toFixed(1)} a ${maxRef.toFixed(1)} g/dL`,
+          optimalText: `${minOpt.toFixed(1)} a ${maxOpt.toFixed(1)} g/dL`,
+          gaugePercent: 20,
+          borderAccentClass: 'border-l-amber-500',
+          badgeVariant: 'warning',
+        };
+      }
+      if (value > maxRef + 1.0) {
+        return {
+          status: 'alert',
+          badgeLabel: 'Elevada',
+          clinicalNote: 'Níveis eritrocitários muito elevados; avaliar causas de eritrocitose primária ou secundária.',
+          referenceText: `${minRef.toFixed(1)} a ${maxRef.toFixed(1)} g/dL`,
+          optimalText: `${minOpt.toFixed(1)} a ${maxOpt.toFixed(1)} g/dL`,
+          gaugePercent: 95,
+          borderAccentClass: 'border-l-rose-500',
+          badgeVariant: 'error',
+        };
+      }
+      return {
+        status: 'normal',
+        badgeLabel: 'Eutrófica',
+        clinicalNote: 'Capacidade de transporte de oxigênio tecidual fisiológica e preservada.',
+        referenceText: `${minRef.toFixed(1)} a ${maxRef.toFixed(1)} g/dL`,
+        optimalText: `${minOpt.toFixed(1)} a ${maxOpt.toFixed(1)} g/dL`,
+        gaugePercent: clamp(((value - minRef) / (maxRef - minRef)) * 100, 30, 70),
+        borderAccentClass: 'border-l-blue-500',
+        badgeVariant: 'info',
+      };
+    }
+
     // -------------------------------------------------------------------------
     // Fallback padrão genérico para outras métricas
     // -------------------------------------------------------------------------

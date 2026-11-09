@@ -13,12 +13,17 @@ set "PYTHON_EXE=%CD%\.venv\Scripts\python.exe"
 set "FORCE_BUILD=0"
 set "FORCE_UPDATE=0"
 set "DEV_MODE=0"
+set "ALLOW_LAN=1"
 
 for %%a in (%*) do (
     if "%%a"=="--build" set "FORCE_BUILD=1"
     if "%%a"=="--rebuild" set "FORCE_BUILD=1"
     if "%%a"=="--update" set "FORCE_UPDATE=1"
     if "%%a"=="--dev" set "DEV_MODE=1"
+    if "%%a"=="--lan" set "ALLOW_LAN=1"
+    if "%%a"=="--network" set "ALLOW_LAN=1"
+    if "%%a"=="--local" set "ALLOW_LAN=0"
+    if "%%a"=="--loopback" set "ALLOW_LAN=0"
 )
 
 IF NOT EXIST ".venv\Scripts\python.exe" (
@@ -64,7 +69,7 @@ IF NOT EXIST "frontend\node_modules" (
 )
 
 IF "%FORCE_BUILD%"=="1" (
-    echo [INFO] Recompilando Frontend React (--build solicitado)...
+    echo [INFO] Recompilando Frontend React [--build solicitado]...
     cd frontend
     call npm run build || (
         echo [ERRO] Falha ao compilar Frontend React.
@@ -87,11 +92,24 @@ IF "%FORCE_BUILD%"=="1" (
     )
 )
 
-echo [INFO] Servidor Longevidade Hub iniciando na porta 8887...
-set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887,http://localhost:8886,http://localhost:8887"
+IF "%ALLOW_LAN%"=="1" (
+    set "HOST=0.0.0.0"
+    if not defined LONGEVIDADE_CORS_ORIGINS (
+        set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887,http://localhost:8886,http://localhost:8887,http://192.168.100.250:8886,http://192.168.100.250:8887,http://whitexp.ddns.net:8887,https://whitexp.ddns.net:8887"
+    )
+    echo [INFO] Modo rede ativado: escutando em 0.0.0.0 [acesso externo e local liberado na porta 8887]...
+) ELSE (
+    set "HOST=127.0.0.1"
+    if not defined LONGEVIDADE_CORS_ORIGINS (
+        set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887,http://localhost:8886,http://localhost:8887,http://whitexp.ddns.net:8887,https://whitexp.ddns.net:8887"
+    )
+    echo [INFO] Modo local ativado: escutando apenas em 127.0.0.1:8887 [--local ativo]...
+)
+
+echo [INFO] Servidor Longevidade Hub iniciando em %HOST%:8887...
 
 IF "%DEV_MODE%"=="1" (
-    echo [INFO] Modo Dev ativado (--dev): iniciando Vite Dev Server (porta 8886)...
+    echo [INFO] Modo Dev ativado [--dev]: iniciando Vite Dev Server [porta 8886]...
     start "Vite Dev Server" /d "%~dp0frontend" cmd /c "npm run dev"
     set "TARGET_URL=http://127.0.0.1:8886"
 ) ELSE (
@@ -101,6 +119,6 @@ IF "%DEV_MODE%"=="1" (
 echo [INFO] O navegador sera aberto automaticamente em %TARGET_URL% assim que o servidor estiver pronto...
 start /b "" "%PYTHON_EXE%" "%~dp0scripts\open_browser_when_ready.py" --url %TARGET_URL%
 
-"%PYTHON_EXE%" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8887 --reload
+"%PYTHON_EXE%" -m uvicorn backend.app.main:app --host %HOST% --port 8887 --reload --reload-dir backend --reload-dir src
 
 pause

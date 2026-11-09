@@ -1464,6 +1464,9 @@ class LongevityRepository:
                 rec["photos"] = photos_by_assessment.get(rec["id"], [])
             return results
 
+    # Alias para compatibilidade com o motor de métricas e convenções de nomenclatura
+    get_physical_assessments = list_physical_assessments
+
     def update_physical_assessment(self, assessment_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         fields = []
         params: list[Any] = []

@@ -428,12 +428,14 @@ export function usePhysicalAssessments() {
     }
   };
 
-  const handleRunComparison = useCallback(async () => {
-    if (!comparePrevId || !compareCurrId) return;
+  const handleRunComparison = useCallback(async (prevOverride?: string, currOverride?: string) => {
+    const prev = prevOverride || comparePrevId;
+    const curr = currOverride || compareCurrId;
+    if (!prev || !curr) return;
     setCompareLoading(true);
     setCompareError(null);
     try {
-      const res = await fetch(`/api/physical-assessments/compare?previous_id=${comparePrevId}&current_id=${compareCurrId}`);
+      const res = await fetch(`/api/physical-assessments/compare?previous_id=${prev}&current_id=${curr}`);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.detail || 'Falha ao processar comparativo');

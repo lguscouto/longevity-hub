@@ -350,3 +350,35 @@ class TestPhysicalAssessmentEndpoints:
         assert summary["latest_lean_mass_kg"] == 64.74  # 78 - (78 * 0.17 = 13.26)
         assert summary["assessment_count"] == 2
 
+    def test_athlete_profile_endpoint_isolated(self, client: TestClient):
+        # Configura perfil com dados médicos e antropométricos
+        update_res = client.post("/api/profile", json={
+            "name": "Carlos Atleta",
+            "birthdate": "1990-05-15",
+            "biological_sex": "male",
+            "height_cm": 180.0,
+            "current_weight_kg": 82.5,
+            "target_weight_kg": 80.0,
+            "target_body_fat_pct": 14.0,
+        })
+        assert update_res.status_code == 200
+
+        res = client.get("/api/physical-assessments/athlete-profile")
+        assert res.status_code == 200
+        data = res.json()
+
+        assert data["name"] == "Carlos Atleta"
+        assert data["height_cm"] == 180.0
+        assert data["current_weight_kg"] == 82.5
+        assert data["target_weight_kg"] == 80.0
+        assert data["target_body_fat_pct"] == 14.0
+        assert data["bmi"] == round(82.5 / (1.8 * 1.8), 1)
+        assert data["chronological_age"] is not None
+
+        # Garante isolamento: nenhum dado clínico de exames, bio_snapshot ou suplementos exposto
+        assert "bio_snapshot" not in data
+        assert "golden" not in data
+        assert "active_supplements" not in data
+        assert "lab_records" not in data
+
+
