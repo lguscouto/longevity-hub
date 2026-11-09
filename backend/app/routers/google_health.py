@@ -38,6 +38,13 @@ from longevidade.ingestion.google_health_client import (
     get_default_token_path,
 )
 from longevidade.ingestion.google_importer import sync_google_health_api
+from longevidade.integrations.google_health.auth import (
+    DEFAULT_REDIRECT_URI,
+    GOOGLE_AUTH_URL,
+    OAuthStateManager,
+    oauth_state_manager,
+    safe_json_for_script,
+)
 from longevidade.integrations.google_health.registry import GoogleHealthDataTypeRegistry
 from longevidade.integrations.google_health.webhooks import (
     extract_notification_events,
@@ -47,56 +54,7 @@ from longevidade.integrations.google_health.webhooks_signature import signature_
 
 router = APIRouter(prefix="/api/google-health", tags=["GoogleHealth"])
 
-
-GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-DEFAULT_REDIRECT_URI = "http://127.0.0.1:8887/api/google-health/callback"
 ACTIVE_GOOGLE_HEALTH_SOURCES: Tuple[str, ...] = ("GoogleHealthAPI", "GoogleHealth")
-
-
-class OAuthStateManager:
-    """Gerencia estados OAuth 2.0 criptograficamente seguros para prevenção contra CSRF."""
-
-    def __init__(self, ttl_seconds: int = 600):
-        self.ttl_seconds = ttl_seconds
-        self._states: Dict[str, datetime] = {}
-        self._lock = threading.Lock()
-
-    def generate_state(self) -> str:
-        state = secrets.token_urlsafe(32)
-        now = datetime.now(timezone.utc)
-        with self._lock:
-            self._cleanup_expired(now)
-            self._states[state] = now
-        return state
-
-    def validate_and_consume(self, state: Optional[str]) -> Tuple[bool, str]:
-        if not state:
-            return False, "Parâmetro state ausente na requisição de callback."
-        now = datetime.now(timezone.utc)
-        with self._lock:
-            self._cleanup_expired(now)
-            matched_key = None
-            for key, created_at in self._states.items():
-                if secrets.compare_digest(key, state):
-                    matched_key = key
-                    break
-
-            if not matched_key:
-                return False, "Parâmetro state inválido, expirado ou já utilizado."
-
-            del self._states[matched_key]
-            return True, "State válido."
-
-    def _cleanup_expired(self, now: datetime) -> None:
-        expired_keys = [
-            k for k, created_at in self._states.items()
-            if (now - created_at).total_seconds() > self.ttl_seconds
-        ]
-        for k in expired_keys:
-            del self._states[k]
-
-
-oauth_state_manager = OAuthStateManager()
 
 
 class GoogleHealthSyncRequest(BaseModel):
@@ -228,11 +186,6 @@ def get_google_health_auth_url(
         "redirect_uri": r_uri,
         "scopes": GOOGLE_HEALTH_SCOPES,
     }
-
-
-def safe_json_for_script(data: Any) -> str:
-    """Serializa JSON com escape seguro de caracteres HTML (<, >, &) para inclusão dentro de <script>."""
-    return json.dumps(data).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
 @router.get("/callback")
@@ -436,7 +389,7 @@ def google_health_oauth_callback(
     except HTTPError as err:
         err_msg = err.read().decode("utf-8", errors="ignore")
         safe_msg = html.escape(err_msg)
-        js_payload = json.dumps({"type": "GOOGLE_AUTH_ERROR", "error": err_msg})
+        js_payload = safe_json_for_script({"type": "GOOGLE_AUTH_ERROR", "error": err_msg})
         html_resp = f"""
         <!DOCTYPE html>
         <html lang="pt-BR">
@@ -453,7 +406,7 @@ def google_health_oauth_callback(
     except Exception as exc:
         exc_str = str(exc)
         safe_exc = html.escape(exc_str)
-        js_payload = json.dumps({"type": "GOOGLE_AUTH_ERROR", "error": exc_str})
+        js_payload = safe_json_for_script({"type": "GOOGLE_AUTH_ERROR", "error": exc_str})
         html_resp = f"""
         <!DOCTYPE html>
         <html lang="pt-BR">
@@ -536,11 +489,21 @@ def sync_google_health(req: GoogleHealthSyncRequest = GoogleHealthSyncRequest())
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
 
-    result = sync_google_health_api(repo=repo, days=days, client=client, selected_types=req.types)
+    from longevidade.sync_lock import file_sync_lock, SyncLockTimeoutError
+
+    lock_file = db_path.parent / "sync.lock"
     try:
-        repo.sync_latest_profile_weight()
-    except Exception:
-        pass
+        with file_sync_lock(lock_path=lock_file, timeout_seconds=0.1):
+            result = sync_google_health_api(repo=repo, days=days, client=client, selected_types=req.types)
+            try:
+                repo.sync_latest_profile_weight()
+            except Exception:
+                pass
+    except SyncLockTimeoutError:
+        raise HTTPException(
+            status_code=409,
+            detail="Outra operação de sincronização está em andamento no sistema operacional (lock de arquivo ocupado).",
+        )
     status = "ok" if result["status"] in ("SUCESSO", "AVISO") else "error"
     return {
         "status": status,

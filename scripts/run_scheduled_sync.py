@@ -36,6 +36,7 @@ from longevidade.calculators.kdm_age import (
     build_kdm_history_rows,
     calculate_kdm_biological_age,
     latest_kdm_biomarker_values,
+    recalculate_kdm_silently,
 )
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
@@ -80,45 +81,6 @@ def setup_logger(log_file: Optional[Path] = None) -> logging.Logger:
     return logger
 
 
-def recalculate_kdm_silently(repo: LongevityRepository, logger: logging.Logger) -> Dict[str, Any]:
-    """Recalcula o KDM Biological Age com base nas métricas frescas inseridas."""
-    try:
-        profile = repo.get_user_profile()
-        chronological_age = float(profile.get("chronological_age") or 40.0)
-        lab_results = repo.get_lab_results(
-            limit=1000,
-            record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
-        )
-        daily_metrics = repo.get_daily_metrics(days=365)
-
-        latest_values = latest_kdm_biomarker_values(lab_results, daily_metrics)
-        historical_rows = build_kdm_history_rows(lab_results, daily_metrics, chronological_age)
-        result = calculate_kdm_biological_age(
-            chronological_age,
-            latest_values,
-            historical_data=historical_rows,
-        )
-
-        if result.get("status") == "complete":
-            repo.save_kdm_record({
-                "calculated_at": date.today().isoformat(),
-                "chronological_age": result["chronological_age"],
-                "kdm_age": result["kdm_age"],
-                "kdm_delta": result["kdm_delta"],
-                "biomarkers_used": json.dumps(result.get("biomarkers_used", []), ensure_ascii=False),
-                "notes": f"KDM recalculado automaticamente via sync; fit_observations={result.get('fit_observations')}",
-            })
-            logger.info(f"KDM recalculado com sucesso: KDM Age {result.get('kdm_age')} (delta: {result.get('kdm_delta')})")
-            return {"status": "ok", "kdm_age": result.get("kdm_age")}
-        else:
-            missing = result.get("missing_biomarkers", [])
-            logger.info(f"KDM incompleto (faltam biomarcadores: {', '.join(missing) if missing else 'dados insuficientes'})")
-            return {"status": "incomplete", "missing": missing}
-    except Exception as exc:
-        logger.warning(f"Erro ao recalcular KDM: {exc}")
-        return {"status": "error", "error": str(exc)}
-
-
 def run_sync(
     repo: Optional[LongevityRepository] = None,
     db_path: Optional[Path] = None,
@@ -140,6 +102,47 @@ def run_sync(
     logger.info(f"Iniciando Sincronização Agendada Longevidade Hub ({resolved_db})")
     logger.info(f"Horário UTC: {start_time.isoformat()}")
 
+    from longevidade.sync_lock import file_sync_lock, SyncLockTimeoutError
+
+    lock_file = (resolved_db.parent / "sync.lock") if resolved_db else None
+    try:
+        with file_sync_lock(lock_path=lock_file, timeout_seconds=5.0):
+            return _run_sync_locked(
+                repo=repo,
+                resolved_db=resolved_db,
+                skip_zepp=skip_zepp,
+                skip_google=skip_google,
+                skip_hevy=skip_hevy,
+                skip_kdm=skip_kdm,
+                logger=logger,
+                days=days,
+                start_time=start_time,
+            )
+    except SyncLockTimeoutError:
+        logger.warning("Sincronização abortada: outra operação de sincronização está em andamento (lock de arquivo ocupado).")
+        return {
+            "timestamp": start_time.isoformat(),
+            "zepp": None,
+            "google_health": None,
+            "hevy": None,
+            "kdm": None,
+            "success": False,
+            "errors": ["Lock de sincronização ocupado por outro processo."],
+            "skipped": True,
+        }
+
+
+def _run_sync_locked(
+    repo: Optional[LongevityRepository],
+    resolved_db: Path,
+    skip_zepp: bool,
+    skip_google: bool,
+    skip_hevy: bool,
+    skip_kdm: bool,
+    logger: logging.Logger,
+    days: Optional[int],
+    start_time: datetime,
+) -> Dict[str, Any]:
     if repo is None:
         initialize_db(resolved_db)
         repo = LongevityRepository(resolved_db)

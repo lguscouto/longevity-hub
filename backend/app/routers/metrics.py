@@ -111,6 +111,23 @@ def _execute_sync(days: Optional[int] = None, full: bool = False, include_hevy: 
             detail="Sincronização com a nuvem Zepp já está em andamento. Aguarde a conclusão da sincronização atual.",
         )
 
+    try:
+        from longevidade.sync_lock import file_sync_lock, SyncLockTimeoutError
+
+        lock_file = get_db_path().parent / "sync.lock"
+        try:
+            with file_sync_lock(lock_path=lock_file, timeout_seconds=0.1):
+                return _execute_sync_locked(days=days, full=full, include_hevy=include_hevy)
+        except SyncLockTimeoutError:
+            raise HTTPException(
+                status_code=409,
+                detail="Outra operação de sincronização está em andamento no sistema operacional (lock de arquivo ocupado).",
+            )
+    finally:
+        _zepp_sync_lock.release()
+
+
+def _execute_sync_locked(days: Optional[int] = None, full: bool = False, include_hevy: bool = True):
     _zepp_sync_state["is_syncing"] = True
     _zepp_sync_state["started_at"] = datetime.now(timezone.utc).isoformat()
     try:
@@ -192,7 +209,7 @@ def _execute_sync(days: Optional[int] = None, full: bool = False, include_hevy: 
 
         try:
             import logging
-            from scripts.run_scheduled_sync import recalculate_kdm_silently
+            from longevidade.calculators.kdm_age import recalculate_kdm_silently
 
             recalculate_kdm_silently(repo, logging.getLogger("backend.app.routers.metrics"))
         except Exception:
@@ -247,5 +264,4 @@ def _execute_sync(days: Optional[int] = None, full: bool = False, include_hevy: 
         raise
     finally:
         _zepp_sync_state["is_syncing"] = False
-        _zepp_sync_lock.release()
 

@@ -158,8 +158,18 @@ def sync_hevy(req: HevySyncRequest = HevySyncRequest()) -> Dict[str, Any]:
     repo = LongevityRepository(db_path)
     client = HevyClient()
 
-    result = sync_hevy_workouts(repo=repo, client=client, max_pages=req.max_pages or 100)
-    return result
+    from longevidade.sync_lock import file_sync_lock, SyncLockTimeoutError
+
+    lock_file = db_path.parent / "sync.lock"
+    try:
+        with file_sync_lock(lock_path=lock_file, timeout_seconds=0.1):
+            result = sync_hevy_workouts(repo=repo, client=client, max_pages=req.max_pages or 100)
+            return result
+    except SyncLockTimeoutError:
+        raise HTTPException(
+            status_code=409,
+            detail="Outra operação de sincronização está em andamento no sistema operacional (lock de arquivo ocupado).",
+        )
 
 
 @router.get("/catalog", response_model=Dict[str, Any])

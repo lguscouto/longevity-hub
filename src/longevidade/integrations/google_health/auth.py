@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
 
 DEFAULT_REDIRECT_URI = "http://127.0.0.1:8887/api/google-health/callback"
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 
 
 class OAuthStateManager:

@@ -2,7 +2,6 @@ from pathlib import Path
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
 from longevidade.ingestion.google_health_client import GoogleHealthCredentials
 
 def test_google_health_status_unauthenticated(client: TestClient, tmp_path: Path):

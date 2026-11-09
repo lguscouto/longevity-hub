@@ -29,7 +29,7 @@ def _get_config_path() -> Path:
     if custom_path:
         return Path(custom_path)
     hermes_home = os.environ.get("HERMES_HOME")
-    if hermes_home and not ZEPP_CONFIG_FILE.parent.exists():
+    if hermes_home:
         fallback_dir = Path(hermes_home) / "zepp"
         fallback_dir.mkdir(parents=True, exist_ok=True)
         return fallback_dir / "config.json"

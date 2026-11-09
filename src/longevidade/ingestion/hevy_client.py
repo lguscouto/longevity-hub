@@ -72,17 +72,28 @@ class HevyCredentials:
     @classmethod
     def save_api_key(cls, api_key: str, token_path: Optional[Path] = None) -> None:
         clean_key = api_key.strip()
-        # Salva no Keyring
+        keyring_success = False
+        # Salva no Keyring seguro do sistema operacional
         try:
             import keyring
             keyring.set_password(cls.KEYRING_SERVICE, cls.KEYRING_USERNAME, clean_key)
+            keyring_success = True
         except Exception:
             pass
 
-        # Salva também no arquivo de fallback local
-        path = token_path or get_default_hevy_token_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"api_key": clean_key, "updated_at": datetime.now(timezone.utc).isoformat()}, indent=2), encoding="utf-8")
+        # Salva em arquivo de fallback apenas se token_path for explicitamente informado (ex: testes) ou se o Keyring falhar
+        if token_path is not None or not keyring_success:
+            path = token_path or get_default_hevy_token_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps({"api_key": clean_key, "updated_at": datetime.now(timezone.utc).isoformat()}, indent=2), encoding="utf-8")
+        else:
+            # Se o Keyring gravou com sucesso e havia um arquivo legado em texto plano, remove-o
+            default_path = get_default_hevy_token_path()
+            if default_path.is_file():
+                try:
+                    default_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
     @classmethod
     def delete_api_key(cls, token_path: Optional[Path] = None) -> None:
