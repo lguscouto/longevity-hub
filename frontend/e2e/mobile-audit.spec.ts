@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import * as path from 'path'
 import * as fs from 'fs'
 
-const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR || 'C:/Users/gustavo/.gemini/antigravity/brain/621d0a40-5750-4c41-9018-8de7648e843c/mobile_screenshots'
+const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR || path.resolve(process.cwd(), 'test-results/mobile_screenshots')
 if (!fs.existsSync(SCREENSHOT_DIR)) {
   try {
     fs.mkdirSync(SCREENSHOT_DIR, { recursive: true })

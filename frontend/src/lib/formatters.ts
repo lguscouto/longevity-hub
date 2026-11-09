@@ -48,7 +48,7 @@ export function formatMetricValue(
   const accessibleFallback = absence ? absence.label : 'Não informado';
 
   // Verifica explicitamente ausência de dados vs medição zero
-  if (value === null || value === undefined || value === '') {
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
     return {
       displayValue: resolvedEmptyFallback,
       displayUnit: showUnitWhenEmpty ? unit : undefined,
@@ -58,19 +58,37 @@ export function formatMetricValue(
     };
   }
 
-  const num = typeof value === 'number' ? value : Number(value);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const isPtBrThousands = /^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(trimmed);
+    const num = isPtBrThousands ? NaN : Number(trimmed);
 
-  // Se string não puder ser convertida em número e não for vazia
-  if (isNaN(num)) {
-    if (typeof value === 'string' && value.trim().length > 0) {
+    if (isNaN(num) || decimals === undefined) {
+      const separator = unit === '%' ? '' : ' ';
+      const textWithUnit = unit ? `${value}${separator}${unit}` : value;
       return {
         displayValue: value,
         displayUnit: unit,
         isNull: false,
-        accessibleText: unit ? `${value} ${unit}` : value,
-        formattedString: unit ? `${value} ${unit}` : value,
+        accessibleText: textWithUnit,
+        formattedString: textWithUnit,
       };
     }
+
+    const formattedNumber = num.toFixed(decimals);
+    const separator = unit === '%' ? '' : ' ';
+    const textWithUnit = unit ? `${formattedNumber}${separator}${unit}` : formattedNumber;
+    return {
+      displayValue: formattedNumber,
+      displayUnit: unit,
+      isNull: false,
+      accessibleText: textWithUnit,
+      formattedString: textWithUnit,
+    };
+  }
+
+  // Se for number mas NaN
+  if (isNaN(value)) {
     return {
       displayValue: resolvedEmptyFallback,
       displayUnit: showUnitWhenEmpty ? unit : undefined,
@@ -81,7 +99,7 @@ export function formatMetricValue(
   }
 
   // Valor numérico válido (incluindo 0)
-  const formattedNumber = decimals !== undefined ? num.toFixed(decimals) : num.toString();
+  const formattedNumber = decimals !== undefined ? value.toFixed(decimals) : value.toString();
   const separator = unit === '%' ? '' : ' ';
   const textWithUnit = unit ? `${formattedNumber}${separator}${unit}` : formattedNumber;
 

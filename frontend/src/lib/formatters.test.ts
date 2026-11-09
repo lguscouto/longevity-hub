@@ -56,6 +56,18 @@ describe('formatters - Semântica de Valores e Nulos vs Zero (UX_UI_32)', () => 
       expect(res.formattedString).toBe('Normal');
     });
 
+    it('preserva strings numéricas já formatadas em pt-BR (ex: 18.000 passos sem truncar zeros após o ponto de milhar)', () => {
+      const steps18k = formatMetricValue((18000).toLocaleString('pt-BR'), 'passos');
+      expect(steps18k.isNull).toBe(false);
+      expect(steps18k.displayValue).toBe('18.000');
+      expect(steps18k.displayUnit).toBe('passos');
+      expect(steps18k.formattedString).toBe('18.000 passos');
+
+      const steps18500 = formatMetricValue('18.500', 'passos');
+      expect(steps18500.displayValue).toBe('18.500');
+      expect(steps18500.formattedString).toBe('18.500 passos');
+    });
+
     it('respeita showUnitWhenEmpty se solicitado', () => {
       const res = formatMetricValue(null, 'kg', { showUnitWhenEmpty: true });
       expect(res.formattedString).toBe('— kg');

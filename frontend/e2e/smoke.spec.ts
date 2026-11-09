@@ -27,11 +27,15 @@ const mockApi = async ({ page }) => {
   })
   // ── Metrics ──────────────────────────────────────────────
   await page.route('**/api/metrics**', async (route) => {
+    const now = new Date()
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const utcDate = now.toISOString().slice(0, 10)
+    const dates = Array.from(new Set([localDate, utcDate]))
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([{
-        date_ref: new Date().toISOString().slice(0, 10),
+      body: JSON.stringify(dates.map((d) => ({
+        date_ref: d,
         steps: 8_423,
         rhr_bpm: 48,
         hrv_ms: 62.5,
@@ -39,7 +43,7 @@ const mockApi = async ({ page }) => {
         vo2_max: 44.2,
         systolic_bp: 118,
         diastolic_bp: 76,
-      }]),
+      }))),
     })
   })
 
@@ -235,23 +239,27 @@ test.describe('Smoke – Longevidade Dashboard', () => {
   })
 
   test('Sync Zepp mostra erro da coleta sem exibir sucesso falso', async ({ page }) => {
-    await page.route('**/api/metrics/sync/zepp', async (route) => {
-      await route.fulfill({
-        status: 502,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          detail: 'A coleta Zepp não foi concluída; snapshots anteriores não foram importados.',
-        }),
-      })
+    const syncErrorResponse = {
+      status: 502,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        detail: 'A coleta Zepp não foi concluída; snapshots anteriores não foram importados.',
+      }),
+    }
+    await page.route('**/api/metrics/sync/zepp*', async (route) => {
+      await route.fulfill(syncErrorResponse)
+    })
+    await page.route('**/api/sync/all*', async (route) => {
+      await route.fulfill(syncErrorResponse)
     })
 
     await page.goto('/')
     runtimeEvidence.get(page)?.allowedConsoleErrorFragments.push(
       'the server responded with a status of 502'
     )
-    await page.getByRole('button', { name: 'Sync Zepp' }).click()
+    await page.getByRole('button', { name: 'Sincronizar' }).first().click()
 
-    await expect(page.getByRole('heading', { name: 'Sincronização com erro' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Não foi possível concluir a sincronização|Sincronização com erro/i })).toBeVisible()
     await expect(
       page.getByText('A coleta Zepp não foi concluída; snapshots anteriores não foram importados.').first()
     ).toBeVisible()
@@ -275,16 +283,16 @@ test.describe('Smoke – Longevidade Dashboard', () => {
     await expect(page).toHaveURL(/#supplements$/)
     await expect(page.locator('main')).not.toBeEmpty()
 
-    // 3. Navegar para IA & Copiloto
-    const aiBtn = page.getByRole('button', { name: /ia & copiloto/i })
+    // 3. Navegar para IA e Copiloto
+    const aiBtn = page.getByRole('button', { name: /ia e copiloto/i })
     await expect(aiBtn).toBeVisible()
     await aiBtn.click()
     await expect(page).toHaveURL(/#ai$/)
     await expect(page.locator('main')).not.toBeEmpty()
 
-    // 4. Navegar para sub-aba N-of-1 Tests dentro de Intervenções
+    // 4. Navegar para sub-aba Experimentos pessoais dentro de Intervenções
     await intervencoesBtn.click()
-    const nof1SubTab = page.getByRole('button', { name: /n-of-1 tests/i })
+    const nof1SubTab = page.getByRole('button', { name: /experimentos pessoais/i })
     await expect(nof1SubTab).toBeVisible()
     await nof1SubTab.click()
     await expect(page).toHaveURL(/#n-of-1$/)

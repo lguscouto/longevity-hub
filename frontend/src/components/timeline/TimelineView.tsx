@@ -24,6 +24,7 @@ import { TimelineWeekView } from './TimelineWeekView'
 import { InsightDrawer } from '../contextInsights/InsightDrawer'
 import { PersonalAssociationsCard } from '../contextInsights/PersonalAssociationsCard'
 import { ConfirmDialog, InlineError, ErrorState, LoadingIndicator, Select, Button } from '../ui'
+import { formatLocalDateKey } from '../../lib/formatters'
 import type {
   TimelineDaySummary,
   TimelineMonthSummary,
@@ -71,10 +72,10 @@ export const TimelineView: React.FC = () => {
     setError(null)
     try {
       if (zoomLevel === 'day') {
-        const endDate = new Date().toISOString().split('T')[0]
+        const endDate = formatLocalDateKey(new Date())
         const d = new Date()
         d.setDate(d.getDate() - daysRange)
-        const startDate = d.toISOString().split('T')[0]
+        const startDate = formatLocalDateKey(d)
 
         const res = await fetchTimelineFeed({
           startDate,

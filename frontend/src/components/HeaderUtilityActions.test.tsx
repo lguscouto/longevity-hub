@@ -96,5 +96,32 @@ describe('HeaderUtilityActions Component', () => {
     fireEvent.click(statusBadge);
     expect(onOpenSyncStatus).toHaveBeenCalledTimes(1);
   });
+
+  it('separates status timestamp from action button clearly (UX: Sincronizado hoje às 15:46 vs Sincronizar)', () => {
+    const onSync = vi.fn();
+    const onOpenSyncStatus = vi.fn();
+    renderActions({
+      onSync,
+      onOpenSyncStatus,
+      lastSyncTime: 'hoje às 15:46',
+      syncState: 'success',
+    });
+
+    // 1. Status badge shows timestamp and opens modal when clicked
+    const statusBadge = screen.getByRole('button', {
+      name: /Sincronizado · Última sincronização: hoje às 15:46/i,
+    });
+    expect(statusBadge).toBeInTheDocument();
+    expect(statusBadge.textContent).toContain('Sincronizado hoje às 15:46');
+    fireEvent.click(statusBadge);
+    expect(onOpenSyncStatus).toHaveBeenCalledTimes(1);
+
+    // 2. Sync button is an action button ("Sincronizar"), NOT a duplicate status
+    const syncBtn = screen.getByRole('button', { name: 'Sincronizar' });
+    expect(syncBtn).toBeInTheDocument();
+    expect(syncBtn.textContent).toBe('Sincronizar');
+    fireEvent.click(syncBtn);
+    expect(onSync).toHaveBeenCalledTimes(1);
+  });
 });
 

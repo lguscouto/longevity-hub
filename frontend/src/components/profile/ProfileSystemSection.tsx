@@ -39,7 +39,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
                 <StatusBadge variant="success">Armazenamento local ativo</StatusBadge>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Seus dados ficam salvos com segurança no seu dispositivo no arquivo <code>longevidade.db</code>.
+                Seus dados ficam salvos com segurança no seu dispositivo no arquivo <code>data/longevity.sqlite3</code>.
               </p>
             </div>
           </div>

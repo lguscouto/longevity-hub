@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Dumbbell,
   RefreshCw,
@@ -39,8 +39,17 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(2026)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas')
   const [limit, setLimit] = useState(500)
+  const prevSyncingRef = useRef(isSyncingZepp)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
   // Estado de sincronização Hevy
   const [isSyncingHevy, setIsSyncingHevy] = useState(false)
@@ -73,7 +82,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
           : ''
       const sourceParam = sourceFilter !== 'all' ? `source=${sourceFilter}` : ''
       const categoryParam = selectedCategory !== 'Todas' ? `category=${encodeURIComponent(selectedCategory)}` : ''
-      const searchParam = searchQuery.trim() ? `search=${encodeURIComponent(searchQuery.trim())}` : ''
+      const searchParam = debouncedSearch ? `search=${encodeURIComponent(debouncedSearch)}` : ''
 
       const queryParts = [periodParam, sourceParam, categoryParam, searchParam, `limit=${limit}`].filter(Boolean)
       const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
@@ -83,7 +92,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
 
       const [workoutsData, summaryData] = await Promise.all([
         requestJson<WorkoutSession[]>(`/api/workouts${queryString}`),
-        requestJson<WorkoutsSummary>(`/api/workouts/summary${summaryQuery ? `?${summaryQuery}` : ''}`),
+        requestJson<WorkoutsSummary>(`/api/workouts/summary${summaryQuery}`),
       ])
 
       setWorkouts(Array.isArray(workoutsData) ? workoutsData : [])
@@ -96,13 +105,14 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   }
 
   useEffect(() => {
-    loadData()
-  }, [sourceFilter, selectedPeriod, selectedCategory, searchQuery, limit])
+    void loadData()
+  }, [sourceFilter, selectedPeriod, selectedCategory, debouncedSearch, limit])
 
   useEffect(() => {
-    if (!isSyncingZepp) {
+    if (prevSyncingRef.current && !isSyncingZepp) {
       void loadData()
     }
+    prevSyncingRef.current = isSyncingZepp
   }, [isSyncingZepp])
 
   // Sincronizar Hevy

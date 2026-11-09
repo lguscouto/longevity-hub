@@ -186,14 +186,15 @@ export default function App() {
   const [cgmSummaries, setCgmSummaries] = useState<any[]>([])
   const [profile, setProfile] = useState<any>({
     name: 'Paciente Longevidade',
-    chronological_age: 40,
-    height_cm: 170,
-    current_weight_kg: 72.5,
-    target_weight_kg: 75,
+    chronological_age: null,
+    height_cm: null,
+    current_weight_kg: null,
+    target_weight_kg: null,
   })
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [moduleErrors, setModuleErrors] = useState<Record<string, string>>({})
   const [showManualModal, setShowManualModal] = useState(false)
   const [showDoctorModal, setShowDoctorModal] = useState(false)
   const [showAISettings, setShowAISettings] = useState(false)
@@ -329,13 +330,20 @@ export default function App() {
     const sequence = ++refreshSequence.current
     setLoading(true)
     setError(null)
+    const errorsMap: Record<string, string> = {}
 
     try {
       const [requiredData, nextKdmRecord, syncStatus] = await Promise.all([
         Promise.all([
           requestJson<DailyMetric[]>(`/api/metrics?days=${daysRange}`),
-          requestJson<any[]>('/api/labs').catch(() => []),
-          requestJson<any[]>('/api/phenoage/history').catch(() => []),
+          requestJson<any[]>('/api/labs').catch((err) => {
+            errorsMap['Exames'] = err?.message || 'Falha ao carregar exames'
+            return []
+          }),
+          requestJson<any[]>('/api/phenoage/history').catch((err) => {
+            errorsMap['PhenoAge'] = err?.message || 'Falha ao carregar histórico PhenoAge'
+            return []
+          }),
           requestJson<any[]>('/api/n-of-1').catch(() => []),
           requestJson<any[]>('/api/cgm/summary').catch(() => []),
           requestJson<any>('/api/profile'),
@@ -347,6 +355,7 @@ export default function App() {
       const [nextMetrics, nextLabs, nextPhenoHistory, nextExperiments, nextCgmSummaries, nextProfile] = requiredData
 
       if (sequence !== refreshSequence.current) return
+      setModuleErrors(errorsMap)
 
       if (syncStatus?.last_sync) {
         setLastSyncTime(formatLastSyncDisplay(syncStatus.last_sync))
@@ -640,7 +649,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chronological_age: profile.chronological_age || 40,
+          chronological_age: profile.chronological_age ?? undefined,
           records: recordsToSave,
         }),
       })
@@ -728,6 +737,26 @@ export default function App() {
             {error && (
               <div role="alert" className="rounded-2xl border border-rose-500/50 bg-rose-500/10 dark:bg-rose-950/40 p-4 text-rose-900 dark:text-rose-100">
                 {error}
+              </div>
+            )}
+
+            {Object.keys(moduleErrors).length > 0 && (
+              <div
+                role="status"
+                className="rounded-radius-xl border border-amber-500/50 bg-amber-500/10 dark:bg-amber-950/40 p-4 text-amber-900 dark:text-amber-100 flex items-center justify-between text-sm"
+              >
+                <span>
+                  <strong>Aviso de integridade:</strong> Falha ao carregar dados de:{' '}
+                  {Object.keys(moduleErrors).join(', ')}.
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setModuleErrors({})}
+                  aria-label="Dispensar aviso de erro"
+                >
+                  Dispensar
+                </Button>
               </div>
             )}
 

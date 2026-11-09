@@ -185,4 +185,37 @@ describe('AssessmentComparison', () => {
     fireEvent.keyDown(slider, { key: 'ArrowRight' });
     expect(slider).toHaveAttribute('aria-valuenow', '55');
   });
+
+  it('opens side-by-side fullscreen lightbox when clicking Tela Cheia Lado a Lado button', () => {
+    render(
+      <AssessmentComparison
+        assessments={mockAssessments}
+        comparePrevId="ass-1"
+        setComparePrevId={vi.fn()}
+        compareCurrId="ass-2"
+        setCompareCurrId={vi.fn()}
+        compareLoading={false}
+        compareError={null}
+        comparisonManifest={mockManifest}
+        onRunComparison={vi.fn()}
+        onOpenLightbox={vi.fn()}
+      />
+    );
+
+    const fullscreenBtns = screen.getAllByRole('button', { name: /Tela Cheia Lado a Lado/i });
+    expect(fullscreenBtns.length).toBeGreaterThan(0);
+
+    // Clica no botão de tela cheia lado a lado
+    fireEvent.click(fullscreenBtns[0]);
+
+    // Verifica que o diálogo em tela cheia foi aberto com as duas fotos
+    const dialog = screen.getByRole('dialog', { name: /Comparativo fotográfico lado a lado em tela cheia/i });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByAltText('Foto Anterior')).toBeInTheDocument();
+    expect(screen.getByAltText('Foto Atual')).toBeInTheDocument();
+
+    // Fecha o diálogo via ESC
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: /Comparativo fotográfico lado a lado em tela cheia/i })).not.toBeInTheDocument();
+  });
 });

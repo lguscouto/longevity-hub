@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Calculator, Dna, Sparkles } from 'lucide-react'
-import { Modal, TermHelp, SourceTag } from './ui'
+import { Calculator, ChevronDown, ClipboardList, Dna, Sparkles } from 'lucide-react'
+import { Modal, TermHelp, SourceTag, Button } from './ui'
 
 type ModelStatus = 'complete' | 'incomplete'
 
@@ -59,6 +59,45 @@ const BIOMARKER_LABELS: Record<string, string> = {
   systolic_bp: 'Pressão sistólica',
   diastolic_bp: 'Pressão diastólica',
 }
+
+export interface RequiredLabExam {
+  number: number
+  name: string
+  detail: string
+}
+
+export const REQUIRED_LAB_EXAMS: RequiredLabExam[] = [
+  {
+    number: 1,
+    name: 'Hemograma completo com diferencial de leucócitos',
+    detail: 'Linfócitos (%), VCM / MCV, RDW e Leucócitos / WBC',
+  },
+  {
+    number: 2,
+    name: 'Albumina sérica',
+    detail: 'Albumina',
+  },
+  {
+    number: 3,
+    name: 'Creatinina sérica',
+    detail: 'Creatinina',
+  },
+  {
+    number: 4,
+    name: 'Glicemia de jejum',
+    detail: 'Glicose',
+  },
+  {
+    number: 5,
+    name: 'Proteína C reativa ultrassensível (PCR-us)',
+    detail: 'hs-CRP',
+  },
+  {
+    number: 6,
+    name: 'Fosfatase alcalina',
+    detail: 'Fosfatase Alcalina (FA)',
+  },
+]
 
 function asRecord(value: unknown): ModelPayload | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as ModelPayload) : null
@@ -245,6 +284,7 @@ const ModelScore: React.FC<ModelScoreProps> = ({
 
 export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, latestKdmRecord, onRecalculate }) => {
   const [showModal, setShowModal] = useState(false)
+  const [showExamsList, setShowExamsList] = useState(true)
 
   const phenoRecord = nestedOrSelf(latestRecord, ['phenoage', 'phenoage_result', 'result'])
   const phenoAge = firstNumber(phenoRecord, ['pheno_age', 'biological_age'])
@@ -321,6 +361,45 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
           />
         </div>
 
+        {/* Informação dos Exames Necessários */}
+        <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 dark:bg-cyan-950/20 p-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                Exames Necessários para o Cálculo Completo
+              </h4>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowExamsList((prev) => !prev)}
+              className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer min-h-0 h-auto px-2 py-1"
+              aria-expanded={showExamsList}
+            >
+              <span>{showExamsList ? 'Ocultar' : 'Ver todos (6)'}</span>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showExamsList ? 'rotate-180' : ''}`} />
+            </Button>
+          </div>
+
+          {showExamsList && (
+            <div className="space-y-2 pt-1 border-t border-cyan-500/10 dark:border-cyan-500/20">
+              <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                {REQUIRED_LAB_EXAMS.map((exam) => (
+                  <li key={exam.number} className="leading-snug">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{exam.name}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block ml-4">{exam.detail}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-cyan-500/10 dark:border-cyan-500/20">
+                Estes 6 pedidos laboratoriais fornecem os 9 biomarcadores clínicos exigidos pelo modelo PhenoAge (Morgan Levine, 2018).
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1">
           <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
           <span>
@@ -352,6 +431,18 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
           <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-slate-700 dark:text-slate-200 leading-relaxed">
             O cálculo usa exclusivamente os exames clínicos registrados com origem verificável. Para incluir um novo marcador, cadastre-o primeiro em <strong>Exames Laboratoriais</strong> a partir do seu laudo.
           </p>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 space-y-2">
+            <span className="font-semibold text-slate-900 dark:text-slate-100 block">
+              Todos os exames necessários:
+            </span>
+            <ol className="list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
+              {REQUIRED_LAB_EXAMS.map((exam) => (
+                <li key={exam.number}>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{exam.name}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
             Esta ação não preenche valores de exemplo, não cria exames e não usa dados sintéticos, manuais ou não verificados.
           </p>

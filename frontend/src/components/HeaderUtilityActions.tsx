@@ -108,11 +108,10 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
       >
         <SyncStatusBadge
           state={effectiveSyncState}
-          sourceLabel="Fontes de saúde"
+          sourceLabel=""
           lastSyncTime={lastSyncTime}
           dataCoveredUntil={dataCoveredUntil}
           onClick={onOpenSyncStatus}
-          compact
           className="hidden md:inline-flex"
         />
 
@@ -124,11 +123,11 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
             isSyncing || isSyncingGoogle
               ? 'Sincronizando dados de Zepp, Google Health e Hevy...'
               : lastSyncTime
-              ? `Última sincronização: ${lastSyncTime}. Clique para atualizar.`
-              : 'Nenhuma sincronização anterior registrada. Clique para sincronizar Zepp, Google Health e Hevy.'
+              ? `Sincronizar agora (Zepp, Google Health e Hevy). Última atualização: ${lastSyncTime}.`
+              : 'Clique para sincronizar dados de Zepp, Google Health e Hevy.'
           }
           aria-label="Sincronizar"
-          className="relative flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-md text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+          className="relative flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden rounded-radius-md text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700/80 hover:text-emerald-700 dark:hover:text-emerald-300 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 transition shadow-xs disabled:opacity-50 shrink-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
         >
           <RefreshCw
             className={`h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 ${
@@ -137,13 +136,8 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
             aria-hidden="true"
           />
           <span className="hidden sm:inline">
-            {isSyncing || isSyncingGoogle
-              ? 'Sincronizando...'
-              : lastSyncTime
-              ? `Sincronizado ${lastSyncTime}`
-              : 'Sincronizar'}
+            {isSyncing || isSyncingGoogle ? 'Sincronizando...' : 'Sincronizar'}
           </span>
-          <span className="sm:hidden font-medium">Sincronizar</span>
         </button>
 
         <button

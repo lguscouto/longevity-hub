@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText } from 'lucide-react';
+import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, Download } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
 import { ConfirmDialog, EmptyState, InlineError, Button, IconButton, ResponsiveDataTable, DataColumn } from './ui';
@@ -12,6 +12,7 @@ import {
   pickHighlights,
 } from './labs/labMarkers';
 import { CardiovascularRatios } from './labs/CardiovascularRatios';
+import { DerivedBiomarkersPanel } from './labs/DerivedBiomarkersPanel';
 import { LabPanelDetailModal } from './labs/LabPanelDetailModal';
 import { LabBatchEntryModal } from './labs/LabBatchEntryModal';
 
@@ -203,6 +204,15 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
           </Button>
 
           <IconButton
+            variant="ghost"
+            size="sm"
+            onClick={() => window.open(`/api/labs/export?date=${encodeURIComponent(row.date)}`, '_blank')}
+            icon={Download}
+            title={`Baixar exames de ${row.date} (CSV)`}
+            aria-label={`Baixar exames de ${row.date} em CSV`}
+          />
+
+          <IconButton
             variant="destructive"
             size="sm"
             onClick={() => setDeleteConfirmDate(row.date)}
@@ -227,15 +237,30 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => setShowBatchModal(true)}
-          leftIcon={Plus}
-          className="w-full sm:w-auto shrink-0"
-        >
-          Novo Painel de Exames
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {panelRows.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open('/api/labs/export', '_blank')}
+              leftIcon={Download}
+              className="w-full sm:w-auto shrink-0"
+              title="Baixar todos os exames em formato CSV"
+            >
+              Baixar Todos (CSV)
+            </Button>
+          )}
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowBatchModal(true)}
+            leftIcon={Plus}
+            className="w-full sm:w-auto shrink-0"
+          >
+            Novo Painel de Exames
+          </Button>
+        </div>
       </div>
 
       {deleteError && <InlineError message={deleteError} />}
@@ -248,6 +273,9 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
 
       {/* Cartões de Razões Cardiovasculares Avançadas */}
       <CardiovascularRatios clinicalLabs={clinicalLabs} />
+
+      {/* Painel Modular de Biomarcadores Derivados & Modelos Clínicos */}
+      <DerivedBiomarkersPanel currentSelectedDate={selectedPanelDate} onRefreshData={onRefreshData} />
 
       {/* Tabela / Cards de Laudos Consolidada */}
       {panelRows.length === 0 ? (

@@ -1,0 +1,514 @@
+import React, { useEffect, useState } from 'react';
+import {
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  Brain,
+  Calculator,
+  ChevronDown,
+  ChevronRight,
+  Flame,
+  Heart,
+  HelpCircle,
+  Info,
+  Layers,
+  Scale,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react';
+import { ApiError, requestJson } from '../../lib/api';
+import { InlineError, Select, Button } from '../ui';
+
+export interface EvaluatedMetricItem {
+  metric_id: string;
+  display_name: string;
+  category: string;
+  status: 'calculated' | 'missing_inputs' | 'blocked_reference' | 'invalid_inputs' | 'out_of_scope' | string;
+  value: number | null;
+  unit: string | null;
+  evidence_level?: string;
+  algorithm_version: string;
+  source?: string | null;
+  source_url?: string | null;
+  formula_expression?: string | null;
+  missing_inputs?: string[];
+  missing_input_keys?: string[];
+  missing_measurements?: string[];
+  limitations?: string[] | string | null;
+  clinical_disclaimer?: string | null;
+  confidence?: string | null;
+  used_inputs?: Record<string, any>;
+  category_specific?: Record<string, any>;
+}
+
+export interface DerivedBiomarkersResponse {
+  collected_at: string | null;
+  available_dates: string[];
+  metrics_by_category: Record<string, EvaluatedMetricItem[]>;
+  direct_biomarkers_series: Record<string, { collected_at: string; value: number; unit?: string }[]>;
+  cohort: string;
+}
+
+const CATEGORY_CONFIG: Record<
+  string,
+  { title: string; icon: React.FC<{ className?: string }>; description: string }
+> = {
+  biological_age: {
+    title: '1. Idade Biológica e Envelhecimento',
+    icon: Brain,
+    description: 'Relógios biológicos e algoritmos preditivos de sobrevida e morbimortalidade.',
+  },
+  metabolic_insulin: {
+    title: '2. Glicemia, Insulina e Metabolismo',
+    icon: Sparkles,
+    description: 'Sensibilidade insulínica, índices substitutos e controle glicêmico funcional.',
+  },
+  inflammation_immune_nutrition: {
+    title: '3. Inflamação, Imunidade e Nutrição',
+    icon: Flame,
+    description: 'Razões celulares e marcadores combinados de imunoinflamação e estado nutricional.',
+  },
+  hepatic: {
+    title: '4. Fígado e Esteatose',
+    icon: Activity,
+    description: 'Escores de esteatose e estratificação não invasiva de fibrose hepática.',
+  },
+  cardiovascular_renal: {
+    title: '5. Cardiovascular, Lipídico e Renal',
+    icon: Heart,
+    description: 'Aterogenicidade de partículas, função de filtração glomerular e risco cardiometabólico.',
+  },
+  body_composition: {
+    title: '6. Adiposidade e Composição Corporal',
+    icon: Scale,
+    description: 'Modelos antropométricos geométricos, estimativa de gordura e acúmulo visceral.',
+  },
+  direct_biomarkers: {
+    title: '7. Séries Históricas de Marcadores Primários',
+    icon: TrendingUp,
+    description: 'Acompanhamento longitudinal de biomarcadores diretos de alta relevância.',
+  },
+};
+
+const formatValue = (val: number | null, unit: string | null): string => {
+  if (val === null || val === undefined || isNaN(val)) return '—';
+  const formatted = Math.abs(val) >= 100 ? val.toFixed(1) : val.toFixed(2);
+  return unit ? `${formatted} ${unit}` : formatted;
+};
+
+const getMissingList = (metric: EvaluatedMetricItem): string[] => {
+  const raw = metric.missing_inputs || metric.missing_input_keys;
+  return Array.isArray(raw) ? raw : [];
+};
+
+const getLimitationsText = (metric: EvaluatedMetricItem): string => {
+  if (Array.isArray(metric.limitations)) {
+    return metric.limitations.join('; ');
+  }
+  return metric.limitations || '';
+};
+
+const getStatusBadge = (metric: EvaluatedMetricItem) => {
+  switch (metric.status) {
+    case 'calculated':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+          Calculado
+        </span>
+      );
+    case 'missing_inputs': {
+      const missing = getMissingList(metric);
+      return (
+        <span
+          className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20"
+          title={missing.length > 0 ? `Faltam dados: ${missing.join(', ')}` : 'Faltam insumos'}
+        >
+          Faltam insumos ({missing.length})
+        </span>
+      );
+    }
+    case 'blocked_reference':
+      return (
+        <span
+          className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20"
+          title="Equação pendente de coeficientes ou calibração de coorte externa"
+        >
+          Pendente ref.
+        </span>
+      );
+    case 'out_of_scope':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
+          Fora do escopo
+        </span>
+      );
+    case 'invalid_inputs':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+          Insumos inválidos
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          {metric.status}
+        </span>
+      );
+  }
+};
+
+export const DerivedBiomarkersPanel: React.FC<{
+  currentSelectedDate?: string | null;
+  onRefreshData?: () => void;
+}> = ({ currentSelectedDate }) => {
+  const [data, setData] = useState<DerivedBiomarkersResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(currentSelectedDate || '');
+  const [selectedCohort, setSelectedCohort] = useState<string>('nhanes');
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({
+    direct_biomarkers: true,
+  });
+
+  const fetchDerivedMetrics = async (date?: string, cohort?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (date) params.set('date', date);
+      if (cohort) {
+        params.set('cohort_variant', cohort);
+        params.set('cohort', cohort);
+      }
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+
+      const resp = await requestJson<DerivedBiomarkersResponse>(`/api/biomarkers/derived${queryString}`);
+      setData({
+        collected_at: resp?.collected_at ?? null,
+        available_dates: Array.isArray(resp?.available_dates) ? resp.available_dates : [],
+        metrics_by_category: resp?.metrics_by_category ?? {},
+        direct_biomarkers_series: resp?.direct_biomarkers_series ?? {},
+        cohort: resp?.cohort ?? 'nhanes',
+      });
+      if (resp?.collected_at && !selectedDate) {
+        setSelectedDate(resp.collected_at);
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Falha ao carregar biomarcadores derivados.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDerivedMetrics(currentSelectedDate || undefined, selectedCohort);
+  }, [currentSelectedDate, selectedCohort]);
+
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    fetchDerivedMetrics(newDate || undefined, selectedCohort);
+  };
+
+  const handleCohortChange = (newCohort: string) => {
+    setSelectedCohort(newCohort);
+    fetchDerivedMetrics(selectedDate || undefined, newCohort);
+  };
+
+  const toggleCategory = (catKey: string) => {
+    setCollapsedCategories((prev) => ({ ...prev, [catKey]: !prev[catKey] }));
+  };
+
+  const categories = Object.keys(CATEGORY_CONFIG);
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-radius-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+      {/* Header com seletores de Data e Coorte */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Painel de Biomarcadores Derivados & Modelos Clínicos
+            </h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Cálculos determinísticos de longevidade, metabolismo, inflamação e composição corporal (Levine 2018, Hao 2025).
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Seletor de Data */}
+          {data?.available_dates && data.available_dates.length > 0 && (
+            <div className="flex items-center gap-2 text-xs">
+              <label htmlFor="derived-date-select" className="font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                Data do laudo:
+              </label>
+              <Select
+                id="derived-date-select"
+                value={selectedDate || data.collected_at || ''}
+                onChange={(e) => handleDateChange(e.target.value)}
+                className="w-auto min-h-0 py-1 px-2 pr-7 text-xs font-mono"
+              >
+                {data.available_dates.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {/* Seletor de Coorte para BioAge */}
+          <div className="flex items-center gap-2 text-xs">
+            <label htmlFor="derived-cohort-select" className="font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+              Coorte BioAge:
+            </label>
+            <Select
+              id="derived-cohort-select"
+              value={selectedCohort}
+              onChange={(e) => handleCohortChange(e.target.value)}
+              className="w-auto min-h-0 py-1 px-2 pr-7 text-xs font-semibold"
+            >
+              <option value="nhanes">NHANES (EUA / Padrão)</option>
+              <option value="ukb">UK Biobank (Reino Unido)</option>
+              <option value="charls">CHARLS (China / Ásia)</option>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {error && <InlineError message={error} />}
+
+      {loading && !data && (
+        <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+          Carregando biomarcadores calculados...
+        </div>
+      )}
+
+      {/* Módulos de Biomarcadores */}
+      {data && (
+        <div className="space-y-4">
+          {categories.map((catKey) => {
+            const config = CATEGORY_CONFIG[catKey];
+            const metrics = data.metrics_by_category?.[catKey] || [];
+            const isCollapsed = !!collapsedCategories[catKey];
+            const Icon = config.icon;
+
+            // Se for direct_biomarkers, podemos tratar com visualização longitudinal
+            if (catKey === 'direct_biomarkers') {
+              const seriesKeys = Object.keys(data.direct_biomarkers_series || {});
+              return (
+                <div
+                  key={catKey}
+                  className="border border-slate-200 dark:border-slate-800 rounded-radius-lg overflow-hidden bg-slate-50/50 dark:bg-slate-950/40"
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => toggleCategory(catKey)}
+                    className="w-full flex items-center justify-between p-3.5 bg-slate-100/70 dark:bg-slate-900/80 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-left rounded-none min-h-0 h-auto font-normal text-slate-800 dark:text-slate-200 border-0"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
+                          {config.title}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {config.description}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-0.5 rounded-radius-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                        {seriesKeys.length} marcadores
+                      </span>
+                      {isCollapsed ? (
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                      )}
+                    </div>
+                  </Button>
+
+                  {!isCollapsed && (
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {seriesKeys.map((metricKey) => {
+                        const history = data.direct_biomarkers_series[metricKey] || [];
+                        const latest = history[history.length - 1];
+                        return (
+                          <div
+                            key={metricKey}
+                            className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-radius-md space-y-1.5 shadow-xs"
+                          >
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                              {metricKey.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-base font-extrabold text-slate-900 dark:text-white">
+                                {latest ? `${latest.value} ${latest.unit || ''}` : '—'}
+                              </span>
+                              <span className="text-xs font-mono text-slate-400">
+                                {latest ? latest.collected_at : 'Sem dados'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">
+                              {history.length} ponto(s) na série temporal
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={catKey}
+                className="border border-slate-200 dark:border-slate-800 rounded-radius-lg overflow-hidden bg-slate-50/50 dark:bg-slate-950/40"
+              >
+                {/* Header de Categoria com Collapse */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => toggleCategory(catKey)}
+                  className="w-full flex items-center justify-between p-3.5 bg-slate-100/70 dark:bg-slate-900/80 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-left rounded-none min-h-0 h-auto font-normal text-slate-800 dark:text-slate-200 border-0"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
+                        {config.title}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {config.description}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 rounded-radius-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                      {metrics.length} métricas
+                    </span>
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-slate-400" />
+                    )}
+                  </div>
+                </Button>
+
+                {/* Conteúdo da Categoria */}
+                {!isCollapsed && (
+                  <div className="p-4 space-y-3">
+                    {/* Disclaimer contextual para categoria de Inflamação / Pesquisa */}
+                    {catKey === 'inflammation_immune_nutrition' && (
+                      <div className="flex items-start gap-2 p-2.5 rounded-radius-md bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Nota Clínica Metodológica:</strong> Índices celulares hematológicos (NLR, PLR, SII, SIRI, PIV) refletem padrões inflamatórios sistêmicos e são ferramentas de pesquisa translacional. Devem ser sempre avaliados em conjunto com a clínica do paciente e histórico infeccioso recente.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Disclaimer contextual para Esteatose / Fibrose */}
+                    {catKey === 'hepatic' && (
+                      <div className="flex items-start gap-2 p-2.5 rounded-radius-md bg-blue-500/10 border border-blue-500/20 text-xs text-blue-800 dark:text-blue-300">
+                        <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Interpretação por Faixa Etária:</strong> O FIB-4 possui alta sensibilidade na exclusão de fibrose avançada, porém pode ter falsos positivos em indivíduos com idade &lt; 35 anos ou &gt; 65 anos.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Grid de Métricas */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {metrics.map((metric) => {
+                        const isCalc = metric.status === 'calculated';
+                        return (
+                          <div
+                            key={metric.metric_id}
+                            className={`p-3 rounded-radius-md border transition-all ${
+                              isCalc
+                                ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
+                                : 'bg-slate-100/50 dark:bg-slate-950/20 border-dashed border-slate-300 dark:border-slate-800 opacity-90'
+                            } flex flex-col justify-between space-y-2`}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-start justify-between gap-1.5">
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                                  {metric.display_name}
+                                </span>
+                                {getStatusBadge(metric)}
+                              </div>
+
+                              <div className="flex items-baseline justify-between pt-1">
+                                <span
+                                  className={`text-lg font-extrabold ${
+                                    isCalc
+                                      ? 'text-slate-900 dark:text-white'
+                                      : 'text-slate-400 dark:text-slate-500 font-mono text-sm'
+                                  }`}
+                                >
+                                  {formatValue(metric.value, metric.unit)}
+                                </span>
+                                <span className="text-xs text-slate-400 font-mono">
+                                  v{metric.algorithm_version}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Detalhes de Insumos Faltantes ou Limitações */}
+                            <div className="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60 pt-2 space-y-1">
+                              {(() => {
+                                const missing = getMissingList(metric);
+                                if (missing.length === 0) return null;
+                                return (
+                                  <p className="text-xs text-amber-700 dark:text-amber-400 truncate">
+                                    Requer: {missing.join(', ')}
+                                  </p>
+                                );
+                              })()}
+                              {(() => {
+                                const limText = getLimitationsText(metric);
+                                if (!limText) return null;
+                                return (
+                                  <p
+                                    className="text-xs text-slate-400 dark:text-slate-500 line-clamp-2"
+                                    title={limText}
+                                  >
+                                    {limText}
+                                  </p>
+                                );
+                              })()}
+                              {metric.source && (
+                                <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
+                                  <span className="truncate">{metric.source}</span>
+                                  {metric.source_url && (
+                                    <a
+                                      href={metric.source_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-indigo-600 dark:text-indigo-400 hover:underline shrink-0 font-medium ml-1"
+                                    >
+                                      ref ↗
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};

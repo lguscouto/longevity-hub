@@ -16,6 +16,7 @@ import {
 import { createHealthEvent } from './api'
 import type { HealthEventCreatePayload } from './types'
 import { Modal, Input, Select, Textarea, FormField, Button } from '../ui'
+import { formatLocalDateKey } from '../../lib/formatters'
 
 interface AddHealthEventModalProps {
   isOpen: boolean
@@ -32,7 +33,7 @@ export const AddHealthEventModal: React.FC<AddHealthEventModalProps> = ({
   onSuccess,
   defaultDate,
 }) => {
-  const todayStr = defaultDate || new Date().toISOString().split('T')[0]
+  const todayStr = defaultDate || formatLocalDateKey(new Date())
 
   const [activePreset, setActivePreset] = useState<PresetKey>('alcohol')
   const [dateRef, setDateRef] = useState<string>(todayStr)

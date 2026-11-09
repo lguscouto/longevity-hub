@@ -8,6 +8,7 @@ import {
   Cloud,
   CloudOff,
   KeyRound,
+  ChevronDown,
 } from 'lucide-react';
 import { STALE_THRESHOLDS } from '../../lib/dataSemantics';
 
@@ -153,6 +154,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       ? `${partialCount.imported} importados · ${partialCount.unprocessable} não processados`
       : null,
     errorMessage ? `Detalhes: ${errorMessage}` : null,
+    onClick ? 'Clique para ver detalhes das fontes e histórico' : null,
   ].filter(Boolean);
 
   const fullAriaLabel = tooltipParts.join(' · ');
@@ -174,15 +176,19 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
           <span
             className={`hidden sm:inline-flex items-center gap-1 ${config.textClass}`}
           >
-            <span>{sourceLabel}</span>
-            <span className="text-slate-400 dark:text-slate-600 font-normal">·</span>
+            {sourceLabel ? (
+              <>
+                <span>{sourceLabel}</span>
+                <span className="text-slate-400 dark:text-slate-600 font-normal">·</span>
+              </>
+            ) : null}
             <span>
               {state === 'syncing'
                 ? 'Sincronizando fontes...'
                 : state === 'partial' && partialCount
                 ? `${partialCount.imported} ok · ${partialCount.unprocessable} avisos`
                 : lastSyncTime
-                ? `sincronizado ${lastSyncTime}`
+                ? `${sourceLabel ? 'sincronizado' : 'Sincronizado'} ${lastSyncTime}`
                 : config.label}
             </span>
             {dataCoveredUntil && state === 'success' && (
@@ -196,10 +202,17 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
           </span>
         )}
       </span>
+
+      {onClick && (
+        <ChevronDown
+          className="h-3 w-3 opacity-60 ml-0.5 shrink-0"
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 
-  const baseClasses = `inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[32px] sm:min-h-[34px] rounded-radius-sm border text-xs shadow-xs transition select-none ${
+  const baseClasses = `inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-radius-md border text-xs shadow-xs transition select-none ${
     config.containerClass
   } ${className}`;
 
@@ -211,7 +224,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
         disabled={disabled || state === 'syncing'}
         aria-label={fullAriaLabel}
         title={fullAriaLabel}
-        className={`${baseClasses} hover:opacity-90 active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden`}
+        className={`${baseClasses} hover:brightness-95 dark:hover:brightness-110 active:scale-98 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:w-full md:after:hidden`}
       >
         {content}
       </button>

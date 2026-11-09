@@ -58,7 +58,7 @@ describe('MetricCard (UX_UI_32)', () => {
     const { rerender } = render(
       <MetricCard
         title="Passos 24h"
-        value={10420}
+        value={(18000).toLocaleString('pt-BR')}
         unit="passos"
         rangeType="target"
         rangeValue="10.000"
@@ -66,7 +66,8 @@ describe('MetricCard (UX_UI_32)', () => {
       />
     );
 
-    // Meta Pessoal
+    // Exibe 18.000 integralmente (sem truncar zeros de milhar para 18) e a Meta Pessoal
+    expect(screen.getByText('18.000')).toBeInTheDocument();
     expect(screen.getByLabelText('Meta Pessoal: 10.000')).toBeInTheDocument();
     expect(screen.getByText('10.000')).toBeInTheDocument();
 

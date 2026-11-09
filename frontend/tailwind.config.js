@@ -48,6 +48,7 @@ export default {
         },
       },
       fontSize: {
+        '2xs': ['0.75rem', { lineHeight: '1rem' }],
         metric: ['2rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em', fontWeight: '800' }],
       },
       borderRadius: {
@@ -61,6 +62,7 @@ export default {
         'radius-md': '0.75rem',    // 12px - Alias semântico para surface-sm
         'radius-lg': '1rem',       // 16px - Alias semântico para surface-md
         'radius-xl': '1rem',       // 16px - Alias semântico para surface-lg
+        'radius-full': '9999px',   // 9999px - Alias semântico para pill
       },
       boxShadow: {
         'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',

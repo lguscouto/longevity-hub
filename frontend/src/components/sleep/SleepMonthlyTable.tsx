@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, Search, ChevronUp, ChevronDown, Download, Moon } from 'lucide-react';
 import { EmptyState, Input, Button, ResponsiveDataTable, DataColumn } from '../ui';
+import { formatLocalDateKey } from '../../lib/formatters';
 import {
   DailyMetric,
   MonthlySleepSummary,
@@ -398,7 +399,7 @@ export const SleepMonthlyTable: React.FC<SleepMonthlyTableProps> = ({
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     const filenameSuffix =
-      selectedMonth !== 'all' ? selectedMonth : new Date().toISOString().split('T')[0];
+      selectedMonth !== 'all' ? selectedMonth : formatLocalDateKey(new Date());
     link.setAttribute('download', `historico_sono_${filenameSuffix}.csv`);
     document.body.appendChild(link);
     link.click();

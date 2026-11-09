@@ -332,7 +332,8 @@ const collectedBaselines: BaselineMetadata[] = [];
 
 test.describe('UX/UI 61 — Visual Regression 2.2.0 Baseline Capture (24 Canonical Baselines)', () => {
   test.afterAll(async () => {
-    if (collectedBaselines.length > 0) {
+    const isUpdate = process.argv.includes('--update-snapshots') || Boolean(process.env.UPDATE_BASELINES);
+    if (isUpdate && collectedBaselines.length > 0) {
       const baselinesDir = path.resolve(process.cwd(), '../docs/screenshots/baselines');
       if (!fs.existsSync(baselinesDir)) {
         fs.mkdirSync(baselinesDir, { recursive: true });
@@ -410,14 +411,23 @@ test.describe('UX/UI 61 — Visual Regression 2.2.0 Baseline Capture (24 Canonic
             filename
           );
 
-          const dir = path.dirname(screenshotPath);
-          if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
+          const isUpdate = process.argv.includes('--update-snapshots') || Boolean(process.env.UPDATE_BASELINES);
+
+          if (isUpdate) {
+            const dir = path.dirname(screenshotPath);
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true });
+            }
+
+            await page.screenshot({
+              path: screenshotPath,
+              fullPage: false,
+              animations: 'disabled',
+            });
           }
 
-          await page.screenshot({
-            path: screenshotPath,
-            fullPage: false,
+          await expect(page).toHaveScreenshot(filename, {
+            maxDiffPixelRatio: 0.02,
             animations: 'disabled',
           });
 

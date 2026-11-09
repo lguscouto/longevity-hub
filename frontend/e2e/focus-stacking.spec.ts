@@ -62,7 +62,7 @@ test.describe('Focus Stacking & Accessibility (UX21-P1-11, UX21-P1-12, UX21-P2-0
 
   test('1. Escape key dismisses the topmost modal dialog and restores body scroll', async ({ page }) => {
     // Open Manual Entry Modal via header button
-    const openBtn = page.getByRole('button', { name: 'Registrar Métrica' });
+    const openBtn = page.getByRole('button', { name: 'Registrar medição manual' });
     await openBtn.click();
 
     const modal = page.getByRole('dialog');
@@ -84,7 +84,7 @@ test.describe('Focus Stacking & Accessibility (UX21-P1-11, UX21-P1-12, UX21-P2-0
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
     // Open Doctor Briefing dialog
-    const briefingBtn = page.getByRole('button', { name: 'Doctor Briefing' });
+    const briefingBtn = page.getByRole('button', { name: 'Resumo para consulta' });
     await briefingBtn.click();
 
     const dialog = page.getByRole('dialog');
@@ -102,7 +102,7 @@ test.describe('Focus Stacking & Accessibility (UX21-P1-11, UX21-P1-12, UX21-P2-0
   });
 
   test('3. Focus trap restricts Tab navigation within the active dialog', async ({ page }) => {
-    const openBtn = page.getByRole('button', { name: 'Registrar Métrica' });
+    const openBtn = page.getByRole('button', { name: 'Registrar medição manual' });
     await openBtn.click();
 
     const modal = page.getByRole('dialog');

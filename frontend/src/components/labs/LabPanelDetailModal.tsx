@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, CheckCircle2, Check, FileText, Info } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Check, Download, FileText, Info } from 'lucide-react';
 import { Modal, Button, TermHelp, GLOSSARY_TERMS } from '../ui';
 import {
   LabResult,
@@ -28,7 +28,20 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
     icon={<FileText className="h-6 w-6 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />}
     size="4xl"
     footer={
-      <div className="flex justify-end w-full">
+      <div className="flex items-center justify-between w-full gap-2">
+        {date ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.open(`/api/labs/export?date=${encodeURIComponent(date)}`, '_blank')}
+            leftIcon={Download}
+            title={`Baixar laudo de ${date} em formato CSV`}
+          >
+            Baixar Laudo (CSV)
+          </Button>
+        ) : (
+          <div />
+        )}
         <Button variant="outline" size="sm" onClick={onClose}>
           Fechar Laudo
         </Button>

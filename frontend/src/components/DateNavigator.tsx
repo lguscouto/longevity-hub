@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { TimeRangeControl, TimeRangeOption } from './ui';
+import { formatLocalDateKey } from '../lib/formatters';
 
 const DAYS_RANGE_OPTIONS: TimeRangeOption<number>[] = [
   { value: 7, label: 'Últimos 7 dias', shortLabel: '7 dias', ariaLabel: 'Últimos 7 dias' },
@@ -34,19 +35,19 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
   const handlePrevDay = () => {
     const d = getCurrentDateObj();
     d.setDate(d.getDate() - 1);
-    const iso = d.toISOString().split('T')[0];
+    const iso = formatLocalDateKey(d);
     onDateChange(iso);
   };
 
   const handleNextDay = () => {
     const d = getCurrentDateObj();
     d.setDate(d.getDate() + 1);
-    const iso = d.toISOString().split('T')[0];
+    const iso = formatLocalDateKey(d);
     onDateChange(iso);
   };
 
   const handleResetToday = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatLocalDateKey(new Date());
     onDateChange(today);
   };
 

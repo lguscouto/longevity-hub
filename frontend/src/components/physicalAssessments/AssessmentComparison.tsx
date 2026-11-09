@@ -22,6 +22,7 @@ import {
   ANGLE_LABELS,
   BODY_STATE_LABELS,
 } from './types';
+import { SideBySideLightbox } from './SideBySideLightbox';
 
 interface AssessmentComparisonProps {
   assessments: PhysicalAssessment[];
@@ -74,6 +75,7 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
   const [viewMode, setViewMode] = useState<ComparisonViewMode>('side-by-side');
   const [sliderPosition, setSliderPosition] = useState<number>(50);
   const [isDraggingSlider, setIsDraggingSlider] = useState<boolean>(false);
+  const [sideBySideLightboxIndex, setSideBySideLightboxIndex] = useState<number | null>(null);
 
   const selectedPrevAssessment = useMemo(
     () => assessments.find(a => a.id === comparePrevId),
@@ -575,6 +577,24 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                       Slider Antes/Depois
                     </Button>
                   </div>
+
+                  {filteredPhotos.some(m => m.previous_photo && m.current_photo) && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      leftIcon={Maximize2}
+                      onClick={() => {
+                        const firstPairedIndex = filteredPhotos.findIndex(
+                          m => m.previous_photo && m.current_photo
+                        );
+                        setSideBySideLightboxIndex(firstPairedIndex >= 0 ? firstPairedIndex : 0);
+                      }}
+                      className="border-slate-200 dark:border-slate-700 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-300"
+                    >
+                      Tela Cheia Lado a Lado
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -673,22 +693,38 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                           )}
                         </div>
 
-                        {canUseSlider && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-slate-400 mr-1">Divisão:</span>
-                            {[25, 50, 75].map(pct => (
-                              <Button
-                                key={pct}
-                                type="button"
-                                size="sm"
-                                variant={sliderPosition === pct ? 'secondary' : 'ghost'}
-                                onClick={() => setSliderPosition(pct)}
-                              >
-                                {pct}%
-                              </Button>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {canUseSlider && (
+                            <div className="flex items-center gap-1.5 mr-1">
+                              <span className="text-xs text-slate-400 mr-1">Divisão:</span>
+                              {[25, 50, 75].map(pct => (
+                                <Button
+                                  key={pct}
+                                  type="button"
+                                  size="sm"
+                                  variant={sliderPosition === pct ? 'secondary' : 'ghost'}
+                                  onClick={() => setSliderPosition(pct)}
+                                >
+                                  {pct}%
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+
+                          {match.previous_photo && match.current_photo && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              leftIcon={Maximize2}
+                              onClick={() => setSideBySideLightboxIndex(idx)}
+                              aria-label={`Abrir fotos de ${ANGLE_LABELS[match.angle] || match.angle} em tela cheia lado a lado`}
+                              className="hover:border-cyan-500/50 hover:text-cyan-600 dark:hover:text-cyan-300 transition-colors"
+                            >
+                              Tela Cheia Lado a Lado
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
                       {/* MODO SLIDER INTERATIVO (ANTES / DEPOIS SOBREPOSTOS) */}
@@ -894,6 +930,18 @@ export const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
             )}
           </div>
         </div>
+      )}
+      {/* MODAL / LIGHTBOX DE COMPARAÇÃO EM TELA CHEIA LADO A LADO */}
+      {comparisonManifest && (
+        <SideBySideLightbox
+          isOpen={sideBySideLightboxIndex !== null}
+          onClose={() => setSideBySideLightboxIndex(null)}
+          pairs={filteredPhotos}
+          currentIndex={sideBySideLightboxIndex ?? 0}
+          onNavigate={setSideBySideLightboxIndex}
+          previousAssessment={comparisonManifest.previous_assessment}
+          currentAssessment={comparisonManifest.current_assessment}
+        />
       )}
     </div>
   );

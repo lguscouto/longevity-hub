@@ -8,7 +8,17 @@ const hasNumber = (value: number | undefined): value is number =>
 
 /** Cartões de Razões Cardiovasculares Avançadas (UX_UI_54) — métricas derivadas/calculadas com proveniência e fórmula sob demanda. */
 export const CardiovascularRatios: React.FC<{ clinicalLabs: LabResult[] }> = ({ clinicalLabs }) => {
-  const getV = (k: string) => clinicalLabs.find((l) => normalizeLabMetricKey(l.metric_key) === k)?.value;
+  const latestDate = clinicalLabs.reduce<string | null>((latest, lab) => {
+    if (!lab.collected_at) return latest;
+    if (!latest || lab.collected_at > latest) return lab.collected_at;
+    return latest;
+  }, null);
+
+  const activeLabs = latestDate
+    ? clinicalLabs.filter((l) => l.collected_at === latestDate)
+    : clinicalLabs;
+
+  const getV = (k: string) => activeLabs.find((l) => normalizeLabMetricKey(l.metric_key) === k)?.value;
   const apob = getV('apob');
   const apoa1 = getV('apoa1');
   const tg = getV('triglycerides');

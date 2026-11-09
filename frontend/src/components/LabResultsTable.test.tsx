@@ -102,5 +102,31 @@ describe('LabResultsTable', () => {
     await user.click(cancelBtn)
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
+
+  it('renders download buttons and triggers export for single date and all exams', async () => {
+    const user = userEvent.setup()
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    render(
+      <LabResultsTable
+        labs={[
+          { collected_at: '2026-07-30', metric_key: 'glucose_mgdl', metric_name: 'Glicemia', value: 85, unit: 'mg/dL', record_origin: 'patient_lab' },
+        ]}
+        onAddBatchLabs={vi.fn()}
+      />,
+    )
+
+    const downloadAllBtn = screen.getByRole('button', { name: /baixar todos \(csv\)/i })
+    expect(downloadAllBtn).toBeInTheDocument()
+    await user.click(downloadAllBtn)
+    expect(openSpy).toHaveBeenCalledWith('/api/labs/export', '_blank')
+
+    const downloadRowBtn = screen.getByTitle(/baixar exames de 2026-07-30/i)
+    expect(downloadRowBtn).toBeInTheDocument()
+    await user.click(downloadRowBtn)
+    expect(openSpy).toHaveBeenCalledWith('/api/labs/export?date=2026-07-30', '_blank')
+
+    openSpy.mockRestore()
+  })
 })
 

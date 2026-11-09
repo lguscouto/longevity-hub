@@ -1,5 +1,6 @@
 export * from './types';
 export * from './PhotoLightbox';
+export * from './SideBySideLightbox';
 export * from './AssessmentHistory';
 export * from './AssessmentWizard';
 export * from './AssessmentDetails';

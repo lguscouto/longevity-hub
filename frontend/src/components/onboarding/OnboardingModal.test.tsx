@@ -154,13 +154,15 @@ describe('OnboardingModal', () => {
 
     // Preenche nome
     const nameInput = screen.getByPlaceholderText('Ex: Carlos')
-    await user.clear(nameInput)
-    await user.type(nameInput, 'Carlos Longevidade')
+    fireEvent.change(nameInput, { target: { value: 'Carlos Longevidade' } })
 
     // Avança até o passo 4
     await user.click(screen.getByRole('button', { name: /Próximo/i }))
+    await screen.findByText('Provedores de Saúde e Dispositivos Suportados')
     await user.click(screen.getByRole('button', { name: /Próximo/i }))
+    await screen.findByText('Copiloto Clínico de Longevidade por IA')
     await user.click(screen.getByRole('button', { name: /Próximo/i }))
+    await screen.findByText('Resumo da Configuração Inicial')
 
     expect(screen.getByText('Carlos Longevidade')).toBeInTheDocument()
 
