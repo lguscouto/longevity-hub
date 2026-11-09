@@ -22,12 +22,12 @@ O produto combina:
 React + Vite + TypeScript + Tailwind + Recharts
                     │ REST /api/*
                     ▼
-             FastAPI (porta 8011)
+             FastAPI (porta 8887)
                     │
      ┌──────────────┼────────────────┐
      ▼              ▼                ▼
 SQLite local   algoritmos Python   integrações locais/LLM
-longevity.sqlite3 PhenoAge, CGM,   Zepp, Google Health,
+longevity.sqlite3 PhenoAge, CGM,   Zepp, Google Health, Hevy,
                 N-of-1, KDM        OpenAI/Anthropic/OpenRouter
 ```
 
@@ -76,13 +76,13 @@ Veja comandos e regras de teste em [docs/development-and-validation.md](docs/dev
 | Perfil | Perfil, data de nascimento, altura, meta de peso, IMC, conexão Google e histórico completo de pipelines na parte inferior. |
 | Métricas | Consulta e upsert de métricas diárias; sincronização Zepp + arquivos Google Health. |
 | Exames | Inclusão em lote de biomarcadores, catálogo de alvos ótimos de longevidade, histórico por data e exclusão por painel. |
-| PhenoAge | Cálculo e persistência de Morgan Levine PhenoAge usando 9 marcadores laboratoriais. |
+| PhenoAge | Cálculo e persistência de Morgan Levine PhenoAge (2018) usando 9 marcadores de exames sanguíneos. |
 | KDM | Cálculo e persistência de Idade Biológica Klemera-Doubal (KDM Age). |
 | CGM | Inclusão por lote, importação CSV (`,` ou `;`), resumo diário (Time-in-Range 70-140 mg/dL, CV%) e exportação CSV. |
 | N-of-1 | Comparação de períodos controle/intervenção, teste t de Welch, Cohen's d e valor-p com validação de sobreposição. |
 | Suplementos/hormônios | Cadastro, edição, remoção, registro diário de tomada e logs de auditoria. |
 | Conformidade | Quatro pilares diários e score de 0 a 100%. |
-| IA | Copiloto multi-provedor (OpenRouter, OpenAI, Anthropic) alimentado com contexto clínico enriquecido com algoritmos determinísticos e guardrails; vault Windows Keyring; modos `minimal` e `full`. |
+| IA | Copiloto multi-provedor (OpenRouter, OpenAI, Anthropic) alimentado com contexto fisiológico enriquecido (Daily Guidance e Energy Bank); vault Windows Keyring; modos `minimal` e `full`. |
 | Relatórios | Doctor Briefing Markdown e PDF calculados com métricas, exames e idades biológicas recentes. |
 
 ## Dados, privacidade e isolamento
@@ -92,16 +92,12 @@ Veja comandos e regras de teste em [docs/development-and-validation.md](docs/dev
 - As chaves de IA e os dados clínicos são dados sensíveis. Chaves são salvas preferencialmente no Windows Credential Vault.
 - O sistema é de apoio à organização e discussão com profissionais; não substitui avaliação médica.
 
-A modelagem de dados e os pontos de segurança estão em [docs/data-model-and-security.md](docs/data-model-and-security.md).nt.py`;
-- `../google health/config/google_token.json` para a indicação visual de conexão Google.
+A modelagem de dados e os pontos de segurança estão em [docs/data-model-and-security.md](docs/data-model-and-security.md).
 
-Se esses caminhos não existirem, os importadores retornam zero registros e registram o resultado em `pipeline_run`.
+## Estado de qualidade e isolamento de testes
 
-## Estado de qualidade observado em 29/07/2026
-
-- `npm run build`: concluído com sucesso; bundle principal JavaScript de 665,86 kB (aviso do Vite acima de 500 kB).
-- Testes isolados que não usam o banco real: `6 passed` (`test_ai_provider.py`, `test_db.py`, `test_n_of_1.py`, `test_phenoage.py`).
-- A suíte completa não deve ser executada diretamente contra o banco operacional: `tests/test_kdm_and_supplements.py` importa a aplicação real e grava suplementos/compliance no banco configurado.
+- `npm run build` e `npm test -- --run`: build de produção em chunks (`vendor-react`, `vendor-charts`, `vendor-icons`) e suíte Vitest automatizada.
+- Suíte backend (`pytest`): `tests/conftest.py` isola integralmente `LONGEVIDADE_DB_PATH`, `HERMES_HOME` e `keyring` em memória/diretório temporário a cada teste, garantindo que o banco operacional (`data/longevity.sqlite3`) e o cofre de credenciais do usuário nunca sejam tocados durante os testes.
 
 Leia [docs/known-limitations.md](docs/known-limitations.md) antes de considerar a aplicação pronta para uso médico ou para uma mudança de arquitetura.
 

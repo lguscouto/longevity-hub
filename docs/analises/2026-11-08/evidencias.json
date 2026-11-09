@@ -1,0 +1,1050 @@
+{
+  "analysis_date": "2026-11-08",
+  "timezone": "America/Sao_Paulo",
+  "project_version": "2.4.6",
+  "branch": "main",
+  "head": "16a1b3e",
+  "scope": "Working tree with pre-existing local modifications; synthetic data and temporary databases only.",
+  "preexisting_status": {
+    "modified_tracked": 74,
+    "deleted_tracked": 2,
+    "untracked_files": 14,
+    "files_hashed": 573,
+    "preexisting_changes_during_validation": []
+  },
+  "tests": {
+    "pytest": {
+      "passed": 398,
+      "warnings": 1,
+      "duration_s": 88.0
+    },
+    "vitest": {
+      "files_passed": 71,
+      "tests_passed": 386,
+      "duration_s": 22.06
+    },
+    "build": {
+      "exit_code": 0,
+      "output": "Temporary directory; operational frontend/dist preserved"
+    },
+    "design_audit": {
+      "exit_code": 1,
+      "failed_rules": {
+        "typography.micro-11": {
+          "open": 2,
+          "baseline": 0
+        },
+        "effects.backdrop-blur": {
+          "open": 1,
+          "baseline": 0
+        },
+        "native.button": {
+          "open": 96,
+          "baseline": 93
+        },
+        "native.select": {
+          "open": 2,
+          "baseline": 0
+        }
+      }
+    },
+    "e2e_initial": {
+      "status": "interrupted",
+      "completed_passed": 1,
+      "completed_failed": 3,
+      "reason": "Outdated accessible-name selectors caused repeated 30-second timeouts"
+    },
+    "e2e_selected": {
+      "passed": 20,
+      "failed": 4,
+      "cases": 24,
+      "timeout_ms": 10000,
+      "retries": 0,
+      "failures": [
+        "chromium initial page load: ERR_CONNECTION_REFUSED",
+        "chromium sync: outdated accessible-name selector",
+        "mobile sync: outdated accessible-name selector",
+        "chromium 320x568: scrollWidth 338 > 320"
+      ]
+    },
+    "e2e_confirmation": {
+      "passed": 1,
+      "failed": 2,
+      "duration_s": 36.6,
+      "server_readiness_url": "http://127.0.0.1:3030",
+      "timeout_ms": 30000,
+      "retries": 0,
+      "failures": [
+        "chromium sync: outdated accessible-name selector",
+        "chromium 320x568: scrollWidth 338 > 320"
+      ]
+    },
+    "pip_check": {
+      "exit_code": 0
+    },
+    "npm_ls_depth_0": {
+      "exit_code": 0
+    },
+    "preexisting_diff_check": {
+      "exit_code": 1,
+      "issues": [
+        "src/longevidade/calculators/kdm_age.py:559 blank line at EOF",
+        "src/longevidade/db/repository.py:2267 blank line at EOF",
+        "src/longevidade/metrics/catalog.py:154 blank line at EOF"
+      ]
+    }
+  },
+  "database_probes": {
+    "schema_version": 19,
+    "journal_new_db": "delete",
+    "tables": [
+      "ai_insights_history",
+      "ai_reports",
+      "ai_settings",
+      "cgm_daily_summary",
+      "cgm_readings",
+      "daily_checkins",
+      "daily_metric_quality",
+      "daily_metrics",
+      "derived_metric_records",
+      "exercise_catalog",
+      "exercise_mappings",
+      "google_health_sync_state",
+      "health_data_points",
+      "health_events",
+      "health_events_backfill_state",
+      "insight_feedback",
+      "interventions",
+      "kdm_records",
+      "lab_results",
+      "manual_entries",
+      "metric_change_points",
+      "n_of_1_experiments",
+      "personal_associations",
+      "phenoage_records",
+      "physical_assessment_photos",
+      "physical_assessments",
+      "pipeline_run",
+      "protocol_compliance",
+      "supplement_audit_logs",
+      "supplement_logs",
+      "supplement_stack",
+      "user_profile",
+      "workout_exercises",
+      "workout_sets",
+      "workouts"
+    ],
+    "exercise_count": 1324,
+    "seeded_supplements_new": 5,
+    "journal_after_reinitialization": "wal",
+    "supplements_after_delete_and_reinitialize": 5,
+    "future_version_after_apply": 19,
+    "repository_foreign_keys": 1,
+    "integrity_check": "ok",
+    "foreign_key_check": [],
+    "router_operation_count": 118,
+    "routes_by_file": {
+      "backend/app/routers/ai.py": 10,
+      "backend/app/routers/biomarkers.py": 3,
+      "backend/app/routers/cgm.py": 5,
+      "backend/app/routers/checkins.py": 3,
+      "backend/app/routers/compliance.py": 2,
+      "backend/app/routers/context_insights.py": 11,
+      "backend/app/routers/correlations.py": 1,
+      "backend/app/routers/daily_guidance.py": 1,
+      "backend/app/routers/energy_circadian.py": 1,
+      "backend/app/routers/google_health.py": 7,
+      "backend/app/routers/interventions.py": 4,
+      "backend/app/routers/kdm.py": 3,
+      "backend/app/routers/labs.py": 7,
+      "backend/app/routers/metrics.py": 5,
+      "backend/app/routers/n_of_1.py": 2,
+      "backend/app/routers/phenoage.py": 2,
+      "backend/app/routers/physical_assessments.py": 13,
+      "backend/app/routers/pipeline.py": 1,
+      "backend/app/routers/profile.py": 3,
+      "backend/app/routers/quality.py": 1,
+      "backend/app/routers/reports.py": 3,
+      "backend/app/routers/steps.py": 1,
+      "backend/app/routers/supplements.py": 8,
+      "backend/app/routers/timeline.py": 10,
+      "backend/app/routers/workouts.py": 9,
+      "backend/app/routers/zepp.py": 2
+    },
+    "derived_catalog_count": 67,
+    "derived_catalog_status": {
+      "ready": 51,
+      "needs_reference": 13,
+      "needs_definition": 2,
+      "restricted": 1
+    },
+    "derived_catalog_categories": {
+      "biological_age": 14,
+      "metabolic_insulin": 10,
+      "inflammation_immune_nutrition": 11,
+      "hepatic": 6,
+      "cardiovascular_renal": 13,
+      "body_composition": 8,
+      "direct_biomarkers": 5
+    }
+  },
+  "lab_probes": {
+    "synthetic": true,
+    "collection_date": "2026-11-08",
+    "chronological_age_default": 40,
+    "common_panel": [
+      {
+        "key": "fasting_glucose",
+        "value": 90.0,
+        "unit": "mg/dL"
+      },
+      {
+        "key": "creatinine",
+        "value": 1.0,
+        "unit": "mg/dL"
+      },
+      {
+        "key": "albumin",
+        "value": 4.5,
+        "unit": "g/dL"
+      },
+      {
+        "key": "hscrp",
+        "value": 0.5,
+        "unit": "mg/L"
+      },
+      {
+        "key": "lymphocyte_pct",
+        "value": 30.0,
+        "unit": "%"
+      },
+      {
+        "key": "mcv",
+        "value": 89.0,
+        "unit": "fL"
+      },
+      {
+        "key": "rdw",
+        "value": 12.5,
+        "unit": "%"
+      },
+      {
+        "key": "alk_phos",
+        "value": 65.0,
+        "unit": "U/L"
+      },
+      {
+        "key": "wbc",
+        "value": 6.0,
+        "unit": "10^3/uL"
+      }
+    ],
+    "equivalent_glucose_variant": {
+      "value": 4.995,
+      "unit": "mmol/L"
+    },
+    "profile_variant": {
+      "chronological_age": 65,
+      "birthdate": null
+    },
+    "results": {
+      "standard_units": {
+        "status": "complete",
+        "chronological_age": 40.0,
+        "pheno_age": 30.83,
+        "stored_glucose": 90.0,
+        "stored_unit": "mg/dL"
+      },
+      "equivalent_glucose_mmol": {
+        "status": "complete",
+        "chronological_age": 40.0,
+        "pheno_age": 20.61,
+        "stored_glucose": 4.995,
+        "stored_unit": "mmol/L"
+      },
+      "profile_age_without_birthdate": {
+        "status": "complete",
+        "chronological_age": 40.0,
+        "pheno_age": 30.83,
+        "stored_glucose": 90.0,
+        "stored_unit": "mg/dL"
+      }
+    }
+  },
+  "router_operations_from_ast": [
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "GET",
+      "path": "/api/ai/settings",
+      "line": 131
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "POST",
+      "path": "/api/ai/settings",
+      "line": 153
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "POST",
+      "path": "/api/ai/test-connection",
+      "line": 171
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "POST",
+      "path": "/api/ai/generate-insights",
+      "line": 192
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "POST",
+      "path": "/api/ai/chat",
+      "line": 289
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "GET",
+      "path": "/api/ai/history",
+      "line": 357
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "GET",
+      "path": "/api/ai/reports/latest",
+      "line": 366
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "GET",
+      "path": "/api/ai/reports",
+      "line": 376
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "GET",
+      "path": "/api/ai/reports/{report_id}",
+      "line": 385
+    },
+    {
+      "file": "backend/app/routers/ai.py",
+      "method": "POST",
+      "path": "/api/ai/analyze-supplements",
+      "line": 398
+    },
+    {
+      "file": "backend/app/routers/biomarkers.py",
+      "method": "GET",
+      "path": "/api/biomarkers/catalog",
+      "line": 41
+    },
+    {
+      "file": "backend/app/routers/biomarkers.py",
+      "method": "GET",
+      "path": "/api/biomarkers/derived",
+      "line": 92
+    },
+    {
+      "file": "backend/app/routers/biomarkers.py",
+      "method": "POST",
+      "path": "/api/biomarkers/evaluate",
+      "line": 207
+    },
+    {
+      "file": "backend/app/routers/cgm.py",
+      "method": "GET",
+      "path": "/api/cgm/summary",
+      "line": 28
+    },
+    {
+      "file": "backend/app/routers/cgm.py",
+      "method": "POST",
+      "path": "/api/cgm/batch",
+      "line": 38
+    },
+    {
+      "file": "backend/app/routers/cgm.py",
+      "method": "POST",
+      "path": "/api/cgm/readings",
+      "line": 67
+    },
+    {
+      "file": "backend/app/routers/cgm.py",
+      "method": "POST",
+      "path": "/api/cgm/upload-csv",
+      "line": 86
+    },
+    {
+      "file": "backend/app/routers/cgm.py",
+      "method": "GET",
+      "path": "/api/cgm/export-csv",
+      "line": 165
+    },
+    {
+      "file": "backend/app/routers/checkins.py",
+      "method": "GET",
+      "path": "/api/checkins/{date_ref}",
+      "line": 31
+    },
+    {
+      "file": "backend/app/routers/checkins.py",
+      "method": "PUT",
+      "path": "/api/checkins/{date_ref}",
+      "line": 57
+    },
+    {
+      "file": "backend/app/routers/checkins.py",
+      "method": "GET",
+      "path": "/api/checkins",
+      "line": 70
+    },
+    {
+      "file": "backend/app/routers/compliance.py",
+      "method": "POST",
+      "path": "/api/compliance",
+      "line": 21
+    },
+    {
+      "file": "backend/app/routers/compliance.py",
+      "method": "GET",
+      "path": "/api/compliance/history",
+      "line": 32
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "GET",
+      "path": "/api/context/changes/{metric}",
+      "line": 53
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "GET",
+      "path": "/api/context/explain/{metric}",
+      "line": 66
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "POST",
+      "path": "/api/context/explain/synthesize",
+      "line": 82
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "POST",
+      "path": "/api/context/feedback",
+      "line": 94
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "GET",
+      "path": "/api/context/associations",
+      "line": 111
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "POST",
+      "path": "/api/context/associations/recompute",
+      "line": 128
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "GET",
+      "path": "/api/context/change-points",
+      "line": 152
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "POST",
+      "path": "/api/context/change-points/detect",
+      "line": 166
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "GET",
+      "path": "/api/context/before-after/{intervention_id}",
+      "line": 194
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "GET",
+      "path": "/api/context/n-of-1/{experiment_id}/confounders",
+      "line": 214
+    },
+    {
+      "file": "backend/app/routers/context_insights.py",
+      "method": "POST",
+      "path": "/api/context/confounders/balance",
+      "line": 226
+    },
+    {
+      "file": "backend/app/routers/correlations.py",
+      "method": "GET",
+      "path": "/api/correlations",
+      "line": 11
+    },
+    {
+      "file": "backend/app/routers/daily_guidance.py",
+      "method": "GET",
+      "path": "/api/daily-guidance",
+      "line": 11
+    },
+    {
+      "file": "backend/app/routers/energy_circadian.py",
+      "method": "GET",
+      "path": "/api/energy-circadian",
+      "line": 12
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "GET",
+      "path": "/api/google-health/status",
+      "line": 72
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "GET",
+      "path": "/api/google-health/auth-url",
+      "line": 140
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "GET",
+      "path": "/api/google-health/callback",
+      "line": 192
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "POST",
+      "path": "/api/google-health/credentials",
+      "line": 425
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "POST",
+      "path": "/api/google-health/disconnect",
+      "line": 446
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "POST",
+      "path": "/api/google-health/sync",
+      "line": 468
+    },
+    {
+      "file": "backend/app/routers/google_health.py",
+      "method": "POST",
+      "path": "/api/google-health/webhook",
+      "line": 620
+    },
+    {
+      "file": "backend/app/routers/interventions.py",
+      "method": "GET",
+      "path": "/api/interventions",
+      "line": 36
+    },
+    {
+      "file": "backend/app/routers/interventions.py",
+      "method": "POST",
+      "path": "/api/interventions",
+      "line": 47
+    },
+    {
+      "file": "backend/app/routers/interventions.py",
+      "method": "PUT",
+      "path": "/api/interventions/{intervention_id}",
+      "line": 64
+    },
+    {
+      "file": "backend/app/routers/interventions.py",
+      "method": "DELETE",
+      "path": "/api/interventions/{intervention_id}",
+      "line": 84
+    },
+    {
+      "file": "backend/app/routers/kdm.py",
+      "method": "GET",
+      "path": "/api/kdm/latest",
+      "line": 29
+    },
+    {
+      "file": "backend/app/routers/kdm.py",
+      "method": "GET",
+      "path": "/api/kdm/history",
+      "line": 58
+    },
+    {
+      "file": "backend/app/routers/kdm.py",
+      "method": "POST",
+      "path": "/api/kdm/calculate",
+      "line": 81
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "GET",
+      "path": "/api/labs",
+      "line": 36
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "GET",
+      "path": "/api/labs/latest",
+      "line": 45
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "GET",
+      "path": "/api/labs/targets",
+      "line": 54
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "POST",
+      "path": "/api/labs/batch",
+      "line": 58
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "DELETE",
+      "path": "/api/labs/date/{collected_at}",
+      "line": 72
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "POST",
+      "path": "/api/labs/delete",
+      "line": 80
+    },
+    {
+      "file": "backend/app/routers/labs.py",
+      "method": "GET",
+      "path": "/api/labs/export",
+      "line": 89
+    },
+    {
+      "file": "backend/app/routers/metrics.py",
+      "method": "GET",
+      "path": "/api/metrics",
+      "line": 56
+    },
+    {
+      "file": "backend/app/routers/metrics.py",
+      "method": "POST",
+      "path": "/api/metrics",
+      "line": 67
+    },
+    {
+      "file": "backend/app/routers/metrics.py",
+      "method": "GET",
+      "path": "/api/metrics/sync/status",
+      "line": 77
+    },
+    {
+      "file": "backend/app/routers/metrics.py",
+      "method": "POST",
+      "path": "/api/metrics/sync/zepp",
+      "line": 98
+    },
+    {
+      "file": "backend/app/routers/metrics.py",
+      "method": "POST",
+      "path": "/api/metrics/sync/all",
+      "line": 103
+    },
+    {
+      "file": "backend/app/routers/n_of_1.py",
+      "method": "GET",
+      "path": "/api/n-of-1",
+      "line": 26
+    },
+    {
+      "file": "backend/app/routers/n_of_1.py",
+      "method": "POST",
+      "path": "/api/n-of-1",
+      "line": 35
+    },
+    {
+      "file": "backend/app/routers/phenoage.py",
+      "method": "GET",
+      "path": "/api/phenoage/history",
+      "line": 63
+    },
+    {
+      "file": "backend/app/routers/phenoage.py",
+      "method": "POST",
+      "path": "/api/phenoage/calculate",
+      "line": 73
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "GET",
+      "path": "/api/physical-assessments",
+      "line": 29
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "POST",
+      "path": "/api/physical-assessments",
+      "line": 50
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "GET",
+      "path": "/api/physical-assessments/compare",
+      "line": 60
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "GET",
+      "path": "/api/physical-assessments/timeline",
+      "line": 81
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "GET",
+      "path": "/api/physical-assessments/{assessment_id}",
+      "line": 215
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "PUT",
+      "path": "/api/physical-assessments/{assessment_id}",
+      "line": 230
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "PATCH",
+      "path": "/api/physical-assessments/{assessment_id}",
+      "line": 230
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "DELETE",
+      "path": "/api/physical-assessments/{assessment_id}",
+      "line": 249
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "POST",
+      "path": "/api/physical-assessments/{assessment_id}/photos",
+      "line": 260
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "GET",
+      "path": "/api/physical-assessments/{assessment_id}/photos/download",
+      "line": 301
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "GET",
+      "path": "/api/physical-assessments/{assessment_id}/photos/{photo_id}/content",
+      "line": 319
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "PATCH",
+      "path": "/api/physical-assessments/{assessment_id}/photos/{photo_id}",
+      "line": 337
+    },
+    {
+      "file": "backend/app/routers/physical_assessments.py",
+      "method": "DELETE",
+      "path": "/api/physical-assessments/{assessment_id}/photos/{photo_id}",
+      "line": 356
+    },
+    {
+      "file": "backend/app/routers/pipeline.py",
+      "method": "GET",
+      "path": "/api/pipeline-runs",
+      "line": 14
+    },
+    {
+      "file": "backend/app/routers/profile.py",
+      "method": "GET",
+      "path": "/api/profile",
+      "line": 57
+    },
+    {
+      "file": "backend/app/routers/profile.py",
+      "method": "POST",
+      "path": "/api/profile",
+      "line": 231
+    },
+    {
+      "file": "backend/app/routers/profile.py",
+      "method": "POST",
+      "path": "/api/profile/onboarding-complete",
+      "line": 248
+    },
+    {
+      "file": "backend/app/routers/quality.py",
+      "method": "GET",
+      "path": "/api/quality/daily",
+      "line": 37
+    },
+    {
+      "file": "backend/app/routers/reports.py",
+      "method": "GET",
+      "path": "/api/reports/doctor-briefing",
+      "line": 17
+    },
+    {
+      "file": "backend/app/routers/reports.py",
+      "method": "POST",
+      "path": "/api/reports/doctor-briefing",
+      "line": 27
+    },
+    {
+      "file": "backend/app/routers/reports.py",
+      "method": "GET",
+      "path": "/api/reports/doctor-briefing/pdf",
+      "line": 38
+    },
+    {
+      "file": "backend/app/routers/steps.py",
+      "method": "GET",
+      "path": "/api/steps/analytics",
+      "line": 160
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "GET",
+      "path": "/api/supplements",
+      "line": 38
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "POST",
+      "path": "/api/supplements",
+      "line": 47
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "GET",
+      "path": "/api/supplements/audit-logs",
+      "line": 68
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "GET",
+      "path": "/api/supplements/logs/{date_str}",
+      "line": 77
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "POST",
+      "path": "/api/supplements/toggle",
+      "line": 86
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "POST",
+      "path": "/api/supplements/analyze-ai",
+      "line": 98
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "DELETE",
+      "path": "/api/supplements/{supplement_id}",
+      "line": 104
+    },
+    {
+      "file": "backend/app/routers/supplements.py",
+      "method": "POST",
+      "path": "/api/supplements/delete",
+      "line": 112
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "GET",
+      "path": "/api/timeline",
+      "line": 35
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "GET",
+      "path": "/api/timeline/summary/weekly",
+      "line": 61
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "GET",
+      "path": "/api/timeline/summary/monthly",
+      "line": 72
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "POST",
+      "path": "/api/timeline/events",
+      "line": 81
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "PATCH",
+      "path": "/api/timeline/events/{event_id}",
+      "line": 88
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "DELETE",
+      "path": "/api/timeline/events/{event_id}",
+      "line": 98
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "POST",
+      "path": "/api/timeline/reconcile",
+      "line": 111
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "GET",
+      "path": "/api/timeline/reconcile/status",
+      "line": 119
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "GET",
+      "path": "/api/timeline/timezone",
+      "line": 130
+    },
+    {
+      "file": "backend/app/routers/timeline.py",
+      "method": "PUT",
+      "path": "/api/timeline/timezone",
+      "line": 137
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "GET",
+      "path": "/api/workouts",
+      "line": 27
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "GET",
+      "path": "/api/workouts/summary",
+      "line": 65
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "GET",
+      "path": "/api/workouts/hevy/status",
+      "line": 84
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "POST",
+      "path": "/api/workouts/hevy/credentials",
+      "line": 124
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "POST",
+      "path": "/api/workouts/hevy/sync",
+      "line": 154
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "GET",
+      "path": "/api/workouts/catalog",
+      "line": 166
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "GET",
+      "path": "/api/workouts/catalog/{catalog_id}",
+      "line": 189
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "POST",
+      "path": "/api/workouts/exercises/link",
+      "line": 201
+    },
+    {
+      "file": "backend/app/routers/workouts.py",
+      "method": "GET",
+      "path": "/api/workouts/{workout_id}",
+      "line": 227
+    },
+    {
+      "file": "backend/app/routers/zepp.py",
+      "method": "GET",
+      "path": "/api/zepp/status",
+      "line": 59
+    },
+    {
+      "file": "backend/app/routers/zepp.py",
+      "method": "POST",
+      "path": "/api/zepp/credentials",
+      "line": 83
+    }
+  ],
+  "main_operations": [
+    {
+      "method": "POST",
+      "path": "/api/sync/all"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sync/zepp"
+    },
+    {
+      "method": "GET",
+      "path": "/api/sync/status"
+    },
+    {
+      "method": "GET",
+      "path": "/api/metrics/steps/analytics"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "method": "GET",
+      "path": "/api/version"
+    }
+  ],
+  "limitations": [
+    "No operational database inspection or migration",
+    "No authenticated external integrations or LLM calls",
+    "No complete E2E pass",
+    "No full WCAG, penetration test, dependency CVE or independent clinical validation"
+  ],
+  "artifacts": {
+    "build.txt": {
+      "bytes": 8484,
+      "sha256": "d8491b1ca2743205f048ae4793c06cfa1cc4b94392d129d37fb8d17cf2f47ec4"
+    },
+    "design-audit.txt": {
+      "bytes": 1878,
+      "sha256": "a6c90e884d9a0f8cc728123f4d910f8870712767e5eed0c6ef120cfedbcfe0b0"
+    },
+    "e2e-confirmacao.txt": {
+      "bytes": 9080,
+      "sha256": "0f7ca6b45aa5b373a542c1e9105f622f1969955876524b322989b5dce2f23f3a"
+    },
+    "e2e-inicial.txt": {
+      "bytes": 2337,
+      "sha256": "94e1e6d719e5a9655035f662bed5354f6ec62efd575c16eb63098e06a845f7a0"
+    },
+    "e2e-selecao.txt": {
+      "bytes": 22209,
+      "sha256": "810c3f899a079907b16a97b6528e63ed487aa7ffcc173aae66de90e6a3c3c144"
+    },
+    "overflow-320px.png": {
+      "bytes": 39979,
+      "sha256": "29149e0d7f82be0135c4127d345de88b573ff69e303e1703e3ad9c35af32e969"
+    },
+    "pytest.txt": {
+      "bytes": 991,
+      "sha256": "9fd71d58042d06e6ebee0161796645ca9ec609f3f8f285f101f56685c3a020bb"
+    },
+    "vitest.txt": {
+      "bytes": 706,
+      "sha256": "3afcad751e767e90cb0603a097b6576e75abb8aaccb5bbeb9b706b89aa72e130"
+    }
+  }
+}

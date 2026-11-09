@@ -1,6 +1,6 @@
 # Longevidade Hub — Open-Source Personal Longevity OS & Healthspan Platform
 
-Aplicação Web e plataforma local auditável de inteligência para longevidade, combinando métricas de wearables (**Zepp/Amazfit**, **Google Health API v4**, **Health Connect**, **Hevy**), exames laboratoriais, cálculo de idade biológica epigenética (**PhenoAge Morgan Levine** e **KDM Age**), experimentos estocásticos **N-of-1**, catálogo completo de treinos, monitoramento contínuo de glicemia (**CGM**) e gerador de relatórios clínicos (**Doctor Briefing**).
+Aplicação Web e plataforma local auditável de inteligência para longevidade, combinando métricas de wearables (**Zepp/Amazfit**, **Google Health API v4**, **Health Connect**, **Hevy**), exames laboratoriais, cálculo de idade biológica fenotípica baseada em sangue (**PhenoAge Morgan Levine 2018** e **Klemera-Doubal KDM Age**), experimentos estocásticos **N-of-1**, catálogo completo de treinos, monitoramento contínuo de glicemia (**CGM**) e gerador de relatórios clínicos (**Doctor Briefing**).
 
 ---
 
@@ -28,10 +28,10 @@ Para a documentação completa de visão geral do projeto, consulte **[docs/over
   - Persistência auditável de estado incremental (`google_health_sync_state`) e camada de dados brutos (`health_data_points`).
 - **Dashboard de Métricas Diárias & Readiness:** Sincronização automatizada de Passos, Sono (Fases Profundo, Leve, REM), HRV, FC de Repouso (RHR), SpO2, Frequência Respiratória, VO2 Max, Peso e Pressão Arterial.
 - **Orientação Diária & Bateria Corporal (Energy Bank):** Motores determinísticos com travas de segurança *fail-closed* contra falta de dados ou cobertura parcial de recuperação/atividade.
-- **Idade Biológica Epigenética (PhenoAge & KDM):** Calculadoras auditáveis baseadas em marcadores de sangue (Morgan Levine PhenoAge e Klemera-Doubal KDM Age) com histórico evolutivo.
+- **Idade Biológica Fenotípica (PhenoAge & KDM):** Calculadoras auditáveis baseadas em painéis clínicos sanguíneos (Morgan Levine PhenoAge e Klemera-Doubal KDM Age) com validação e histórico evolutivo.
 - **Treinos & Catálogo de Exercícios:** Integração com Hevy e Zepp Workouts, mapeamento automático de exercícios e catálogo integrado com 1.300+ exercícios, grupos musculares, instruções e demonstrações visuais.
 - **Experimentos N-of-1:** Ferramenta estatística (d de Cohen + p-value via SciPy) para testar intervenções com validação rigorosa contra sobreposição de períodos.
-- **Copiloto de IA & Vault Local de Segredos:** Integração multi-provedor (OpenRouter, OpenAI, Anthropic) com vault seguro Windows Credential Vault (Keyring), modos de privacidade (`minimal` e `full`) e suporte aos guardrails determinísticos.
+- **Copiloto de IA & Vault Local de Segredos:** Integração multi-provedor (OpenRouter, OpenAI, Anthropic) com vault seguro Windows Credential Vault (Keyring), modos de privacidade (`minimal` e `full`) e segurança clínica contextual por injeção fisiológica de prontidão (*Daily Guidance & Energy Bank*).
 - **Exames Laboratoriais & Alvos de Longevidade:** Tabela comparativa com faixas de referência e **Alvos Ótimos de Longevidade** (ApoB < 60, hs-CRP < 0.5, etc.).
 - **Glicemia Contínua (CGM):** Importador de CSVs de sensores contínuos (FreeStyle Libre) com cálculo de Glicemia Média, Variabilidade (CV%) e Time-in-Range (70-140 mg/dL).
 - **Doctor Briefing (Markdown & PDF):** Geração de relatórios médicos sintéticos em Markdown e PDF via ReportLab.

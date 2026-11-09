@@ -1,0 +1,120 @@
+[WebServer] npm notice run longevidade-frontend@2.4.6 dev
+[WebServer] npm notice run vite --host 127.0.0.1 --port 3030
+[WebServer] (node:13676) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer]   VITE v8.3.5  ready in 241 ms
+[WebServer] 
+[WebServer]   ➜  Local:   http://127.0.0.1:3030/
+
+Running 3 tests using 1 worker
+
+(node:21004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › e2e\smoke.spec.ts:220:3 › Smoke – Longevidade Dashboard › página carrega com título e estrutura básica (921ms)
+  x  2 [chromium] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso (31.3s)
+(node:2392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[320px - Hoje] Overflow detected: scrollW=338, docWidth=320, badElements: [
+  {
+    "tag": "DIV",
+    "className": "flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-radiu",
+    "id": "",
+    "right": 338,
+    "docWidth": 320
+  },
+  {
+    "tag": "BUTTON",
+    "className": "relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after",
+    "id": "",
+    "right": 333,
+    "docWidth": 320
+  },
+  {
+    "tag": "svg",
+    "className": "[object SVGAnimatedString]",
+    "id": "",
+    "right": 323,
+    "docWidth": 320
+  }
+]
+  x  3 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) (1.7s)
+
+
+  1) [chromium] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /sincronizar dados|sync zepp/i }).first()
+
+
+      254 |       'the server responded with a status of 502'
+      255 |     )
+    > 256 |     await page.getByRole('button', { name: /sincronizar dados|sync zepp/i }).first().click()
+          |                                                                                      ^
+      257 |
+      258 |     await expect(page.getByRole('heading', { name: 'Sincronização com erro' })).toBeVisible()
+      259 |     await expect(
+        at E:\hermes\longevidade\frontend\e2e\smoke.spec.ts:256:86
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) 
+
+    Error: [320px - Hoje] documentElement.scrollWidth (338px) must be <= innerWidth (320px)
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 320
+    Received:    338
+
+      316 |     result.scrollW,
+      317 |     `[${contextLabel}] documentElement.scrollWidth (${result.scrollW}px) must be <= innerWidth (${result.docWidth}px)`
+    > 318 |   ).toBeLessThanOrEqual(result.docWidth);
+          |     ^
+      319 |
+      320 |   expect(
+      321 |     result.badElements,
+        at checkHorizontalOverflow (E:\hermes\longevidade\frontend\e2e\viewport-matrix.spec.ts:318:5)
+        at E:\hermes\longevidade\frontend\e2e\viewport-matrix.spec.ts:348:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\e2e-confirmation-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso 
+    [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) 
+  1 passed (36.6s)

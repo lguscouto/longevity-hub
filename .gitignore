@@ -48,6 +48,8 @@ frontend/node_modules/
 frontend/dist/
 frontend/build/
 frontend/.vite/
+frontend/.vitest/
+.vitest/
 frontend/test-results/
 frontend/playwright-report/
 .eslintcache
@@ -92,10 +94,13 @@ integrations/zepp/zepp-health-cli/config.local.json
 integrations/**/data/
 integrations/**/acompanhamento/
 
-# Relatórios médicos gerados contendo dados de saúde
+# Relatórios médicos gerados, planilhas e capturas de rede contendo dados de saúde
 doctor_briefing_*.pdf
 relatorio_*.pdf
 *.pdf
+*.xlsx
+*.xls
+*.har
 
 # ==========================================
 # Bancos de Dados SQLite & Arquivos WAL

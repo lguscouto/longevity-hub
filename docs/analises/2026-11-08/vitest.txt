@@ -1,0 +1,16 @@
+npm notice run longevidade-frontend@2.4.6 test:run
+npm notice run vitest run
+
+ RUN  v5.0.5 E:/hermes/longevidade/frontend
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ Test Files  71 passed (71)
+      Tests  386 passed (386)
+   Start at  20:37:27
+   Duration  22.06s (environment 50%, tests 30%, setup 9%, import 7%, transform 4%)
+
+Environment  jsdom was created 71 times · 145.52s total, 50% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+

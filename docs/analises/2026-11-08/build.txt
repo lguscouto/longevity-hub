@@ -1,0 +1,64 @@
+npm notice run longevidade-frontend@2.4.6 build
+npm notice run tsc && vite build --outDir C:\Users\gustavo\AppData\Local\Temp/longevidade-analise-2026-11-08/frontend-dist
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 2637 modules transformed.
+
+(!) outDir C:\Users\gustavo\AppData\Local\Temp\longevidade-analise-2026-11-08\frontend-dist is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+
+rendering chunks...
+computing gzip size...
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/index.html                                    1.51 kB │ gzip:   0.75 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/index-D4eixS2A.css                   149.92 kB │ gzip:  20.59 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/circle-CO0UFX6r.js                     0.16 kB │ gzip:   0.15 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/plus-DFATJpOd.js                       0.18 kB │ gzip:   0.17 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/arrow-right-CDN_iPxr.js                0.20 kB │ gzip:   0.18 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/search-Bsv978Jg.js                     0.20 kB │ gzip:   0.18 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/trending-up-9i3htZ4o.js                0.21 kB │ gzip:   0.19 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/trending-down-KhmX1NZ3.js              0.21 kB │ gzip:   0.19 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/target-BzvFloTr.js                     0.26 kB │ gzip:   0.18 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/download-snEZ_N5s.js                   0.26 kB │ gzip:   0.21 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/copy-DorYh-IH.js                       0.27 kB │ gzip:   0.23 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/database-DD1K2YGP.js                   0.27 kB │ gzip:   0.22 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/eye-DNNNVu-W.js                        0.29 kB │ gzip:   0.22 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/map-pin-DZfOfveC.js                    0.29 kB │ gzip:   0.24 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/award-MIQaTRvc.js                      0.30 kB │ gzip:   0.24 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/funnel-UpzjHRr2.js                     0.31 kB │ gzip:   0.25 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/utensils-Bb7H6K5i.js                   0.31 kB │ gzip:   0.24 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/pen-line-BYV6ePrn.js                   0.33 kB │ gzip:   0.25 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/bot-B8PDDjfG.js                        0.36 kB │ gzip:   0.25 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/scale-GVClDIXo.js                      0.36 kB │ gzip:   0.24 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/trash-CAS-5TdK.js                      0.38 kB │ gzip:   0.25 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/file-text-CvECgYNT.js                  0.42 kB │ gzip:   0.27 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/ruler-CFLQUCdP.js                      0.43 kB │ gzip:   0.26 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/sliders-horizontal-B4lf1abZ.js         0.45 kB │ gzip:   0.26 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/layers-dmhSFq1W.js                     0.47 kB │ gzip:   0.27 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/table-DaueYitd.js                      0.49 kB │ gzip:   0.30 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/key-CYPCjqeU.js                        0.52 kB │ gzip:   0.33 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/calculator-D7BL1KKc.js                 0.56 kB │ gzip:   0.30 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/api-BS700jTx.js                        1.12 kB │ gzip:   0.49 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/DoctorBriefingModal-BnxGE8yX.js        2.83 kB │ gzip:   1.11 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/ManualEntryModal-Befc56fe.js           4.11 kB │ gzip:   1.39 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/DailyComplianceWidget-BMKXTpkv.js      5.09 kB │ gzip:   1.88 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/CGMDashboard-CFTArbC6.js               5.55 kB │ gzip:   1.81 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/WorkoutsTable-Co618tvD.js              7.85 kB │ gzip:   2.71 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/SyncProgressModal-KnFH2Zeh.js         11.02 kB │ gzip:   3.09 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/PhenoAgeWidget-0e_Vzok7.js            11.76 kB │ gzip:   3.88 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/jsx-runtime-91FqQEc_.js               12.12 kB │ gzip:   4.80 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/GoogleHealthAuthModal-C6jhNM3U.js     12.20 kB │ gzip:   3.72 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/NOf1Tracker-CNp5WnoI.js               17.23 kB │ gzip:   4.10 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/AISettingsModal-CLDMedz0.js           20.90 kB │ gzip:   5.48 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/OnboardingModal-CDsn5jjw.js           24.00 kB │ gzip:   6.08 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/SupplementsView-BGrwSvEi.js           34.52 kB │ gzip:   7.43 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/AICopilotView-CRjgPuoz.js             39.11 kB │ gzip:   9.68 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/DailyStepsView-C0rS2BW8.js            42.19 kB │ gzip:   8.29 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/LabResultsTable-uBCOxjeb.js           47.53 kB │ gzip:  12.41 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/WorkoutsView-DZtvwy0j.js              47.82 kB │ gzip:  10.64 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/SleepView-B5UaHfs7.js                 49.96 kB │ gzip:  10.78 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/TimelineView-DsRWi_aX.js              57.66 kB │ gzip:  13.19 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/ProfileView-BvSeTWt0.js               74.54 kB │ gzip:  14.93 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/index-BQ5sVHSO.js                    362.77 kB │ gzip: 104.97 kB
+C:/Users/gustavo/AppData/Local/Temp/longevidade-analise-2026-11-08/frontend-dist/assets/PhysicalAssessmentsView-Cl2duhHh.js  486.74 kB │ gzip: 131.35 kB
+
+✓ built in 626ms

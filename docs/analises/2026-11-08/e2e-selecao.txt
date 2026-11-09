@@ -1,0 +1,257 @@
+npm notice run longevidade-frontend@2.4.6 test:e2e
+npm notice run playwright test --config=e2e/playwright.config.ts e2e/smoke.spec.ts e2e/viewport-matrix.spec.ts --retries=0 --timeout=10000 --max-failures=5
+
+Running 24 tests using 1 worker
+
+(node:37968) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm notice run longevidade-frontend@2.4.6 dev
+[WebServer] npm notice run vite --host 127.0.0.1 --port 3030
+[WebServer] (node:32476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer]   VITE v8.3.5  ready in 322 ms
+[WebServer] 
+[WebServer]   ➜  Local:   http://127.0.0.1:3030/
+  x   1 [chromium] › e2e\smoke.spec.ts:220:3 › Smoke – Longevidade Dashboard › página carrega com título e estrutura básica (312ms)
+(node:48504) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  2 [chromium] › e2e\smoke.spec.ts:228:3 › Smoke – Longevidade Dashboard › métricas renderizam com os valores sintéticos mockados (1.4s)
+  x   3 [chromium] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso (10.5s)
+(node:49376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  4 [chromium] › e2e\smoke.spec.ts:265:3 › Smoke – Longevidade Dashboard › navegação por abas atualiza o deep link e preserva a aba após reload (2.5s)
+[320px - Hoje] Overflow detected: scrollW=338, docWidth=320, badElements: [
+  {
+    "tag": "DIV",
+    "className": "flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-radiu",
+    "id": "",
+    "right": 338,
+    "docWidth": 320
+  },
+  {
+    "tag": "BUTTON",
+    "className": "relative p-1.5 min-h-[36px] min-w-[36px] after:content-[''] after:absolute after",
+    "id": "",
+    "right": 333,
+    "docWidth": 320
+  },
+  {
+    "tag": "svg",
+    "className": "[object SVGAnimatedString]",
+    "id": "",
+    "right": 323,
+    "docWidth": 320
+  }
+]
+  x   5 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) (1.7s)
+(node:45772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[TELEMETRY] Header heights at 360x800 (360x800 (Android Standard)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok  6 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 360x800 (Android Standard) (2.9s)
+[TELEMETRY] Header heights at 375x667 (375x667 (iPhone SE)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok  7 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 375x667 (iPhone SE) (2.8s)
+[TELEMETRY] Header heights at 390x844 (390x844 (iPhone 14)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok  8 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 390x844 (iPhone 14) (2.7s)
+[TELEMETRY] Header heights at 414x896 (414x896 (iPhone Plus)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok  9 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 414x896 (iPhone Plus) (2.6s)
+[TELEMETRY] Header heights at 768x1024 (768x1024 (iPad Portrait)): {"Hoje":192,"Saúde":250,"Treinos":192,"Intervenções":250,"IA":192,"Perfil":250}
+  ok 10 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 768x1024 (iPad Portrait) (2.8s)
+[TELEMETRY] Header heights at 1024x1366 (1024x1366 (iPad Pro / Small Laptop)): {"Hoje":192,"Saúde":250,"Treinos":192,"Intervenções":250,"IA":192,"Perfil":250}
+  ok 11 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 1024x1366 (iPad Pro / Small Laptop) (2.8s)
+[TELEMETRY] Header heights at 1280x800 (1280x800 (Desktop Standard)): {"Hoje":144,"Saúde":202,"Treinos":144,"Intervenções":202,"IA":144,"Perfil":202}
+  ok 12 [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 1280x800 (Desktop Standard) (3.0s)
+(node:48252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 13 [mobile] › e2e\smoke.spec.ts:220:3 › Smoke – Longevidade Dashboard › página carrega com título e estrutura básica (1.1s)
+  ok 14 [mobile] › e2e\smoke.spec.ts:228:3 › Smoke – Longevidade Dashboard › métricas renderizam com os valores sintéticos mockados (1.2s)
+  x  15 [mobile] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso (10.5s)
+(node:7684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 16 [mobile] › e2e\smoke.spec.ts:265:3 › Smoke – Longevidade Dashboard › navegação por abas atualiza o deep link e preserva a aba após reload (2.9s)
+[TELEMETRY] Header heights at 320x568 (320x568 (Small Mobile)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok 17 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) (2.9s)
+[TELEMETRY] Header heights at 360x800 (360x800 (Android Standard)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok 18 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 360x800 (Android Standard) (2.8s)
+[TELEMETRY] Header heights at 375x667 (375x667 (iPhone SE)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok 19 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 375x667 (iPhone SE) (2.9s)
+[TELEMETRY] Header heights at 390x844 (390x844 (iPhone 14)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok 20 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 390x844 (iPhone 14) (2.9s)
+[TELEMETRY] Header heights at 414x896 (414x896 (iPhone Plus)): {"Hoje":264,"Saúde":318,"Treinos":264,"Intervenções":318,"IA":264,"Perfil":318}
+  ok 21 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 414x896 (iPhone Plus) (3.1s)
+[TELEMETRY] Header heights at 768x1024 (768x1024 (iPad Portrait)): {"Hoje":192,"Saúde":250,"Treinos":192,"Intervenções":250,"IA":192,"Perfil":250}
+  ok 22 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 768x1024 (iPad Portrait) (3.2s)
+[TELEMETRY] Header heights at 1024x1366 (1024x1366 (iPad Pro / Small Laptop)): {"Hoje":192,"Saúde":250,"Treinos":192,"Intervenções":250,"IA":192,"Perfil":250}
+  ok 23 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 1024x1366 (iPad Pro / Small Laptop) (3.0s)
+[TELEMETRY] Header heights at 1280x800 (1280x800 (Desktop Standard)): {"Hoje":144,"Saúde":202,"Treinos":144,"Intervenções":202,"IA":144,"Perfil":202}
+  ok 24 [mobile] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 1280x800 (Desktop Standard) (2.9s)
+
+
+  1) [chromium] › e2e\smoke.spec.ts:220:3 › Smoke – Longevidade Dashboard › página carrega com título e estrutura básica 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3030/
+    Call log:
+      - navigating to "http://127.0.0.1:3030/", waiting until "load"
+
+
+      219 |
+      220 |   test('página carrega com título e estrutura básica', async ({ page }) => {
+    > 221 |     await page.goto('/')
+          |                ^
+      222 |
+      223 |     await expect(page).toHaveTitle(/Longevidade/)
+      224 |     await expect(page.locator('#root')).not.toBeEmpty({ timeout: 10_000 })
+        at E:\hermes\longevidade\frontend\e2e\smoke.spec.ts:221:16
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "GET http://127.0.0.1:3030/",
+    + ]
+
+      214 |     )
+      215 |     expect(unexpectedConsoleErrors).toEqual([])
+    > 216 |     expect(evidence?.failedRequests ?? []).toEqual([])
+          |                                            ^
+      217 |     expect(evidence?.externalRequests ?? []).toEqual([])
+      218 |   })
+      219 |
+        at E:\hermes\longevidade\frontend\e2e\smoke.spec.ts:216:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--8423d-m-título-e-estrutura-básica-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--8423d-m-título-e-estrutura-básica-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Smoke-–-Longevidade--8423d-m-título-e-estrutura-básica-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--8423d-m-título-e-estrutura-básica-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\smoke-Smoke-–-Longevidade--8423d-m-título-e-estrutura-básica-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.click: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /sincronizar dados|sync zepp/i }).first()
+
+
+      254 |       'the server responded with a status of 502'
+      255 |     )
+    > 256 |     await page.getByRole('button', { name: /sincronizar dados|sync zepp/i }).first().click()
+          |                                                                                      ^
+      257 |
+      258 |     await expect(page.getByRole('heading', { name: 'Sincronização com erro' })).toBeVisible()
+      259 |     await expect(
+        at E:\hermes\longevidade\frontend\e2e\smoke.spec.ts:256:86
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) 
+
+    Error: [320px - Hoje] documentElement.scrollWidth (338px) must be <= innerWidth (320px)
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 320
+    Received:    338
+
+      316 |     result.scrollW,
+      317 |     `[${contextLabel}] documentElement.scrollWidth (${result.scrollW}px) must be <= innerWidth (${result.docWidth}px)`
+    > 318 |   ).toBeLessThanOrEqual(result.docWidth);
+          |     ^
+      319 |
+      320 |   expect(
+      321 |     result.badElements,
+        at checkHorizontalOverflow (E:\hermes\longevidade\frontend\e2e\viewport-matrix.spec.ts:318:5)
+        at E:\hermes\longevidade\frontend\e2e\viewport-matrix.spec.ts:348:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\viewport-matrix-UX-UI-38-—-82922-cs-on-320x568-Small-Mobile--chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [mobile] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.click: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /sincronizar dados|sync zepp/i }).first()
+
+
+      254 |       'the server responded with a status of 502'
+      255 |     )
+    > 256 |     await page.getByRole('button', { name: /sincronizar dados|sync zepp/i }).first().click()
+          |                                                                                      ^
+      257 |
+      258 |     await expect(page.getByRole('heading', { name: 'Sincronização com erro' })).toBeVisible()
+      259 |     await expect(
+        at E:\hermes\longevidade\frontend\e2e\smoke.spec.ts:256:86
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-mobile\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-mobile\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-mobile\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\smoke-Smoke-–-Longevidade--d01c2-ta-sem-exibir-sucesso-falso-mobile\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    [chromium] › e2e\smoke.spec.ts:220:3 › Smoke – Longevidade Dashboard › página carrega com título e estrutura básica 
+    [chromium] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso 
+    [chromium] › e2e\viewport-matrix.spec.ts:330:5 › UX/UI 38 — Responsive Viewport Matrix (8 viewports × 6 views) › Validates responsive layout and header metrics on 320x568 (Small Mobile) 
+    [mobile] › e2e\smoke.spec.ts:237:3 › Smoke – Longevidade Dashboard › Sync Zepp mostra erro da coleta sem exibir sucesso falso 
+  20 passed (1.3m)

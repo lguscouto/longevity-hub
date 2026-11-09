@@ -1,0 +1,26 @@
+npm notice run longevidade-frontend@2.4.6 test:e2e
+npm notice run playwright test --config=e2e/playwright.config.ts e2e/smoke.spec.ts e2e/task-flows.spec.ts e2e/keyboard-navigation.spec.ts e2e/focus-stacking.spec.ts e2e/viewport-matrix.spec.ts e2e/mobile-audit.spec.ts --retries=0
+
+Running 78 tests using 1 worker
+
+[WebServer] npm notice run longevidade-frontend@2.4.6 dev
+[WebServer] npm notice run vite --host 127.0.0.1 --port 3030
+(node:32036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:47668) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 20:38:51 [vite] (client) Re-optimizing dependencies because lockfile has changed
+[WebServer] 
+[WebServer]   VITE v8.3.5  ready in 432 ms
+[WebServer] 
+[WebServer]   ➜  Local:   http://127.0.0.1:3030/
+  x   1 [chromium] › e2e\focus-stacking.spec.ts:63:3 › Focus Stacking & Accessibility (UX21-P1-11, UX21-P1-12, UX21-P2-04) › 1. Escape key dismisses the topmost modal dialog and restores body scroll (31.3s)
+(node:49108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   2 [chromium] › e2e\focus-stacking.spec.ts:83:3 › Focus Stacking & Accessibility (UX21-P1-11, UX21-P1-12, UX21-P2-04) › 2. Reduced motion overrides all animation durations to zero or sub-millisecond (31.1s)
+(node:46548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   3 [chromium] › e2e\focus-stacking.spec.ts:104:3 › Focus Stacking & Accessibility (UX21-P1-11, UX21-P1-12, UX21-P2-04) › 3. Focus trap restricts Tab navigation within the active dialog (31.2s)
+(node:43480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  4 [chromium] › e2e\keyboard-navigation.spec.ts:75:3 › UX_UI_25: Keyboard Navigation & Focus Visible Audit › 1. Sequência Tab no Header navega controles interativos (785ms)
