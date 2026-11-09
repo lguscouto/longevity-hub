@@ -53,11 +53,16 @@ def analyze_n_of_1(
 
     # Desvio padrão pooled
     n_c, n_t = len(c), len(t)
-    s_pooled = math.sqrt(((n_c - 1) * c_std**2 + (n_t - 1) * t_std**2) / (n_c + n_t - 2)) if (n_c + n_t - 2) > 0 else 1.0
-    cohens_d = (diff_mean / s_pooled) if s_pooled > 0 else 0.0
-
-    # Teste t independente (Welch's t-test)
-    t_stat, p_val = stats.ttest_ind(t, c, equal_var=False)
+    s_pooled = math.sqrt(((n_c - 1) * c_std**2 + (n_t - 1) * t_std**2) / (n_c + n_t - 2)) if (n_c + n_t - 2) > 0 else 0.0
+    if s_pooled > 1e-12:
+        cohens_d = diff_mean / s_pooled
+        t_stat, p_val = stats.ttest_ind(t, c, equal_var=False)
+        p_val_float = float(p_val)
+        if math.isnan(p_val_float):
+            p_val_float = 1.0 if abs(diff_mean) < 1e-12 else 0.0
+    else:
+        cohens_d = 0.0 if abs(diff_mean) < 1e-12 else math.copysign(10.0, diff_mean)
+        p_val_float = 1.0 if abs(diff_mean) < 1e-12 else 0.0
 
     abs_d = abs(cohens_d)
     if abs_d < 0.2:
@@ -75,7 +80,7 @@ def analyze_n_of_1(
         "diff_mean": round(diff_mean, 2),
         "diff_pct": round(diff_pct, 2),
         "cohens_d": round(cohens_d, 2),
-        "p_value": round(float(p_val), 4),
-        "statistically_significant": bool(p_val < 0.05),
+        "p_value": round(p_val_float, 4),
+        "statistically_significant": bool(p_val_float < 0.05),
         "effect_interpretation": interp,
     }

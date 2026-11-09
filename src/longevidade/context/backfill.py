@@ -24,9 +24,10 @@ BATCH_SIZE = 100
 
 
 def get_db_connection(db_path: str | Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(Path(db_path), check_same_thread=False)
+    conn = sqlite3.connect(Path(db_path), timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA busy_timeout = 30000;")
     return conn
 
 
@@ -88,9 +89,9 @@ def get_user_timezone_from_db(conn: sqlite3.Connection) -> str:
 def backfill_workouts(conn: sqlite3.Connection, user_tz: str) -> int:
     """Processa workouts de forma retomável em lotes."""
     cur = conn.cursor()
-    cur.execute("SELECT last_processed_id FROM health_events_backfill_state WHERE source_type = 'workouts';")
+    cur.execute("SELECT last_processed_id, status FROM health_events_backfill_state WHERE source_type = 'workouts';")
     state = cur.fetchone()
-    last_id = state["last_processed_id"] if state else None
+    resume_from_id = state["last_processed_id"] if (state and state["status"] == "in_progress") else None
 
     count = 0
     query = "SELECT * FROM workouts ORDER BY workout_date ASC, workout_time ASC, id ASC;"
@@ -99,9 +100,12 @@ def backfill_workouts(conn: sqlite3.Connection, user_tz: str) -> int:
 
     conn.execute(
         """
-        INSERT INTO health_events_backfill_state (source_type, status, updated_at)
-        VALUES ('workouts', 'in_progress', CURRENT_TIMESTAMP)
-        ON CONFLICT(source_type) DO UPDATE SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP;
+        INSERT INTO health_events_backfill_state (source_type, total_records_processed, status, updated_at)
+        VALUES ('workouts', 0, 'in_progress', CURRENT_TIMESTAMP)
+        ON CONFLICT(source_type) DO UPDATE SET
+            total_records_processed = CASE WHEN health_events_backfill_state.status = 'in_progress' THEN health_events_backfill_state.total_records_processed ELSE 0 END,
+            status = 'in_progress',
+            updated_at = CURRENT_TIMESTAMP;
         """
     )
     conn.commit()
@@ -109,11 +113,17 @@ def backfill_workouts(conn: sqlite3.Connection, user_tz: str) -> int:
     try:
         batch_events: List[HealthEvent] = []
         last_item_id = None
+        skipping = resume_from_id is not None
         for r in rows:
             row_dict = dict(r)
+            current_id = str(row_dict["id"])
+            if skipping:
+                if current_id == str(resume_from_id):
+                    skipping = False
+                continue
             ev = workout_to_health_event(row_dict, user_tz)
             batch_events.append(ev)
-            last_item_id = str(row_dict["id"])
+            last_item_id = current_id
 
             if len(batch_events) >= BATCH_SIZE:
                 with conn:

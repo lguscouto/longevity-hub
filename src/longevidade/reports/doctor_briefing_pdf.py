@@ -4,6 +4,7 @@ Gerador de PDF de alta fidelidade para o Doctor Briefing 2.0 utilizando ReportLa
 
 from __future__ import annotations
 
+import html
 import io
 from datetime import date
 from typing import Any, Dict
@@ -75,7 +76,9 @@ def generate_doctor_briefing_pdf(
     elements.append(Paragraph("🏥 Relatório Clínico Sintético de Longevidade (Doctor Briefing)", title_style))
     elements.append(Spacer(1, 4))
     today_str = date.today().strftime("%d/%m/%Y")
-    elements.append(Paragraph(f"<b>Data de Emissão:</b> {today_str} | <b>Paciente:</b> {name} ({age_str})", body_style))
+    safe_name = html.escape(str(name))
+    safe_age_str = html.escape(str(age_str))
+    elements.append(Paragraph(f"<b>Data de Emissão:</b> {today_str} | <b>Paciente:</b> {safe_name} ({safe_age_str})", body_style))
     elements.append(Spacer(1, 10))
 
     # Métricas Fisiológicas
@@ -138,10 +141,10 @@ def generate_doctor_briefing_pdf(
             ref_str = f"{lab.get('ref_min', '')} - {lab.get('ref_max', '')}"
             target_str = str(lab.get("optimal_target", "—"))
             labs_table_data.append([
-                Paragraph(lab["metric_name"], body_style),
-                Paragraph(f"{lab['value']} {lab.get('unit', '')}", body_style),
-                Paragraph(ref_str, body_style),
-                Paragraph(target_str, body_style),
+                Paragraph(html.escape(str(lab.get("metric_name", ""))), body_style),
+                Paragraph(html.escape(f"{lab.get('value', '')} {lab.get('unit', '')}".strip()), body_style),
+                Paragraph(html.escape(ref_str), body_style),
+                Paragraph(html.escape(target_str), body_style),
             ])
 
         t_labs = Table(labs_table_data, colWidths=[180, 120, 120, 120])

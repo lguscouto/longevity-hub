@@ -5,11 +5,12 @@ Orquestra o CRUD de eventos manuais, consultas agregadas e reconciliação.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 from uuid import uuid4
 
 from longevidade.context.backfill import (
@@ -57,8 +58,13 @@ class TimelineContextService:
         from longevidade.db.schema import initialize_db
         initialize_db(self.db_path)
 
-    def _get_connection(self) -> sqlite3.Connection:
-        return get_db_connection(self.db_path)
+    @contextmanager
+    def _get_connection(self) -> Iterator[sqlite3.Connection]:
+        conn = get_db_connection(self.db_path)
+        try:
+            yield conn
+        finally:
+            conn.close()
 
     def get_user_timezone(self) -> str:
         with self._get_connection() as conn:
@@ -357,15 +363,16 @@ class TimelineContextService:
 
     def get_metric_changes(self, metric: str, limit: int = 30) -> List[Dict[str, Any]]:
         """Varre o histórico recente e lista as datas onde ocorreram alterações notáveis ou significativas."""
-        from longevidade.context.baselines import evaluate_metric_baseline
+        from longevidade.context.baselines import evaluate_metric_baseline, validate_daily_metric_column
 
+        safe_metric = validate_daily_metric_column(metric)
         results: List[Dict[str, Any]] = []
         with self._get_connection() as conn:
             cur = conn.execute(
                 f"""
-                SELECT date_ref, {metric}
+                SELECT date_ref, {safe_metric}
                 FROM daily_metrics
-                WHERE {metric} IS NOT NULL
+                WHERE {safe_metric} IS NOT NULL
                 ORDER BY date_ref DESC
                 LIMIT ?;
                 """,
@@ -375,12 +382,12 @@ class TimelineContextService:
 
             for r in rows:
                 d_ref = r["date_ref"]
-                res = evaluate_metric_baseline(conn, metric, d_ref)
+                res = evaluate_metric_baseline(conn, safe_metric, d_ref)
                 if res.significance in ("notável", "significativa"):
                     results.append(
                         {
                             "date_ref": d_ref,
-                            "metric": metric,
+                            "metric": safe_metric,
                             "observed_value": res.observed_value,
                             "baseline_value": res.baseline_value,
                             "delta_percent": res.delta_percent,

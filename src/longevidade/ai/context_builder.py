@@ -132,7 +132,33 @@ def build_patient_clinical_context(
 
     chrono_age_val = profile.get("chronological_age")
     if chrono_age_val is not None:
-        kdm_res = calculate_kdm_biological_age(chrono_age_val, kdm_input)
+        all_labs_for_kdm = repo.get_lab_results(
+            limit=1000,
+            record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,
+        )
+        all_metrics_for_kdm = repo.get_daily_metrics(days=365)
+        kdm_latest_vals = latest_kdm_biomarker_values(all_labs_for_kdm, all_metrics_for_kdm)
+        kdm_latest_vals.update(kdm_input)
+        kdm_history_rows = build_kdm_history_rows(all_labs_for_kdm, all_metrics_for_kdm, float(chrono_age_val))
+        kdm_res = calculate_kdm_biological_age(float(chrono_age_val), kdm_latest_vals, historical_data=kdm_history_rows)
+        if kdm_res.get("status") != "complete":
+            saved_kdm = repo.get_latest_kdm_record()
+            if saved_kdm and saved_kdm.get("kdm_age") is not None:
+                used_raw = saved_kdm.get("biomarkers_used") or []
+                if isinstance(used_raw, str):
+                    import json as _json
+                    try:
+                        used_list = _json.loads(used_raw)
+                    except Exception:
+                        used_list = [x.strip() for x in used_raw.split(",") if x.strip()]
+                else:
+                    used_list = list(used_raw)
+                kdm_res = {
+                    "status": "complete",
+                    "kdm_age": saved_kdm["kdm_age"],
+                    "kdm_delta": saved_kdm.get("kdm_delta", 0.0),
+                    "biomarkers_count": len(used_list),
+                }
     else:
         kdm_res = {
             "status": "incomplete",

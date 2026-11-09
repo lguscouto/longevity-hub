@@ -42,9 +42,13 @@ def calculate_spearman_correlation(
         return 0.0, 1.0
 
     if HAS_SCIPY:
+        if len(set(series_x)) < 2 or len(set(series_y)) < 2:
+            return 0.0, 1.0
         res = spearmanr(series_x, series_y)
         rho_val = float(res.statistic if hasattr(res, 'statistic') else res[0])
         p_val = float(res.pvalue if hasattr(res, 'pvalue') else res[1])
+        if math.isnan(rho_val) or math.isnan(p_val):
+            return 0.0, 1.0
         return round(rho_val, 3), round(p_val, 4)
 
     rx = _rank(series_x)

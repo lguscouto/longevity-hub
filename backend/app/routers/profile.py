@@ -45,6 +45,14 @@ class UserProfileInput(BaseModel):
     target_body_fat_pct: Optional[float] = None
     onboarding_completed: Optional[bool] = None
 
+    # Contexto Clínico Adicional (§2.1 / §10)
+    diabetes: Optional[bool] = None
+    hypertension: Optional[bool] = None
+    current_smoker: Optional[bool] = None
+    antihypertensive_treatment: Optional[bool] = None
+    lipid_lowering_treatment: Optional[bool] = None
+    prior_cvd: Optional[bool] = None
+
 @router.get("", response_model=Dict[str, Any])
 def get_profile():
     db_path = get_db_path()
@@ -93,7 +101,7 @@ def get_profile():
     elif profile.get("chronological_age") is not None:
         chrono_age = float(profile["chronological_age"])
 
-    google_connected = GOOGLE_HEALTH_TOKEN_FILE.is_file()
+    google_connected = get_default_token_path().is_file()
 
     # Cálculo da Relação Cintura-Estatura (WHtR)
     waist_cm = golden.get("waist_cm")

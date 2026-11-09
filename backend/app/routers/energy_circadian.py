@@ -21,11 +21,7 @@ def get_energy_circadian(date_ref: str, wake_time: str = "07:00", target_bedtime
     checkin = None
     if repo:
         try:
-            sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
-            with repo._get_connection() as conn:
-                row = conn.execute(sql, (date_ref,)).fetchone()
-                if row:
-                    checkin = dict(row)
+            checkin = repo.get_daily_checkin(date_ref)
         except Exception:
             pass
 

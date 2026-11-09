@@ -56,7 +56,10 @@ def get_recent_metric_changes(
 ):
     """Lista as datas em que a métrica apresentou alterações notáveis ou significativas."""
     service = _get_service()
-    return service.get_metric_changes(metric, limit)
+    try:
+        return service.get_metric_changes(metric, limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/explain/{metric}", response_model=ContextExplanation)

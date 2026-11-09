@@ -47,14 +47,8 @@ def get_daily_checkin(date_ref: str):
     }
     try:
         repo = LongevityRepository(db_path)
-        sql = "SELECT * FROM daily_checkins WHERE date_ref = ?;"
-        with repo._get_connection() as conn:
-            row = conn.execute(sql, (date_ref,)).fetchone()
-            if not row:
-                return empty_payload
-            item = dict(row)
-            item["tags"] = json.loads(item.get("tags_json") or "[]")
-            return item
+        item = repo.get_daily_checkin(date_ref)
+        return item if item is not None else empty_payload
     except FileNotFoundError:
         return empty_payload
 
@@ -67,47 +61,7 @@ def upsert_daily_checkin(date_ref: str, input_data: DailyCheckinInput):
     db_path = get_db_path()
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
-
-    sql = """
-    INSERT INTO daily_checkins (
-        date_ref, energy_score, mood_score, perceived_stress, soreness_score, pain_score,
-        symptom_severity, illness, alcohol_units, caffeine_last_at, bedtime_target_met, notes, tags_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(date_ref) DO UPDATE SET
-        energy_score = excluded.energy_score,
-        mood_score = excluded.mood_score,
-        perceived_stress = excluded.perceived_stress,
-        soreness_score = excluded.soreness_score,
-        pain_score = excluded.pain_score,
-        symptom_severity = excluded.symptom_severity,
-        illness = excluded.illness,
-        alcohol_units = excluded.alcohol_units,
-        caffeine_last_at = excluded.caffeine_last_at,
-        bedtime_target_met = excluded.bedtime_target_met,
-        notes = excluded.notes,
-        tags_json = excluded.tags_json,
-        updated_at = CURRENT_TIMESTAMP;
-    """
-
-    values = (
-        date_ref,
-        input_data.energy_score,
-        input_data.mood_score,
-        input_data.perceived_stress,
-        input_data.soreness_score,
-        input_data.pain_score,
-        input_data.symptom_severity,
-        input_data.illness or 0,
-        input_data.alcohol_units or 0.0,
-        input_data.caffeine_last_at,
-        input_data.bedtime_target_met,
-        input_data.notes,
-        json.dumps(input_data.tags or []),
-    )
-
-    with repo._get_connection() as conn:
-        conn.execute(sql, values)
-        conn.commit()
+    repo.upsert_daily_checkin(input_data.model_dump())
 
     return {"status": "ok", "message": "Check-in salvo com sucesso", "date_ref": date_ref}
 
@@ -117,14 +71,6 @@ def list_daily_checkins(days: int = 90):
     db_path = get_db_path()
     try:
         repo = LongevityRepository(db_path)
-        sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
-        with repo._get_connection() as conn:
-            rows = conn.execute(sql, (days,)).fetchall()
-            result = []
-            for r in rows:
-                item = dict(r)
-                item["tags"] = json.loads(item.get("tags_json") or "[]")
-                result.append(item)
-            return result
+        return repo.list_daily_checkins(days=days)
     except FileNotFoundError:
         return []

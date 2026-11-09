@@ -111,18 +111,33 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
             ref_min = lab.get("ref_min")
             ref_max = lab.get("ref_max")
 
-            if opt is not None:
-                if key in ("apob", "lpa", "hscrp", "hba1c", "fasting_glucose", "fasting_insulin", "creatinine", "homocysteine") and val > opt:
+            higher_is_better_keys = {
+                "albumin", "albumin_gdl", "vitamin_d", "vitamin_d_ngml",
+                "hdl", "hdl_cholesterol", "lymphocyte_pct", "apoa1",
+                "testosterone_total", "free_testosterone", "igf1",
+                "b12", "vitamin_b12", "folate", "magnesium", "zinc",
+            }
+            lower_is_better_keys = {
+                "apob", "lpa", "hscrp", "hscrp_mgl", "hba1c",
+                "fasting_glucose", "glucose_mgdl", "fasting_insulin", "insulin_uiu",
+                "homa_ir", "creatinine", "creatinine_mgdl", "homocysteine",
+                "ldl", "ldl_cholesterol", "triglycerides", "tg", "uric_acid",
+                "tgo_ast", "tgp_alt", "ggt",
+            }
+
+            if ref_max is not None and val > ref_max:
+                status = "🔴 Fora da Ref. (Acima)"
+            elif ref_min is not None and val < ref_min:
+                status = "🔴 Fora da Ref. (Abaixo)"
+            elif opt is not None:
+                if key in lower_is_better_keys and val > opt:
                     status = "🟡 Acima do Alvo Ótimo"
-                elif key in ("albumin", "vitamin_d") and val < opt:
+                elif key in higher_is_better_keys and val < opt:
                     status = "🟡 Abaixo do Alvo Ótimo"
-            elif ref_min is not None or ref_max is not None:
-                if ref_max is not None and val > ref_max:
-                    status = "🔴 Fora da Ref. (Acima)"
-                elif ref_min is not None and val < ref_min:
-                    status = "🔴 Fora da Ref. (Abaixo)"
                 else:
-                    status = "🟢 Dentro da Ref."
+                    status = "🟢 Ótimo"
+            elif ref_min is not None or ref_max is not None:
+                status = "🟢 Dentro da Ref."
             else:
                 status = "⚪ Sem alvo/referência"
 

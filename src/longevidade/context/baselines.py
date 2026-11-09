@@ -67,6 +67,44 @@ METRIC_SPECS = {
     },
 }
 
+ALLOWED_DAILY_METRIC_COLUMNS = frozenset({
+    "steps",
+    "sleep_minutes",
+    "sleep_deep_min",
+    "sleep_light_min",
+    "sleep_rem_min",
+    "sleep_awake_min",
+    "rhr_bpm",
+    "avg_hr_bpm",
+    "hrv_ms",
+    "readiness_score",
+    "weight_kg",
+    "bmi",
+    "waist_cm",
+    "body_fat_pct",
+    "vo2_max",
+    "skin_temp_c",
+    "stress_samples",
+    "systolic_bp",
+    "diastolic_bp",
+    "grip_strength_kg",
+    "spo2_avg_pct",
+    "spo2_min_pct",
+    "respiratory_rate_rpm",
+    "pai_score",
+    "training_load_acute",
+    "training_load_chronic",
+    "training_load_ratio",
+})
+
+
+def validate_daily_metric_column(metric_col: str) -> str:
+    """Valida se o nome da coluna pertence à allowlist de daily_metrics (prevenção contra SQL Injection)."""
+    cleaned = (metric_col or "").strip()
+    if cleaned not in ALLOWED_DAILY_METRIC_COLUMNS:
+        raise ValueError(f"Métrica inválida ou não suportada: {metric_col!r}")
+    return cleaned
+
 
 def calculate_median(values: List[float]) -> float:
     """Calcula a mediana exata de uma lista de floats."""
@@ -102,6 +140,7 @@ def fetch_metric_history(
     window_days: int = 30,
 ) -> Tuple[Optional[float], List[float]]:
     """Busca o valor observado no target_date e a série histórica prévia de window_days."""
+    metric_col = validate_daily_metric_column(metric_col)
     # Valor observado na data-alvo
     cur = conn.execute(
         f"SELECT {metric_col} FROM daily_metrics WHERE date_ref = ? LIMIT 1;",

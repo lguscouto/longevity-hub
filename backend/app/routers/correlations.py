@@ -19,14 +19,10 @@ def get_correlations(target_metric: str = "hrv_ms", max_lag_days: int = 2, days:
         metrics = []
 
     # Merge checkins into daily metrics for unified correlation analysis
-    sql = "SELECT * FROM daily_checkins ORDER BY date_ref DESC LIMIT ?;"
     checkin_map = {}
     try:
-        with repo._get_connection() as conn:
-            rows = conn.execute(sql, (days,)).fetchall()
-            for r in rows:
-                item = dict(r)
-                checkin_map[item["date_ref"]] = item
+        for item in repo.list_daily_checkins(days=days):
+            checkin_map[item["date_ref"]] = item
     except FileNotFoundError:
         pass
     except Exception as exc:

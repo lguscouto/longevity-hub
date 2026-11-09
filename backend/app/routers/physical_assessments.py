@@ -21,7 +21,8 @@ router = APIRouter(prefix="/api/physical-assessments", tags=["Physical Assessmen
 def _service() -> PhysicalAssessmentService:
     db_path = get_db_path()
     repo = LongevityRepository(db_path)
-    return PhysicalAssessmentService(repo, DATA_DIR)
+    storage_base = db_path.parent if db_path != DATA_DIR / "longevity.sqlite3" else DATA_DIR
+    return PhysicalAssessmentService(repo, storage_base)
 
 
 @router.get("", response_model=List[Dict[str, Any]])

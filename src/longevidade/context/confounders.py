@@ -461,7 +461,9 @@ def analyze_before_after_intervention(
     end_date = row["end_date"]
     name = row["name"]
     category = row["category"]
-    target_metric = row["target_metric"] or "hrv_ms"
+    from longevidade.context.baselines import ALLOWED_DAILY_METRIC_COLUMNS
+    raw_target_metric = (row["target_metric"] or "hrv_ms").strip()
+    target_metric = raw_target_metric if raw_target_metric in ALLOWED_DAILY_METRIC_COLUMNS else "hrv_ms"
 
     start_d = _parse_date(start_date)
     control_start = (start_d - timedelta(days=days_before)).isoformat()
