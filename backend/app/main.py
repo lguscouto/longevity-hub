@@ -37,6 +37,7 @@ from backend.app.routers import (
     workouts,
     zepp,
     steps,
+    biomarkers,
 )
 
 
@@ -67,9 +68,7 @@ def _parse_cors_origins() -> Tuple[str, ...]:
 
 
 LOCAL_ALLOWED_ORIGINS = _parse_cors_origins()
-LOCAL_ALLOWED_ORIGIN_REGEX = (
-    r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$"
-)
+LOCAL_ALLOWED_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 
 @asynccontextmanager
@@ -126,6 +125,7 @@ app.include_router(correlations.router)
 app.include_router(workouts.router)
 app.include_router(zepp.router)
 app.include_router(steps.router)
+app.include_router(biomarkers.router)
 
 # Aliases para integrações externas e scripts legados
 app.add_api_route("/api/sync/all", metrics.sync_all_sources, methods=["POST"], tags=["Sync"])
@@ -135,13 +135,31 @@ app.add_api_route("/api/metrics/steps/analytics", steps.get_steps_analytics, met
 
 
 @app.get("/api/health")
-
 def health_check():
+    db_path = get_db_path()
+    db_connected = False
+    user_version = None
+    db_error = None
+    if db_path.exists():
+        try:
+            import sqlite3
+            with sqlite3.connect(db_path, timeout=5.0) as conn:
+                row = conn.execute("SELECT 1;").fetchone()
+                if row and row[0] == 1:
+                    db_connected = True
+                ver_row = conn.execute("PRAGMA user_version;").fetchone()
+                if ver_row:
+                    user_version = ver_row[0]
+        except Exception as exc:
+            db_error = str(exc)
+
     return {
-        "status": "ok",
+        "status": "ok" if db_connected else "degraded",
         "system": "Longevidade Hub",
-        "database_connected": get_db_path().exists(),
+        "database_connected": db_connected,
+        "user_version": user_version,
         "version": app.version,
+        **({"database_error": db_error} if db_error else {}),
     }
 
 

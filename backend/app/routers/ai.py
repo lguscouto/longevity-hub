@@ -1,3 +1,12 @@
+"""Router do Copiloto de IA Longevidade Hub.
+
+Arquitetura de Segurança Rota A (v2.4.6+):
+O Copiloto utiliza injeção contextual fisiológica rica no prompt do sistema
+(`Daily Guidance + Energy Bank`, histórico de recuperação, sono, VFC e biomarcadores),
+permitindo diálogo conversacional fluido em pt-BR orientado por evidências clínicas,
+sem bloqueios determinísticos estáticos pré-LLM.
+"""
+
 import json
 from datetime import date
 from typing import Optional
@@ -19,20 +28,8 @@ from longevidade.ai.secrets_store import (
     is_masked_or_blank_secret,
     mask_secret,
 )
-from longevidade.ai.safety_policy import (
-    DETERMINISTIC_SAFETY_MODEL,
-    DETERMINISTIC_SAFETY_PROVIDER,
-    TrainingSafetyDecision,
-    build_restricted_chat_reply,
-    build_restricted_insights,
-    evaluate_training_safety,
-    resolve_today_metric_with_rhr_fallback,
-    safe_training_action,
-)
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
-from longevidade.algorithms.daily_guidance import generate_daily_guidance
-from longevidade.calculators.energy_and_stress import calculate_energy_bank
 
 router = APIRouter(prefix="/api/ai", tags=["AI Copilot"])
 
@@ -84,47 +81,6 @@ def _require_provider_secret(repo: LongevityRepository, provider: str, detail_hi
             detail=f"Nenhuma chave de API configurada para o provedor '{provider}'. {detail_hint}",
         )
     return api_key
-
-
-def _current_training_safety(repo: LongevityRepository) -> TrainingSafetyDecision:
-    """Avalia a trava antes de montar prompts ou consultar o provedor externo."""
-
-    today_str = date.today().isoformat()
-    today_metric = repo.get_daily_metric_by_date(today_str)
-    all_60_metrics = repo.get_daily_metrics(days=60)
-    history_metrics = [
-        metric
-        for metric in all_60_metrics
-        if metric.get("date_ref") and metric["date_ref"] < today_str
-    ]
-    resolved_today, _ = resolve_today_metric_with_rhr_fallback(today_metric, history_metrics)
-    guidance = generate_daily_guidance(resolved_today, history_metrics)
-    energy = calculate_energy_bank(resolved_today)
-    return evaluate_training_safety(guidance, energy)
-
-
-def _save_deterministic_guardrail_insight(
-    repo: LongevityRepository,
-    *,
-    category: str,
-    headline: str,
-    insight_text: str,
-    actionable_steps: str | None,
-    audit_prompt: str,
-) -> None:
-    """Registra somente o texto local seguro, nunca uma resposta bruta bloqueada."""
-
-    repo.save_ai_insight(
-        {
-            "provider_used": DETERMINISTIC_SAFETY_PROVIDER,
-            "model_used": DETERMINISTIC_SAFETY_MODEL,
-            "category": category,
-            "headline": headline,
-            "insight_text": insight_text,
-            "actionable_steps": actionable_steps,
-            "user_prompt": audit_prompt,
-        }
-    )
 
 
 @router.get("/settings")

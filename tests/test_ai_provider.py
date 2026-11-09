@@ -242,21 +242,10 @@ def test_ai_reports_endpoints(client, monkeypatch):
 def test_generate_insights_with_time_windows(client, monkeypatch):
     from backend.app.config import get_db_path
     from backend.app.routers import ai as ai_router
-    from longevidade.ai.safety_policy import TrainingSafetyDecision
 
     secret_store = MemorySecretsStore()
     secret_store.set("openrouter", "mock-openrouter-key")
     monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
-    monkeypatch.setattr(
-        ai_router,
-        "_current_training_safety",
-        lambda repo: TrainingSafetyDecision(
-            restricted=False,
-            reason_code=None,
-            guidance={"state": "green", "confidence": "high"},
-            energy={"status": "optimal"},
-        ),
-    )
 
     mock_llm_response = (
         json.dumps({
@@ -292,21 +281,10 @@ def test_generate_insights_with_time_windows(client, monkeypatch):
 
 def test_ai_chat_greeting_formatting_and_language(client, monkeypatch):
     from backend.app.routers import ai as ai_router
-    from longevidade.ai.safety_policy import TrainingSafetyDecision
 
     secret_store = MemorySecretsStore()
     secret_store.set("openrouter", "mock-openrouter-key")
     monkeypatch.setattr(ai_router, "get_ai_secrets_store", lambda: secret_store)
-    monkeypatch.setattr(
-        ai_router,
-        "_current_training_safety",
-        lambda repo: TrainingSafetyDecision(
-            restricted=False,
-            reason_code=None,
-            guidance={"state": "green", "confidence": "high"},
-            energy={"status": "optimal"},
-        ),
-    )
 
     with patch("backend.app.routers.ai.generate_llm_response") as mock_llm:
         mock_llm.return_value = ("Boa tarde! Como posso ajudar você hoje com seus dados de saúde?", None)

@@ -116,8 +116,12 @@ def test_energy_bank_restriction_does_not_reuse_a_high_intensity_primary_action(
 
 
 def test_rhr_smart_fallback_when_night_monitored(tmp_path, monkeypatch):
-    from longevidade.ai.safety_policy import resolve_today_metric_with_rhr_fallback
-    from backend.app.routers.ai import _current_training_safety
+    from longevidade.ai.safety_policy import (
+        evaluate_training_safety,
+        resolve_today_metric_with_rhr_fallback,
+    )
+    from longevidade.algorithms.daily_guidance import generate_daily_guidance
+    from longevidade.calculators.energy_and_stress import calculate_energy_bank
 
     repo = _configure_ai(tmp_path, monkeypatch)
     today = date.today()
@@ -145,7 +149,15 @@ def test_rhr_smart_fallback_when_night_monitored(tmp_path, monkeypatch):
         }
     )
 
-    safety = _current_training_safety(repo)
+    today_str = today.isoformat()
+    today_metric = repo.get_daily_metric_by_date(today_str)
+    all_60 = repo.get_daily_metrics(days=60)
+    history_metrics = [m for m in all_60 if m.get("date_ref") and m["date_ref"] < today_str]
+    resolved_today, projected = resolve_today_metric_with_rhr_fallback(today_metric, history_metrics)
+    assert projected is True
+    guidance = generate_daily_guidance(resolved_today, history_metrics)
+    energy = calculate_energy_bank(resolved_today)
+    safety = evaluate_training_safety(guidance, energy)
     # Com o fallback inteligente a partir de D-1, a segurança não fica mais travada
     assert safety.restricted is False
     assert safety.guidance.get("confidence") == "high"
