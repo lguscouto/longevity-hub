@@ -52,6 +52,10 @@ def get_biomarkers_catalog() -> Dict[str, Any]:
             "input_keys": spec.input_keys,
             "output_unit": spec.output_unit,
             "source_url": spec.source_url,
+            "source_citation": spec.source_citation,
+            "source": spec.source_citation,
+            "reference_range": spec.reference_range,
+            "optimal_range": spec.optimal_range,
             "evidence_level": spec.evidence_level,
             "implementation_status": spec.implementation_status,
             "limitations": spec.limitations,
@@ -76,6 +80,10 @@ def get_biomarkers_catalog() -> Dict[str, Any]:
                     "input_keys": s.input_keys,
                     "output_unit": s.output_unit,
                     "source_url": s.source_url,
+                    "source_citation": s.source_citation,
+                    "source": s.source_citation,
+                    "reference_range": s.reference_range,
+                    "optimal_range": s.optimal_range,
                     "evidence_level": s.evidence_level,
                     "implementation_status": s.implementation_status,
                     "limitations": s.limitations,
@@ -158,6 +166,11 @@ def _compute_derived_biomarkers(
                 "subcategory": metric_spec.subcategory if metric_spec else "",
                 "definition": metric_spec.definition if metric_spec else "",
                 "priority": metric_spec.priority if metric_spec else "P0",
+                "reference_range": metric_spec.reference_range if metric_spec else None,
+                "optimal_range": metric_spec.optimal_range if metric_spec else None,
+                "source": metric_spec.source_citation if metric_spec else None,
+                "source_citation": metric_spec.source_citation if metric_spec else None,
+                "source_url": metric_spec.source_url if metric_spec else res.get("source_url"),
                 "missing_inputs": res.get("missing_input_keys", []),
             })
 
@@ -198,6 +211,8 @@ def _compute_derived_biomarkers(
         "context": {
             "inputs_count": len(inputs),
             "paired_limitations": pair_limitations,
+            "chronological_age": inputs.get("age_years"),
+            "biological_sex": inputs.get("sex"),
         },
     }
 

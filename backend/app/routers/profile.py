@@ -23,6 +23,7 @@ class UserProfileInput(BaseModel):
     current_weight_kg: Optional[float] = None
     target_weight_kg: Optional[float] = None
     gender: Optional[str] = None
+    biological_sex: Optional[str] = None
 
     # Ficha Médica e Segurança (Medical ID)
     blood_type: Optional[str] = None
@@ -198,6 +199,7 @@ def get_profile():
         "target_weight_kg": profile.get("target_weight_kg"),
         "bmi": bmi,
         "gender": profile.get("gender"),
+        "biological_sex": profile.get("gender"),
         "avatar_url": profile.get("avatar_url"),
         "google_connected": google_connected,
         "source": "Google Health API & Hub Longevidade",
@@ -233,6 +235,10 @@ def update_profile(input_data: UserProfileInput):
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
     data = input_data.model_dump(exclude_unset=True)
+    if "biological_sex" in data:
+        bio_sex = data.pop("biological_sex")
+        if not data.get("gender"):
+            data["gender"] = bio_sex
     if "birthdate" in data and data["birthdate"] and "chronological_age" not in data:
         try:
             bdate = date.fromisoformat(data["birthdate"][:10])

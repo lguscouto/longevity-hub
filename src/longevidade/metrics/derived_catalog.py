@@ -26,6 +26,9 @@ class DerivedMetricSpec:
     implementation_status: str  # ready, restricted, needs_reference, needs_definition
     limitations: list[str] = field(default_factory=list)
     priority: str = "P0"  # P0, P1, P2
+    reference_range: str | None = None
+    optimal_range: str | None = None
+    source_citation: str | None = None
 
 
 DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
@@ -49,6 +52,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Calibrado em coorte americana NHANES III/IV; requer painel laboratorial de mesma coleta sem valores não positivos."],
         priority="P0",
+        reference_range="Idade cronológica ± 2.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Levine et al., 2018 (Aging)",
     ),
     "phenoage_gap": DerivedMetricSpec(
         id="phenoage_gap",
@@ -64,6 +70,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Diferença linear simples; valores negativos indicam rejuvenescimento biológico estimado."],
         priority="P0",
+        reference_range="-2.0 a +2.0 anos",
+        optimal_range="< -2.0 anos",
+        source_citation="Levine et al., 2018 (Aging)",
     ),
     "phenoage_accel": DerivedMetricSpec(
         id="phenoage_accel",
@@ -79,6 +88,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado até calibração com população de referência formal (não confundir com phenoage_gap)."],
         priority="P1",
+        reference_range="-2.0 a +2.0 anos",
+        optimal_range="< 0.0 anos",
+        source_citation="Levine et al., 2018 (Aging)",
     ),
     "light_bioage": DerivedMetricSpec(
         id="light_bioage",
@@ -94,6 +106,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Suporta variantes de coorte NHANES (CRP em mg/dL), UKB (CRP em mg/L) e CHARLS (CRP em mg/L)."],
         priority="P0",
+        reference_range="Idade cronológica ± 2.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Hao et al., 2025 (Adv Sci)",
     ),
     "light_bioage_diff": DerivedMetricSpec(
         id="light_bioage_diff",
@@ -109,6 +124,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Diferença linear dependente da variante de coorte selecionada para Light BioAge."],
         priority="P0",
+        reference_range="-2.0 a +2.0 anos",
+        optimal_range="< 0.0 anos",
+        source_citation="Hao et al., 2025 (Adv Sci)",
     ),
     "gold_bioage": DerivedMetricSpec(
         id="gold_bioage",
@@ -127,6 +145,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Utiliza coeficientes oficiais publicados para NHANES ou UKB sem refit arbitrário."],
         priority="P1",
+        reference_range="Idade cronológica ± 2.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Hao et al., 2025 (Adv Sci)",
     ),
     "gold_bioage_diff": DerivedMetricSpec(
         id="gold_bioage_diff",
@@ -142,6 +163,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Diferença linear dependente da variante de coorte de GOLD BioAge."],
         priority="P1",
+        reference_range="-2.0 a +2.0 anos",
+        optimal_range="< 0.0 anos",
+        source_citation="Hao et al., 2025 (Adv Sci)",
     ),
     "kdm_bioage_v2": DerivedMetricSpec(
         id="kdm_bioage_v2",
@@ -160,6 +184,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Requer parâmetros treinados auditáveis da coorte de referência NHANES V2."],
         priority="P1",
+        reference_range="Idade cronológica ± 3.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Klemera & Doubal, 2006; Levine et al., 2013",
     ),
     "kdm_accel_v2": DerivedMetricSpec(
         id="kdm_accel_v2",
@@ -175,6 +202,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado até disponibilização de parâmetros treinados de referência."],
         priority="P1",
+        reference_range="-3.0 a +3.0 anos",
+        optimal_range="< 0.0 anos",
+        source_citation="Klemera & Doubal, 2006; Levine et al., 2013",
     ),
     "phenoage_v2": DerivedMetricSpec(
         id="phenoage_v2",
@@ -193,6 +223,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Requer pesos treinados oficiais da coorte BioAge V2."],
         priority="P1",
+        reference_range="Idade cronológica ± 2.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Kwon et al., 2021 (BioAge)",
     ),
     "hd_v2": DerivedMetricSpec(
         id="hd_v2",
@@ -211,6 +244,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Escore de desregulação adimensional (não é medido em anos); requer médias e matriz de covariância populacional."],
         priority="P2",
+        reference_range="< 1.0 (Mahalanobis)",
+        optimal_range="< 0.5",
+        source_citation="Cohen et al., 2013; BioAge",
     ),
     "allostatic_load": DerivedMetricSpec(
         id="allostatic_load",
@@ -226,6 +262,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_definition",
         limitations=["Exige definição formal do protocolo institucional e dos limites de alto risco por biomarcador."],
         priority="P2",
+        reference_range="< 3 pontos",
+        optimal_range="0 a 1 ponto",
+        source_citation="Seeman et al., 2001; McEwen, 1998",
     ),
     "clinical_clock_7": DerivedMetricSpec(
         id="clinical_clock_7",
@@ -241,6 +280,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Requer validação e artefato do modelo treinado publicado pelos autores."],
         priority="P2",
+        reference_range="Idade cronológica ± 2.5 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Sci Rep 2025",
     ),
     "kdm_original": DerivedMetricSpec(
         id="kdm_original",
@@ -259,6 +301,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Exige variáveis espirométricas (VEF1) e sorologia CMV frequentemente ausentes em exames de rotina."],
         priority="P2",
+        reference_range="Idade cronológica ± 3.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="Levine, 2013 (J Gerontol A Biol Sci Med Sci)",
     ),
 
     # =========================================================================
@@ -278,6 +323,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Válido estritamente para estado de jejum basal; não intercambiável com HOMA2 computorizado."],
         priority="P0",
+        reference_range="< 2.0 (normal) / < 2.5 (limítrofe)",
+        optimal_range="< 1.0 (alta sensibilidade)",
+        source_citation="Matthews et al., 1985 (Diabetologia)",
     ),
     "quicki": DerivedMetricSpec(
         id="quicki",
@@ -293,6 +341,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Requer valores estritamente positivos de insulina e glicose em jejum."],
         priority="P0",
+        reference_range="> 0.33",
+        optimal_range="≥ 0.38 (alta sensibilidade)",
+        source_citation="Katz et al., 2000 (JCEM)",
     ),
     "mcauley_index": DerivedMetricSpec(
         id="mcauley_index",
@@ -308,6 +359,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Triglicerídeos convertidos para mmol/L (mg/dL / 88.57) antes da transformação logarítmica."],
         priority="P1",
+        reference_range="> 5.8",
+        optimal_range="≥ 6.5 (alta sensibilidade)",
+        source_citation="McAuley et al., 2001 (Diabetes Care)",
     ),
     "tyg_index": DerivedMetricSpec(
         id="tyg_index",
@@ -323,6 +377,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Requer jejum mínimo de 8 a 12 horas."],
         priority="P0",
+        reference_range="< 8.5",
+        optimal_range="< 8.0",
+        source_citation="Simental-Mendía et al., 2008",
     ),
     "mets_ir": DerivedMetricSpec(
         id="mets_ir",
@@ -338,6 +395,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Requer HDL > 1 mg/dL e pareamento temporal de antropometria (IMC)."],
         priority="P0",
+        reference_range="< 35.0",
+        optimal_range="< 30.0",
+        source_citation="Bello-Chavolla et al., 2018",
     ),
     "spise": DerivedMetricSpec(
         id="spise",
@@ -353,6 +413,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Escore validado em populações adultas; valores mais altos indicam maior sensibilidade insulínica."],
         priority="P1",
+        reference_range="> 6.63",
+        optimal_range="≥ 8.0",
+        source_citation="Paulmichl et al., 2016",
     ),
     "tyg_bmi": DerivedMetricSpec(
         id="tyg_bmi",
@@ -368,6 +431,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Marcador combinado epidemiológico de adiposidade e resistência à insulina."],
         priority="P1",
+        reference_range="< 200",
+        optimal_range="< 175",
+        source_citation="Er et al., 2016",
     ),
     "tyg_wc": DerivedMetricSpec(
         id="tyg_wc",
@@ -383,6 +449,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Exige medição padronizada da circunferência da cintura na mesma data ou janela configurada."],
         priority="P1",
+        reference_range="< 700 (H) / < 650 (M)",
+        optimal_range="< 600",
+        source_citation="Zheng et al., 2020",
     ),
     "tyg_whtr": DerivedMetricSpec(
         id="tyg_whtr",
@@ -398,6 +467,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Depende de cintura e altura válidas."],
         priority="P1",
+        reference_range="< 4.2",
+        optimal_range="< 3.8",
+        source_citation="Khamseh et al., 2021",
     ),
     "estimated_average_glucose": DerivedMetricSpec(
         id="estimated_average_glucose",
@@ -413,6 +485,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Reflete a média glicêmica ponderada dos últimos 90 a 120 dias."],
         priority="P0",
+        reference_range="< 117 mg/dL",
+        optimal_range="< 105 mg/dL",
+        source_citation="Nathan et al., 2008 (ADAG Study)",
     ),
 
     # =========================================================================
@@ -432,6 +507,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Índice inflamatório contextual derivado de hemograma; contagens absolutas positivas."],
         priority="P0",
+        reference_range="1.0 a 3.0",
+        optimal_range="1.2 a 2.0",
+        source_citation="Forget et al., 2017 (BMC Res Notes)",
     ),
     "plr": DerivedMetricSpec(
         id="plr",
@@ -447,6 +525,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Ambos os biomarcadores na mesma base de contagem (10³/µL)."],
         priority="P0",
+        reference_range="80 a 180",
+        optimal_range="90 a 140",
+        source_citation="Balta et al., 2016",
     ),
     "mlr": DerivedMetricSpec(
         id="mlr",
@@ -462,6 +543,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Contagens absolutas na mesma escala."],
         priority="P1",
+        reference_range="0.10 a 0.35",
+        optimal_range="0.15 a 0.25",
+        source_citation="Djordjevic et al., 2018",
     ),
     "sii": DerivedMetricSpec(
         id="sii",
@@ -477,6 +561,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Marcador prognóstico contextual de base oncológica/hospitalar."],
         priority="P0",
+        reference_range="< 600",
+        optimal_range="< 450",
+        source_citation="Hu et al., 2014",
     ),
     "siri": DerivedMetricSpec(
         id="siri",
@@ -492,6 +579,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Exige contagens absolutas positivas de leucograma."],
         priority="P0",
+        reference_range="< 1.2",
+        optimal_range="< 0.8",
+        source_citation="Qi et al., 2016",
     ),
     "piv": DerivedMetricSpec(
         id="piv",
@@ -507,6 +597,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Marcador de pesquisa; não utilizar como indicador isolado de diagnóstico."],
         priority="P1",
+        reference_range="< 300",
+        optimal_range="< 200",
+        source_citation="Fucà et al., 2020",
     ),
     "car": DerivedMetricSpec(
         id="car",
@@ -522,6 +615,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Unidades normalizadas: PCR-us em mg/L e albumina em g/dL."],
         priority="P0",
+        reference_range="< 0.2",
+        optimal_range="< 0.1",
+        source_citation="Fairclough et al., 2009",
     ),
     "cally": DerivedMetricSpec(
         id="cally",
@@ -537,6 +633,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Requer PCR-us estritamente positiva (> 0 mg/L)."],
         priority="P1",
+        reference_range="> 2.0",
+        optimal_range="≥ 3.0",
+        source_citation="Iida et al., 2020",
     ),
     "halp": DerivedMetricSpec(
         id="halp",
@@ -552,6 +651,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Hemoglobina e albumina convertidas para g/L (× 10); contagens celulares em 10³/µL."],
         priority="P1",
+        reference_range="> 30",
+        optimal_range="≥ 40",
+        source_citation="Chen et al., 2015",
     ),
     "conut": DerivedMetricSpec(
         id="conut",
@@ -567,6 +669,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Pontuação discreta por faixas: 0-1 normal, 2-4 leve, 5-8 moderada, 9-12 grave."],
         priority="P1",
+        reference_range="0 a 1 (normal)",
+        optimal_range="0 (ótimo)",
+        source_citation="Ignacio de Ulíbarri et al., 2005",
     ),
     "pni": DerivedMetricSpec(
         id="pni",
@@ -582,6 +687,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Fórmula clássica de Onodera: valores > 50 indicam bom estado nutricional."],
         priority="P1",
+        reference_range="≥ 45",
+        optimal_range="≥ 50",
+        source_citation="Onodera et al., 1984",
     ),
 
     # =========================================================================
@@ -601,6 +709,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Saída contínua de 0 a 100; escores < 30 descartam esteatose e ≥ 60 indicam alta probabilidade."],
         priority="P0",
+        reference_range="< 30 (esteatose improvável)",
+        optimal_range="< 20",
+        source_citation="Bedogni et al., 2006 (BMC Gastroenterol)",
     ),
     "dsi": DerivedMetricSpec(
         id="dsi",
@@ -616,6 +727,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado até especificação completa dos coeficientes originais e tratamento de variáveis demográficas."],
         priority="P1",
+        reference_range="< 0.0",
+        optimal_range="< -0.5",
+        source_citation="Kotronen et al., 2009",
     ),
     "hsi": DerivedMetricSpec(
         id="hsi",
@@ -631,6 +745,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Valores < 30 descartam esteatose e > 36 sugerem presença."],
         priority="P2",
+        reference_range="< 30.0 (esteatose improvável)",
+        optimal_range="< 25.0",
+        source_citation="Lee et al., 2010 (Dig Liver Dis)",
     ),
     "fib4": DerivedMetricSpec(
         id="fib4",
@@ -649,6 +766,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
             "Desempenho diagnóstico reduzido em indivíduos abaixo de 35 anos ou acima de 65 anos."
         ],
         priority="P2",
+        reference_range="< 1.30 (<65a) / < 2.0 (≥65a)",
+        optimal_range="< 1.0",
+        source_citation="Sterling et al., 2006 (Hepatology)",
     ),
     "apri": DerivedMetricSpec(
         id="apri",
@@ -664,6 +784,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_definition",
         limitations=["Exige o limite superior da normalidade de AST (ULN) reportado pelo laboratório analítico."],
         priority="P2",
+        reference_range="< 0.50 (fibrose improvável)",
+        optimal_range="< 0.30",
+        source_citation="Wai et al., 2003 (Hepatology)",
     ),
     "ast_alt_ratio": DerivedMetricSpec(
         id="ast_alt_ratio",
@@ -679,6 +802,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Valores > 1 ou > 2 devem ser interpretados no contexto clínico de hepatopatia alcoólica ou fibrose."],
         priority="P2",
+        reference_range="0.8 a 1.2",
+        optimal_range="0.9 a 1.1",
+        source_citation="De Ritis et al., 1957; Botros & Sikaris, 2013",
     ),
 
     # =========================================================================
@@ -698,6 +824,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Conversão molar obrigatória: TG / 88.57 e HDL / 38.67 antes do logaritmo base 10."],
         priority="P0",
+        reference_range="< 0.11 (baixo risco)",
+        optimal_range="< 0.00 (baixíssimo risco)",
+        source_citation="Dobiásová & Frohlich, 2001 (Clin Biochem)",
     ),
     "non_hdl_cholesterol": DerivedMetricSpec(
         id="non_hdl_cholesterol",
@@ -713,6 +842,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Indicador aterogênico primário substituto na ausência de dosagem direta de ApoB."],
         priority="P0",
+        reference_range="< 130 mg/dL",
+        optimal_range="< 100 mg/dL",
+        source_citation="NLA 2014; ESC/EAS 2019 Guidelines",
     ),
     "castelli_1": DerivedMetricSpec(
         id="castelli_1",
@@ -728,6 +860,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Valores ótimos de longevidade preconizados < 3.5."],
         priority="P1",
+        reference_range="< 4.5 (homens) / < 4.0 (mulheres)",
+        optimal_range="< 3.5",
+        source_citation="Castelli et al., 1983 (Framingham Study)",
     ),
     "castelli_2": DerivedMetricSpec(
         id="castelli_2",
@@ -743,6 +878,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Valores ótimos de longevidade preconizados < 2.0."],
         priority="P1",
+        reference_range="< 3.0 (homens) / < 2.5 (mulheres)",
+        optimal_range="< 2.0",
+        source_citation="Castelli et al., 1986 (Circulation)",
     ),
     "tg_hdl_ratio": DerivedMetricSpec(
         id="tg_hdl_ratio",
@@ -758,6 +896,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Unidade explícita em mg/dL; valores < 1.5 indicam alta sensibilidade insulínica."],
         priority="P1",
+        reference_range="< 2.5 (homens) / < 2.0 (mulheres)",
+        optimal_range="< 1.5",
+        source_citation="Gaza et al., 2000; Reaven, 2003",
     ),
     "egfr": DerivedMetricSpec(
         id="egfr",
@@ -773,6 +914,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Equação oficial sem raça; não intercambiável com fórmula antiga MDRD."],
         priority="P0",
+        reference_range="≥ 60 mL/min/1.73m²",
+        optimal_range="≥ 90 mL/min/1.73m²",
+        source_citation="Inker et al., 2021 (NEJM CKD-EPI)",
     ),
     "prevent_age": DerivedMetricSpec(
         id="prevent_age",
@@ -788,6 +932,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado até instalação do pacote oficial AHA auditado pós-errata de 14/10/2026; não confundir com idade biológica sistêmica."],
         priority="P1",
+        reference_range="Idade cronológica ± 3.0 anos",
+        optimal_range="< Idade cronológica",
+        source_citation="AHA PREVENT 2023",
     ),
     "prevent_cvd_10y": DerivedMetricSpec(
         id="prevent_cvd_10y",
@@ -803,6 +950,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado aguardando artefatos oficiais AHA validados."],
         priority="P1",
+        reference_range="< 5.0% (baixo risco)",
+        optimal_range="< 3.0%",
+        source_citation="AHA PREVENT 2023",
     ),
     "prevent_cvd_30y": DerivedMetricSpec(
         id="prevent_cvd_30y",
@@ -818,6 +968,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado aguardando artefatos oficiais AHA validados."],
         priority="P1",
+        reference_range="< 15.0%",
+        optimal_range="< 10.0%",
+        source_citation="AHA PREVENT 2023",
     ),
     "prevent_ascvd": DerivedMetricSpec(
         id="prevent_ascvd",
@@ -833,6 +986,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado aguardando artefatos oficiais AHA validados."],
         priority="P1",
+        reference_range="< 5.0%",
+        optimal_range="< 3.0%",
+        source_citation="AHA PREVENT 2023",
     ),
     "prevent_hf": DerivedMetricSpec(
         id="prevent_hf",
@@ -848,6 +1004,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="needs_reference",
         limitations=["Bloqueado aguardando artefatos oficiais AHA validados."],
         priority="P1",
+        reference_range="< 5.0%",
+        optimal_range="< 2.0%",
+        source_citation="AHA PREVENT 2023",
     ),
     # Legadas preservadas de cardio_ratios.py
     "apob_apoa1_ratio": DerivedMetricSpec(
@@ -864,6 +1023,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Alvo ótimo preconizado < 0.60 para proteção aterogênica máxima."],
         priority="P1",
+        reference_range="< 0.80 (homens) / < 0.70 (mulheres)",
+        optimal_range="< 0.60",
+        source_citation="Walldius et al., 2001 (AMORIS Study)",
     ),
     "remnant_cholesterol": DerivedMetricSpec(
         id="remnant_cholesterol",
@@ -879,6 +1041,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Valores < 15 mg/dL ideais; requer dosagem ou cálculo consistente de LDL."],
         priority="P1",
+        reference_range="< 30 mg/dL",
+        optimal_range="< 20 mg/dL",
+        source_citation="Nordestgaard et al., 2013 (Lancet)",
     ),
 
     # =========================================================================
@@ -898,6 +1063,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Não distingue massa magra de massa adiposa."],
         priority="P0",
+        reference_range="18.5 a 24.9 kg/m²",
+        optimal_range="21.0 a 23.5 kg/m²",
+        source_citation="World Health Organization (WHO)",
     ),
     "whtr": DerivedMetricSpec(
         id="whtr",
@@ -913,6 +1081,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Alvo ótimo geral < 0.50 mantendo independência de sexo e etnia."],
         priority="P0",
+        reference_range="< 0.50",
+        optimal_range="< 0.48",
+        source_citation="Ashwell & Gibson, 2016",
     ),
     "bri": DerivedMetricSpec(
         id="bri",
@@ -928,6 +1099,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Requer excentricidade corporal válida: (cintura / (π × altura)) ≤ 1."],
         priority="P0",
+        reference_range="1.0 a 4.0",
+        optimal_range="1.5 a 3.0",
+        source_citation="Thomas et al., 2013 (Obesity)",
     ),
     "wwi": DerivedMetricSpec(
         id="wwi",
@@ -943,6 +1117,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Avalia adiposidade central descolada do peso total."],
         priority="P1",
+        reference_range="< 11.0",
+        optimal_range="< 10.5",
+        source_citation="Park et al., 2018",
     ),
     "rfm": DerivedMetricSpec(
         id="rfm",
@@ -958,6 +1135,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Equação sexo-específica; validada contra absorciometria de raios-X de dupla energia (DEXA)."],
         priority="P1",
+        reference_range="10 a 22% (homens) / 20 a 32% (mulheres)",
+        optimal_range="12 a 18% (homens) / 20 a 25% (mulheres)",
+        source_citation="Woolcott & Bergman, 2018 (Sci Rep)",
     ),
     "vai": DerivedMetricSpec(
         id="vai",
@@ -973,6 +1153,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Triglicerídeos e HDL convertidos para mmol/L; sensível à disfunção do tecido adiposo visceral."],
         priority="P1",
+        reference_range="< 2.0",
+        optimal_range="< 1.5",
+        source_citation="Amato et al., 2010 (Diabetes Care)",
     ),
     "lap": DerivedMetricSpec(
         id="lap",
@@ -988,6 +1171,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Valores com cintura abaixo da constante de base (65 cm masc, 58 cm fem) resultam em valores negativos ou nulos."],
         priority="P1",
+        reference_range="< 35 (homens) / < 25 (mulheres)",
+        optimal_range="< 25 (homens) / < 20 (mulheres)",
+        source_citation="Kahn, 2005",
     ),
     "cmi": DerivedMetricSpec(
         id="cmi",
@@ -1003,6 +1189,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Razão triglicerídeos/HDL calculada em mg/dL."],
         priority="P1",
+        reference_range="< 1.0",
+        optimal_range="< 0.7",
+        source_citation="Wakabayashi et al., 2015",
     ),
 
     # =========================================================================
@@ -1022,6 +1211,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Variável medida diretamente; aliases como testosterone_total mapeados sem duplicação de métrica."],
         priority="P0",
+        reference_range="300 a 890 ng/dL",
+        optimal_range="500 a 750 ng/dL",
+        source_citation="Endocrine Society Guidelines",
     ),
     "hematocrit": DerivedMetricSpec(
         id="hematocrit",
@@ -1037,6 +1229,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Variável medida diretamente no hemograma."],
         priority="P0",
+        reference_range="40 a 52% (homens) / 36 a 48% (mulheres)",
+        optimal_range="42 a 48% (homens) / 38 a 44% (mulheres)",
+        source_citation="World Health Organization",
     ),
     "hemoglobin": DerivedMetricSpec(
         id="hemoglobin",
@@ -1052,6 +1247,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Variável medida diretamente no hemograma."],
         priority="P0",
+        reference_range="13.5 a 17.5 g/dL (homens) / 12.0 a 15.5 g/dL (mulheres)",
+        optimal_range="14.5 a 16.5 g/dL (homens) / 13.0 a 15.0 g/dL (mulheres)",
+        source_citation="World Health Organization",
     ),
     "hba1c": DerivedMetricSpec(
         id="hba1c",
@@ -1067,6 +1265,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Marcador laboratorial primário de controle glicêmico de médio prazo."],
         priority="P0",
+        reference_range="< 5.7%",
+        optimal_range="< 5.4%",
+        source_citation="ADA Guidelines 2024",
     ),
     "hs_crp": DerivedMetricSpec(
         id="hs_crp",
@@ -1082,6 +1283,9 @@ DERIVED_METRICS_CATALOG: dict[str, DerivedMetricSpec] = {
         implementation_status="ready",
         limitations=["Variável medida diretamente; padronizada em mg/L."],
         priority="P0",
+        reference_range="< 1.0 mg/L (baixo risco)",
+        optimal_range="< 0.5 mg/L",
+        source_citation="Ridker et al., 2003 (Circulation)",
     ),
 }
 

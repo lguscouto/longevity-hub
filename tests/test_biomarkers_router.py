@@ -13,6 +13,12 @@ def test_biomarkers_catalog_endpoint(client: TestClient):
     assert len(data["metrics"]) >= 64
     assert "biological_age" in data["categories"]
     assert "metabolic_insulin" in data["categories"]
+    homa = next((m for m in data["metrics"] if m["id"] == "homa_ir"), None)
+    assert homa is not None
+    assert homa["reference_range"] == "< 2.0 (normal) / < 2.5 (limítrofe)"
+    assert homa["optimal_range"] == "< 1.0 (alta sensibilidade)"
+    assert homa["source_citation"] == "Matthews et al., 1985 (Diabetologia)"
+    assert homa["source"] == "Matthews et al., 1985 (Diabetologia)"
 
 
 def test_biomarkers_evaluate_adhoc_endpoint(client: TestClient):
@@ -116,6 +122,14 @@ def test_biomarkers_derived_with_ingested_labs_and_persistence(client: TestClien
     assert homa["status"] == "calculated"
     # (88 * 6.5) / 405 = 1.412
     assert pytest.approx(homa["value"], rel=1e-2) == 1.41
+    assert homa["reference_range"] == "< 2.0 (normal) / < 2.5 (limítrofe)"
+    assert homa["optimal_range"] == "< 1.0 (alta sensibilidade)"
+    assert homa["source"] == "Matthews et al., 1985 (Diabetologia)"
+
+    # Verificar contexto biológico
+    assert data["context"]["biological_sex"] == "male"
+    assert data["context"]["chronological_age"] is not None
+    assert data["context"]["chronological_age"] > 40
 
     # Localizar PhenoAge
     pheno = next((m for m in categories["biological_age"] if m["metric_id"] == "phenoage"), None)
