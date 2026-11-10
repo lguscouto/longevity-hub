@@ -78,7 +78,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const rangeConfig = rangeType ? RANGE_SEMANTICS[rangeType] : null;
 
   return (
-    <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+    <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors min-w-0">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{title}</span>
@@ -103,11 +103,11 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         )}
       </div>
       {(subtitle || (rangeConfig && rangeValue) || trend || onExplainChange) && (
-        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
             {rangeConfig && rangeValue ? (
               <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${rangeConfig.badgeClass}`}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold border ${rangeConfig.badgeClass} max-w-full`}
                 title={rangeConfig.tooltip}
                 aria-label={`${rangeConfig.label}: ${rangeValue}`}
               >
@@ -116,9 +116,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                 <span className="font-mono">{rangeValue}</span>
               </span>
             ) : subtitle ? (
-              <span className="truncate">{subtitle}</span>
+              <span className="truncate max-w-full">{subtitle}</span>
             ) : null}
-            {trend && <span className="font-semibold text-emerald-600 dark:text-emerald-400">{trend}</span>}
+            {trend && <span className="font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">{trend}</span>}
           </div>
           {onExplainChange && (
             <ExplainChangeButton onClick={onExplainChange} size="sm" />
