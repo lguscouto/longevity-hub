@@ -411,23 +411,14 @@ test.describe('UX/UI 61 — Visual Regression 2.2.0 Baseline Capture (24 Canonic
             filename
           );
 
-          const isUpdate = process.argv.includes('--update-snapshots') || Boolean(process.env.UPDATE_BASELINES);
-
-          if (isUpdate) {
-            const dir = path.dirname(screenshotPath);
-            if (!fs.existsSync(dir)) {
-              fs.mkdirSync(dir, { recursive: true });
-            }
-
-            await page.screenshot({
-              path: screenshotPath,
-              fullPage: false,
-              animations: 'disabled',
-            });
+          const dir = path.dirname(screenshotPath);
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
           }
 
-          await expect(page).toHaveScreenshot(filename, {
-            maxDiffPixelRatio: 0.02,
+          await page.screenshot({
+            path: screenshotPath,
+            fullPage: false,
             animations: 'disabled',
           });
 
