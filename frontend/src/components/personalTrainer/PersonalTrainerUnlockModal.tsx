@@ -131,7 +131,6 @@ export const PersonalTrainerUnlockModal: React.FC<PersonalTrainerUnlockModalProp
           <form onSubmit={handleUnlock} className="space-y-4">
             <FormField
               label="Digite seu PIN de 4 dígitos"
-              helperText="PIN padrão de fábrica: 1234 (configurável pelo titular)"
               error={error || undefined}
             >
               <Input

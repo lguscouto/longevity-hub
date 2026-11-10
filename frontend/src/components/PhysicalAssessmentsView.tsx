@@ -129,7 +129,14 @@ export const PhysicalAssessmentsView: React.FC = () => {
 
   const handleCopyPersonalLink = async () => {
     try {
-      const shareUrl = `${window.location.origin}${window.location.pathname}#personal`;
+      const isLoopback =
+        typeof window !== 'undefined' &&
+        (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+      const origin = isLoopback
+        ? 'http://whitexp.ddns.net:8887'
+        : window.location.origin.replace(/^https:/, 'http:');
+      const path = window.location.pathname === '/' ? '' : window.location.pathname;
+      const shareUrl = `${origin}${path}#personal`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(shareUrl);
       } else {
@@ -145,7 +152,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
     } catch {
       showToast({
         title: 'Não foi possível copiar',
-        message: 'Acesse diretamente pelo endereço: #personal',
+        message: 'Copie a URL: http://whitexp.ddns.net:8887/#personal',
         type: 'error',
       });
     }
