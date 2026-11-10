@@ -228,6 +228,12 @@ export function usePhysicalAssessments() {
     }
   };
 
+  const parseNumericInput = (val: string): number | null => {
+    if (!val || !val.trim()) return null;
+    const num = parseFloat(val.replace(',', '.'));
+    return Number.isFinite(num) ? num : null;
+  };
+
   const handleCreateAssessment = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!formDate) {
@@ -243,11 +249,11 @@ export function usePhysicalAssessments() {
       const payload = {
         assessment_date: formDate,
         title: formTitle || undefined,
-        weight_kg: formWeight ? parseFloat(formWeight) : undefined,
-        body_fat_percentage: formBodyFat ? parseFloat(formBodyFat) : undefined,
-        waist_cm: formWaist ? parseFloat(formWaist) : undefined,
-        abdomen_cm: formAbdomen ? parseFloat(formAbdomen) : undefined,
-        hip_cm: formHip ? parseFloat(formHip) : undefined,
+        weight_kg: parseNumericInput(formWeight) ?? undefined,
+        body_fat_percentage: parseNumericInput(formBodyFat) ?? undefined,
+        waist_cm: parseNumericInput(formWaist) ?? undefined,
+        abdomen_cm: parseNumericInput(formAbdomen) ?? undefined,
+        hip_cm: parseNumericInput(formHip) ?? undefined,
         notes: formNotes || undefined,
       };
 
@@ -330,11 +336,11 @@ export function usePhysicalAssessments() {
       const payload = {
         assessment_date: editDate,
         title: editTitle || undefined,
-        weight_kg: editWeight ? parseFloat(editWeight) : null,
-        body_fat_percentage: editBodyFat ? parseFloat(editBodyFat) : null,
-        waist_cm: editWaist ? parseFloat(editWaist) : null,
-        abdomen_cm: editAbdomen ? parseFloat(editAbdomen) : null,
-        hip_cm: editHip ? parseFloat(editHip) : null,
+        weight_kg: parseNumericInput(editWeight),
+        body_fat_percentage: parseNumericInput(editBodyFat),
+        waist_cm: parseNumericInput(editWaist),
+        abdomen_cm: parseNumericInput(editAbdomen),
+        hip_cm: parseNumericInput(editHip),
         notes: editNotes || undefined,
       };
 

@@ -75,7 +75,18 @@ def _parse_cors_origins() -> Tuple[str, ...]:
 
 
 LOCAL_ALLOWED_ORIGINS = _parse_cors_origins()
-LOCAL_ALLOWED_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1|whitexp\.ddns\.net|192\.168\.\d+\.\d+)(:\d+)?$"
+
+
+def _get_cors_origin_regex() -> str:
+    custom = os.environ.get("LONGEVIDADE_CORS_ORIGIN_REGEX")
+    if custom:
+        return custom
+    if os.environ.get("LONGEVIDADE_ALLOW_LAN") == "1":
+        return r"^https?://(localhost|127\.0\.0\.1|whitexp\.ddns\.net|192\.168\.\d+\.\d+)(:\d+)?$"
+    return r"^https?://(localhost|127\.0\.0\.1|whitexp\.ddns\.net)(:\d+)?$"
+
+
+LOCAL_ALLOWED_ORIGIN_REGEX = _get_cors_origin_regex()
 
 
 @asynccontextmanager

@@ -69,21 +69,17 @@ export function useFocusTrap(
   containerRef: React.RefObject<HTMLElement | null>,
   options: UseFocusTrapOptions
 ): void {
-  const {
-    isOpen,
-    onClose,
-    initialFocusRef,
-    returnFocusOnDeactivate = true,
-    disableEscape = false,
-    lockScroll = true,
-    closeOnNavigation = true,
-  } = options
+  const { isOpen } = options
 
   const overlayId = useId()
   const previousActiveElementRef = useRef<HTMLElement | null>(null)
+  const optionsRef = useRef(options)
+  optionsRef.current = options
 
   useEffect(() => {
     if (!isOpen) return
+
+    const { lockScroll = true } = optionsRef.current
 
     // Save previous active element to restore focus on exit
     const prevActive = document.activeElement as HTMLElement | null
@@ -102,7 +98,7 @@ export function useFocusTrap(
     const stackItem: OverlayStackItem = {
       id: overlayId,
       containerRef,
-      onClose,
+      onClose: () => optionsRef.current.onClose?.(),
       previousActiveElement: prevActive,
       lockScroll,
       previousBodyOverflow: prevOverflow,
@@ -114,8 +110,9 @@ export function useFocusTrap(
       // Only set initial focus if this overlay is still in the stack
       if (!activeOverlayStack.some((item) => item.id === overlayId)) return
 
-      if (initialFocusRef?.current) {
-        initialFocusRef.current.focus()
+      const currentInitialFocus = optionsRef.current.initialFocusRef
+      if (currentInitialFocus?.current) {
+        currentInitialFocus.current.focus()
         return
       }
 
@@ -133,13 +130,15 @@ export function useFocusTrap(
 
     // Handle keydown for Tab trapping and Escape
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isOpen || !containerRef.current) return
+      if (!containerRef.current) return
 
       // ONLY the top-most overlay in the stack responds to keyboard events
       const topOverlay = activeOverlayStack[activeOverlayStack.length - 1]
       if (!topOverlay || topOverlay.id !== overlayId) {
         return
       }
+
+      const { disableEscape = false, onClose } = optionsRef.current
 
       if (event.key === 'Escape') {
         if (!disableEscape && onClose) {
@@ -182,6 +181,7 @@ export function useFocusTrap(
     }
 
     const handleNavigation = () => {
+      const { closeOnNavigation = true, onClose } = optionsRef.current
       if (closeOnNavigation && onClose) {
         onClose()
       }
@@ -203,9 +203,14 @@ export function useFocusTrap(
         activeOverlayStack.splice(idx, 1)
       }
 
+      const {
+        lockScroll: shouldLockScroll = true,
+        returnFocusOnDeactivate = true,
+      } = optionsRef.current
+
       // Restore scroll only if no active overlay demands locked scroll
       if (activeOverlayStack.length === 0) {
-        if (lockScroll) {
+        if (shouldLockScroll) {
           document.body.style.overflow = globalOriginalOverflow
         }
       } else {
@@ -230,15 +235,5 @@ export function useFocusTrap(
         }
       }
     }
-  }, [
-    isOpen,
-    onClose,
-    containerRef,
-    initialFocusRef,
-    returnFocusOnDeactivate,
-    disableEscape,
-    lockScroll,
-    closeOnNavigation,
-    overlayId,
-  ])
+  }, [isOpen, containerRef, overlayId])
 }

@@ -94,12 +94,14 @@ IF "%FORCE_BUILD%"=="1" (
 
 IF "%ALLOW_LAN%"=="1" (
     set "HOST=0.0.0.0"
+    set "LONGEVIDADE_ALLOW_LAN=1"
     if not defined LONGEVIDADE_CORS_ORIGINS (
         set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887,http://localhost:8886,http://localhost:8887,http://192.168.100.250:8886,http://192.168.100.250:8887,http://whitexp.ddns.net:8887,https://whitexp.ddns.net:8887"
     )
     echo [INFO] Modo rede ativado: escutando em 0.0.0.0 [acesso externo e local liberado na porta 8887]...
 ) ELSE (
     set "HOST=127.0.0.1"
+    set "LONGEVIDADE_ALLOW_LAN=0"
     if not defined LONGEVIDADE_CORS_ORIGINS (
         set "LONGEVIDADE_CORS_ORIGINS=http://127.0.0.1:8886,http://127.0.0.1:8887,http://localhost:8886,http://localhost:8887,http://whitexp.ddns.net:8887,https://whitexp.ddns.net:8887"
     )

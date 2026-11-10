@@ -137,6 +137,27 @@ describe('useFocusTrap & Modal Stacking', () => {
     document.body.removeChild(triggerBtn)
   })
 
+  it('does not steal focus or reset when container re-renders while open', () => {
+    let closeCount = 0
+    const { rerender } = render(<TestTrapComponent isOpen={true} onClose={() => { closeCount++ }} />)
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    const middleInput = screen.getByTestId('trap-container-input-middle')
+    middleInput.focus()
+    expect(document.activeElement).toBe(middleInput)
+
+    // Re-render with a new inline onClose callback (simulating parent component state change)
+    rerender(<TestTrapComponent isOpen={true} onClose={() => { closeCount++ }} />)
+    act(() => {
+      vi.advanceTimersByTime(50)
+    })
+
+    // Active element MUST remain on middleInput, NOT jump to first button!
+    expect(document.activeElement).toBe(middleInput)
+  })
+
   it('manages 3 stacked overlays (Drawer -> Modal -> ConfirmDialog) where Escape only closes the top-most overlay', () => {
     const onCloseDrawer = vi.fn()
     const onCloseModal = vi.fn()

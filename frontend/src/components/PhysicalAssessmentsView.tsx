@@ -119,6 +119,10 @@ export const PhysicalAssessmentsView: React.FC = () => {
   const { showToast } = useToast();
   const [copiedPersonalLink, setCopiedPersonalLink] = React.useState(false);
 
+  const handleCloseEditModal = React.useCallback(() => {
+    setEditingAssessment(null);
+  }, [setEditingAssessment]);
+
   // Se veio do Portal do Personal clicando em "Nova Avaliação", abre o wizard automaticamente
   React.useEffect(() => {
     if (sessionStorage.getItem('longevidade_open_new_assessment') === 'true') {
@@ -398,7 +402,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
       {/* EDIT ASSESSMENT MODAL */}
       <EditAssessmentModal
         isOpen={Boolean(editingAssessment)}
-        onClose={() => setEditingAssessment(null)}
+        onClose={handleCloseEditModal}
         editError={editError}
         editDate={editDate}
         setEditDate={setEditDate}
