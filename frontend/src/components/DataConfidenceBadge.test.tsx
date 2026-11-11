@@ -14,6 +14,14 @@ describe('DataConfidenceBadge (UX_UI_51)', () => {
     vi.clearAllMocks();
   });
 
+  it('omits missing coverage and counts instead of showing undefined values', async () => {
+    mockRequestJson.mockResolvedValueOnce({ confidence: 'unavailable' });
+    render(<DataConfidenceBadge selectedDate="2026-11-11" />);
+    const label = await screen.findByText('Dados insuficientes');
+    expect(label.parentElement).not.toHaveTextContent('%');
+    expect(label.parentElement).not.toHaveAttribute('title', expect.stringContaining('undefined'));
+  });
+
   it('renders canonical Portuguese confidence label and coverage percentage', async () => {
     const today = formatLocalDateKey();
     mockRequestJson.mockResolvedValueOnce({

@@ -95,7 +95,7 @@ const CATEGORY_CONFIG: Record<
   cardiovascular_renal: {
     title: '5. Cardiovascular, Lipídico e Renal',
     icon: Heart,
-    description: 'Aterogenicidade de partículas, função de filtração glomerular e risco cardiometabólico.',
+    description: 'Indicadores de colesterol, função dos rins e risco cardiovascular e metabólico.',
   },
   body_composition: {
     title: '6. Adiposidade e Composição Corporal',

@@ -96,7 +96,7 @@ test.describe('UX_UI_25: Keyboard Navigation & Focus Visible Audit', () => {
 
   test('2. Abertura e fechamento de modal via Teclado (Enter / Escape) com Focus Trap', async ({ page }) => {
     // Focus Registrar Métrica button directly
-    const openBtn = page.getByRole('button', { name: 'Registrar Métrica' });
+    const openBtn = page.getByRole('button', { name: 'Registrar medição manual' });
     await openBtn.focus();
     await expect(openBtn).toBeFocused();
 
@@ -123,7 +123,7 @@ test.describe('UX_UI_25: Keyboard Navigation & Focus Visible Audit', () => {
   });
 
   test('3. Doctor Briefing: Abertura e fechamento via Teclado com Escape', async ({ page }) => {
-    const briefingBtn = page.getByRole('button', { name: 'Doctor Briefing' });
+    const briefingBtn = page.getByRole('button', { name: 'Resumo para consulta' });
     await briefingBtn.focus();
     await expect(briefingBtn).toBeFocused();
 

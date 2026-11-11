@@ -74,7 +74,7 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider opacity-75">Como estou hoje?</span>
               <span className="px-2 py-0.5 rounded-radius-full text-xs font-bold bg-slate-900/10 dark:bg-white/10 uppercase">
-                {guidance?.confidence || 'unavailable'}
+                {({ high: 'Confiança alta', medium: 'Confiança moderada', low: 'Confiança baixa', unavailable: 'Dados insuficientes' } as Record<string, string>)[guidance?.confidence] || 'Dados insuficientes'}
               </span>
             </div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{guidance?.label || 'Orientação Diária'}</h2>

@@ -67,6 +67,7 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
                 <strong className="text-slate-900 dark:text-white">{privacyModeLabel}</strong>
               </p>
               <p className="text-slate-500 dark:text-slate-400">{privacyModeDescription}</p>
+              <p>As respostas são informativas e podem conter erros. Dados insuficientes de recuperação limitam recomendações de treino; confirme decisões de saúde com um profissional.</p>
             </div>
           </div>
         </div>

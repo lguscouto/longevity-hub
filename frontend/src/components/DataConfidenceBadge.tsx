@@ -63,6 +63,8 @@ export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ select
   }[confidenceKey]
 
   const Icon = config.icon
+  const hasCoverage = typeof summary.coverage_pct === 'number' && Number.isFinite(summary.coverage_pct)
+  const hasCounts = Number.isFinite(summary.metrics_available) && Number.isFinite(summary.metrics_expected)
   const isToday = selectedDate === formatLocalDateKey()
   const freshnessSource = summary.last_sync_at || summary.evaluated_at || (isToday ? selectedDate : undefined)
   const freshness = formatDataFreshness(freshnessSource, {
@@ -72,12 +74,12 @@ export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ select
 
   return (
     <div
-      title={`${summary.metrics_available}/${summary.metrics_expected} métricas ativas (${summary.coverage_pct}% cobertura) • ${freshness.text}`}
+      title={`${hasCounts ? `${summary.metrics_available}/${summary.metrics_expected} métricas ativas` : config.label}${hasCoverage ? ` (${summary.coverage_pct}% cobertura)` : ''} • ${freshness.text}`}
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${config.bg} transition-all`}
     >
       <Icon className="h-3.5 w-3.5" />
       <span>{config.label}</span>
-      <span className="opacity-75 font-normal">({summary.coverage_pct}%)</span>
+      {hasCoverage && <span className="opacity-75 font-normal">({summary.coverage_pct}%)</span>}
       {freshness.isStale && (
         <span className="text-xs text-rose-500 font-bold ml-0.5">• Desatualizado</span>
       )}

@@ -264,14 +264,14 @@ for (const vp of VIEWPORTS) {
       await page.waitForLoadState('domcontentloaded');
 
       // Click metric registration button in header
-      const openModalBtn = page.getByRole('button', { name: 'Registrar Métrica' });
+      const openModalBtn = page.getByRole('button', { name: 'Registrar medição manual' });
       await expect(openModalBtn).toBeVisible();
       await openModalBtn.click();
 
       // Modal should be visible
       const modal = page.getByRole('dialog');
       await expect(modal).toBeVisible();
-      await expect(page.getByText('Registrar Métricas Manuais')).toBeVisible();
+      await expect(modal.getByRole('heading', { name: 'Registrar medição' })).toBeVisible();
 
       // Close modal
       const closeBtn = page.getByLabel('Fechar modal');
@@ -283,13 +283,13 @@ for (const vp of VIEWPORTS) {
       await page.goto('/');
       await page.waitForLoadState('domcontentloaded');
 
-      const briefingBtn = page.getByRole('button', { name: 'Doctor Briefing' });
+      const briefingBtn = page.getByRole('button', { name: 'Resumo para consulta' });
       await expect(briefingBtn).toBeVisible();
       await briefingBtn.click();
 
       const modal = page.getByRole('dialog');
       await expect(modal).toBeVisible();
-      await expect(page.getByRole('heading', { name: /Relatório Clínico/i })).toBeVisible();
+      await expect(modal.getByRole('heading', { name: 'Resumo para consulta médica' })).toBeVisible();
 
       // Close briefing
       const closeBtn = page.getByRole('button', { name: 'Fechar', exact: true }).first();
@@ -325,9 +325,9 @@ for (const vp of VIEWPORTS) {
       await expect(page.getByText(/Google Health/i).first()).toBeVisible();
 
       // Click Diagnóstico & Sistema sub-tab in main content (role="tab")
-      const diagBtn = page.getByRole('main').getByRole('tab', { name: 'Diagnóstico & Sistema' });
+      const diagBtn = page.getByRole('main').getByRole('tab', { name: 'Diagnóstico e Sistema' });
       await diagBtn.click();
-      await expect(page.getByText('Base de Dados SQLite Local')).toBeVisible();
+      await expect(page.getByText('Armazenamento local', { exact: true })).toBeVisible();
     });
 
     test('5. Copiloto de IA: Navegar Modos e Interagir', async ({ page }) => {
@@ -335,7 +335,7 @@ for (const vp of VIEWPORTS) {
       await page.waitForLoadState('domcontentloaded');
 
       // Navigate to IA & Copiloto tab
-      const copilotTab = page.getByRole('button', { name: 'IA & Copiloto' });
+      const copilotTab = page.getByRole('button', { name: 'IA e Copiloto' });
       await copilotTab.click();
 
       // Verify task buttons: Analisar, Conversar, Histórico

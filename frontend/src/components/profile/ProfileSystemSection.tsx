@@ -39,7 +39,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
                 <StatusBadge variant="success">Armazenamento local ativo</StatusBadge>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Seus dados ficam salvos com segurança no seu dispositivo no arquivo <code>data/longevity.sqlite3</code>.
+                Seus dados ficam armazenados neste dispositivo, normalmente no arquivo <code>data/longevity.sqlite3</code>.
               </p>
             </div>
           </div>
@@ -62,7 +62,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
               <div>
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">IA e provedores</h4>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  OpenAI, Anthropic, Gemini, Groq, Ollama (BYOK)
+                  OpenAI, Anthropic e OpenRouter (chave própria)
                 </span>
               </div>
             </div>
