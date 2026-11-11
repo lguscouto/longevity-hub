@@ -221,12 +221,18 @@ def test_phenoage_rejects_markers_mixed_across_collection_dates(client):
 def test_lab_batch_rejects_markers_mixed_across_collection_dates(client):
     from backend.app.config import get_db_path
 
+    units = {
+        "glucose_mgdl": "mg/dL", "creatinine_mgdl": "mg/dL",
+        "albumin_gdl": "g/dL", "hscrp_mgl": "mg/L",
+        "lymphocyte_pct": "%", "mcv_fl": "fL", "rdw_pct": "%",
+        "alk_phos_ul": "U/L", "wbc_1000ul": "10^3/uL",
+    }
     records = [
         {
             "collected_at": "2020-01-01" if index % 2 else "2026-08-01",
             "metric_key": metric_key,
             "value": value,
-            "unit": "unit",
+            "unit": units[metric_key],
         }
         for index, (metric_key, value) in enumerate(PHENOAGE_VALUES.items())
     ]

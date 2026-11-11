@@ -1,6 +1,6 @@
 import csv
 import io
-from fastapi import APIRouter, Response, Query
+from fastapi import APIRouter, Response, Query, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
@@ -62,12 +62,15 @@ def add_batch_labs(batch: BatchLabInput):
     initialize_db(db_path)
     repo = LongevityRepository(db_path)
     recs = [r.model_dump() for r in batch.records]
-    result = ingest_lab_records(
-        recs,
-        repo,
-        chronological_age=batch.chronological_age,
-        record_origin=PATIENT_LAB_ORIGIN,
-    )
+    try:
+        result = ingest_lab_records(
+            recs,
+            repo,
+            chronological_age=batch.chronological_age,
+            record_origin=PATIENT_LAB_ORIGIN,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return result
 
 @router.delete("/date/{collected_at}")

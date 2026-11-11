@@ -137,6 +137,13 @@ def ingest_lab_records(
     latest_values: Dict[str, float] = {}
     phenoage_candidates: list[Dict[str, Any]] = []
 
+    # Valida o lote completo antes da primeira gravação para evitar persistência parcial.
+    from longevidade.metrics.unit_conversion import validate_phenoage_lab_unit
+    for rec in records:
+        validate_phenoage_lab_unit(
+            str(rec.get("metric_key") or ""), rec.get("raw_unit") or rec.get("unit")
+        )
+
     for rec in records:
         normalized_rec = normalize_lab_record(rec)
         key = normalize_lab_key(normalized_rec.get("metric_key"))

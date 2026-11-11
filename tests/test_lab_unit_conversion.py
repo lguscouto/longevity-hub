@@ -1,7 +1,51 @@
 import json
 from datetime import date
+import pytest
 from longevidade.db.repository import LongevityRepository
 from backend.app.config import get_db_path
+from longevidade.metrics.unit_conversion import convert_biomarker_unit, validate_phenoage_lab_unit
+
+
+@pytest.mark.parametrize("marker", [
+    "glucose_mgdl", "creatinine_mgdl", "albumin_gdl", "hscrp_mgl",
+    "lymphocyte_pct", "mcv_fl", "rdw_pct", "alk_phos_ul", "wbc_1000ul",
+])
+def test_every_phenoage_marker_rejects_incompatible_units(marker):
+    with pytest.raises(ValueError, match=marker):
+        validate_phenoage_lab_unit(marker, "kg")
+
+
+def test_whole_cell_units_are_converted_even_for_small_values():
+    result = convert_biomarker_unit("wbc", 5, "cells/uL")
+    assert result.value == pytest.approx(0.005)
+
+
+@pytest.mark.parametrize("invalid_unit", [None, "", "g/L", "mmol/mol", "unidade desconhecida"])
+def test_rejects_invalid_phenoage_units_before_inserting_any_record(client, invalid_unit):
+    records = _full_phenoage_panel_raw_mmol()
+    records[-1]["unit"] = invalid_unit
+    response = client.post("/api/labs/batch", json={"records": records})
+    assert response.status_code == 422
+    assert "wbc_1000ul" in response.json()["detail"]
+    assert LongevityRepository(get_db_path()).get_lab_results(limit=20) == []
+
+
+def test_equivalent_panels_produce_same_phenoage_and_keep_raw_values(client):
+    records = _full_phenoage_panel_raw_mmol()
+    first = client.post("/api/labs/batch", json={"chronological_age": 40, "records": records})
+    assert first.status_code == 200
+    canonical = [dict(record) for record in records]
+    for index, value, unit in [(0, 90.0, "mg/dL"), (1, 1.0, "mg/dL"), (2, 4.5, "g/dL"), (3, 1.5, "mg/L"), (8, 6.0, "10^3/uL")]:
+        canonical[index].update(value=value, unit=unit)
+    for record in canonical:
+        record["collected_at"] = "2026-11-02"
+    second = client.post("/api/labs/batch", json={"chronological_age": 40, "records": canonical})
+    assert second.status_code == 200
+    assert first.json()["phenoage"]["pheno_age"] == second.json()["phenoage"]["pheno_age"]
+    labs = LongevityRepository(get_db_path()).get_lab_results(limit=20)
+    glucose = next(r for r in labs if r["metric_key"] == "glucose_mgdl" and r["collected_at"] == "2026-11-01")
+    assert glucose["raw_value"] == 4.995
+    assert glucose["raw_unit"] == "mmol/L"
 
 
 def _full_phenoage_panel_raw_mmol(collected_at: str = "2026-11-01"):

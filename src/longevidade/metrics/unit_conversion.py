@@ -229,8 +229,29 @@ def _clean_unit(unit_str: str | None) -> str:
     if not unit_str:
         return ""
     u = unit_str.strip().lower()
-    u = u.replace(" ", "").replace("^", "").replace("³", "3").replace("µ", "u")
+    u = u.replace(" ", "").replace("^", "").replace("³", "3").replace("µ", "u").replace("μ", "u")
     return u
+
+
+_PHENOAGE_UNITS: dict[str, frozenset[str]] = {
+    "glucose_mgdl": frozenset({"mg/dl", "mgdl", "mmol/l"}),
+    "creatinine_mgdl": frozenset({"mg/dl", "mgdl", "umol/l"}),
+    "albumin_gdl": frozenset({"g/dl", "gdl", "g/l", "gl"}),
+    "hscrp_mgl": frozenset({"mg/l", "mgl", "mg/dl", "mgdl"}),
+    "lymphocyte_pct": frozenset({"%"}),
+    "mcv_fl": frozenset({"fl"}),
+    "rdw_pct": frozenset({"%"}),
+    "alk_phos_ul": frozenset({"u/l", "ul"}),
+    "wbc_1000ul": frozenset({"103/ul", "k/ul", "mil/ul", "mil/mm3", "cells/ul", "cells/mm3", "celulas/ul", "celulas/mm3", "/ul", "/mm3", "/mcl"}),
+}
+
+
+def validate_phenoage_lab_unit(metric_key: str, unit: str | None) -> None:
+    """Rejeita unidades não suportadas para os nove marcadores de PhenoAge."""
+    key = normalize_lab_key(metric_key)
+    allowed = _PHENOAGE_UNITS.get(key)
+    if allowed is not None and _clean_unit(unit) not in allowed:
+        raise ValueError(f"Unidade ausente ou não suportada para '{key}': '{unit or ''}'.")
 
 
 def normalize_observation_inputs(
@@ -340,10 +361,9 @@ def normalize_observation_inputs(
         elif canonical_key in {"wbc_k_ul", "neutrophils_k_ul", "lymphocytes_k_ul", "monocytes_k_ul", "platelets_k_ul"}:
             if any(marker in u_clean for marker in ["/ul", "/mm3", "/mcl", "cells/ul", "cells/mm3", "celulas/ul", "celulas/mm3"]):
                 if not any(k in u_clean for k in ["103", "10^3", "k/ul", "mil/mm3", "mil/ul"]):
-                    # Unidade em células inteiras
-                    if val_converted > 50.0:  # Guarda contra valor já em k/uL mas com rótulo ambíguo
-                        val_converted = val_converted / 1000.0
-                        conv_applied = "cells/µL -> 10³/µL (/ 1000.0)"
+                    # A unidade declarada, não a magnitude, determina a conversão.
+                    val_converted = val_converted / 1000.0
+                    conv_applied = "cells/µL -> 10³/µL (/ 1000.0)"
 
         # 8. Altura: metros -> cm
         elif canonical_key == "height_cm":
