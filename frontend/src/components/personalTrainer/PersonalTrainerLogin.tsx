@@ -242,7 +242,7 @@ export const PersonalTrainerLogin: React.FC<PersonalTrainerLoginProps> = ({
 
           {/* Aviso de Privacidade e Segurança */}
           <div className="mt-6 pt-5 border-t border-slate-200/80 dark:border-slate-800/80 text-center">
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
               <ShieldAlert className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
               <span>Ambiente Isolado • Acesso restrito a fotos, avaliações e exames</span>
             </div>

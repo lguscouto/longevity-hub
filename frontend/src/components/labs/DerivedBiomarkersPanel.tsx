@@ -909,7 +909,7 @@ export const DerivedBiomarkersPanel: React.FC<{
                                     <TrendingUp className="h-3 w-3 shrink-0 text-indigo-500" />
                                     Série histórica ({data.direct_biomarkers_series[metric.metric_id].length} medições)
                                   </span>
-                                  <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
                                     Última: {data.direct_biomarkers_series[metric.metric_id].slice(-1)[0]?.collected_at}
                                   </span>
                                 </div>

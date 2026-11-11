@@ -330,9 +330,9 @@ interface BaselineMetadata {
 
 const collectedBaselines: BaselineMetadata[] = [];
 
-test.describe('UX/UI 61 — Visual Regression 2.2.0 Baseline Capture (24 Canonical Baselines)', () => {
-  test.afterAll(async () => {
-    const isUpdate = process.argv.includes('--update-snapshots') || Boolean(process.env.UPDATE_BASELINES);
+test.describe('Comparação visual — 24 telas de referência', () => {
+  test.afterAll(async ({}, testInfo) => {
+    const isUpdate = testInfo.config.updateSnapshots !== 'none';
     if (isUpdate && collectedBaselines.length > 0) {
       const baselinesDir = path.resolve(process.cwd(), '../docs/screenshots/baselines');
       if (!fs.existsSync(baselinesDir)) {
@@ -385,42 +385,22 @@ test.describe('UX/UI 61 — Visual Regression 2.2.0 Baseline Capture (24 Canonic
         test(testTitle, async ({ page }) => {
           await page.setViewportSize({ width: vp.width, height: vp.height });
           await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+          await page.clock.setFixedTime(new Date('2026-10-03T15:00:00Z'));
+          await page.addInitScript((targetTheme) => localStorage.setItem('longevity-hub-theme', targetTheme), theme);
           await mockApi(page);
 
           await page.goto(`/#${view.id}`);
           await page.waitForLoadState('networkidle');
 
-          // Configura o tema no elemento raiz
-          await page.evaluate((targetTheme) => {
-            if (targetTheme === 'dark') {
-              document.documentElement.classList.add('dark');
-              localStorage.setItem('theme', 'dark');
-            } else {
-              document.documentElement.classList.remove('dark');
-              localStorage.setItem('theme', 'light');
-            }
-          }, theme);
-
           await page.waitForTimeout(100);
 
           // Salva screenshot canônico versionado 2.2.0
           const filename = `v2.2.0_${view.id}_${vp.key}_${theme}_normal.png`;
-          const screenshotPath = path.resolve(
-            process.cwd(),
-            '../docs/screenshots/baselines',
-            filename
-          );
-
-          const dir = path.dirname(screenshotPath);
-          if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-          }
-
-          await page.screenshot({
-            path: screenshotPath,
+          const image = await page.screenshot({
             fullPage: false,
             animations: 'disabled',
           });
+          expect(image).toMatchSnapshot([filename], { maxDiffPixelRatio: 0.01 });
 
           // Registra metadados estruturados (U22-P2-22)
           collectedBaselines.push({
