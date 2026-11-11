@@ -5,28 +5,46 @@ Compila métricas dos últimos 30-90 dias em um documento Markdown claro e objet
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
+from math import isfinite
 from typing import Any, Dict, List
 import numpy as np
 
 from longevidade.db.repository import LongevityRepository
+from longevidade.reports.briefing_context import briefing_context
 from longevidade.reports.lab_selection import get_clinical_lab_snapshot
 from longevidade.metrics.unit_conversion import has_canonical_clinical_unit
 
 
-def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None = None, patient_age: float | None = None) -> str:
+def briefing_identity(profile: dict, patient_name: str | None, patient_age: float | None) -> tuple[str, str]:
+    name = patient_name or profile.get("name") or "Paciente"
+    age = patient_age if patient_age is not None else profile.get("chronological_age")
+    age_text = f"{age:.0f} anos" if isinstance(age, (int, float)) and isfinite(age) and 0 <= age <= 130 else "Idade não informada"
+    return name, age_text
+
+
+def briefing_goals(profile: dict) -> list[str]:
+    goals = profile.get("longevity_goals")
+    if not isinstance(goals, list):
+        return []
+    return [" ".join(goal.split()) for goal in goals if isinstance(goal, str) and goal.strip()]
+
+
+def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None = None, patient_age: float | None = None,
+                             *, questions: list[str] | None = None) -> str:
     """Gera o relatório Doctor Briefing em Markdown a partir do perfil do repositório."""
     user_prof = repo.get_user_profile() or {}
-    name = patient_name or user_prof.get("name", "Paciente")
-    age = patient_age if patient_age is not None else user_prof.get("chronological_age")
-    age_str = f"{float(age):.0f} anos" if age is not None else "Idade não informada"
+    name, age_str = briefing_identity(user_prof, patient_name, patient_age)
 
-    daily_30 = repo.get_daily_metrics(days=30)
+    today = date.today()
+    daily_90 = repo.get_daily_metrics_between((today - timedelta(days=89)).isoformat(), today.isoformat())
+    first_30 = (today - timedelta(days=29)).isoformat()
+    daily_30 = [row for row in daily_90 if row["date_ref"] >= first_30]
     clinical_snapshot = get_clinical_lab_snapshot(repo)
     latest_labs = clinical_snapshot.latest_labs
     latest_phenoage = clinical_snapshot.latest_phenoage
 
-    today_str = date.today().strftime("%d/%m/%Y")
+    today_str = today.strftime("%d/%m/%Y")
 
     # Cálculos das métricas dos últimos 30 dias
     bps_sys = [m["systolic_bp"] for m in daily_30 if m.get("systolic_bp") is not None]
@@ -153,18 +171,13 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
             f"> Nota de segurança: {excluded_count} registro(s) sem provenance clínica verificável foram excluídos deste briefing."
         )
 
-    lines.extend([
-        "",
-        "---",
-        "",
-        "## 3. Principais Objetivos da Consulta",
-        "",
-        "1. Avaliação dos marcadores lipidicos e inflamatórios (ApoB / hs-CRP) em relação às metas de longevidade.",
-        "2. Revisão da rotina de treino aeróbico (Zona 2 vs VO2 Max) e preservação de massa magra.",
-        "3. Ajuste fino de suplementação baseada nas deficiências detectadas no painel sanguíneo.",
-        "",
-        "---",
-        "*Documento gerado automaticamente pelo Longevidade Hub (Healthspan & Longevity Platform).*"
-    ])
+    goals = briefing_goals(user_prof)
+    if goals:
+        lines.extend(["", "---", "", "## 3. Objetivos registrados no perfil", ""])
+        lines.extend(f"- {goal}" for goal in goals)
+    for title, items in briefing_context(repo, daily_90, clinical_snapshot, today, questions):
+        lines.extend(["", f"## {title}", ""])
+        lines.extend(f"- {item}" for item in items)
+    lines.extend(["", "---", "*Documento gerado automaticamente pelo Longevidade Hub.*"])
 
     return "\n".join(lines)

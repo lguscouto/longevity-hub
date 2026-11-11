@@ -128,8 +128,10 @@ A função retorna amostra insuficiente quando qualquer período tem menos de tr
 
 | Método | Caminho | Corpo/consulta | Resultado |
 |---|---|---|---|
-| `GET` | `/api/reports/doctor-briefing?name=...&age=...` | query opcional | `{ "markdown": "..." }` com Doctor Briefing. |
-| `POST` | `/api/reports/doctor-briefing` | `{ "patient_name": "...", "patient_age": 32 }` | Mesmo relatório em Markdown. |
+| `GET` | `/api/reports/doctor-briefing?name=...&age=...` | query opcional | `{ "markdown": "..." }`; resposta sem cache. |
+| `POST` | `/api/reports/doctor-briefing` | `patient_name`, `patient_age`, `questions` opcionais | Mesmo relatório em Markdown; até 10 perguntas, 300 caracteres por pergunta. |
+| `GET` | `/api/reports/doctor-briefing/pdf?name=...&age=...` | query opcional | Download PDF; `Cache-Control: no-store`. |
+| `POST` | `/api/reports/doctor-briefing/pdf` | `patient_name`, `patient_age`, `questions` opcionais | Download PDF; perguntas são processadas para esta resposta e não persistidas pelo relatório. Até 10 perguntas, 300 caracteres cada. |
 
 ## IA
 

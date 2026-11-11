@@ -10,7 +10,15 @@ No computador que executa o servidor e com o mesmo usuário Windows que executar
 .venv\Scripts\python.exe -m backend.app.access
 ```
 
-Digite e confirme uma senha de pelo menos 12 caracteres no terminal. A digitação não é exibida. A aplicação não cria essa senha automaticamente. Para substituí-la, execute o comando novamente; a alteração é uma ação administrativa local. Após iniciar, abra o endereço local informado pelo aplicativo e entre com a senha. O portal do personal continua acessível pelo link da tela de entrada.
+Digite e confirme uma senha de pelo menos 12 caracteres no terminal. A digitação não é exibida. A aplicação não cria essa senha automaticamente. Para substituí-la, execute o comando novamente; a alteração é uma ação administrativa local. Após iniciar, abra o endereço local informado pelo aplicativo e entre com o usuário `gustavo` e a senha. O portal do personal continua acessível pelo link da tela de entrada.
+
+Para configurar ou trocar o PIN de quatro dígitos no computador servidor, use:
+
+```powershell
+.venv\Scripts\python.exe -m backend.app.access --local-pin
+```
+
+O PIN é aceito apenas por HTTP direto em loopback, por exemplo em `http://127.0.0.1:8887`. A sessão aberta com PIN tem a mesma restrição. Para acesso remoto, use `gustavo` e a senha forte configurada pelo comando anterior, em HTTPS. O cofre mantém as duas credenciais em entradas separadas.
 
 O iniciador compara as fontes com a identificação gravada no build e recompila o frontend quando necessário. Para reinstalar as dependências a partir dos locks, use explicitamente `run_app.bat --update`; essa opção executa `npm ci` e pode substituir a pasta `node_modules`.
 

@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import html
 import io
-from datetime import date
-from typing import Any, Dict
+from datetime import date, timedelta
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -15,6 +14,8 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from longevidade.db.repository import LongevityRepository
+from longevidade.reports.doctor_briefing import briefing_goals, briefing_identity
+from longevidade.reports.briefing_context import briefing_context
 from longevidade.reports.lab_selection import get_clinical_lab_snapshot
 from longevidade.metrics.unit_conversion import has_canonical_clinical_unit
 
@@ -23,12 +24,11 @@ def generate_doctor_briefing_pdf(
     repo: LongevityRepository,
     patient_name: str | None = None,
     patient_age: float | None = None,
+    *, questions: list[str] | None = None,
 ) -> bytes:
     """Gera o PDF binário do relatório médico Doctor Briefing."""
     user_prof = repo.get_user_profile() or {}
-    name = patient_name or user_prof.get("name", "Paciente")
-    age = patient_age if patient_age is not None else user_prof.get("chronological_age")
-    age_str = f"{float(age):.0f} anos" if age is not None else "Idade não informada"
+    name, age_str = briefing_identity(user_prof, patient_name, patient_age)
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -73,17 +73,21 @@ def generate_doctor_briefing_pdf(
 
     elements = []
 
+    today = date.today()
+
     # Cabeçalho
     elements.append(Paragraph("🏥 Relatório Clínico Sintético de Longevidade (Doctor Briefing)", title_style))
     elements.append(Spacer(1, 4))
-    today_str = date.today().strftime("%d/%m/%Y")
+    today_str = today.strftime("%d/%m/%Y")
     safe_name = html.escape(str(name))
     safe_age_str = html.escape(str(age_str))
     elements.append(Paragraph(f"<b>Data de Emissão:</b> {today_str} | <b>Paciente:</b> {safe_name} ({safe_age_str})", body_style))
     elements.append(Spacer(1, 10))
 
     # Métricas Fisiológicas
-    daily_30 = repo.get_daily_metrics(days=30)
+    daily_90 = repo.get_daily_metrics_between((today - timedelta(days=89)).isoformat(), today.isoformat())
+    first_30 = (today - timedelta(days=29)).isoformat()
+    daily_30 = [row for row in daily_90 if row["date_ref"] >= first_30]
     rhrs = [m["rhr_bpm"] for m in daily_30 if m.get("rhr_bpm") is not None]
     hrvs = [m["hrv_ms"] for m in daily_30 if m.get("hrv_ms") is not None]
     spo2s = [m["spo2_avg_pct"] for m in daily_30 if m.get("spo2_avg_pct") is not None]
@@ -101,16 +105,15 @@ def generate_doctor_briefing_pdf(
         [
             Paragraph("<b>Métrica</b>", body_style),
             Paragraph("<b>Média 30d</b>", body_style),
-            Paragraph("<b>Alvo Clínico Longevidade (Referência Geral)</b>", body_style),
         ],
-        [Paragraph(PHYSIOLOGICAL_TARGETS["rhr_bpm"]["label"], body_style), Paragraph(f"{avg_str(rhrs, '{:.0f}')} bpm", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["rhr_bpm"]["target"], body_style)],
-        [Paragraph(PHYSIOLOGICAL_TARGETS["hrv_ms"]["label"], body_style), Paragraph(f"{avg_str(hrvs, '{:.0f}')} ms", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["hrv_ms"]["target"], body_style)],
-        [Paragraph(PHYSIOLOGICAL_TARGETS["spo2_avg_pct"]["label"], body_style), Paragraph(f"{avg_str(spo2s, '{:.1f}')}%", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["spo2_avg_pct"]["target"], body_style)],
-        [Paragraph(PHYSIOLOGICAL_TARGETS["respiratory_rate_rpm"]["label"], body_style), Paragraph(f"{avg_str(resps, '{:.1f}')} rpm", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["respiratory_rate_rpm"]["target"], body_style)],
-        [Paragraph(PHYSIOLOGICAL_TARGETS["vo2_max"]["label"], body_style), Paragraph(f"{avg_str(vo2s, '{:.1f}')} mL/kg/min", body_style), Paragraph(PHYSIOLOGICAL_TARGETS["vo2_max"]["target"], body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["rhr_bpm"]["label"], body_style), Paragraph(f"{avg_str(rhrs, '{:.0f}')} bpm", body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["hrv_ms"]["label"], body_style), Paragraph(f"{avg_str(hrvs, '{:.0f}')} ms", body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["spo2_avg_pct"]["label"], body_style), Paragraph(f"{avg_str(spo2s, '{:.1f}')}%", body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["respiratory_rate_rpm"]["label"], body_style), Paragraph(f"{avg_str(resps, '{:.1f}')} rpm", body_style)],
+        [Paragraph(PHYSIOLOGICAL_TARGETS["vo2_max"]["label"], body_style), Paragraph(f"{avg_str(vo2s, '{:.1f}')} mL/kg/min", body_style)],
     ]
 
-    t_metrics = Table(metrics_table_data, colWidths=[200, 140, 200])
+    t_metrics = Table(metrics_table_data, colWidths=[320, 220])
     t_metrics.setStyle(
         TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F1F5F9")),
@@ -169,6 +172,16 @@ def generate_doctor_briefing_pdf(
                 body_style,
             )
         )
+
+    goals = briefing_goals(user_prof)
+    if goals:
+        elements.append(Paragraph("3. Objetivos registrados no perfil", h2_style))
+        for goal in goals:
+            elements.append(Paragraph(html.escape(goal), body_style))
+
+    for title, items in briefing_context(repo, daily_90, clinical_snapshot, today, questions):
+        elements.append(Paragraph(html.escape(title), h2_style))
+        elements.extend(Paragraph(html.escape(item), body_style) for item in items)
 
     doc.build(elements)
     pdf_bytes = buffer.getvalue()

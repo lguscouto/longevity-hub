@@ -38,7 +38,7 @@ Para instalação com locks, backups, restauração isolada, retenção e limite
 - **Copiloto de IA & Vault Local de Segredos:** Integração multi-provedor (OpenRouter, OpenAI, Anthropic) com vault seguro Windows Credential Vault (Keyring), modos de privacidade (`minimal` e `full`) e segurança clínica contextual por injeção fisiológica de prontidão (*Daily Guidance & Energy Bank*).
 - **Exames Laboratoriais & Alvos de Longevidade:** Tabela comparativa com faixas de referência e **Alvos Ótimos de Longevidade** (ApoB < 60, hs-CRP < 0.5, etc.).
 - **Glicemia Contínua (CGM):** Importador de CSVs de sensores contínuos (FreeStyle Libre) com cálculo de Glicemia Média, Variabilidade (CV%) e Time-in-Range (70-140 mg/dL).
-- **Doctor Briefing (Markdown & PDF):** Geração de relatórios médicos sintéticos em Markdown e PDF via ReportLab.
+- **Resumo para consulta (Markdown & PDF):** Relatório local e somente leitura com cobertura e origem, tendências de 7/30/90 dias, estimativas de idade e insumos disponíveis, check-ins, intervenções, experimentos e perguntas para a consulta. Não substitui avaliação profissional.
 - **Sincronização Agendada em Segundo Plano:** Script autônomo (`scripts/run_scheduled_sync.py`) configurável para o Agendador de Tarefas do Windows ou Cron, garantindo atualização contínua e silenciosa dos dados.
 
 ---
@@ -70,6 +70,8 @@ longevidade/
 │       └── routers/                 # Rotas da API (Google Health, Métricas, Workouts, IA, Labs, etc.)
 └── frontend/                        # Web App React + Vite + TypeScript + Tailwind CSS + Recharts
 ```
+
+O andamento de implementação e as referências para regressão visual estão em [Plano por fases](docs/plano-implementacao-fases.md) e [Baselines visuais](docs/screenshots/README.md).
 
 ---
 

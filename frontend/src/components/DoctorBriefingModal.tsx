@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Stethoscope, Download, Copy, Check } from 'lucide-react';
-import { Modal, Button } from './ui';
+import { Modal, Button, FormField, Textarea } from './ui';
 
 interface DoctorBriefingModalProps {
   isOpen: boolean;
@@ -14,12 +14,59 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
   markdownContent,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [questionsText, setQuestionsText] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const questions = questionsText.split('\n').map(line => line.trim()).filter(Boolean);
+  const questionsError = questions.length > 10 || questions.some(line => line.length > 300)
+    ? 'Digite até 10 perguntas, com no máximo 300 caracteres por linha.'
+    : '';
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(markdownContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    setActionError('');
+    const appendix = questions.length ? `\n\n## Perguntas para a consulta\n\n${questions.map(question => `- ${question}`).join('\n')}` : '';
+    try {
+      await navigator.clipboard.writeText(markdownContent + appendix);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setActionError('Não foi possível copiar o resumo.');
+    }
   };
+
+  const handleDownload = async () => {
+    setActionError('');
+    setDownloading(true);
+    try {
+      const response = await fetch('/api/reports/doctor-briefing/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions }),
+      });
+      if (!response.ok || !response.headers.get('Content-Type')?.includes('application/pdf')) {
+        throw new Error('PDF indisponível');
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'doctor_briefing_longevidade.pdf';
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setActionError('Não foi possível baixar o PDF. Tente novamente.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const downloadButton = <Button type="button" variant="secondary" size="sm" leftIcon={Download}
+    disabled={downloading || !!questionsError} onClick={handleDownload}>
+    {downloading ? 'Gerando PDF…' : 'Baixar PDF'}
+  </Button>;
+  const copyButton = <Button type="button" variant="secondary" size="sm"
+    disabled={!!questionsError || !markdownContent} onClick={handleCopy} leftIcon={copied ? Check : Copy}>
+    {copied ? 'Copiado!' : 'Copiar texto'}
+  </Button>;
 
   return (
     <Modal
@@ -36,45 +83,15 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
       closeButtonAriaLabel="Fechar"
       headerAction={
         <div className="hidden sm:flex items-center gap-2">
-          <a
-            href="/api/reports/doctor-briefing/pdf"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 transition"
-          >
-            <Download className="h-4 w-4" /> Baixar PDF
-          </a>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleCopy}
-            leftIcon={copied ? Check : Copy}
-          >
-            {copied ? 'Copiado!' : 'Copiar texto'}
-          </Button>
+          {downloadButton}
+          {copyButton}
         </div>
       }
       footer={
-        <div className="flex items-center justify-between sm:justify-end gap-2 w-full">
-          <div className="flex sm:hidden items-center gap-2">
-            <a
-              href="/api/reports/doctor-briefing/pdf"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 transition"
-            >
-              <Download className="h-4 w-4" /> PDF
-            </a>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleCopy}
-              leftIcon={copied ? Check : Copy}
-            >
-              {copied ? 'Copiado!' : 'Copiar'}
-            </Button>
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full">
+          <div className="flex flex-wrap sm:hidden items-center gap-2">
+            {downloadButton}
+            {copyButton}
           </div>
           <Button
             type="button"
@@ -94,6 +111,13 @@ export const DoctorBriefingModal: React.FC<DoctorBriefingModalProps> = ({
             Este resumo organiza seus dados para facilitar sua conversa com o profissional de saúde. Ele não substitui avaliação, diagnóstico ou orientação médica.
           </span>
         </div>
+        <FormField id="briefing-questions" label="Perguntas para a consulta"
+          helperText="Uma por linha. As perguntas entram no texto copiado e no PDF." error={questionsError}>
+          <Textarea id="briefing-questions" rows={3} maxLength={3010} value={questionsText}
+            onChange={event => setQuestionsText(event.target.value)} aria-invalid={!!questionsError}
+            aria-describedby={questionsError ? 'briefing-questions-error' : 'briefing-questions-helper'} />
+        </FormField>
+        {actionError && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{actionError}</p>}
         <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
           {markdownContent || 'Gerando resumo...'}
         </div>

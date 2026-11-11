@@ -50,14 +50,16 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
   >
     {date && results && (
       <div className="space-y-6 pr-2">
-        {LAB_MARKERS_GROUPS.map((group, idx) => {
-          const groupKeys = group.items.map((i) => i.key);
-          const matchingResults = results.filter((r) => groupKeys.includes(normalizeLabMetricKey(r.metric_key)));
+        {[...LAB_MARKERS_GROUPS, { groupName: 'Outros marcadores', icon: '🔬', items: [] }].map((group) => {
+          const groupKeys = new Set(group.items.map((item) => item.key));
+          const matchingResults = results.filter((result) => groupKeys.size
+            ? groupKeys.has(normalizeLabMetricKey(result.metric_key))
+            : !getMarkerMeta(result.metric_key));
 
           if (matchingResults.length === 0) return null;
 
           return (
-            <div key={idx} className="space-y-3">
+            <div key={group.groupName} className="space-y-3">
               <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2">
                 <span aria-hidden="true">{group.icon}</span> {group.groupName} ({matchingResults.length})
               </h4>
@@ -66,6 +68,9 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
                 {matchingResults.map((item, i) => {
                   const status = getLabMarkerStatus(item);
                   const markerMeta = getMarkerMeta(item.metric_key);
+                  const hasLabReference = item.ref_min != null || item.ref_max != null;
+                  const refMin = hasLabReference ? item.ref_min : markerMeta?.ref_min;
+                  const refMax = hasLabReference ? item.ref_max : markerMeta?.ref_max;
                   const targetFormatted = formatOptimalTargetText(markerMeta, item.optimal_target);
 
                   return (
@@ -126,9 +131,9 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
                           <span className="truncate" title={`Origem: ${recordOriginLabel(item.record_origin)}`}>
                             Origem: {recordOriginLabel(item.record_origin)}
                           </span>
-                          {markerMeta?.ref_min != null && markerMeta?.ref_max != null && (
-                            <span className="shrink-0" title="Intervalo populacional padrão de referência clínica laboratorial">
-                              Ref: {markerMeta.ref_min} – {markerMeta.ref_max}
+                          {(refMin != null || refMax != null) && (
+                            <span className="shrink-0" title={hasLabReference ? 'Referência informada no laudo' : 'Referência geral do catálogo'}>
+                              Ref: {refMin ?? '—'} – {refMax ?? '—'}
                             </span>
                           )}
                         </div>

@@ -107,6 +107,8 @@ const LAB_KEY_ALIASES: Record<string, string> = {
   hemoglobina: 'hemoglobin',
   platelets: 'platelets',
   plaquetas: 'platelets',
+  total_testosterone: 'testosterone_total',
+  total_testosterone_ng_dl: 'testosterone_total',
 };
 
 export const normalizeLabMetricKey = (key: string) => {
@@ -721,6 +723,7 @@ export const isMarkerOptimal = (lab: LabResult): boolean => {
   const rule = meta?.optimal_rule ?? 'max';
   const val = Number(lab.value);
   if (isNaN(val)) return false;
+  if (meta?.key === 'testosterone_total' && !isMarkerWithinClinicalRange(lab)) return false;
 
   switch (rule) {
     case 'max':
@@ -747,6 +750,13 @@ export const isMarkerWithinClinicalRange = (lab: LabResult): boolean => {
   const refMax = lab.ref_max ?? meta?.ref_max;
   const val = Number(lab.value);
   if (isNaN(val)) return false;
+
+  if (meta?.key === 'testosterone_total') {
+    const hasLabReference = lab.ref_min != null || lab.ref_max != null;
+    const lower = hasLabReference ? lab.ref_min : refMin;
+    const upper = hasLabReference ? lab.ref_max : refMax;
+    return (lower == null || val >= lower) && (upper == null || val <= upper);
+  }
 
   const rule = meta?.optimal_rule ?? 'max';
   if (rule === 'max') {

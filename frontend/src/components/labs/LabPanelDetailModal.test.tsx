@@ -1,10 +1,28 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LabPanelDetailModal } from './LabPanelDetailModal';
 import { LabResult } from './labMarkers';
 
 describe('LabPanelDetailModal (UX_UI_54)', () => {
+  it('shows imported testosterone and retains results outside the catalog', () => {
+    const results: LabResult[] = [
+      { collected_at: '2026-02-10', metric_key: 'total_testosterone', metric_name: 'Testosterona Total',
+        value: 910, unit: 'ng/dL', record_origin: 'patient_lab', ref_min: 240, ref_max: 800, optimal_target: 700 },
+      { collected_at: '2026-02-10', metric_key: 'marker_outside_catalog', metric_name: 'Marcador adicional',
+        value: 12, unit: '%', record_origin: 'patient_lab' },
+    ];
+
+    render(<LabPanelDetailModal date="2026-02-10" results={results} onClose={vi.fn()} />);
+
+    const hormones = screen.getByRole('heading', { name: /Hormônios.*\(1\)/ }).parentElement!;
+    expect(within(hormones).getByText('Testosterona Total')).toBeVisible();
+    expect(within(hormones).getByText('Ref: 240 – 800')).toBeVisible();
+    expect(within(hormones).getByText('Atenção clínica')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Outros marcadores (1)' })).toBeVisible();
+    expect(screen.getByText('Marcador adicional')).toBeVisible();
+  });
+
   it('segregates clinical normal vs optimal without turning normal into attention (U22-P1-22 & U22-P1-23)', () => {
     const mockResults: LabResult[] = [
       // Ótimo: ApoB <= 60

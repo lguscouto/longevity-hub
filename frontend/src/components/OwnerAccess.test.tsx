@@ -19,9 +19,11 @@ describe('OwnerAccess', () => {
     render(<OwnerAccess />)
     expect(await screen.findByLabelText('Senha')).toBeInTheDocument()
     expect(screen.queryByText('Painel renderizado')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Usuário'), { target: { value: 'gustavo' } })
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-de-teste' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     expect(await screen.findByText('Painel renderizado')).toBeInTheDocument()
+    expect(vi.mocked(requestJson).mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ username: 'gustavo', password: 'senha-de-teste' }))
   })
 
   it('permits the separate trainer entry without an owner session', async () => {

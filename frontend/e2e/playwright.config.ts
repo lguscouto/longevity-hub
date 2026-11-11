@@ -6,7 +6,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   updateSnapshots: 'none',
-  snapshotPathTemplate: '{testDir}/../../docs/screenshots/baselines/{arg}{ext}',
+  snapshotPathTemplate: process.env.LONGEVIDADE_VISUAL_CANDIDATES === '1'
+    ? '{testDir}/../test-results/phase5-candidates/{platform}/{arg}{ext}'
+    : '{testDir}/../../docs/screenshots/baselines/{platform}/{arg}{ext}',
   workers: 1,
   reporter: 'list',
   testMatch: ['**/*.spec.ts'],

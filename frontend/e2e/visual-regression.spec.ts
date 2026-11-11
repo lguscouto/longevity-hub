@@ -10,6 +10,7 @@ const mockApi = async (page: Page) => {
       body: JSON.stringify({}),
     });
   });
+  await page.route('**/api/owner/session', route => route.fulfill({ json: { authenticated: true } }));
 
   await page.route('**/api/metrics**', async (route) => {
     await route.fulfill({
@@ -305,7 +306,7 @@ const CANONICAL_VIEWS = [
   { id: 'labs', title: 'Saúde' },
   { id: 'workouts', title: 'Treinos' },
   { id: 'supplements', title: 'Intervenções' },
-  { id: 'ai', title: 'IA' },
+  { id: 'ai', title: 'IA e Copiloto' },
   { id: 'profile', title: 'Perfil' },
 ];
 
@@ -332,10 +333,12 @@ interface BaselineMetadata {
 const collectedBaselines: BaselineMetadata[] = [];
 
 test.describe('Comparação visual — 24 telas de referência', () => {
+  test.use({ timezoneId: 'America/Sao_Paulo', locale: 'pt-BR' });
+
   test.afterAll(async ({}, testInfo) => {
     const isUpdate = testInfo.config.updateSnapshots !== 'none';
     if (isUpdate && collectedBaselines.length > 0) {
-      const baselinesDir = path.resolve(process.cwd(), '../docs/screenshots/baselines');
+      const baselinesDir = path.dirname(testInfo.snapshotPath(collectedBaselines[0].filename, { kind: 'screenshot' }));
       if (!fs.existsSync(baselinesDir)) {
         fs.mkdirSync(baselinesDir, { recursive: true });
       }
@@ -365,6 +368,7 @@ test.describe('Comparação visual — 24 telas de referência', () => {
       const allBaselines = Array.from(mergedMap.values());
       const manifest = {
         version: '2.2.0',
+        platform: process.platform,
         generated_at: new Date().toISOString(),
         reduced_motion: true,
         canonical_viewports: BASELINE_VIEWPORTS,
@@ -392,16 +396,17 @@ test.describe('Comparação visual — 24 telas de referência', () => {
 
           await page.goto(`/#${view.id}`);
           await page.waitForLoadState('networkidle');
+          const navigation = page.getByRole('navigation', { name: 'Navegação Principal' });
+          await expect(navigation.getByRole('button', { name: view.title, exact: true })).toHaveAttribute('aria-current', 'page');
+          await expect(page.locator('main')).toBeVisible();
+          await expect(page.getByText(/ChunkLoadError|ReferenceError|Erro ao carregar componente/)).not.toBeVisible();
 
-          await page.waitForTimeout(100);
-
-          // Salva screenshot canônico versionado 2.2.0
           const filename = `v2.2.0_${view.id}_${vp.key}_${theme}_normal.png`;
-          const image = await page.screenshot({
+          await expect(page).toHaveScreenshot([filename], {
             fullPage: false,
             animations: 'disabled',
+            maxDiffPixelRatio: 0.01,
           });
-          expect(image).toMatchSnapshot([filename], { maxDiffPixelRatio: 0.01 });
 
           // Registra metadados estruturados (U22-P2-22)
           collectedBaselines.push({
@@ -422,13 +427,6 @@ test.describe('Comparação visual — 24 telas de referência', () => {
             captured_at: new Date().toISOString(),
           });
 
-          // Validações fundamentais de renderização e acessibilidade
-          const mainContent = page.locator('main');
-          await expect(mainContent).toBeVisible();
-
-          // Valida ausência de erro de carregamento crítico
-          await expect(page.locator('text=ChunkLoadError')).not.toBeVisible();
-          await expect(page.locator('text=ReferenceError')).not.toBeVisible();
         });
       }
     }

@@ -1,6 +1,7 @@
 """Autenticação do proprietário e autorização das rotas da aplicação."""
 from __future__ import annotations
 
+import argparse
 import getpass
 import hashlib
 import ipaddress
@@ -18,10 +19,13 @@ from pydantic import BaseModel, Field
 
 SERVICE = "longevidade-hub"
 OWNER_KEY = "owner-password-hash"
+OWNER_LOCAL_KEY = "owner-local-pin-hash"
+OWNER_USERNAME = "gustavo"
 OWNER_COOKIE = "longevidade_owner"
 TRAINER_COOKIE = "longevidade_trainer"
 SESSION_SECONDS = 12 * 60 * 60
 _owner_sessions: dict[str, float] = {}
+_local_owner_sessions: set[str] = set()
 _login_attempts: dict[tuple[str, str], list[float]] = {}
 _attempts_lock = threading.Lock()
 router = APIRouter(prefix="/api/owner", tags=["Owner authentication"])
@@ -69,31 +73,54 @@ def secure_transport(request: Request) -> bool:
     return _loopback(peer) and _loopback(request.url.hostname)
 
 
-def owner_authenticated(token: str | None) -> bool:
+def _local_owner_request(request: Request) -> bool:
+    return (
+        request.client is not None
+        and _loopback(request.client.host)
+        and _loopback(request.url.hostname)
+        and request.url.scheme == "http"
+        and not any(name in request.headers for name in ("forwarded", "x-forwarded-proto", "x-forwarded-for", "x-forwarded-host"))
+    )
+
+
+def owner_authenticated(token: str | None, *, allow_local: bool = False) -> bool:
     if not token:
         return False
     expiry = _owner_sessions.get(token, 0)
     if expiry <= time.monotonic():
         _owner_sessions.pop(token, None)
+        _local_owner_sessions.discard(token)
         return False
-    return True
+    return allow_local or token not in _local_owner_sessions
 
 
 class OwnerLogin(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=1, max_length=1024)
 
 
 @router.post("/login")
 def owner_login(payload: OwnerLogin, request: Request, response: Response):
+    if payload.username.strip().casefold() != OWNER_USERNAME:
+        raise HTTPException(401, "Usuário ou senha incorretos.")
+    local_pin = re.fullmatch(r"[0-9]{4}", payload.password) is not None
+    local_request = _local_owner_request(request)
+    if local_pin and not local_request:
+        raise HTTPException(401, "O PIN de 4 dígitos só funciona no computador servidor. Neste endereço, use a senha de acesso remoto.")
     try:
-        stored = keyring.get_password(SERVICE, OWNER_KEY)
+        stored = keyring.get_password(SERVICE, OWNER_LOCAL_KEY if local_pin else OWNER_KEY)
+        has_local_pin = local_request and not local_pin and not stored and keyring.get_password(SERVICE, OWNER_LOCAL_KEY)
     except Exception as exc:
         raise HTTPException(503, "Cofre de credenciais indisponível.") from exc
-    if not stored:
-        raise HTTPException(503, "Senha do proprietário ainda não configurada no computador servidor.")
-    if not check_password(payload.password, stored):
-        raise HTTPException(401, "Senha incorreta.")
+    if has_local_pin:
+        raise HTTPException(401, "Neste computador, digite o PIN de 4 dígitos no campo Senha.")
+    if not stored and not local_pin:
+        raise HTTPException(503, "Senha de acesso remoto ainda não configurada no computador servidor.")
+    if not stored or not check_password(payload.password, stored):
+        raise HTTPException(401, "Usuário ou senha incorretos.")
     token = secrets.token_urlsafe(32)
+    if local_pin:
+        _local_owner_sessions.add(token)
     _owner_sessions[token] = time.monotonic() + SESSION_SECONDS
     response.set_cookie(OWNER_COOKIE, token, httponly=True, secure=_effective_scheme(request) == "https", samesite="strict", max_age=SESSION_SECONDS, path="/")
     return {"authenticated": True}
@@ -101,7 +128,7 @@ def owner_login(payload: OwnerLogin, request: Request, response: Response):
 
 @router.get("/session")
 def owner_session(request: Request):
-    if not owner_authenticated(request.cookies.get(OWNER_COOKIE)):
+    if not owner_authenticated(request.cookies.get(OWNER_COOKIE), allow_local=_local_owner_request(request)):
         raise HTTPException(401, "Sessão não encontrada ou expirada.")
     return {"authenticated": True}
 
@@ -109,6 +136,7 @@ def owner_session(request: Request):
 @router.post("/logout")
 def owner_logout(request: Request, response: Response):
     _owner_sessions.pop(request.cookies.get(OWNER_COOKIE, ""), None)
+    _local_owner_sessions.discard(request.cookies.get(OWNER_COOKIE, ""))
     response.delete_cookie(OWNER_COOKIE, path="/")
     return {"authenticated": False}
 
@@ -170,12 +198,21 @@ async def authorization_middleware(request: Request, call_next):
                     _login_attempts.pop(peer_key, None)
             return result
         return await call_next(request)
-    if owner_authenticated(request.cookies.get(OWNER_COOKIE)) or _trainer_allowed(request):
+    if owner_authenticated(request.cookies.get(OWNER_COOKIE), allow_local=_local_owner_request(request)) or _trainer_allowed(request):
         return await call_next(request)
     return JSONResponse({"detail": "Autenticação necessária."}, status_code=401)
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Configura a credencial do proprietário no cofre do sistema.")
+    parser.add_argument("--local-pin", action="store_true", help="Configura um PIN de quatro dígitos para acesso HTTP em loopback.")
+    if parser.parse_args().local_pin:
+        pin = getpass.getpass("Novo PIN local (4 dígitos): ")
+        if not re.fullmatch(r"[0-9]{4}", pin) or pin != getpass.getpass("Confirme o PIN: "):
+            raise SystemExit("PIN inválido ou confirmação diferente; nenhuma alteração realizada.")
+        keyring.set_password(SERVICE, OWNER_LOCAL_KEY, password_hash(pin))
+        print("PIN local configurado no cofre do sistema.")
+        return
     password = getpass.getpass("Nova senha do proprietário (mínimo 12 caracteres): ")
     if len(password) < 12 or password != getpass.getpass("Confirme a senha: "):
         raise SystemExit("Senha curta ou confirmação diferente; nenhuma alteração realizada.")

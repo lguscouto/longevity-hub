@@ -509,6 +509,14 @@ class LongevityRepository:
             row = conn.execute(sql, (date_ref,)).fetchone()
             return dict(row) if row else None
 
+    def get_daily_metrics_between(self, start_date: str, end_date: str) -> List[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM daily_metrics WHERE date_ref BETWEEN ? AND ? ORDER BY date_ref;",
+                (start_date, end_date),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
     def get_latest_daily_metric_date(self, source: Optional[str] = None) -> Optional[str]:
         """Retorna a data (date_ref) mais recente registrada em daily_metrics."""
         if source:

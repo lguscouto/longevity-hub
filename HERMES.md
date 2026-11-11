@@ -87,7 +87,7 @@ Veja comandos e regras de teste em [docs/development-and-validation.md](docs/dev
 | Suplementos/hormônios | Cadastro, edição, remoção, registro diário de tomada e logs de auditoria. |
 | Conformidade | Quatro pilares diários e score de 0 a 100%. |
 | IA | Copiloto multi-provedor (OpenRouter, OpenAI, Anthropic) alimentado com contexto fisiológico enriquecido (Daily Guidance e Energy Bank); vault Windows Keyring; modos `minimal` e `full`. |
-| Relatórios | Doctor Briefing Markdown e PDF calculados com métricas, exames e idades biológicas recentes. |
+| Relatórios | Resumo para consulta em Markdown e PDF, gerado localmente a partir do perfil e dos dados disponíveis. Inclui cobertura/origem, tendências de 7/30/90 dias, insumos registrados das estimativas de idade, sintomas, intervenções, experimentos e perguntas do usuário. Somente leitura; não substitui avaliação médica. |
 
 ## Dados, privacidade e isolamento
 
@@ -113,5 +113,7 @@ Leia [docs/known-limitations.md](docs/known-limitations.md) antes de considerar 
 - [Desenvolvimento, execução e validação](docs/development-and-validation.md)
 - [Plano priorizado de melhorias](docs/improvement-roadmap.md)
 - [Limitações e divergências verificadas](docs/known-limitations.md)
+- [Plano e andamento das fases](docs/plano-implementacao-fases.md)
+- [Baselines e comparação visual](docs/screenshots/README.md)
 - [SDD do módulo de IA existente](docs/sdd.md)
 - [Auditoria médica/mercado existente](docs/medical_e2e_audit.md)

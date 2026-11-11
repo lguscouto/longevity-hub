@@ -40,8 +40,8 @@ def test_owner_and_trainer_permissions_are_separate(client: TestClient):
     assert client.post("/api/physical-assessments", json={}).status_code == 401
     assert client.post("/api/sync/all").status_code == 401
 
-    assert client.post("/api/owner/login", json={"password": "wrong"}).status_code == 401
-    assert client.post("/api/owner/login", json={"password": "temporary-test-password"}).status_code == 200
+    assert client.post("/api/owner/login", json={"username": "gustavo", "password": "wrong"}).status_code == 401
+    assert client.post("/api/owner/login", json={"username": "gustavo", "password": "temporary-test-password"}).status_code == 200
     assert client.get("/api/profile").status_code == 200
     token = client.cookies.get(access.OWNER_COOKIE)
     access._owner_sessions[token] = time.monotonic() - 1
@@ -78,8 +78,8 @@ def test_all_registered_api_routes_require_authentication_except_explicit_public
 def test_transport_rejects_remote_http_and_forged_proxy_headers(client: TestClient):
     main = importlib.import_module("backend.app.main")
     with TestClient(main.app, base_url="http://example.invalid", client=("203.0.113.12", 5000)) as remote:
-        assert remote.post("/api/owner/login", json={"password": "x"}).status_code == 403
-        assert remote.post("/api/owner/login", headers={"X-Forwarded-Proto": "https"}, json={"password": "x"}).status_code == 403
+        assert remote.post("/api/owner/login", json={"username": "gustavo", "password": "x"}).status_code == 403
+        assert remote.post("/api/owner/login", headers={"X-Forwarded-Proto": "https"}, json={"username": "gustavo", "password": "x"}).status_code == 403
     with TestClient(main.app, base_url="https://example.invalid", client=("203.0.113.12", 5000)) as remote:
         assert remote.get("/api/profile").status_code == 401
 
@@ -97,8 +97,8 @@ def test_owner_login_is_rate_limited(client: TestClient):
     keyring.set_password(access.SERVICE, access.OWNER_KEY, access.password_hash("temporary-test-password"))
     client.cookies.clear()
     for _ in range(8):
-        assert client.post("/api/owner/login", json={"password": "wrong"}).status_code == 401
-    assert client.post("/api/owner/login", json={"password": "wrong"}).status_code == 429
+        assert client.post("/api/owner/login", json={"username": "gustavo", "password": "wrong"}).status_code == 401
+    assert client.post("/api/owner/login", json={"username": "gustavo", "password": "wrong"}).status_code == 429
 
 
 def test_owner_cookie_logout_and_https_flags(client: TestClient):
@@ -106,7 +106,7 @@ def test_owner_cookie_logout_and_https_flags(client: TestClient):
     keyring.set_password(access.SERVICE, access.OWNER_KEY, access.password_hash("temporary-test-password"))
     main = importlib.import_module("backend.app.main")
     with TestClient(main.app, base_url="https://service.invalid", client=("203.0.113.12", 5000)) as remote:
-        result = remote.post("/api/owner/login", json={"password": "temporary-test-password"})
+        result = remote.post("/api/owner/login", json={"username": "gustavo", "password": "temporary-test-password"})
         assert result.status_code == 200
         cookie = result.headers["set-cookie"].lower()
         assert "secure" in cookie and "httponly" in cookie and "samesite=strict" in cookie
@@ -119,7 +119,7 @@ def test_cross_origin_mutation_and_unconfigured_webhook_are_rejected(client: Tes
     client.cookies.clear()
     monkeypatch.delenv("GOOGLE_HEALTH_WEBHOOK_SECRET", raising=False)
     monkeypatch.delenv("GOOGLE_HEALTH_ENDPOINT_AUTH", raising=False)
-    assert client.post("/api/owner/login", headers={"Origin": "http://evil.invalid"}, json={"password": "x"}).status_code == 403
+    assert client.post("/api/owner/login", headers={"Origin": "http://evil.invalid"}, json={"username": "gustavo", "password": "x"}).status_code == 403
     assert client.post("/api/google-health/webhook", json={"type": "notification"}).status_code == 401
     assert client.post("/api/google-health/webhook", headers={"Authorization": "anything"}, json={"type": "verification"}).status_code == 401
 
@@ -182,5 +182,29 @@ def test_remote_attacker_cannot_replace_the_public_initial_trainer_password(clie
         payload = {"current_password": "1234", "new_password": "new-test-password"}
         assert remote.post("/api/personal/change-password", headers={"X-Personal-Token": token}, json=payload).status_code == 403
         assert remote.get("/api/labs").status_code == 401
-        assert remote.post("/api/owner/login", json={"password": "temporary-test-password"}).status_code == 200
+        assert remote.post("/api/owner/login", json={"username": "gustavo", "password": "temporary-test-password"}).status_code == 200
         assert remote.post("/api/personal/change-password", headers={"X-Personal-Token": token}, json=payload).status_code == 200
+
+
+def test_owner_local_pin_rejects_wrong_username_and_remote_use(client: TestClient):
+    access = importlib.import_module("backend.app.access")
+    keyring.set_password(access.SERVICE, access.OWNER_LOCAL_KEY, access.password_hash("9271"))
+    client.cookies.clear()
+    credentials = {"username": "gustavo", "password": "9271"}
+    assert client.post("/api/owner/login", json={**credentials, "username": "outra-pessoa"}).status_code == 401
+    malformed_pin = client.post("/api/owner/login", json={**credentials, "password": "92711"})
+    assert malformed_pin.status_code == 401
+    assert "PIN de 4 dígitos" in malformed_pin.json()["detail"]
+    assert client.post("/api/owner/login", json=credentials).status_code == 200
+    assert client.get("/api/profile").status_code == 200
+    token = client.cookies.get(access.OWNER_COOKIE)
+
+    main = importlib.import_module("backend.app.main")
+    with TestClient(main.app, base_url="https://service.invalid", client=("203.0.113.12", 5000)) as remote:
+        assert remote.post("/api/owner/login", json=credentials).status_code == 401
+        remote.cookies.set(access.OWNER_COOKIE, token)
+        assert remote.get("/api/owner/session").status_code == 401
+        assert remote.get("/api/profile").status_code == 401
+
+    assert client.post("/api/owner/logout").status_code == 200
+    assert client.get("/api/profile").status_code == 401

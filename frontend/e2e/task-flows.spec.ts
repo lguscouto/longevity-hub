@@ -280,6 +280,17 @@ for (const vp of VIEWPORTS) {
     });
 
     test('2. Abrir Briefing Médico via Modal', async ({ page }) => {
+      await page.addInitScript(() => {
+        let copiedText = '';
+        Object.defineProperty(navigator, 'clipboard', {
+          value: {
+            writeText: async (value: string) => { copiedText = value; },
+            readText: async () => copiedText,
+          },
+        });
+      });
+      await page.route('**/api/reports/doctor-briefing/pdf', route =>
+        route.fulfill({ contentType: 'application/pdf', body: '%PDF-1.4' }));
       await page.goto('/');
       await page.waitForLoadState('domcontentloaded');
 
@@ -290,6 +301,17 @@ for (const vp of VIEWPORTS) {
       const modal = page.getByRole('dialog');
       await expect(modal).toBeVisible();
       await expect(modal.getByRole('heading', { name: 'Resumo para consulta médica' })).toBeVisible();
+      await modal.getByLabel('Perguntas para a consulta').fill('Como revisar meu sono?\n\nQue dados devo levar?');
+      await modal.getByRole('button', { name: 'Copiar texto' }).click();
+      await expect(modal.getByRole('button', { name: 'Copiado!' })).toBeVisible();
+      const copied = await page.evaluate(() => navigator.clipboard.readText());
+      expect(copied).toContain('# Relatório Clínico');
+      expect(copied).toContain('## Perguntas para a consulta\n\n- Como revisar meu sono?\n- Que dados devo levar?');
+      const request = page.waitForRequest(req => req.method() === 'POST' && req.url().endsWith('/doctor-briefing/pdf'));
+      const download = page.waitForEvent('download');
+      await modal.getByRole('button', { name: 'Baixar PDF' }).click();
+      expect((await request).postDataJSON()).toEqual({ questions: ['Como revisar meu sono?', 'Que dados devo levar?'] });
+      expect((await download).suggestedFilename()).toBe('doctor_briefing_longevidade.pdf');
 
       // Close briefing
       const closeBtn = page.getByRole('button', { name: 'Fechar', exact: true }).first();
