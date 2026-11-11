@@ -1,8 +1,8 @@
-# Limitações e divergências verificadas
+# Limitações históricas e divergências verificadas
 
-Esta lista registra achados concretos da leitura de código e validação em 29/07/2026. Ela existe para evitar que documentos, UI ou nomes de funcionalidades sejam interpretados como comportamentos que o repositório ainda não entrega.
+> **Registro histórico de 29/07/2026.** Vários itens abaixo foram corrigidos ou reavaliados desde então. Para o estado atual, consulte a [validação A01–A19 e o aditivo das fases 5 e 8](validacao-final-fase-7.md).
 
-A sequência recomendada para corrigir os itens está em [improvement-roadmap.md](improvement-roadmap.md).
+O plano vigente e seu andamento estão em [plano-implementacao-fases.md](plano-implementacao-fases.md).
 
 ## Alta prioridade
 
