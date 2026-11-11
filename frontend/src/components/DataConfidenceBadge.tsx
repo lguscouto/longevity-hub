@@ -20,21 +20,25 @@ interface QualitySummary {
 
 export const DataConfidenceBadge: React.FC<DataConfidenceBadgeProps> = ({ selectedDate }) => {
   const [summary, setSummary] = useState<QualitySummary | null>(null)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let isMounted = true
+    setSummary(null)
+    setFailed(false)
     requestJson<QualitySummary>(`/api/quality/daily?date_ref=${selectedDate}`)
       .then((data) => {
         if (isMounted) setSummary(data)
       })
       .catch(() => {
-        if (isMounted) setSummary(null)
+        if (isMounted) setFailed(true)
       })
     return () => {
       isMounted = false
     }
   }, [selectedDate])
 
+  if (failed) return <span role="status" className="text-sm text-slate-600 dark:text-slate-400">Qualidade dos dados indisponível</span>
   if (!summary) return null
 
   const confidenceKey = summary?.confidence in { high: 1, medium: 1, low: 1, unavailable: 1 } ? summary.confidence : 'unavailable'

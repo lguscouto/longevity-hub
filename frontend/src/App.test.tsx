@@ -98,6 +98,17 @@ describe('App', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(6)
   })
 
+  it('reports failed CGM loading instead of presenting it as an empty history', async () => {
+    const original = requestJsonMock.getMockImplementation()!
+    requestJsonMock.mockImplementation((input, init) => String(input) === '/api/cgm/summary'
+      ? Promise.reject(new Error('offline'))
+      : original(input, init))
+    renderApp()
+    expect(await screen.findByText(/Falha ao carregar dados de:.*Glicemia/i)).toBeInTheDocument()
+    expect(await screen.findByText('Não foi possível carregar os dados de glicemia.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tentar carregar os dados novamente' })).toBeInTheDocument()
+  })
+
   it('renders backend KDM incomplete status instead of a local estimate', async () => {
     renderApp()
 

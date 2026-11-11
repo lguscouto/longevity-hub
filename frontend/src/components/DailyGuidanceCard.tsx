@@ -27,16 +27,19 @@ interface DailyGuidanceCardProps {
 export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDate, refreshKey }) => {
   const [guidance, setGuidance] = useState<GuidanceResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let isMounted = true
     setLoading(true)
+    setFailed(false)
+    setGuidance(null)
     requestJson<GuidanceResponse>(`/api/daily-guidance?date_ref=${selectedDate}`)
       .then((data) => {
         if (isMounted) setGuidance(data)
       })
       .catch(() => {
-        if (isMounted) setGuidance(null)
+        if (isMounted) setFailed(true)
       })
       .finally(() => {
         if (isMounted) setLoading(false)
@@ -47,7 +50,8 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
     }
   }, [selectedDate, refreshKey])
 
-  if (!guidance) return null
+  if (failed) return <div role="status" className="surface-card p-4 text-sm">Não foi possível carregar a orientação diária. Tente atualizar os dados.</div>
+  if (!guidance) return loading ? <div role="status" className="surface-card p-4 text-sm">Carregando orientação diária...</div> : null
 
   const stateKey = guidance?.state in { optimal: 1, moderate: 1, recover: 1, insufficient_data: 1 }
     ? guidance.state
@@ -62,6 +66,9 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
 
   const factorsList = Array.isArray(guidance?.factors) ? guidance.factors : []
   const limitationsList = Array.isArray(guidance?.limitations) ? guidance.limitations : []
+  const guidanceLabel = !guidance.label || /^(unavailable|insufficient_data)$/i.test(guidance.label.trim())
+    ? 'Dados insuficientes'
+    : guidance.label
 
   return (
     <div className={`p-6 rounded-radius-xl surface-card border ${stateColors} shadow-sm space-y-4`}>
@@ -77,7 +84,7 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
                 {({ high: 'Confiança alta', medium: 'Confiança moderada', low: 'Confiança baixa', unavailable: 'Dados insuficientes' } as Record<string, string>)[guidance?.confidence] || 'Dados insuficientes'}
               </span>
             </div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{guidance?.label || 'Orientação Diária'}</h2>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{guidanceLabel}</h2>
           </div>
         </div>
 
@@ -122,7 +129,7 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
               }`}
             >
               {factor.impact === 'negative' ? <ArrowDownRight className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />}
-              {factor.label} {factor.change_pct !== 0 && `(${factor.change_pct > 0 ? '+' : ''}${factor.change_pct}%)`}
+              {factor.label} {Number.isFinite(factor.change_pct) && factor.change_pct !== 0 && `(${factor.change_pct > 0 ? '+' : ''}${factor.change_pct}%)`}
             </span>
           ))}
         </div>

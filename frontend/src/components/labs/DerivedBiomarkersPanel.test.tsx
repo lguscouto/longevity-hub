@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DerivedBiomarkersPanel } from './DerivedBiomarkersPanel';
 import { requestJson } from '../../lib/api';
@@ -146,6 +146,29 @@ describe('DerivedBiomarkersPanel', () => {
 
     // PhenoAge should be filtered out
     expect(screen.queryByText('PhenoAge (Levine 2018)')).not.toBeInTheDocument();
+  });
+
+  it('keeps searched KPI totals aligned with displayed metrics, including new categories and neutral results', async () => {
+    mockedRequestJson.mockResolvedValue({
+      ...mockResponse,
+      metrics_by_category: {
+        ...mockResponse.metrics_by_category,
+        outra_categoria: [{
+          metric_id: 'new_metric', display_name: 'Indicador novo', category: 'outra_categoria',
+          status: 'calculated', value: 7, unit: null, algorithm_version: 'test',
+        }],
+      },
+    } as any);
+    render(<DerivedBiomarkersPanel currentSelectedDate="2026-03-10" />);
+    expect(await screen.findByText('Indicador novo')).toBeInTheDocument();
+    expect(screen.getByText('outra categoria')).toBeInTheDocument();
+    expect(screen.getByText(/interpretação clínica indisponível/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(/Buscar por nome, sigla ou conceito/i), { target: { value: 'indicador novo' } });
+    const pending = screen.getByRole('button', { name: /Pendentes.*1/ });
+    expect(within(pending).getByText('1')).toBeInTheDocument();
+    fireEvent.click(pending);
+    expect(screen.getByText('Indicador novo')).toBeInTheDocument();
+    expect(screen.queryByText('HOMA-IR')).not.toBeInTheDocument();
   });
 
   it('filters metrics by status using quick filter buttons', async () => {

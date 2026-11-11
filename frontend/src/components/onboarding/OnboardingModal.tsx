@@ -839,7 +839,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   value={privacyMode}
                   onChange={(e) => setPrivacyMode(e.target.value as PrivacyMode)}
                 >
-                  <option value="minimal">Mínimo (Apenas biomarcadores anônimos)</option>
+                  <option value="minimal">Reduzido (sem identificadores diretos no contexto automático)</option>
                   <option value="full">Completo (Contexto ampliado de histórico)</option>
                 </Select>
               </FormField>
@@ -913,7 +913,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 {selectedModel}
               </div>
               <div className="text-xs text-slate-400 mt-1">
-                Privacidade: {privacyMode === 'full' ? 'Completa' : 'Mínima'}
+                Contexto enviado: {privacyMode === 'full' ? 'Ampliado' : 'Reduzido'}
               </div>
             </div>
           </div>

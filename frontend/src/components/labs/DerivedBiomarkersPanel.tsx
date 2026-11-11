@@ -75,22 +75,22 @@ const CATEGORY_CONFIG: Record<
   biological_age: {
     title: '1. Idade Biológica e Envelhecimento',
     icon: Brain,
-    description: 'Relógios biológicos e algoritmos preditivos de sobrevida e morbimortalidade.',
+    description: 'Estimativas de idade biológica e indicadores calculados a partir dos seus dados.',
   },
   metabolic_insulin: {
     title: '2. Glicemia, Insulina e Metabolismo',
     icon: Sparkles,
-    description: 'Sensibilidade insulínica, índices substitutos e controle glicêmico funcional.',
+    description: 'Indicadores de açúcar no sangue e da resposta do organismo à insulina.',
   },
   inflammation_immune_nutrition: {
     title: '3. Inflamação, Imunidade e Nutrição',
     icon: Flame,
-    description: 'Razões celulares e marcadores combinados de imunoinflamação e estado nutricional.',
+    description: 'Indicadores relacionados à inflamação, às células de defesa e à nutrição.',
   },
   hepatic: {
     title: '4. Fígado e Esteatose',
     icon: Activity,
-    description: 'Escores de esteatose e estratificação não invasiva de fibrose hepática.',
+    description: 'Estimativas relacionadas à gordura no fígado e à possibilidade de fibrose.',
   },
   cardiovascular_renal: {
     title: '5. Cardiovascular, Lipídico e Renal',
@@ -100,7 +100,7 @@ const CATEGORY_CONFIG: Record<
   body_composition: {
     title: '6. Adiposidade e Composição Corporal',
     icon: Scale,
-    description: 'Modelos antropométricos geométricos, estimativa de gordura e acúmulo visceral.',
+    description: 'Indicadores baseados nas medidas corporais e estimativas de gordura.',
   },
   direct_biomarkers: {
     title: '7. Séries Históricas de Marcadores Primários',
@@ -122,6 +122,17 @@ const normalizeSearchText = (str: string): string => {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
+};
+
+const matchesSearch = (metric: EvaluatedMetricItem, evaluation: EvaluationResult | undefined, query: string): boolean => {
+  if (!query) return true;
+  return [metric.display_name, metric.metric_id, metric.subcategory || '', metric.definition || '', evaluation?.clinicalNote || '', evaluation?.badgeLabel || '']
+    .some(value => normalizeSearchText(value).includes(query));
+};
+
+const kpiStatus = (metric: EvaluatedMetricItem, evaluation: EvaluationResult | undefined) => {
+  if (metric.status !== 'calculated' || !evaluation || evaluation.status === 'neutral') return 'pending';
+  return evaluation.status;
 };
 
 const getMissingList = (metric: EvaluatedMetricItem): string[] => {
@@ -248,7 +259,7 @@ export const DerivedBiomarkersPanel: React.FC<{
 
   const expandAllCategories = () => {
     const next: Record<string, boolean> = {};
-    Object.keys(CATEGORY_CONFIG).forEach((k) => {
+    Object.keys(data?.metrics_by_category || {}).forEach((k) => {
       next[k] = false;
     });
     setCollapsedCategories(next);
@@ -256,7 +267,7 @@ export const DerivedBiomarkersPanel: React.FC<{
 
   const collapseAllCategories = () => {
     const next: Record<string, boolean> = {};
-    Object.keys(CATEGORY_CONFIG).forEach((k) => {
+    Object.keys(data?.metrics_by_category || {}).forEach((k) => {
       next[k] = true;
     });
     setCollapsedCategories(next);
@@ -295,22 +306,20 @@ export const DerivedBiomarkersPanel: React.FC<{
     if (data?.metrics_by_category) {
       Object.values(data.metrics_by_category).forEach((list) => {
         list.forEach((metric) => {
-          if (metric.status !== 'calculated') {
-            pending += 1;
-          } else {
-            const ev = evaluatedMap.get(metric.metric_id);
-            if (ev?.status === 'optimal') optimal += 1;
-            else if (ev?.status === 'normal') normal += 1;
-            else if (ev?.status === 'attention') attention += 1;
-            else if (ev?.status === 'alert') alert += 1;
-            else normal += 1;
-          }
+          const evaluation = evaluatedMap.get(metric.metric_id);
+          if (!matchesSearch(metric, evaluation, normalizeSearchText(searchQuery))) return;
+          const status = kpiStatus(metric, evaluation);
+          if (status === 'optimal') optimal += 1;
+          else if (status === 'normal') normal += 1;
+          else if (status === 'attention') attention += 1;
+          else if (status === 'alert') alert += 1;
+          else pending += 1;
         });
       });
     }
 
     return { optimal, normal, attention, alert, pending };
-  }, [data, evaluatedMap]);
+  }, [data, evaluatedMap, searchQuery]);
 
   // Filtragem e busca de métricas por categoria
   const filteredMetricsByCategory = useMemo(() => {
@@ -323,14 +332,15 @@ export const DerivedBiomarkersPanel: React.FC<{
       result[catKey] = list.filter((m) => {
         const ev = evaluatedMap.get(m.metric_id);
         const isCalc = m.status === 'calculated';
+        const status = kpiStatus(m, ev);
 
         // 1. Filtro de Status
         if (statusFilter === 'calculated' && !isCalc) return false;
-        if (statusFilter === 'pending' && isCalc) return false;
-        if (statusFilter === 'optimal' && (!isCalc || ev?.status !== 'optimal')) return false;
-        if (statusFilter === 'normal' && (!isCalc || ev?.status !== 'normal')) return false;
-        if (statusFilter === 'attention' && (!isCalc || ev?.status !== 'attention')) return false;
-        if (statusFilter === 'alert' && (!isCalc || ev?.status !== 'alert')) return false;
+        if (statusFilter === 'pending' && status !== 'pending') return false;
+        if (statusFilter === 'optimal' && status !== 'optimal') return false;
+        if (statusFilter === 'normal' && status !== 'normal') return false;
+        if (statusFilter === 'attention' && status !== 'attention') return false;
+        if (statusFilter === 'alert' && status !== 'alert') return false;
         if (
           statusFilter === 'attention_alert' &&
           (!isCalc || (ev?.status !== 'attention' && ev?.status !== 'alert'))
@@ -339,24 +349,14 @@ export const DerivedBiomarkersPanel: React.FC<{
         }
 
         // 2. Busca por texto insensível a acentuação
-        if (q) {
-          const matchName = normalizeSearchText(m.display_name).includes(q);
-          const matchId = normalizeSearchText(m.metric_id).includes(q);
-          const matchSub = normalizeSearchText(m.subcategory || '').includes(q);
-          const matchDef = normalizeSearchText(m.definition || '').includes(q);
-          const matchNote = normalizeSearchText(ev?.clinicalNote || '').includes(q);
-          const matchBadge = normalizeSearchText(ev?.badgeLabel || '').includes(q);
-          return matchName || matchId || matchSub || matchDef || matchNote || matchBadge;
-        }
-
-        return true;
+        return matchesSearch(m, ev, q);
       });
     });
 
     return result;
   }, [data, evaluatedMap, statusFilter, searchQuery]);
 
-  const categories = Object.keys(CATEGORY_CONFIG);
+  const categories = [...new Set([...Object.keys(CATEGORY_CONFIG), ...Object.keys(data?.metrics_by_category || {})])];
   const isFilteringActive = searchQuery.trim().length > 0 || statusFilter !== 'all';
 
   const hasAnyVisibleMetrics = useMemo(() => {
@@ -376,7 +376,7 @@ export const DerivedBiomarkersPanel: React.FC<{
             </h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Cálculos determinísticos de longevidade, metabolismo, inflamação e composição corporal (Levine 2018, Hao 2025).
+            Resultados calculados a partir dos seus exames e medidas. As referências e limitações aparecem em cada cartão.
           </p>
         </div>
 
@@ -474,7 +474,7 @@ export const DerivedBiomarkersPanel: React.FC<{
               </span>
             </div>
             <p className="text-xs text-emerald-700/80 dark:text-emerald-400 mt-1 truncate">
-              Excelente controle metabólico
+              Na faixa definida para o indicador
             </p>
           </div>
 
@@ -567,7 +567,7 @@ export const DerivedBiomarkersPanel: React.FC<{
               </span>
             </div>
             <p className="text-xs text-rose-700/80 dark:text-rose-400 mt-1 truncate">
-              Demanda intervenção clínica
+              Merece avaliação profissional
             </p>
           </div>
 
@@ -598,7 +598,7 @@ export const DerivedBiomarkersPanel: React.FC<{
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-              Aguardando exames/medidas
+              Dados ou interpretação pendentes
             </p>
           </div>
         </div>
@@ -689,7 +689,7 @@ export const DerivedBiomarkersPanel: React.FC<{
       {data && (
         <div className="space-y-4">
           {categories.map((catKey) => {
-            const config = CATEGORY_CONFIG[catKey];
+            const config = CATEGORY_CONFIG[catKey] || { title: catKey.replace(/_/g, ' '), icon: Layers, description: 'Indicadores disponíveis nesta categoria.' };
             const metrics = filteredMetricsByCategory[catKey] || [];
 
             // Se busca/filtro está ativo e não há métricas correspondentes, oculta categoria
@@ -825,7 +825,7 @@ export const DerivedBiomarkersPanel: React.FC<{
                                   </StatusBadge>
                                 ) : (
                                   <StatusBadge variant="neutral" size="sm">
-                                    {metric.status}
+                                    {metric.status === 'out_of_scope' ? 'Fora do escopo' : 'Indisponível'}
                                   </StatusBadge>
                                 )}
                               </div>
@@ -848,7 +848,7 @@ export const DerivedBiomarkersPanel: React.FC<{
                             </div>
 
                             {/* Mini-Gauge Linear e Faixas de Referência / Alvo */}
-                            {isCalc && (
+                            {isCalc && evaluation.status !== 'neutral' && (
                               <div className="space-y-1">
                                 <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-radius-full overflow-hidden">
                                   <div

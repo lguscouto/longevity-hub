@@ -22,6 +22,13 @@ describe('DataConfidenceBadge (UX_UI_51)', () => {
     expect(label.parentElement).not.toHaveAttribute('title', expect.stringContaining('undefined'));
   });
 
+  it('distinguishes a loading failure from missing measurements', async () => {
+    mockRequestJson.mockRejectedValueOnce(new Error('offline'));
+    render(<DataConfidenceBadge selectedDate="2026-11-11" />);
+    expect(await screen.findByText('Qualidade dos dados indisponível')).toBeInTheDocument();
+    expect(screen.queryByText('Dados insuficientes')).not.toBeInTheDocument();
+  });
+
   it('renders canonical Portuguese confidence label and coverage percentage', async () => {
     const today = formatLocalDateKey();
     mockRequestJson.mockResolvedValueOnce({

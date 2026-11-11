@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import App from '../App'
 import { requestJson } from '../lib/api'
+import { Button, FormField, Input } from './ui'
 
 function isTrainerRoute() {
   return /^#(?:personal|trainer|treinador|personal-trainer)(?:$|[?&#/])/i.test(window.location.hash)
@@ -73,16 +74,17 @@ export function OwnerAccess() {
   }
   if (checking) return <main className="p-8">Verificando acesso…</main>
   if (trainerRoute && !authenticated) return <App />
-  if (authenticated) return <><div className="flex justify-end px-4 pt-2"><button type="button" onClick={logout} className="rounded px-3 py-2 text-sm underline focus-visible:outline focus-visible:outline-2">Sair da conta do proprietário</button></div><App /></>
+  if (authenticated) return <App onOwnerLogout={logout} />
   return <main className="flex min-h-screen items-center justify-center p-4">
-    <div className="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8">
+    <div className="glass-panel w-full max-w-md rounded-radius-xl p-6 sm:p-8">
       <h1 className="text-xl font-semibold">Acesso ao Longevidade Hub</h1>
       <p className="mt-2 text-sm">Entre com a senha do proprietário.</p>
       <form onSubmit={login} className="mt-6 space-y-4">
-        <label htmlFor="owner-password" className="block text-sm">Senha</label>
-        <input id="owner-password" type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded border p-3 text-slate-900" />
+        <FormField id="owner-password" label="Senha">
+          <Input id="owner-password" type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
+        </FormField>
         {error && <p role="alert" className="text-red-600">{error}</p>}
-        <button disabled={busy} className="rounded bg-blue-700 px-5 py-3 text-white disabled:opacity-50" type="submit">Entrar</button>
+        <Button disabled={busy} variant="primary" type="submit">Entrar</Button>
       </form>
       <a href="#personal" className="mt-6 inline-block underline">Acessar o portal do personal</a>
     </div>

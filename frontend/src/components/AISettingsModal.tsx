@@ -47,8 +47,8 @@ type SettingsPayload = {
 }
 
 const PRIVACY_MODE_DESCRIPTIONS: Record<PrivacyMode, string> = {
-  minimal: 'Modo mínimo: não envia nome, nascimento ou histórico completo; usa apenas o contexto essencial para responder.',
-  full: 'Modo completo: opt-in para enviar contexto ampliado de perfil e histórico quando você precisar de uma análise mais abrangente.',
+  minimal: 'O contexto automático omite nome e data de nascimento. O texto digitado por você pode conter informações pessoais.',
+  full: 'O contexto automático inclui mais informações do perfil e histórico, que serão enviadas ao provedor escolhido.',
 }
 
 function normalizePrivacyMode(mode?: string): PrivacyMode {

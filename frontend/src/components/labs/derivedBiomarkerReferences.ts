@@ -1588,12 +1588,12 @@ export function evaluateDerivedMetric(
     // -------------------------------------------------------------------------
     default: {
       return {
-        status: 'normal',
+        status: 'neutral',
         badgeLabel: 'Calculado',
-        clinicalNote: 'Indicador derivado processado com sucesso pelo algoritmo clínico.',
+        clinicalNote: 'Resultado calculado; interpretação clínica indisponível para este indicador.',
         referenceText: refText,
         optimalText: optText,
-        gaugePercent: 50,
+        gaugePercent: 0,
         borderAccentClass: 'border-l-indigo-500',
         badgeVariant: 'info',
       };

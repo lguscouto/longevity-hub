@@ -156,7 +156,7 @@ function getInitialTab(): Tab {
   return 'overview'
 }
 
-export default function App() {
+export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = {}) {
   const { showToast } = useToast()
   const [activeTab, setActiveTab] = useState<Tab>(getInitialTab)
   const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDateKey(new Date()))
@@ -353,8 +353,7 @@ export default function App() {
     // Modo isolado: quando no Portal do Personal, não busca dados médicos privados
     if (activeTab === 'personal') {
       try {
-        const nextProfile = await requestJson<any>('/api/physical-assessments/athlete-profile')
-          .catch(() => requestJson<any>('/api/profile').catch(() => null))
+        const nextProfile = await requestJson<any>('/api/physical-assessments/athlete-profile').catch(() => null)
         if (sequence !== refreshSequence.current) return
         if (nextProfile) setProfile(nextProfile)
         setLoading(false)
@@ -378,12 +377,12 @@ export default function App() {
             errorsMap['PhenoAge'] = err?.message || 'Falha ao carregar histórico PhenoAge'
             return []
           }),
-          requestJson<any[]>('/api/n-of-1').catch(() => []),
-          requestJson<any[]>('/api/cgm/summary').catch(() => []),
+          requestJson<any[]>('/api/n-of-1').catch(() => { errorsMap['Experimentos'] = 'Falha ao carregar experimentos'; return [] }),
+          requestJson<any[]>('/api/cgm/summary').catch(() => { errorsMap['Glicemia'] = 'Falha ao carregar glicemia'; return [] }),
           requestJson<any>('/api/profile'),
         ]),
-        requestJson<any>('/api/kdm/latest').catch(() => null),
-        requestJson<{ last_sync?: string | null; last_status?: string | null }>('/api/metrics/sync/status').catch(() => null),
+        requestJson<any>('/api/kdm/latest').catch(() => { errorsMap['KDM'] = 'Falha ao carregar KDM'; return null }),
+        requestJson<{ last_sync?: string | null; last_status?: string | null }>('/api/metrics/sync/status').catch(() => { errorsMap['Sincronização'] = 'Falha ao carregar estado da sincronização'; return null }),
       ])
 
       const [nextMetrics, nextLabs, nextPhenoHistory, nextExperiments, nextCgmSummaries, nextProfile] = requiredData
@@ -735,6 +734,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
       {activeTab !== 'personal' && (
         <Header
+          onOwnerLogout={onOwnerLogout}
           activeTab={activeTab}
           setActiveTab={handleSelectTab}
           onSelectTab={handleSelectTab}
@@ -747,7 +747,7 @@ export default function App() {
           isSyncing={isSyncing}
           isSyncingGoogle={isSyncingGoogle}
           lastSyncTime={lastSyncTime}
-          syncState={syncState}
+          syncState={moduleErrors['Sincronização'] ? 'unavailable' : syncState}
           dataCoveredUntil={dataCoveredUntil}
           onOpenSyncStatus={() => setIsSyncModalOpen(true)}
         />
@@ -788,10 +788,10 @@ export default function App() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setModuleErrors({})}
-                  aria-label="Dispensar aviso de erro"
+                  onClick={() => void fetchDashboardData()}
+                  aria-label="Tentar carregar os dados novamente"
                 >
-                  Dispensar
+                  Tentar novamente
                 </Button>
               </div>
             )}
@@ -940,12 +940,12 @@ export default function App() {
                   storageKey="longevidade_overview_advanced_collapsed"
                 >
                   <div className="grid gap-6 lg:grid-cols-2">
-                    <PhenoAgeWidget
+                    {moduleErrors['PhenoAge'] || moduleErrors['KDM'] ? <div role="status">Não foi possível carregar as estimativas de idade biológica.</div> : <PhenoAgeWidget
                       latestRecord={phenoHistory[0]}
                       latestKdmRecord={latestKdmRecord}
                       onRecalculate={handleRecalculatePheno}
-                    />
-                    <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />
+                    />}
+                    {moduleErrors['Glicemia'] ? <div role="status">Não foi possível carregar os dados de glicemia.</div> : <CGMDashboard summaries={cgmSummaries} onRefreshData={fetchDashboardData} />}
                   </div>
 
                   <div className="space-y-3 pt-2">
@@ -1008,13 +1008,13 @@ export default function App() {
                   </div>
                 </div>
 
-                {activeTab === 'labs' && (
+                {activeTab === 'labs' && (moduleErrors['Exames'] ? <div role="status">Não foi possível carregar os exames.</div> : (
                   <LabResultsTable
                     labs={labs}
                     onAddBatchLabs={handleAddBatchLabs}
                     onRefreshData={fetchDashboardData}
                   />
-                )}
+                ))}
 
                 {activeTab === 'steps' && (
                   <Suspense
@@ -1032,7 +1032,7 @@ export default function App() {
             {activeTab === 'supplements' && <SupplementsView selectedDate={selectedDate} />}
             {activeTab === 'sleep' && <SleepView />}
             {activeTab === 'ai' && <AICopilotView onOpenSettings={() => setShowAISettings(true)} chatMessages={aiChatMessages} setChatMessages={setAiChatMessages} />}
-            {activeTab === 'n-of-1' && <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />}
+            {activeTab === 'n-of-1' && (moduleErrors['Experimentos'] ? <div role="status">Não foi possível carregar os experimentos.</div> : <NOf1Tracker experiments={experiments} onCreateExperiment={handleCreateExperiment} />)}
             {activeTab === 'physical-assessments' && <PhysicalAssessmentsView />}
             {activeTab === 'personal' && (
               <Suspense
@@ -1045,6 +1045,7 @@ export default function App() {
                 <PersonalTrainerView
                   isIsolated={true}
                   onRequestUnlock={() => { window.location.hash = 'overview' }}
+                  onOwnerLogout={onOwnerLogout}
                 />
               </Suspense>
             )}

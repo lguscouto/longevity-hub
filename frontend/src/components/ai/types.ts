@@ -55,14 +55,14 @@ export interface ChatMessage {
 }
 
 export const PRIVACY_MODE_LABELS: Record<PrivacyMode, string> = {
-  minimal: 'privacidade mínima',
-  full: 'privacidade completa',
+  minimal: 'contexto reduzido',
+  full: 'contexto ampliado',
 };
 
 export const PRIVACY_MODE_DESCRIPTIONS: Record<PrivacyMode, string> = {
   minimal:
-    'Modo mínimo: não envia nome, nascimento ou histórico completo; usa apenas o contexto essencial.',
-  full: 'Modo completo: opt-in para enviar contexto ampliado de perfil e histórico quando necessário.',
+    'O contexto automático omite nome e data de nascimento. A mensagem que você digitar pode conter informações pessoais.',
+  full: 'O contexto automático inclui mais informações do perfil e do histórico, que serão enviadas ao provedor escolhido.',
 };
 
 export const TIME_WINDOW_LABELS: Record<TimeWindow, string> = {

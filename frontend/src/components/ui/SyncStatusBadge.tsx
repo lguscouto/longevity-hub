@@ -20,6 +20,7 @@ export type SyncState =
   | 'error'
   | 'expired'
   | 'disconnected'
+  | 'unavailable'
   | 'stale';
 
 export interface SyncStatusBadgeProps {
@@ -49,6 +50,15 @@ interface StateConfig {
 }
 
 const STATE_CONFIGS: Record<SyncState, StateConfig> = {
+  unavailable: {
+    label: 'Estado da sincronização indisponível',
+    badgeLabel: 'Estado indisponível',
+    icon: CloudOff,
+    containerClass: 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300',
+    iconClass: 'text-slate-500 dark:text-slate-400',
+    textClass: 'text-slate-700 dark:text-slate-300',
+    ariaDescription: 'Não foi possível carregar o estado da sincronização.',
+  },
   never: {
     label: 'Nunca sincronizado',
     badgeLabel: 'Não sincronizado',

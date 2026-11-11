@@ -46,7 +46,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
 
           <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800/80 px-3 py-2 rounded-radius-md border border-slate-200 dark:border-slate-700">
             <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-            <span>Privacidade: seus dados não são enviados para serviços externos sem sua autorização.</span>
+            <span>Dados ficam neste dispositivo; integrações e solicitações à IA podem compartilhá-los com os serviços configurados.</span>
           </div>
         </div>
       </div>
@@ -69,7 +69,7 @@ export const ProfileSystemSection: React.FC<ProfileSystemSectionProps> = ({
             <StatusBadge variant="info">Configuração Local</StatusBadge>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-            Configure suas chaves de API, escolha provedores locais ou em nuvem e ajuste suas preferências de privacidade para as análises do Copiloto.
+            Configure suas chaves, escolha entre OpenAI, Anthropic ou OpenRouter e ajuste quais dados serão enviados ao Copiloto.
           </p>
         </div>
 

@@ -37,6 +37,7 @@ export interface PersonalTrainerViewProps {
   onRequestUnlock?: () => void;
   isIsolated?: boolean;
   initialSession?: PersonalTrainerSession | null;
+  onOwnerLogout?: () => void;
 }
 
 export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
@@ -45,6 +46,7 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
   onRequestUnlock,
   isIsolated = true,
   initialSession,
+  onOwnerLogout,
 }) => {
   const [savedSession] = useState<PersonalTrainerSession | null>(() =>
     initialSession !== undefined ? initialSession : getPersonalTrainerSession()
@@ -204,6 +206,7 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
           <PersonalTrainerTopBar
             onRequestUnlock={triggerUnlock}
             session={null}
+            onOwnerLogout={onOwnerLogout}
           />
         )}
         <PersonalTrainerLogin
@@ -228,6 +231,7 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
           onRequestUnlock={triggerUnlock}
           session={session}
           onLogout={handleLogout}
+          onOwnerLogout={onOwnerLogout}
         />
       )}
 

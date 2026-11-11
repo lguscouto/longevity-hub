@@ -341,15 +341,15 @@ for (const vp of VIEWPORTS) {
       // Verify task buttons: Analisar, Conversar, Histórico
       await expect(page.getByRole('button', { name: /Analisar/i })).toBeVisible();
       await expect(page.getByRole('button', { name: /Conversar/i })).toBeVisible();
-      await expect(page.getByRole('button', { name: /Histórico/i })).toBeVisible();
+      await expect(page.getByRole('button', { name: /Histórico de análises/i })).toBeVisible();
 
       // Click Conversar mode
       await page.getByRole('button', { name: /Conversar/i }).click();
       await expect(page.getByPlaceholder(/Faça uma pergunta/i)).toBeVisible();
 
       // Click Histórico mode
-      await page.getByRole('button', { name: /Histórico/i }).click();
-      await expect(page.getByText('Histórico de Relatórios de Longevidade')).toBeVisible();
+      await page.getByRole('button', { name: /Histórico de análises/i }).click();
+      await expect(page.getByRole('heading', { name: /Histórico de análises/i })).toBeVisible();
     });
 
     test('6. Avaliação Física: Stepper Wizard e Navegação', async ({ page }) => {
@@ -364,7 +364,7 @@ for (const vp of VIEWPORTS) {
       const physicalTab = page.getByRole('button', { name: 'Avaliações Físicas' });
       await physicalTab.click();
 
-      await expect(page.getByText('Avaliações Físicas & Fotos Corporais')).toBeVisible();
+      await expect(page.getByRole('heading', { name: /Avaliações físicas e fotos corporais/i })).toBeVisible();
 
       // Click Nova Avaliação
       const createBtn = page.getByRole('button', { name: /Nova Avaliação/i });
@@ -375,15 +375,15 @@ for (const vp of VIEWPORTS) {
 
       // Advance to Step 2
       await page.getByRole('button', { name: /Próxima Etapa/i }).click();
-      await expect(page.getByText('Medidas Antropométricas & Circunferências')).toBeVisible();
+      await expect(page.getByText('Medidas corporais e circunferências')).toBeVisible();
 
       // Advance to Step 3
       await page.getByRole('button', { name: /Próxima Etapa/i }).click();
-      await expect(page.getByText('Composição Corporal & Percentual de Gordura')).toBeVisible();
+      await expect(page.getByText('Composição corporal e percentual de gordura')).toBeVisible();
 
       // Step back to Step 2
       await page.getByRole('button', { name: /Etapa Anterior/i }).click();
-      await expect(page.getByText('Medidas Antropométricas & Circunferências')).toBeVisible();
+      await expect(page.getByText('Medidas corporais e circunferências')).toBeVisible();
 
       // Cancel back to history
       await page.getByRole('button', { name: 'Cancelar' }).click();

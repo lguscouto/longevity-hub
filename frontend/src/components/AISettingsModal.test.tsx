@@ -98,7 +98,7 @@ describe('AISettingsModal privacy and key-vault settings', () => {
 
     const privacySelect = await screen.findByRole('combobox', { name: /modo de privacidade/i })
     expect(privacySelect).toHaveValue('minimal')
-    expect(screen.getByText(/não envia nome, nascimento ou histórico completo/i)).toBeInTheDocument()
+    expect(screen.getByText(/contexto automático omite nome e data de nascimento/i)).toBeInTheDocument()
 
     await user.selectOptions(privacySelect, 'full')
 

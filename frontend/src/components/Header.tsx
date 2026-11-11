@@ -13,10 +13,12 @@ import {
   Sparkles,
   User,
   UserCheck,
+  LogOut,
 } from 'lucide-react';
 import { HeaderUtilityActions } from './HeaderUtilityActions';
 import { useScrollActiveIntoView } from '../hooks/useScrollActiveIntoView';
 import { SyncState } from './ui/SyncStatusBadge';
+import { Button } from './ui';
 
 export type PrimaryTab = 'today' | 'health' | 'workouts' | 'interventions' | 'ai' | 'profile';
 
@@ -67,6 +69,7 @@ const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
 ];
 
 export interface HeaderProps {
+  onOwnerLogout?: () => void;
   activeTab: string;
   setActiveTab?: (tab: string) => void;
   onSelectTab?: (tab: string) => void;
@@ -85,6 +88,7 @@ export interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  onOwnerLogout,
   activeTab,
   setActiveTab,
   onSelectTab,
@@ -113,6 +117,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   const activeSubNavRef = useScrollActiveIntoView<HTMLButtonElement>({
     activeKey: activeTab,
+    behavior: 'smooth',
+    inline: 'nearest',
+    block: 'nearest',
+  });
+  const activePrimaryNavRef = useScrollActiveIntoView<HTMLButtonElement>({
+    activeKey: primaryTab,
     behavior: 'smooth',
     inline: 'nearest',
     block: 'nearest',
@@ -168,11 +178,16 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-sm sm:text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-emerald-600 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent flex items-center gap-1.5 truncate">
                 LONGEVIDADE <span className="text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-radius-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">HUB</span>
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+              <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
                 Gestão e acompanhamento pessoal de saúde e longevidade
               </p>
             </div>
           </div>
+          {onOwnerLogout && (
+            <Button type="button" variant="ghost" onClick={onOwnerLogout} aria-label="Sair da conta do proprietário" title="Sair da conta do proprietário" className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-radius-md text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none">
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          )}
         </div>
 
         {/* Ações Utilitárias Modulares: Clínicas, Infraestrutura e Preferências */}
@@ -194,7 +209,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Linha Principal: Barra de Navegação Consolidada (6 Áreas Primárias com Landing Canônica - U22-P1-05) */}
       <div className="max-w-7xl mx-auto py-0.5">
-        <nav aria-label="Navegação Principal" className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100/90 dark:bg-slate-900/70 p-1 sm:p-1.5 rounded-radius-xl border border-slate-200 dark:border-slate-800">
+        <nav aria-label="Navegação Principal" className="flex overflow-x-auto sm:grid sm:grid-cols-6 gap-1 bg-slate-100/90 dark:bg-slate-900/70 p-1 sm:p-1.5 rounded-radius-xl border border-slate-200 dark:border-slate-800">
           {PRIMARY_NAV_ITEMS.map((item) => {
             const isActive = primaryTab === item.id;
             const target = item.targetTab;
@@ -202,14 +217,15 @@ export const Header: React.FC<HeaderProps> = ({
             return (
               <button
                 key={item.id}
+                ref={isActive ? activePrimaryNavRef : undefined}
                 onClick={() => handleTabClick(target)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 min-h-[44px] rounded-radius-lg text-xs sm:text-sm font-medium transition-all ${
+                className={`flex shrink-0 items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 min-h-[44px] rounded-radius-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                   isActive ? activePrimaryClass : inactivePrimaryClass
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{item.label}</span>
+                <span>{item.label}</span>
               </button>
             );
           })}

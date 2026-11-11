@@ -258,9 +258,9 @@ describe('derivedBiomarkerReferences - Motor de Avaliação Clínica', () => {
 
     it('suporta métricas genéricas sem corte específico', () => {
       const res = evaluateDerivedMetric('unmapped_metric', 42.0);
-      expect(res.status).toBe('normal');
+      expect(res.status).toBe('neutral');
       expect(res.badgeLabel).toBe('Calculado');
-      expect(res.gaugePercent).toBe(50);
+      expect(res.gaugePercent).toBe(0);
     });
   });
 });

@@ -8,12 +8,14 @@ export interface PersonalTrainerTopBarProps {
   onRequestUnlock: () => void;
   session?: PersonalTrainerSession | null;
   onLogout?: () => void;
+  onOwnerLogout?: () => void;
 }
 
 export const PersonalTrainerTopBar: React.FC<PersonalTrainerTopBarProps> = ({
   onRequestUnlock,
   session,
   onLogout,
+  onOwnerLogout,
 }) => {
   const themeCtx = useContext(ThemeContext);
   const theme = themeCtx?.theme ?? 'dark';
@@ -47,6 +49,7 @@ export const PersonalTrainerTopBar: React.FC<PersonalTrainerTopBarProps> = ({
 
         {/* Top Actions: Trainer Info, Logout, Theme toggle and Student Area Unlock button */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {onOwnerLogout && <Button type="button" variant="ghost" size="sm" onClick={onOwnerLogout} aria-label="Sair da conta do proprietário" title="Sair da conta do proprietário" leftIcon={LogOut}>Sair do proprietário</Button>}
           {/* Badge do Personal Logado */}
           {session && (
             <div

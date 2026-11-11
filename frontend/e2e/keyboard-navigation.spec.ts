@@ -70,6 +70,7 @@ test.describe('UX_UI_25: Keyboard Navigation & Focus Visible Audit', () => {
     await mockApi(page);
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('navigation', { name: 'Navegação Principal' })).toBeVisible();
   });
 
   test('1. Sequência Tab no Header navega controles interativos', async ({ page }) => {

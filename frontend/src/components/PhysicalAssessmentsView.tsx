@@ -271,7 +271,7 @@ export const PhysicalAssessmentsView: React.FC = () => {
       <div className="glass-panel p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center gap-3 text-emerald-700 dark:text-emerald-400 text-sm">
         <ShieldCheck className="h-5 w-5 shrink-0" />
         <span>
-          <strong>Privacidade Garantida:</strong> As fotos são salvas estritamente no seu armazenamento local e não são transmitidas automaticamente a nenhum provedor de Inteligência Artificial.
+          <strong>Fotos e privacidade:</strong> As fotos são armazenadas neste dispositivo e podem ser acessadas pelo portal do personal autenticado. Elas não são enviadas automaticamente aos provedores de IA.
         </span>
       </div>
 

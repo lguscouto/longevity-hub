@@ -76,7 +76,7 @@ describe('AICopilotView external AI privacy consent', () => {
     await waitFor(() => {
       expect(notice).toHaveTextContent(/ANTHROPIC/)
       expect(notice).toHaveTextContent(/claude-3-5-sonnet-20241022/)
-      expect(notice).toHaveTextContent(/privacidade completa/i)
+      expect(notice).toHaveTextContent(/contexto ampliado/i)
     })
   })
 
@@ -92,7 +92,7 @@ describe('AICopilotView external AI privacy consent', () => {
     const dialog1 = await screen.findByRole('alertdialog')
     expect(within(dialog1).getByText(/OPENAI/)).toBeInTheDocument()
     expect(within(dialog1).getByText(/gpt-4o-mini/)).toBeInTheDocument()
-    expect(within(dialog1).getByText(/privacidade mínima/)).toBeInTheDocument()
+    expect(within(dialog1).getByText(/contexto reduzido/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^cancelar$/i }))
     expect(postedTo('/api/ai/generate-insights')).toBe(false)
@@ -112,7 +112,7 @@ describe('AICopilotView external AI privacy consent', () => {
     const dialog2 = await screen.findByRole('alertdialog')
     expect(within(dialog2).getByText(/OPENAI/)).toBeInTheDocument()
     expect(within(dialog2).getByText(/gpt-4o-mini/)).toBeInTheDocument()
-    expect(within(dialog2).getByText(/privacidade mínima/)).toBeInTheDocument()
+    expect(within(dialog2).getByText(/contexto reduzido/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^cancelar$/i }))
     expect(postedTo('/api/ai/chat')).toBe(false)
