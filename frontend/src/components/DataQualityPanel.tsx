@@ -30,14 +30,17 @@ export const DataQualityPanel: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(todayStr)
   const [summary, setSummary] = useState<QualitySummary | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   const fetchQuality = async () => {
     setLoading(true)
+    setError(false)
     try {
       const data = await requestJson<QualitySummary>(`/api/quality/daily?date_ref=${selectedDate}`)
       setSummary(data)
-    } catch (err) {
-      console.error(err)
+    } catch {
+      setSummary(null)
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -78,6 +81,8 @@ export const DataQualityPanel: React.FC = () => {
         </div>
       </div>
 
+      {error && <p role="status" className="text-sm text-rose-700 dark:text-rose-300">Não foi possível carregar a qualidade dos dados.</p>}
+
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
@@ -90,7 +95,7 @@ export const DataQualityPanel: React.FC = () => {
 
           <div className="p-4 rounded-radius-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
             <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 block mb-1">Cobertura dos dados</span>
-            <span className="text-lg font-black text-slate-900 dark:text-white">{summary?.coverage_pct ?? 0}%</span>
+            <span className="text-lg font-black text-slate-900 dark:text-white">{typeof summary.coverage_pct === 'number' && Number.isFinite(summary.coverage_pct) ? `${summary.coverage_pct}%` : 'Indisponível'}</span>
             <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1">Quantidade de registros nas últimas 24h</span>
           </div>
 
@@ -116,6 +121,18 @@ export const DataQualityPanel: React.FC = () => {
             ))}
           </ul>
         </div>
+      )}
+      {summary && (summary.items || []).length > 0 && (
+        <details className="text-sm text-slate-700 dark:text-slate-300">
+          <summary className="cursor-pointer font-semibold">Fontes registradas por indicador</summary>
+          <p className="mt-2 text-xs">A fonte refere-se ao registro de qualidade e pode não identificar a última alteração do valor.</p>
+          <ul className="mt-2 space-y-1">
+            {summary.items.map(item => {
+              const labels: Record<string, string> = { hrv_ms: 'Variabilidade cardíaca', rhr_bpm: 'Frequência cardíaca de repouso', steps: 'Passos', sleep_minutes: 'Sono', spo2_avg_pct: 'Oxigenação', respiratory_rate_rpm: 'Frequência respiratória', pai_score: 'PAI' }
+              return <li key={item.metric_key}>{labels[item.metric_key] || item.metric_key}: {item.source}</li>
+            })}
+          </ul>
+        </details>
       )}
     </div>
   )

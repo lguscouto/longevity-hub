@@ -482,8 +482,15 @@ class LongevityRepository:
         """
 
         values = [data[f] for f in columns]
+        written_metrics = [key for key in columns if key not in ("date_ref", "source") and data[key] is not None]
         with self._get_connection() as conn:
             conn.execute(sql, values)
+            # A qualidade anterior descreve outra observação. O importador pode
+            # registrar a qualidade da nova observação após o upsert.
+            conn.executemany(
+                "DELETE FROM daily_metric_quality WHERE date_ref = ? AND metric_key = ?",
+                [(data["date_ref"], key) for key in written_metrics],
+            )
             conn.commit()
 
     def get_daily_metrics(self, days: int = 30) -> List[Dict[str, Any]]:

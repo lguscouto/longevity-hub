@@ -17,7 +17,8 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
-from pathlib import Path
+import re
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shutil
 import sqlite3
 import tempfile
@@ -33,6 +34,46 @@ class BackupError(Exception):
 
 class BackupIntegrityError(BackupError):
     """Lançada quando a verificação de hash SHA-256 ou PRAGMA integrity_check falha."""
+
+
+def _safe_relative_path(value: object) -> str:
+    if not isinstance(value, str) or not value or '\\' in value:
+        raise BackupIntegrityError('Caminho inválido no manifesto de backup.')
+    posix = PurePosixPath(value)
+    windows = PureWindowsPath(value)
+    if posix.is_absolute() or windows.is_absolute() or windows.drive or any(part in ('..', '.') for part in value.split('/')):
+        raise BackupIntegrityError('Caminho inseguro no manifesto de backup.')
+    return value
+
+
+def _validate_manifest_paths(manifest: dict, names: list[str]) -> None:
+    if names.count('manifest.json') != 1:
+        raise BackupIntegrityError('Manifesto duplicado ou ausente no backup.')
+    database = _safe_relative_path(manifest.get('database', {}).get('arcname'))
+    if not database.startswith('database/') or names.count(database) != 1:
+        raise BackupIntegrityError('Arquivo de banco inválido ou duplicado no backup.')
+    seen: set[str] = set()
+    for photo in manifest.get('photos', []):
+        arc = _safe_relative_path(photo.get('arcname'))
+        relative = _safe_relative_path(photo.get('relative_path'))
+        if arc != f'photos/{relative}' or names.count(arc) != 1 or relative.casefold() in seen:
+            raise BackupIntegrityError('Foto inválida ou duplicada no backup.')
+        seen.add(relative.casefold())
+
+
+def retention_candidates(directory: Path | str, keep: int) -> list[Path]:
+    """Lista backups antigos; não remove nenhum arquivo."""
+    if keep < 1:
+        raise ValueError('A retenção deve preservar pelo menos um backup.')
+    root = Path(directory)
+    if not root.is_dir():
+        return []
+    backups = sorted(
+        (p for p in root.iterdir() if p.is_file() and not p.is_symlink()
+         and re.fullmatch(r'longevity_backup_\d{8}_\d{6}(?:_\d{6})?\.zip', p.name)),
+        key=lambda p: p.name, reverse=True,
+    )
+    return backups[keep:]
 
 
 def _calculate_sha256(file_path: Path) -> str:
@@ -202,6 +243,8 @@ def verify_backup(zip_path: Path | str) -> Dict[str, Any]:
             except Exception as exc:
                 raise BackupIntegrityError(f"Falha ao interpretar manifest.json: {exc}")
 
+            _validate_manifest_paths(manifest, zf.namelist())
+
             db_arcname = manifest.get("database", {}).get("arcname", "database/longevity.sqlite3")
             if db_arcname not in zf.namelist():
                 raise BackupIntegrityError(f"Banco de dados '{db_arcname}' ausente no arquivo de backup.")
@@ -266,8 +309,16 @@ def restore_backup(
     else:
         with zipfile.ZipFile(path, "r") as zf:
             manifest = json.loads(zf.read("manifest.json").decode("utf-8"))
+            _validate_manifest_paths(manifest, zf.namelist())
 
     dest_db = Path(target_db_path)
+    if dest_db.exists():
+        raise BackupError('A restauração exige um caminho de banco ainda inexistente.')
+    photos_dest = Path(target_photos_dir) if target_photos_dir is not None else dest_db.parent / 'physical_assessments'
+    for photo_entry in manifest.get('photos', []):
+        photo_path = photos_dest / photo_entry['relative_path']
+        if not photo_path.resolve().is_relative_to(photos_dest.resolve()) or photo_path.exists():
+            raise BackupError('A restauração exige destino isolado para todas as fotos.')
     dest_db.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix="longevidade_restore_") as tmp_dir:
@@ -302,12 +353,6 @@ def restore_backup(
 
             # Restauração das fotos se diretório alvo foi informado ou determinado
             restored_photos_count = 0
-            photos_dest = (
-                Path(target_photos_dir)
-                if target_photos_dir is not None
-                else (dest_db.parent / "physical_assessments")
-            )
-
             for photo_entry in manifest.get("photos", []):
                 arc = photo_entry["arcname"]
                 rel = photo_entry["relative_path"]
@@ -353,6 +398,11 @@ if __name__ == "__main__":
     restore_p.add_argument("--db", default="data/longevity.sqlite3", help="Caminho de destino do banco SQLite")
     restore_p.add_argument("--photos", help="Diretório de destino para fotos")
 
+    retention_p = subparsers.add_parser("retention", help="Lista backups antigos para retenção; não remove por padrão")
+    retention_p.add_argument("--dir", default="data/backups", help="Diretório dos backups")
+    retention_p.add_argument("--keep", type=int, required=True, help="Número mínimo de backups a preservar")
+    retention_p.add_argument("--apply", action="store_true", help="Remove os arquivos listados")
+
     args = parser.parse_args()
 
     if args.command == "create":
@@ -380,4 +430,12 @@ if __name__ == "__main__":
         res = restore_backup(args.zip_path, args.db, target_photos_dir=args.photos)
         print("Restauração concluída com sucesso:")
         print(json.dumps(res, indent=2, ensure_ascii=False))
+
+    elif args.command == "retention":
+        candidates = retention_candidates(args.dir, args.keep)
+        for candidate in candidates:
+            print(candidate)
+            if args.apply:
+                candidate.unlink()
+        print(f"{len(candidates)} backup(s) {'removido(s)' if args.apply else 'elegível(eis); simulação sem exclusão' }.")
 

@@ -23,6 +23,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "integrations" / "zepp" / "scripts"))
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
 from longevidade.ingestion.zepp_importer import import_zepp_data, run_zepp_cloud_fetch
+from longevidade.backup import create_backup, verify_backup
+from longevidade.sync_lock import file_sync_lock
 
 ZEPP_DATA_DIR = PROJECT_ROOT / "integrations" / "zepp" / "data"
 ZEPP_SCRIPTS_DIR = PROJECT_ROOT / "integrations" / "zepp" / "scripts"
@@ -30,6 +32,15 @@ DB_PATH = PROJECT_ROOT / "data" / "longevity.sqlite3"
 
 
 def main():
+    with file_sync_lock(DB_PATH.parent / 'sync.lock', timeout_seconds=0.1):
+        stamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        archive = DB_PATH.parent / 'backups' / f'longevity_backup_{stamp}.zip'
+        create_backup(DB_PATH, archive, notes='Backup anterior à sincronização histórica Zepp')
+        verify_backup(archive)
+        _run_sync()
+
+
+def _run_sync():
     today = date.today()
     start_date = date(2026, 1, 1)
     days = max(270, (today - start_date).days + 1)

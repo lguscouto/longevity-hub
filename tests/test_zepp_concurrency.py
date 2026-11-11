@@ -4,9 +4,10 @@ import importlib
 import threading
 import time
 import pytest
+from fastapi.testclient import TestClient
 
 
-def test_sync_zepp_concurrency_lock_returns_409(client, monkeypatch):
+def test_sync_zepp_concurrency_lock_returns_409(client: TestClient, monkeypatch):
     """Quando uma sincronização está em andamento, nova chamada retorna HTTP 409 Conflict."""
     metrics = importlib.import_module("backend.app.routers.metrics")
 
@@ -72,7 +73,7 @@ def test_sync_zepp_concurrency_lock_returns_409(client, monkeypatch):
     assert final_status["last_status"] == "success"
 
 
-def test_sync_zepp_lock_released_on_error(client, monkeypatch):
+def test_sync_zepp_lock_released_on_error(client: TestClient, monkeypatch):
     """Quando o sync falha com exceção, o lock deve ser liberado no finally."""
     metrics = importlib.import_module("backend.app.routers.metrics")
 
@@ -88,7 +89,7 @@ def test_sync_zepp_lock_released_on_error(client, monkeypatch):
     status = client.get("/api/metrics/sync/status").json()
     assert status["is_syncing"] is False
     assert status["last_status"] == "error"
-    assert "Falha inesperada" in str(status["last_error"])
+    assert status["last_error"] == "Falha na sincronização integrada."
 
     # Permite nova requisição sem ficar travado em 409
     monkeypatch.setattr(
@@ -107,7 +108,7 @@ def test_sync_zepp_lock_released_on_error(client, monkeypatch):
     assert retry_res.json()["status"] == "ok"
 
 
-def test_sync_aliases(client, monkeypatch):
+def test_sync_aliases(client: TestClient, monkeypatch):
     """Valida os aliases /api/v1/sync/zepp e /api/sync/status."""
     metrics = importlib.import_module("backend.app.routers.metrics")
 

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import importlib
+from fastapi.testclient import TestClient
 
 
 def test_sync_zepp_retorna_erro_e_nao_reconcilia_google_quando_a_coleta_falha(
-    client, monkeypatch
+    client: TestClient, monkeypatch
 ):
     """O endpoint não pode mascarar uma coleta Zepp falha como sincronização bem-sucedida."""
     metrics = importlib.import_module("backend.app.routers.metrics")
@@ -30,12 +31,12 @@ def test_sync_zepp_retorna_erro_e_nao_reconcilia_google_quando_a_coleta_falha(
 
     assert response.status_code == 502
     assert response.json() == {
-        "detail": "A coleta Zepp não foi concluída; snapshots antigos não foram importados."
+        "detail": "Não foi possível atualizar os dados do Zepp."
     }
     assert google_called is False
 
 
-def test_sync_zepp_repassa_parametros_days_e_full(client, monkeypatch):
+def test_sync_zepp_repassa_parametros_days_e_full(client: TestClient, monkeypatch):
     """O endpoint deve aceitar e repassar os parâmetros days e full para o importador Zepp."""
     metrics = importlib.import_module("backend.app.routers.metrics")
     captured_args = {}

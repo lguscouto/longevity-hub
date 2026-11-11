@@ -552,17 +552,13 @@ def _process_webhook_sync(
     if health_user_id:
         if client.credentials and client.credentials.health_user_id:
             if client.credentials.health_user_id != health_user_id:
-                logger.warning(
-                    "Google Health webhook: healthUserId '%s' recebido difere do usuário local ('%s'). Sincronização ignorada.",
-                    health_user_id,
-                    client.credentials.health_user_id,
-                )
+                logger.warning('Google Health webhook: usuário recebido não corresponde ao usuário local; sincronização ignorada.')
                 return
         elif client.credentials and not client.credentials.health_user_id:
             # Associa se ainda não persistido
             client.credentials.health_user_id = health_user_id
             client.credentials.save_to_file(token_path)
-            logger.info("healthUserId '%s' associado à credencial local.", health_user_id)
+            logger.info('Identificador de usuário associado à credencial local.')
 
     COLLECTION_MAP: Dict[str, List[str]] = {
         "activity": ["steps", "distance"],
@@ -616,10 +612,24 @@ def _process_webhook_sync(
             days = 7
 
     db_path = get_db_path()
-    initialize_db(db_path)
-    repo = LongevityRepository(db_path)
+    from longevidade.ingestion.google_retry import mark_google_retry
+    from longevidade.sync_lock import file_sync_lock, SyncLockTimeoutError
+    try:
+        with file_sync_lock(lock_path=db_path.parent / 'sync.lock', timeout_seconds=0.1):
+            initialize_db(db_path)
+            repo = LongevityRepository(db_path)
+            result = sync_google_health_api(repo=repo, days=days, client=client, selected_types=types_to_sync)
+            if result.get("status") == "SUCESSO":
+                return
+    except SyncLockTimeoutError:
+        logger.warning('Sincronização de webhook não iniciada: outra sincronização está em andamento.')
+    except Exception:
+        logger.error('Falha na sincronização de webhook do Google Health.')
 
-    sync_google_health_api(repo=repo, days=days, client=client, selected_types=types_to_sync)
+    try:
+        mark_google_retry(db_path)
+    except OSError:
+        logger.error('Não foi possível registrar a repetição da sincronização do Google Health.')
 
 
 @router.post("/webhook")
@@ -692,11 +702,7 @@ async def google_health_webhook(
             )
             if is_system:
                 sys_event_name = ev.operation if (op in ("user-deleted", "user-revoked-access", "revoked") or GoogleHealthDataTypeRegistry.is_system_event(op)) else ev.dataType
-                logger.warning(
-                    "Google Health webhook: evento de ciclo de vida '%s' recebido para healthUserId=%s.",
-                    sys_event_name,
-                    ev.healthUserId,
-                )
+                logger.warning('Google Health webhook: evento de ciclo de vida recebido.')
                 cl = GoogleHealthClient(token_path=token_path)
                 if cl.credentials:
                     if not ev.healthUserId or cl.credentials.health_user_id == ev.healthUserId:
@@ -706,11 +712,7 @@ async def google_health_webhook(
                 continue
 
             if op == "delete":
-                logger.info(
-                    "Google Health webhook: notificação DELETE recebida para dataType=%s, healthUserId=%s.",
-                    ev.dataType,
-                    ev.healthUserId,
-                )
+                logger.info('Google Health webhook: notificação de remoção recebida.')
                 continue
 
             # Eventos de UPSERT ou modificação de dados
@@ -727,8 +729,8 @@ async def google_health_webhook(
                 date_str=date_str,
                 health_user_id=ev.healthUserId,
             )
-        except Exception as item_err:
-            logger.error("Erro isolado ao processar evento de webhook: %s", item_err)
+        except Exception:
+            logger.error('Erro isolado ao processar evento de webhook.')
 
     # 6. Resposta imediata 204 No Content
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -150,3 +150,8 @@ desktop.ini
 .gemini/
 .cursor/
 .claude/
+
+# Ingestão pessoal e sinais locais de sincronização
+/scripts/ingest_lab_pdf_20261107.py
+*.google-retry
+*.google-retry-running

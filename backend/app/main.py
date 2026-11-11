@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 import os
+import logging
 from typing import Tuple
 
 from fastapi import FastAPI
@@ -97,9 +98,10 @@ async def lifespan(app: FastAPI):
     try:
         from longevidade.context.service import get_timeline_service
         service = get_timeline_service(db_path)
-        service.reconcile()
+        from longevidade.context.safe_reconcile import reconcile_with_backup
+        reconcile_with_backup(service, db_path)
     except Exception:
-        pass
+        logging.getLogger(__name__).warning('Reconciliação inicial não concluída; consulte o estado da linha do tempo.')
     yield
 
 

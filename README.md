@@ -18,6 +18,8 @@ Acesse no seu navegador em: **http://127.0.0.1:8887**
 
 Para a documentação completa de visão geral do projeto, consulte **[docs/overview.md](docs/overview.md)**.
 
+Para instalação com locks, backups, restauração isolada, retenção e limites das fontes e mídias, consulte [Operação, backup e fontes](docs/operacao-backup-e-fontes.md).
+
 ---
 
 ## 🌟 Funcionalidades Principais

@@ -489,15 +489,17 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
         (typeof result.zepp === 'object' ? result.zepp.data_covered_until : undefined)
       if (coveredUntil) setDataCoveredUntil(coveredUntil)
 
-      if (result.status === 'ok') {
+      if (result.status === 'ok' || result.status === 'partial') {
         const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         setLastSyncTime(`hoje às ${timeNow}`)
 
-        if (unprocessable > 0 || warningsList.length > 0) {
+        if (result.status === 'partial' || unprocessable > 0 || warningsList.length > 0) {
           setSyncState('partial')
           showToast({
             title: 'Sincronização parcial',
-            message: `${importedTotal} importados · ${unprocessable || warningsList.length} não processados`,
+            message: unprocessable || warningsList.length
+              ? `${importedTotal} importados · ${unprocessable || warningsList.length} com avisos`
+              : `${importedTotal} importados · uma ou mais fontes não foram sincronizadas`,
             type: 'partial',
             duration: 0,
             action: {

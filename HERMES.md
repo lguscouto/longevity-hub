@@ -38,13 +38,15 @@ longevity.sqlite3 PhenoAge, CGM,   Zepp, Google Health, Hevy,
 
 Para o detalhamento completo, comece por [docs/overview.md](docs/overview.md), [docs/architecture.md](docs/architecture.md) e [docs/api-reference.md](docs/api-reference.md).
 
+Para procedimentos atuais de backup, retenção, inicialização e limitações de proveniência, consulte [Operação, backup e fontes](docs/operacao-backup-e-fontes.md). A análise inicial de 08/11/2026 descreve um estado histórico e continua sendo leitura obrigatória; confirme os comportamentos no código vigente.
+
 ## Como executar
 
 ### Aplicação local integrada
 
 Configure primeiro a senha do proprietário com `.venv\Scripts\python.exe -m backend.app.access`. O painel exige autenticação, e o portal do personal tem sessão separada. Consulte [Acesso e credenciais](docs/acesso-e-credenciais.md) para HTTPS, proxy e cofre.
 
-No Windows, execute `run_app.bat` a partir da raiz. O script ativa/cria `.venv`, instala dependências Node automaticamente via `npm ci` se `node_modules` não existir, compila o frontend somente se `frontend/dist` ainda não existir e sobe o Uvicorn em `127.0.0.1:8887`.
+No Windows, execute `run_app.bat` a partir da raiz. O script ativa/cria `.venv`, usa os arquivos de lock na instalação, instala dependências Node via `npm ci` quando necessário e recompila o frontend quando a identificação das fontes difere da versão gerada. `--update` reinstala explicitamente as dependências dos locks e recompila. O bind padrão aceita conexões de rede; `--local` restringe a loopback. O acesso remoto depende de HTTPS conforme [acesso e credenciais](docs/acesso-e-credenciais.md).
 
 **URL:** http://127.0.0.1:8887
 

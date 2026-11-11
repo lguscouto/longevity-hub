@@ -108,3 +108,15 @@ def test_sync_google_health_persists_raw_layer(repo: LongevityRepository, tmp_pa
             assert row[1] == "steps"
             assert row[2] == 4500.0
             assert '{"steps": {"count": 4500}}' in row[3]
+
+
+def test_provider_errors_are_not_persisted_or_returned(repo: LongevityRepository, tmp_path: Path):
+    creds = GoogleHealthCredentials(access_token="valid_token")
+    client = GoogleHealthClient(credentials=creds, token_path=tmp_path / "token.json")
+    with patch.object(client, "fetch_daily_metrics_summary", return_value=([], ["segredo-simulado-do-provedor"])):
+        result = sync_google_health_api(repo, client=client)
+    assert result["status"] == "ERRO"
+    assert "segredo-simulado-do-provedor" not in str(result)
+    with repo._get_connection() as conn:
+        dump = "\n".join(conn.iterdump())
+    assert "segredo-simulado-do-provedor" not in dump

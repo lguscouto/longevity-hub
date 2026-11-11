@@ -76,7 +76,7 @@ def sync_google_health_api(
     if not gh_client.is_authenticated():
         reason = "Google Health API não autenticada."
         if gh_client.is_reauthentication_required():
-            reason = f"Reautenticação necessária: {gh_client.credentials.last_error if gh_client.credentials else 'sessão expirada'}"
+            reason = "Reautenticação necessária para o Google Health."
 
         result = _make_result(
             records_read=0,
@@ -116,7 +116,7 @@ def sync_google_health_api(
         summary += f", {raw_inserted} pontos brutos arquivados"
     summary += ")"
     if errors:
-        summary += f" | Erros: {'; '.join(errors[:3])}"
+        summary += f" | {len(errors)} erro(s) na consulta ao provedor."
 
     now_iso = datetime.now(timezone.utc).isoformat()
     try:
@@ -125,7 +125,7 @@ def sync_google_health_api(
             last_successful_sync=now_iso if inserted > 0 else None,
             last_attempt=now_iso,
             records_imported=inserted,
-            last_error="; ".join(errors) if errors else None,
+            last_error="Falha na consulta ao Google Health." if errors else None,
         )
     except Exception:
         pass
@@ -138,7 +138,7 @@ def sync_google_health_api(
         status=status,
         summary=summary,
         exception_type="API_WARNING" if errors else None,
-        exception_message="; ".join(errors) if errors else None,
+        exception_message="Falha na consulta ao Google Health." if errors else None,
     )
     repo.log_pipeline_run("GoogleHealthAPI", inserted, result["status"], result["summary"])
     try:

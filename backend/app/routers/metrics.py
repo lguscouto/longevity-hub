@@ -141,7 +141,7 @@ def _execute_sync_locked(days: Optional[int] = None, full: bool = False, include
         # Não mascarar falha de coleta Zepp como sucesso nem reconciliar fontes
         # secundárias sobre snapshots sabidamente antigos.
         if isinstance(zepp_result, dict) and zepp_result.get("status") == "ERRO":
-            detail = zepp_result.get("summary") or "Não foi possível atualizar os dados do Zepp."
+            detail = "Não foi possível atualizar os dados do Zepp."
             _zepp_sync_state["last_status"] = "error"
             _zepp_sync_state["last_error"] = detail
             raise HTTPException(status_code=502, detail=detail)
@@ -184,11 +184,11 @@ def _execute_sync_locked(days: Optional[int] = None, full: bool = False, include
                         "reason": "Chave da API do Hevy não configurada.",
                         "records_inserted": 0,
                     }
-            except Exception as h_err:
+            except Exception:
                 hevy_result = {
                     "status": "error",
                     "records_inserted": 0,
-                    "summary": f"Erro na coleta Hevy: {h_err}",
+                    "summary": "Não foi possível sincronizar o Hevy.",
                 }
 
         zepp_count = (
@@ -228,21 +228,22 @@ def _execute_sync_locked(days: Optional[int] = None, full: bool = False, include
             data_covered_until = zepp_result["data_covered_until"]
 
         _zepp_sync_state["last_sync"] = datetime.now(timezone.utc).isoformat()
-        _zepp_sync_state["last_status"] = "success"
+        partial = any(isinstance(result, dict) and str(result.get('status', '')).lower() in ('erro', 'error', 'aviso', 'partial') for result in (google_result, hevy_result)) or bool(warnings)
+        _zepp_sync_state["last_status"] = "partial" if partial else "success"
         _zepp_sync_state["last_error"] = None
 
         try:
             repo.log_pipeline_run(
                 source="SyncAll",
                 records_inserted=zepp_count + google_count + hevy_count,
-                status="SUCESSO",
+                status="AVISO" if partial else "SUCESSO",
                 logs=f"Sincronização unificada: Zepp ({zepp_count}), Google ({google_count}), Hevy ({hevy_count})",
             )
         except Exception:
             pass
 
         return {
-            "status": "ok",
+            "status": "partial" if partial else "ok",
             "zepp": zepp_result,
             "google_health": google_result,
             "hevy": hevy_result,
@@ -258,9 +259,9 @@ def _execute_sync_locked(days: Optional[int] = None, full: bool = False, include
         if not _zepp_sync_state.get("last_error"):
             _zepp_sync_state["last_error"] = str(exc.detail)
         raise
-    except Exception as exc:
+    except Exception:
         _zepp_sync_state["last_status"] = "error"
-        _zepp_sync_state["last_error"] = str(exc)
+        _zepp_sync_state["last_error"] = 'Falha na sincronização integrada.'
         raise
     finally:
         _zepp_sync_state["is_syncing"] = False

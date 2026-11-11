@@ -12,7 +12,7 @@ No computador que executa o servidor e com o mesmo usuário Windows que executar
 
 Digite e confirme uma senha de pelo menos 12 caracteres no terminal. A digitação não é exibida. A aplicação não cria essa senha automaticamente. Para substituí-la, execute o comando novamente; a alteração é uma ação administrativa local. Após iniciar, abra o endereço local informado pelo aplicativo e entre com a senha. O portal do personal continua acessível pelo link da tela de entrada.
 
-Se `frontend/dist` já existir após atualizar o código, execute `npm ci` quando necessário e `npm run build` dentro de `frontend` antes de iniciar; o iniciador atual não recompila automaticamente uma pasta existente.
+O iniciador compara as fontes com a identificação gravada no build e recompila o frontend quando necessário. Para reinstalar as dependências a partir dos locks, use explicitamente `run_app.bat --update`; essa opção executa `npm ci` e pode substituir a pasta `node_modules`.
 
 Se a conta do personal ainda usar a senha inicial distribuída pelo projeto, o primeiro login exige escolher uma senha nova de pelo menos 12 caracteres antes de liberar os dados. Essa troca inicial só é aceita no próprio computador servidor ou em uma sessão do proprietário autenticada; isso impede que alguém use a senha pública para tomar a conta remotamente. Nenhuma senha existente é alterada automaticamente. Trocar a senha encerra as outras sessões do mesmo personal.
 

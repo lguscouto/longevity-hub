@@ -9,9 +9,11 @@ import pytest
 
 from longevidade.backup import (
     BackupIntegrityError,
+    BackupError,
     create_backup,
     restore_backup,
     verify_backup,
+    retention_candidates,
 )
 from longevidade.db.schema import initialize_db
 
@@ -145,4 +147,51 @@ def test_restore_cleans_stale_wal_and_shm(tmp_path: Path):
     row = restored_conn.execute("SELECT name FROM user_profile WHERE id = 1;").fetchone()
     assert row[0] == "Paciente Sem WAL Corrompido"
     restored_conn.close()
+
+
+def test_restore_rejects_existing_database_without_changing_it(tmp_path: Path):
+    source = tmp_path / 'source.sqlite3'
+    initialize_db(source)
+    archive = tmp_path / 'backup.zip'
+    create_backup(source, archive)
+    target = tmp_path / 'existing.sqlite3'
+    target.write_bytes(b'original')
+    with pytest.raises(BackupError, match='inexistente'):
+        restore_backup(archive, target)
+    assert target.read_bytes() == b'original'
+
+
+def test_restore_rejects_photo_path_traversal_before_writing(tmp_path: Path):
+    source = tmp_path / 'source.sqlite3'
+    initialize_db(source)
+    photos = tmp_path / 'photos'
+    photos.mkdir()
+    (photos / 'test.jpg').write_bytes(b'synthetic')
+    archive = tmp_path / 'backup.zip'
+    create_backup(source, archive, photos_dir=photos)
+    malicious = tmp_path / 'malicious.zip'
+    with zipfile.ZipFile(archive) as original, zipfile.ZipFile(malicious, 'w') as modified:
+        for entry in original.infolist():
+            data = original.read(entry.filename)
+            if entry.filename == 'manifest.json':
+                manifest = json.loads(data)
+                manifest['photos'][0]['relative_path'] = '../outside.jpg'
+                data = json.dumps(manifest).encode()
+            modified.writestr(entry, data)
+    target = tmp_path / 'isolated' / 'restored.sqlite3'
+    with pytest.raises(BackupIntegrityError, match='Caminho inseguro'):
+        restore_backup(malicious, target)
+    assert not target.exists()
+    assert not (tmp_path / 'outside.jpg').exists()
+
+
+def test_retention_lists_only_standard_backups_without_deleting(tmp_path: Path):
+    names = ['longevity_backup_20260101_010101.zip', 'longevity_backup_20260201_010101.zip', 'longevity_backup_20260301_010101.zip']
+    for name in names:
+        (tmp_path / name).write_bytes(b'backup')
+    (tmp_path / 'custom.zip').write_bytes(b'other')
+    assert [p.name for p in retention_candidates(tmp_path, 2)] == names[:1]
+    assert all((tmp_path / name).exists() for name in names)
+    with pytest.raises(ValueError):
+        retention_candidates(tmp_path, 0)
 

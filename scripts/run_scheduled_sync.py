@@ -41,6 +41,7 @@ from longevidade.calculators.kdm_age import (
 from longevidade.db.repository import LongevityRepository
 from longevidade.db.schema import initialize_db
 from longevidade.ingestion.google_health_client import GoogleHealthClient
+from longevidade.ingestion.google_retry import claim_google_retry
 from longevidade.ingestion.google_importer import (
     import_google_health_data,
     sync_google_health_api,
@@ -165,17 +166,15 @@ def _run_sync_locked(
             results["zepp"] = zepp_res
             status = zepp_res.get("status", "DESCONHECIDO")
             inserted = zepp_res.get("records_inserted", 0)
-            summary = zepp_res.get("summary", "")
-            logger.info(f"Zepp finalizado: status={status}, inseridos={inserted}. {summary}")
+            logger.info(f"Zepp finalizado: status={status}, inseridos={inserted}.")
             if status == "ERRO":
                 results["success"] = False
-                results["errors"].append(f"Zepp: {summary}")
-        except Exception as exc:
+                results["errors"].append("Zepp falhou durante a sincronização.")
+        except Exception:
             results["success"] = False
-            err_msg = f"Zepp falhou com exceção: {exc}"
+            err_msg = "Zepp falhou durante a sincronização."
             results["errors"].append(err_msg)
             logger.error(err_msg)
-            logger.debug(traceback.format_exc())
     else:
         logger.info("[1/4] Zepp ignorado por configuração (--skip-zepp).")
 
@@ -191,7 +190,12 @@ def _run_sync_locked(
             # 2b. API v4 direta se autenticada
             gh_client = GoogleHealthClient()
             if gh_client.is_authenticated() and not gh_client.is_reauthentication_required():
+                pending_retry = claim_google_retry(resolved_db)
                 api_res = sync_google_health_api(repo=repo, days=30, client=gh_client)
+                if api_res.get("status") == "SUCESSO":
+                    pending_retry.unlink(missing_ok=True)
+                else:
+                    results["errors"].append("A coleta do Google Health não foi concluída.")
                 google_summary.append(f"API v4: {api_res.get('status')} ({api_res.get('records_inserted', 0)} ins)")
                 results["google_health"] = {"local": local_res, "api": api_res}
             else:
@@ -199,8 +203,8 @@ def _run_sync_locked(
                 results["google_health"] = {"local": local_res, "api": None}
 
             logger.info(f"Google Health finalizado: {'; '.join(google_summary)}")
-        except Exception as exc:
-            err_msg = f"Google Health falhou: {exc}"
+        except Exception:
+            err_msg = "Google Health falhou durante a sincronização."
             results["errors"].append(err_msg)
             logger.warning(err_msg)
     else:
@@ -218,8 +222,8 @@ def _run_sync_locked(
             else:
                 logger.info("Chave do Hevy não configurada. Pulei etapa.")
                 results["hevy"] = {"status": "skipped", "reason": "No API key"}
-        except Exception as exc:
-            err_msg = f"Hevy falhou: {exc}"
+        except Exception:
+            err_msg = "Hevy falhou durante a sincronização."
             results["errors"].append(err_msg)
             logger.warning(err_msg)
     else:
@@ -278,8 +282,8 @@ def main() -> int:
             days=args.days,
         )
         return 0 if res.get("success") else 1
-    except Exception as exc:
-        logger.critical(f"Falha crítica na execução do sync: {exc}\n{traceback.format_exc()}")
+    except Exception:
+        logger.critical("Falha crítica na execução da sincronização.")
         return 2
 
 

@@ -111,8 +111,16 @@ def delete_health_event(event_id: str):
 def trigger_timeline_reconcile():
     """Dispara a sincronização e reconciliação idempotente da Timeline."""
     service = _get_service()
-    result = service.reconcile()
-    return result
+    from longevidade.context.safe_reconcile import reconcile_with_backup
+    from longevidade.sync_lock import SyncLockTimeoutError
+    import logging
+    try:
+        return reconcile_with_backup(service, get_db_path())
+    except SyncLockTimeoutError as exc:
+        raise HTTPException(status_code=409, detail='Outra sincronização está em andamento.') from exc
+    except Exception as exc:
+        logging.getLogger(__name__).error('Falha na reconciliação da linha do tempo ou no backup prévio.')
+        raise HTTPException(status_code=503, detail='Não foi possível concluir o backup ou a reconciliação.') from exc
 
 
 @router.get("/reconcile/status", response_model=List[BackfillStatus])

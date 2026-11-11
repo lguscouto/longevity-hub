@@ -162,10 +162,10 @@ def backfill_workouts(conn: sqlite3.Connection, user_tz: str) -> int:
                 )
 
         return count
-    except Exception as exc:
+    except Exception:
         conn.execute(
             "UPDATE health_events_backfill_state SET status = 'error', last_error = ?, updated_at = CURRENT_TIMESTAMP WHERE source_type = 'workouts';",
-            (str(exc),),
+            ('Falha ao processar treinos durante a reconciliação.',),
         )
         conn.commit()
         raise
@@ -202,10 +202,10 @@ def backfill_lab_results(conn: sqlite3.Connection, user_tz: str) -> int:
                 (count,),
             )
         return count
-    except Exception as exc:
+    except Exception:
         conn.execute(
             "UPDATE health_events_backfill_state SET status = 'error', last_error = ?, updated_at = CURRENT_TIMESTAMP WHERE source_type = 'lab_results';",
-            (str(exc),),
+            ('Falha ao processar exames durante a reconciliação.',),
         )
         conn.commit()
         raise
@@ -242,10 +242,10 @@ def backfill_supplements(conn: sqlite3.Connection, user_tz: str) -> int:
                 (count,),
             )
         return count
-    except Exception as exc:
+    except Exception:
         conn.execute(
             "UPDATE health_events_backfill_state SET status = 'error', last_error = ?, updated_at = CURRENT_TIMESTAMP WHERE source_type = 'supplement_stack';",
-            (str(exc),),
+            ('Falha ao processar suplementos durante a reconciliação.',),
         )
         conn.commit()
         raise

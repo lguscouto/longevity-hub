@@ -38,12 +38,12 @@ IF NOT EXIST ".venv\Scripts\python.exe" (
 
 IF "%FORCE_UPDATE%"=="1" (
     echo [INFO] Instalando/atualizando dependencias do backend...
-    "%PYTHON_EXE%" -m pip install -q -r backend\requirements.txt || (
+    "%PYTHON_EXE%" -m pip install -q -r backend\requirements-lock.txt || (
         echo [ERRO] Falha ao instalar dependencias do backend.
         pause
         exit /b 1
     )
-    "%PYTHON_EXE%" -m pip install -q -e . || (
+    "%PYTHON_EXE%" -m pip install -q --no-deps -e . || (
         echo [ERRO] Falha ao instalar pacote longevidade.
         pause
         exit /b 1
@@ -51,12 +51,17 @@ IF "%FORCE_UPDATE%"=="1" (
 ) ELSE (
     "%PYTHON_EXE%" -c "import cryptography" >nul 2>&1 || (
         echo [INFO] Atualizando dependencias do backend no ambiente virtual...
-        "%PYTHON_EXE%" -m pip install -q -r backend\requirements.txt
-        "%PYTHON_EXE%" -m pip install -q -e .
+        "%PYTHON_EXE%" -m pip install -q -r backend\requirements-lock.txt || exit /b 1
+        "%PYTHON_EXE%" -m pip install -q --no-deps -e . || exit /b 1
     )
 )
 
-IF NOT EXIST "frontend\node_modules" (
+IF "%FORCE_UPDATE%"=="1" set "FORCE_BUILD=1"
+IF "%FORCE_UPDATE%"=="1" goto install_frontend
+IF NOT EXIST "frontend\node_modules" goto install_frontend
+goto frontend_ready
+
+:install_frontend
     echo [INFO] Instalando dependencias do frontend...
     cd frontend
     call npm ci || (
@@ -66,7 +71,9 @@ IF NOT EXIST "frontend\node_modules" (
         exit /b 1
     )
     cd ..
-)
+set "FORCE_BUILD=1"
+
+:frontend_ready
 
 IF "%FORCE_BUILD%"=="1" (
     echo [INFO] Recompilando Frontend React [--build solicitado]...
@@ -79,8 +86,9 @@ IF "%FORCE_BUILD%"=="1" (
     )
     cd ..
 ) ELSE IF "%DEV_MODE%"=="0" (
-    IF NOT EXIST "frontend\dist" (
-        echo [INFO] Compilando Frontend React pela primeira vez...
+    node frontend\scripts\build-freshness.mjs >nul 2>&1
+    IF ERRORLEVEL 1 (
+        echo [INFO] Frontend ausente ou desatualizado. Recompilando...
         cd frontend
         call npm run build || (
             echo [ERRO] Falha ao compilar Frontend React.
