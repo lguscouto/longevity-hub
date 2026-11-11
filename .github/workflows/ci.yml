@@ -28,7 +28,7 @@ jobs:
           node-version: 22
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Application (TypeScript & Vite)
         run: npm run build
@@ -46,14 +46,14 @@ jobs:
         run: npx playwright test e2e/viewport-matrix.spec.ts --config=e2e/playwright.config.ts
 
       - name: Run Playwright Visual Regression Tests
-        run: npx playwright test e2e/visual-regression.spec.ts --config=e2e/playwright.config.ts
+        run: npm run test:visual
 
       - name: Upload Test Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: frontend/playwright-report/
+          path: frontend/test-results/
           retention-days: 7
 
   backend:

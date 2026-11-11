@@ -474,7 +474,7 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
 
       {/* Stepper Navigation Actions */}
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
           <Button
             type="button"
             variant="outline"
@@ -499,7 +499,7 @@ export const AssessmentWizard: React.FC<AssessmentWizardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto justify-end">
           {currentStep < 5 ? (
             <>
               {/* Atalho para salvar antes de passar por todas as etapas se o usuário tiver dados parciais */}

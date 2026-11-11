@@ -222,6 +222,7 @@ const mockApi = async (page: Page) => {
       body: JSON.stringify([
         {
           id: 'assessment-baseline-1',
+          photos: [],
           date: '2026-09-20',
           weight_kg: 72.8,
           height_cm: 175,

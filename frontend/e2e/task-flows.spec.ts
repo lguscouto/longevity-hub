@@ -372,9 +372,13 @@ for (const vp of VIEWPORTS) {
 
       // Step 1: Dados Principais
       await expect(page.getByText('Dados Principais da Avaliação')).toBeVisible();
+      const nextStep = page.getByRole('button', { name: /Próxima Etapa/i });
+      const nextBounds = await nextStep.boundingBox();
+      expect(nextBounds!.x).toBeGreaterThanOrEqual(0);
+      expect(nextBounds!.x + nextBounds!.width).toBeLessThanOrEqual(vp.width);
 
       // Advance to Step 2
-      await page.getByRole('button', { name: /Próxima Etapa/i }).click();
+      await nextStep.click();
       await expect(page.getByText('Medidas corporais e circunferências')).toBeVisible();
 
       // Advance to Step 3
