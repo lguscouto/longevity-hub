@@ -2,6 +2,7 @@ import importlib
 from pathlib import Path
 import shutil
 import sys
+import time
 
 import keyring
 import pytest
@@ -57,7 +58,17 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     main = importlib.import_module("backend.app.main")
     try:
-        with TestClient(main.app) as test_client:
+        with TestClient(main.app, base_url="http://127.0.0.1", client=("127.0.0.1", 50000)) as test_client:
+            access = importlib.import_module("backend.app.access")
+            access._login_attempts.clear()
+            access._owner_sessions["test-owner-session"] = time.monotonic() + 3600
+            test_client.cookies.set(access.OWNER_COOKIE, "test-owner-session")
             yield test_client
     finally:
         _drop_backend_app_modules()
+
+
+@pytest.fixture
+def webhook_auth(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("GOOGLE_HEALTH_WEBHOOK_SECRET", "simulated-webhook-secret")
+    client.headers["Authorization"] = "Bearer simulated-webhook-secret"

@@ -97,7 +97,7 @@ export const PersonalTrainerTopBar: React.FC<PersonalTrainerTopBarProps> = ({
             onClick={onRequestUnlock}
             leftIcon={Lock}
             className="text-xs font-semibold border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-            title="Acessar painel médico e clínico completo do aluno (requer PIN)"
+            title="Acessar a área do proprietário"
           >
             Área do Aluno 🔒
           </Button>

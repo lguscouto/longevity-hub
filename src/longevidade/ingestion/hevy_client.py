@@ -51,10 +51,10 @@ class HevyCredentials:
         try:
             import keyring
             key = keyring.get_password(cls.KEYRING_SERVICE, cls.KEYRING_USERNAME)
-            if key and key.strip():
-                return key.strip()
-        except Exception:
-            pass
+            if key is not None:
+                return key.strip() or None
+        except Exception as exc:
+            raise RuntimeError("Cofre de credenciais indisponível") from exc
 
         # 3. Fallback em arquivo JSON local
         path = token_path or get_default_hevy_token_path()
@@ -72,42 +72,14 @@ class HevyCredentials:
     @classmethod
     def save_api_key(cls, api_key: str, token_path: Optional[Path] = None) -> None:
         clean_key = api_key.strip()
-        keyring_success = False
-        # Salva no Keyring seguro do sistema operacional
-        try:
-            import keyring
-            keyring.set_password(cls.KEYRING_SERVICE, cls.KEYRING_USERNAME, clean_key)
-            keyring_success = True
-        except Exception:
-            pass
-
-        # Salva em arquivo de fallback apenas se token_path for explicitamente informado (ex: testes) ou se o Keyring falhar
-        if token_path is not None or not keyring_success:
-            path = token_path or get_default_hevy_token_path()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps({"api_key": clean_key, "updated_at": datetime.now(timezone.utc).isoformat()}, indent=2), encoding="utf-8")
-        else:
-            # Se o Keyring gravou com sucesso e havia um arquivo legado em texto plano, remove-o
-            default_path = get_default_hevy_token_path()
-            if default_path.is_file():
-                try:
-                    default_path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+        import keyring
+        keyring.set_password(cls.KEYRING_SERVICE, cls.KEYRING_USERNAME, clean_key)
 
     @classmethod
     def delete_api_key(cls, token_path: Optional[Path] = None) -> None:
-        try:
-            import keyring
-            keyring.delete_password(cls.KEYRING_SERVICE, cls.KEYRING_USERNAME)
-        except Exception:
-            pass
-        path = token_path or get_default_hevy_token_path()
-        if path.is_file():
-            try:
-                path.unlink(missing_ok=True)
-            except Exception:
-                pass
+        import keyring
+        # Mantém o arquivo legado intacto e impede sua reativação após desconectar.
+        keyring.set_password(cls.KEYRING_SERVICE, cls.KEYRING_USERNAME, "")
 
 
 class HevyClient:

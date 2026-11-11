@@ -6,6 +6,8 @@ Aplicação Web e plataforma local auditável de inteligência para longevidade,
 
 ## 🚀 Como Executar (1 Clique)
 
+Antes do primeiro acesso, configure a senha do proprietário no cofre do sistema executando `.venv\Scripts\python.exe -m backend.app.access`. A senha do personal é independente. Para acesso remoto, configuração de HTTPS, proxies e migração de credenciais legadas, consulte [Acesso e credenciais](docs/acesso-e-credenciais.md).
+
 Para iniciar o servidor Backend (FastAPI na porta **8887**) e a interface Frontend Dashboard com compilação automática:
 
 ```cmd

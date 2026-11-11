@@ -1,12 +1,27 @@
 from fastapi.testclient import TestClient
 import pytest
+import importlib
+import sqlite3
+from datetime import datetime, timedelta
+
+
+@pytest.fixture(autouse=True)
+def nondefault_trainer_account(client: TestClient):
+    auth = importlib.import_module("backend.app.routers.personal_auth")
+    conn = auth._get_connection()
+    try:
+        auth._ensure_trainer_accounts_table(conn)
+        conn.execute("UPDATE personal_trainer_accounts SET password_hash=? WHERE username=?", (auth.hash_password("test-trainer-password"), "willian"))
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def test_personal_login_success_with_willian(client: TestClient):
     """Testa login bem-sucedido com usuário willian e senha 1234."""
     response = client.post(
         "/api/personal/login",
-        json={"username": "willian", "password": "1234"},
+        json={"username": "willian", "password": "test-trainer-password"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -21,7 +36,7 @@ def test_personal_login_case_insensitive_username(client: TestClient):
     """Testa que o nome de usuário é tratado de forma insensível a maiúsculas."""
     response = client.post(
         "/api/personal/login",
-        json={"username": "Willian", "password": "1234"},
+        json={"username": "Willian", "password": "test-trainer-password"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -44,9 +59,46 @@ def test_personal_login_unknown_user(client: TestClient):
     """Testa falha de autenticação com usuário inexistente."""
     response = client.post(
         "/api/personal/login",
-        json={"username": "outro_usuario", "password": "1234"},
+        json={"username": "outro_usuario", "password": "test-trainer-password"},
     )
     assert response.status_code == 401
+
+
+def test_personal_login_fails_closed_when_database_unavailable(client: TestClient, monkeypatch):
+    personal_auth = importlib.import_module("backend.app.routers.personal_auth")
+
+    def fail_database():
+        raise sqlite3.OperationalError("database unavailable")
+
+    monkeypatch.setattr(personal_auth, "_get_connection", fail_database)
+    response = client.post("/api/personal/login", json={"username": "willian", "password": "test-trainer-password"})
+    assert response.status_code == 503
+    assert "token" not in response.json()
+
+
+def test_expired_session_cannot_change_password(client: TestClient):
+    personal_auth = importlib.import_module("backend.app.routers.personal_auth")
+    login = client.post("/api/personal/login", json={"username": "willian", "password": "test-trainer-password"})
+    assert login.status_code == 200
+    token = login.json()["token"]
+    personal_auth._ACTIVE_TRAINER_SESSIONS[token]["expires_at"] = (datetime.now() - timedelta(seconds=1)).isoformat()
+    response = client.post("/api/personal/change-password", headers={"X-Personal-Token": token},
+                           json={"current_password": "test-trainer-password", "new_password": "different-password"})
+    assert response.status_code == 401
+    assert token not in personal_auth._ACTIVE_TRAINER_SESSIONS
+    assert client.post("/api/personal/login", json={"username": "willian", "password": "test-trainer-password"}).status_code == 200
+
+
+def test_password_change_revokes_other_sessions(client: TestClient):
+    credentials = {"username": "willian", "password": "test-trainer-password"}
+    current = client.post("/api/personal/login", json=credentials).json()["token"]
+    other = client.post("/api/personal/login", json=credentials).json()["token"]
+    response = client.post("/api/personal/change-password", headers={"X-Personal-Token": current},
+                           json={"current_password": "test-trainer-password", "new_password": "new-test-password"})
+    assert response.status_code == 200
+    assert client.get("/api/personal/session", headers={"X-Personal-Token": other}).status_code == 401
+    assert client.get("/api/personal/session", headers={"X-Personal-Token": current}).status_code == 200
+    assert client.post("/api/personal/login", json=credentials).status_code == 401
 
 
 def test_personal_session_verification_and_logout(client: TestClient):
@@ -54,7 +106,7 @@ def test_personal_session_verification_and_logout(client: TestClient):
     # 1. Login
     login_resp = client.post(
         "/api/personal/login",
-        json={"username": "willian", "password": "1234"},
+        json={"username": "willian", "password": "test-trainer-password"},
     )
     assert login_resp.status_code == 200
     token = login_resp.json()["token"]

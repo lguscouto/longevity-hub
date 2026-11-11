@@ -203,7 +203,7 @@ def test_webhook_raw_payload_verification(client: TestClient, ec_keypair):
 
 # ── Processamento Assíncrono e Resposta Imediata ──────────────────────
 
-def test_webhook_acknowledges_immediately(client: TestClient):
+def test_webhook_acknowledges_immediately(client: TestClient, webhook_auth):
     """Valida resposta imediata 204 No Content sem bloquear aguardando rede."""
     resp = client.post(
         "/api/google-health/webhook",
@@ -213,7 +213,7 @@ def test_webhook_acknowledges_immediately(client: TestClient):
     assert resp.content == b""
 
 
-def test_webhook_dispatches_background_sync(client: TestClient, tmp_path: Path):
+def test_webhook_dispatches_background_sync(client: TestClient, webhook_auth, tmp_path: Path):
     """Valida que o webhook enfileira a sincronização correta com background_tasks."""
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token")
@@ -237,7 +237,7 @@ def test_webhook_dispatches_background_sync(client: TestClient, tmp_path: Path):
             assert call_kwargs["selected_types"] == ["steps"]
 
 
-def test_webhook_upsert_notification(client: TestClient, tmp_path: Path):
+def test_webhook_upsert_notification(client: TestClient, webhook_auth, tmp_path: Path):
     """Processa notificação de operação UPSERT mapeando dados vitais."""
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token")
@@ -262,7 +262,7 @@ def test_webhook_upsert_notification(client: TestClient, tmp_path: Path):
             assert "heart-rate" in call_kwargs["selected_types"]
 
 
-def test_webhook_idempotency(client: TestClient, tmp_path: Path):
+def test_webhook_idempotency(client: TestClient, webhook_auth, tmp_path: Path):
     """Duas notificações consecutivas idênticas são tratadas sem efeitos colaterais duplicados."""
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token")
@@ -303,7 +303,7 @@ def test_webhook_idempotency(client: TestClient, tmp_path: Path):
     ("hydration-log", "hydration-log"),
     ("nutrition-log", "nutrition-log"),
 ])
-def test_webhook_mandatory_data_types_coverage_p0(client: TestClient, tmp_path: Path, data_type: str, expected_sync_type: str):
+def test_webhook_mandatory_data_types_coverage_p0(client: TestClient, webhook_auth, tmp_path: Path, data_type: str, expected_sync_type: str):
     """P0.2: Cobre recebimento e despacho de webhook para data types oficiais obrigatórios."""
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token")
@@ -328,7 +328,7 @@ def test_webhook_mandatory_data_types_coverage_p0(client: TestClient, tmp_path: 
             assert expected_sync_type in call_kwargs["selected_types"]
 
 
-def test_webhook_system_event_user_deleted(client: TestClient, tmp_path: Path):
+def test_webhook_system_event_user_deleted(client: TestClient, webhook_auth, tmp_path: Path):
     """P0.2: Valida tratamento do evento de sistema user-deleted revogando credenciais."""
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token", health_user_id="user_target_99")
@@ -354,7 +354,7 @@ def test_webhook_system_event_user_deleted(client: TestClient, tmp_path: Path):
             assert "user-deleted" in (updated_creds.last_error or "")
 
 
-def test_webhook_system_event_user_revoked_access(client: TestClient, tmp_path: Path):
+def test_webhook_system_event_user_revoked_access(client: TestClient, webhook_auth, tmp_path: Path):
     """P0.2: Valida tratamento do evento de sistema user-revoked-access revogando credenciais."""
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token", health_user_id="user_target_88")

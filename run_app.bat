@@ -121,6 +121,6 @@ IF "%DEV_MODE%"=="1" (
 echo [INFO] O navegador sera aberto automaticamente em %TARGET_URL% assim que o servidor estiver pronto...
 start /b "" "%PYTHON_EXE%" "%~dp0scripts\open_browser_when_ready.py" --url %TARGET_URL%
 
-"%PYTHON_EXE%" -m uvicorn backend.app.main:app --host %HOST% --port 8887 --reload --reload-dir backend --reload-dir src
+"%PYTHON_EXE%" -m uvicorn backend.app.main:app --host %HOST% --port 8887 --no-proxy-headers --reload --reload-dir backend --reload-dir src
 
 pause

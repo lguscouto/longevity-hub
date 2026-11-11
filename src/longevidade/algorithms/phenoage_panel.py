@@ -70,6 +70,24 @@ def select_latest_complete_phenoage_panel(
         if collected_at is None or metric_key not in required_markers or value is None:
             continue
 
+        # Registros legados podem não ter sido normalizados na ingestão.
+        # Usar sempre a unidade que acompanha `value`, sem interpretar unidades desconhecidas.
+        if "unit" in record:
+            from longevidade.metrics.unit_conversion import (
+                canonical_input_key, normalize_observation_inputs, validate_phenoage_lab_unit,
+            )
+            try:
+                validate_phenoage_lab_unit(metric_key, record.get("unit"))
+            except ValueError:
+                continue
+            normalized = normalize_observation_inputs({
+                metric_key: {"value": value, "unit": record.get("unit")}
+            })
+            item = normalized.get(canonical_input_key(metric_key))
+            if item is None:
+                continue
+            value = item.value
+
         panel = panels.setdefault(collected_at, {})
         rank = _record_rank(record, position)
         previous = panel.get(metric_key)

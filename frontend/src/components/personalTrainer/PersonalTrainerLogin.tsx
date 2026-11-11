@@ -34,6 +34,9 @@ export const PersonalTrainerLogin: React.FC<PersonalTrainerLoginProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingSession, setPendingSession] = useState<PersonalTrainerSession | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +63,10 @@ export const PersonalTrainerLogin: React.FC<PersonalTrainerLoginProps> = ({
         }),
       });
 
+      if (resp.requires_password_change) {
+        setPendingSession(resp);
+        return;
+      }
       savePersonalTrainerSession(resp, rememberMe);
       showToast({
         title: 'Login efetuado com sucesso',
@@ -68,25 +75,6 @@ export const PersonalTrainerLogin: React.FC<PersonalTrainerLoginProps> = ({
       });
       onLoginSuccess(resp);
     } catch (err: any) {
-      // Fallback gracioso para ambiente estático / offline de testes se credenciais forem willian / 1234
-      if (cleanUsername.toLowerCase() === 'willian' && password === '1234') {
-        const fallbackSession: PersonalTrainerSession = {
-          authenticated: true,
-          username: 'willian',
-          name: 'Willian',
-          role: 'personal_trainer',
-          token: 'offline_token_' + Date.now(),
-        };
-        savePersonalTrainerSession(fallbackSession, rememberMe);
-        showToast({
-          title: 'Login efetuado com sucesso',
-          message: 'Bem-vindo ao portal, Willian!',
-          type: 'success',
-        });
-        onLoginSuccess(fallbackSession);
-        return;
-      }
-
       const msg =
         err?.message ||
         'Usuário ou senha incorretos. Verifique suas credenciais de acesso ao Portal do Personal.';
@@ -95,6 +83,49 @@ export const PersonalTrainerLogin: React.FC<PersonalTrainerLoginProps> = ({
       setLoading(false);
     }
   };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingSession) return;
+    if (newPassword.length < 12 || newPassword !== confirmPassword) {
+      setError('Use pelo menos 12 caracteres e confirme a nova senha.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await requestJson('/api/personal/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Personal-Token': pendingSession.token },
+        body: JSON.stringify({ current_password: password, new_password: newPassword }),
+      });
+      const updated = { ...pendingSession, requires_password_change: false };
+      savePersonalTrainerSession(updated, rememberMe);
+      setPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      onLoginSuccess(updated);
+    } catch (err: any) {
+      setError(err?.message || 'Não foi possível atualizar a senha.');
+    } finally { setLoading(false); }
+  };
+
+  if (pendingSession) return (
+    <div className="mx-auto w-full max-w-md p-6">
+      <h1 className="text-xl font-bold">Atualize a senha do personal</h1>
+      <p className="mt-2 text-sm">A senha inicial precisa ser substituída antes de acessar os dados. Essa troca deve ser feita no computador do servidor ou por quem estiver autenticado como proprietário.</p>
+      <form onSubmit={handlePasswordChange} className="mt-5 space-y-4">
+        <FormField id="trainer-new-password" label="Nova senha" required>
+          <Input id="trainer-new-password" type="password" autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+        </FormField>
+        <FormField id="trainer-confirm-password" label="Confirme a nova senha" required>
+          <Input id="trainer-confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+        </FormField>
+        {error && <p role="alert">{error}</p>}
+        <Button type="submit" disabled={loading}>Salvar nova senha</Button>
+      </form>
+    </div>
+  );
 
   return (
     <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 sm:p-6 animate-fadeIn">

@@ -39,7 +39,7 @@ def check_python():
     print(f"  Python: {sys.version.split()[0]} ({sys.executable})")
 
     missing_packages = []
-    for package in ("requests", "openpyxl"):
+    for package in ("requests", "openpyxl", "keyring"):
         try:
             __import__(package)
             ok(f"{package} package installed")
@@ -56,17 +56,21 @@ def check_python():
             ok(f"{package} installed")
 
 
+def load_config():
+    import keyring
+    stored = keyring.get_password("longevidade.integrations", "zepp_config")
+    if stored is not None:
+        return json.loads(stored)
+    if CONFIG.is_file():
+        return json.loads(CONFIG.read_text(encoding="utf-8"))
+    return {}
+
+
 def check_config():
     """Validate the Zepp config."""
     print(f"\n{BOLD}── Zepp Configuration ──{RESET}")
-    if not CONFIG.is_file():
-        err(f"config.json not found at {CONFIG}")
-        info("You need to capture the token from the Zepp app first.")
-        info(f"See: {BASE_DIR / 'INSTRUCOES_TOKEN.md'}")
-        return False
-
     try:
-        cfg = json.loads(CONFIG.read_text())
+        cfg = load_config()
     except json.JSONDecodeError:
         err("config.json is corrupted")
         return False
@@ -76,7 +80,7 @@ def check_config():
     host = cfg.get("host", "")
 
     if token and user_id:
-        masked = token[:8] + "…" + token[-6:] if len(token) > 14 else token
+        masked = token[:8] + "…" + token[-6:] if len(token) > 14 else "***"
         ok(f"app_token: {masked}")
         ok(f"user_id: {user_id}")
         ok(f"host: {host}")
@@ -91,7 +95,7 @@ def test_api():
     print(f"\n{BOLD}── API Connectivity ──{RESET}")
     try:
         import requests, uuid
-        cfg = json.loads(CONFIG.read_text())
+        cfg = load_config()
         host = cfg.get("host", "api-mifit-us3.zepp.com")
         token = cfg.get("app_token", "")
 

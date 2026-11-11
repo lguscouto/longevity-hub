@@ -35,6 +35,12 @@ class NormalizedInput:
 # Mapeamento de chaves canônicas para sua unidade padrão
 CANONICAL_UNITS: dict[str, str] = {
     "age_years": "years",
+    "phenoage": "years",
+    "light_bioage": "years",
+    "gold_bioage": "years",
+    "kdm_bioage_v2": "years",
+    "bmi": "kg/m²",
+    "egfr": "mL/min/1.73m²",
     "sex": "category",
     "weight_kg": "kg",
     "height_cm": "cm",
@@ -44,6 +50,8 @@ CANONICAL_UNITS: dict[str, str] = {
     "dbp_mmhg": "mmHg",
     "resting_hr_bpm": "bpm",
     "total_chol_mg_dl": "mg/dL",
+    "apob_mg_dl": "mg/dL",
+    "apoa1_mg_dl": "mg/dL",
     "hdl_mg_dl": "mg/dL",
     "ldl_mg_dl": "mg/dL",
     "triglycerides_mg_dl": "mg/dL",
@@ -68,6 +76,8 @@ CANONICAL_UNITS: dict[str, str] = {
     "monocytes_k_ul": "10³/µL",
     "platelets_k_ul": "10³/µL",
     "lymphocytes_pct": "%",
+    "neutrophils_pct": "%",
+    "monocytes_pct": "%",
     "mcv_fl": "fL",
     "rdw_pct": "%",
     "total_testosterone_ng_dl": "ng/dL",
@@ -229,7 +239,7 @@ def _clean_unit(unit_str: str | None) -> str:
     if not unit_str:
         return ""
     u = unit_str.strip().lower()
-    u = u.replace(" ", "").replace("^", "").replace("³", "3").replace("µ", "u").replace("μ", "u")
+    u = u.replace(" ", "").replace("^", "").replace("³", "3").replace("²", "2").replace("µ", "u").replace("μ", "u")
     return u
 
 
@@ -254,6 +264,72 @@ def validate_phenoage_lab_unit(metric_key: str, unit: str | None) -> None:
         raise ValueError(f"Unidade ausente ou não suportada para '{key}': '{unit or ''}'.")
 
 
+_UNIT_ALTERNATIVES: dict[str, frozenset[str]] = {
+    "fasting_glucose_mg_dl": frozenset({"mmol/l"}),
+    "creatinine_mg_dl": frozenset({"umol/l"}),
+    "total_chol_mg_dl": frozenset({"mmol/l"}),
+    "hdl_mg_dl": frozenset({"mmol/l"}),
+    "ldl_mg_dl": frozenset({"mmol/l"}),
+    "triglycerides_mg_dl": frozenset({"mmol/l"}),
+    "albumin_g_dl": frozenset({"g/l", "gl"}),
+    "hemoglobin_g_dl": frozenset({"g/l", "gl"}),
+    "hs_crp_mg_l": frozenset({"mg/dl", "mgdl"}),
+    "fasting_insulin_uIU_ml": frozenset({"uui/ml", "ui/ml"}),
+    "height_cm": frozenset({"m", "metro", "metros"}),
+}
+_CELL_COUNT_KEYS = frozenset({"wbc_k_ul", "neutrophils_k_ul", "lymphocytes_k_ul", "monocytes_k_ul", "platelets_k_ul"})
+_CELL_COUNT_UNITS = frozenset({"103/ul", "k/ul", "mil/ul", "mil/mm3", "cells/ul", "cells/mm3", "celulas/ul", "celulas/mm3", "/ul", "/mm3", "/mcl"})
+
+
+def canonical_input_key(key: str) -> str:
+    slug = str(key).strip().lower().replace("-", "_").replace(" ", "_")
+    intermediate = normalize_lab_key(slug)
+    return INPUT_KEY_TO_CANONICAL.get(slug) or INPUT_KEY_TO_CANONICAL.get(intermediate) or next(
+        (candidate for candidate in CANONICAL_UNITS if candidate.lower() == slug), intermediate
+    )
+
+
+def validate_clinical_unit(key: str, unit: str | None) -> None:
+    """Valida unidade conhecida antes de interpretar valores de entrada clínica."""
+    canonical = canonical_input_key(key)
+    expected = CANONICAL_UNITS.get(canonical)
+    if expected is None:
+        return
+    clean = _clean_unit(unit)
+    accepted = {_clean_unit(expected), _clean_unit(expected).replace("/", "")}
+    accepted.update(_UNIT_ALTERNATIVES.get(canonical, ()))
+    if canonical in _CELL_COUNT_KEYS:
+        accepted.update(_CELL_COUNT_UNITS)
+    if clean not in accepted:
+        raise ValueError(f"Unidade ausente ou não suportada para '{key}': '{unit or ''}'.")
+
+
+def has_canonical_clinical_unit(key: str, unit: str | None) -> bool:
+    """Indica se valores e alvos canônicos podem ser comparados sem conversão."""
+    expected = CANONICAL_UNITS.get(canonical_input_key(key))
+    if expected is None:
+        return True
+    clean = _clean_unit(unit)
+    canonical = _clean_unit(expected)
+    return bool(clean) and clean in {canonical, canonical.replace("/", "")}
+
+
+def invalid_observation_units(raw_inputs: Mapping[str, Any]) -> dict[str, str]:
+    """Identifica unidades explícitas incompatíveis, sem presumir unidades em valores escalares."""
+    invalid: dict[str, str] = {}
+    for key, item in raw_inputs.items():
+        if not isinstance(item, Mapping) or not ({"unit", "raw_unit"} & item.keys()):
+            continue
+        canonical = canonical_input_key(key)
+        if CANONICAL_UNITS.get(canonical) in {None, "boolean", "category"}:
+            continue
+        try:
+            validate_clinical_unit(key, item.get("unit") or item.get("raw_unit"))
+        except ValueError as exc:
+            invalid[canonical] = str(exc)
+    return invalid
+
+
 def normalize_observation_inputs(
     raw_inputs: Mapping[str, Any],
     measured_at: str | None = None,
@@ -275,12 +351,13 @@ def normalize_observation_inputs(
             item_measured_at = raw_item.get("measured_at") or raw_item.get("collected_at") or measured_at
 
         # Chave canônica intermediária e final
-        k_slug = raw_k.strip().lower().replace("-", "_").replace(" ", "_")
-        canonical_key = INPUT_KEY_TO_CANONICAL.get(k_slug)
-        if not canonical_key:
-            # Tenta resolver via normalize_lab_key
-            intermediate = normalize_lab_key(raw_k)
-            canonical_key = INPUT_KEY_TO_CANONICAL.get(intermediate, intermediate)
+        canonical_key = canonical_input_key(raw_k)
+        if isinstance(raw_item, Mapping) and ({"unit", "raw_unit"} & raw_item.keys()):
+            try:
+                validate_clinical_unit(raw_k, raw_unit)
+            except ValueError:
+                # Dados legados incompatíveis não devem ser usados em cálculos.
+                continue
 
         # Contexto clínico booleano ou sexo
         if canonical_key in {

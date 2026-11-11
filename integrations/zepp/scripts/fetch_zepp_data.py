@@ -63,6 +63,10 @@ except ImportError:  # pragma: no cover - supports direct script execution
 
 def load_config() -> dict:
     """Load config from config.json or env vars (same logic as zepp_health.py)."""
+    import keyring
+    stored = keyring.get_password("longevidade.integrations", "zepp_config")
+    if stored is not None:
+        return json.loads(stored)
     config_paths = [
         ZEPP_CLI_DIR / "config.json",
         Path.home() / ".config" / "zepp" / "config.json",

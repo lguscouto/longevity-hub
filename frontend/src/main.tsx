@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
+import { OwnerAccess } from './components/OwnerAccess'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/ui'
 import './index.css'
@@ -9,7 +9,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
       <ToastProvider>
-        <App />
+        <OwnerAccess />
       </ToastProvider>
     </ThemeProvider>
   </React.StrictMode>,

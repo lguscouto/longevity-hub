@@ -163,11 +163,11 @@ def test_google_health_webhook_unauthenticated(client: TestClient, tmp_path: Pat
     with patch("backend.app.routers.google_health.get_default_token_path", return_value=tmp_path / "nonexistent.json"):
         with patch("backend.app.routers.google_health.sync_google_health_api") as mock_sync:
             resp = client.post("/api/google-health/webhook", json={"collectionType": "activity", "date": "2026-03-24"})
-            assert resp.status_code == 204
+            assert resp.status_code == 401
             mock_sync.assert_not_called()
 
 
-def test_google_health_webhook_authenticated_triggers_sync(client: TestClient, tmp_path: Path):
+def test_google_health_webhook_authenticated_triggers_sync(client: TestClient, webhook_auth, tmp_path: Path):
     token_file = tmp_path / "token.json"
     creds = GoogleHealthCredentials(access_token="valid_access_token")
     creds.save_to_file(token_file)

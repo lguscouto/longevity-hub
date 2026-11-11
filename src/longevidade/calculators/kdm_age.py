@@ -475,7 +475,7 @@ def build_kdm_history_rows(
     for lab in lab_results:
         obs_date = _parse_date(lab.get("collected_at"))
         marker = canonical_kdm_biomarker(lab.get("metric_key"))
-        value = _finite_float(lab.get("value"))
+        value = _normalized_kdm_lab_value(lab)
         if obs_date is None or marker is None or value is None:
             continue
         row_for(obs_date)[marker] = value
@@ -501,7 +501,7 @@ def latest_kdm_biomarker_values(
     values: dict[str, float] = {}
     for lab in lab_results:
         marker = canonical_kdm_biomarker(lab.get("metric_key"))
-        value = _finite_float(lab.get("value"))
+        value = _normalized_kdm_lab_value(lab)
         if marker is not None and value is not None and marker not in values:
             values[marker] = value
 
@@ -513,6 +513,21 @@ def latest_kdm_biomarker_values(
     return values
 
 
+def _normalized_kdm_lab_value(lab: Mapping[str, Any]) -> float | None:
+    """Converte unidades explícitas e exclui registros incompatíveis do KDM."""
+    from longevidade.metrics.unit_conversion import normalize_observation_inputs, validate_clinical_unit
+
+    key = str(lab.get("metric_key") or "")
+    if "unit" not in lab:
+        return _finite_float(lab.get("value"))
+    try:
+        validate_clinical_unit(key, lab.get("unit"))
+    except ValueError:
+        return None
+    result = normalize_observation_inputs({key: {"value": lab.get("value"), "unit": lab.get("unit")}})
+    return _finite_float(next(iter(result.values())).value) if result else None
+
+
 def recalculate_kdm_silently(repo: Any, logger: Any = None) -> dict[str, Any]:
     """Recalcula o KDM Biological Age com base nas métricas frescas inseridas."""
     import json
@@ -520,7 +535,9 @@ def recalculate_kdm_silently(repo: Any, logger: Any = None) -> dict[str, Any]:
 
     try:
         profile = repo.get_user_profile()
-        chronological_age = float(profile.get("chronological_age") or 40.0)
+        chronological_age = _finite_float(profile.get("chronological_age"))
+        if chronological_age is None or chronological_age <= 0:
+            return {"status": "incomplete", "missing": ["chronological_age"]}
         lab_results = repo.get_lab_results(
             limit=1000,
             record_origins=CLINICALLY_ELIGIBLE_LAB_ORIGINS,

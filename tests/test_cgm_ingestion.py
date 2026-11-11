@@ -169,30 +169,16 @@ class TestRepositoryCGMReadings:
 # ─── Testes dos Endpoints ───────────────────────────────────────────────────
 
 
-@pytest.fixture
-def cgm_client(tmp_path):
-    """Client HTTP com banco temporário."""
-    db_path = tmp_path / "cgm-api-test.sqlite3"
-    os.environ["LONGEVIDADE_DB_PATH"] = str(db_path)
-    # Recarrega módulos backend
-    for mod in list(sys.modules):
-        if mod.startswith("backend.app"):
-            sys.modules.pop(mod, None)
-    main = importlib.import_module("backend.app.main")
-    with TestClient(main.app) as client:
-        yield client
-
-
 class TestEndpointBatch:
     """Testa POST /api/cgm/batch modificado."""
 
-    def test_batch_returns_summary_and_readings_count(self, cgm_client):
+    def test_batch_returns_summary_and_readings_count(self, client: TestClient):
         """Endpoint /batch retorna sumário + contagem de leituras."""
         payload = {
             "date_ref": "2026-07-15",
             "glucose_readings": [90, 100, 110, 120, 130],
         }
-        resp = cgm_client.post("/api/cgm/batch", json=payload)
+        resp = client.post("/api/cgm/batch", json=payload)
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
@@ -201,14 +187,14 @@ class TestEndpointBatch:
         assert data["summary"]["total_readings"] == 5
         assert data["summary"]["date_ref"] == "2026-07-15"
 
-    def test_batch_dedup_does_not_fail(self, cgm_client):
+    def test_batch_dedup_does_not_fail(self, client: TestClient):
         """Enviar o mesmo batch duas vezes não quebra."""
         payload = {
             "date_ref": "2026-07-15",
             "glucose_readings": [90, 100, 110],
         }
-        resp1 = cgm_client.post("/api/cgm/batch", json=payload)
-        resp2 = cgm_client.post("/api/cgm/batch", json=payload)
+        resp1 = client.post("/api/cgm/batch", json=payload)
+        resp2 = client.post("/api/cgm/batch", json=payload)
         assert resp1.status_code == 200
         assert resp2.status_code == 200
         data2 = resp2.json()
@@ -221,14 +207,14 @@ class TestEndpointBatch:
 class TestEndpointReadings:
     """Testa POST /api/cgm/readings (novo)."""
 
-    def test_add_single_reading(self, cgm_client):
+    def test_add_single_reading(self, client: TestClient):
         """Adiciona leitura individual e retorna sumário do dia."""
         payload = {
             "timestamp": "2026-07-20T14:30:00",
             "glucose_mgdl": 105.0,
             "device_id": "freestyle",
         }
-        resp = cgm_client.post("/api/cgm/readings", json=payload)
+        resp = client.post("/api/cgm/readings", json=payload)
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
@@ -236,24 +222,24 @@ class TestEndpointReadings:
         assert data["summary"]["date_ref"] == "2026-07-20"
         assert data["summary"]["mean_glucose"] == 105.0
 
-    def test_add_reading_default_device(self, cgm_client):
+    def test_add_reading_default_device(self, client: TestClient):
         """device_id opcional, default 'manual'."""
         payload = {
             "timestamp": "2026-07-20T15:00:00",
             "glucose_mgdl": 95.0,
         }
-        resp = cgm_client.post("/api/cgm/readings", json=payload)
+        resp = client.post("/api/cgm/readings", json=payload)
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
 
-    def test_add_readings_then_summary_reflects_all(self, cgm_client):
+    def test_add_readings_then_summary_reflects_all(self, client: TestClient):
         """Múltiplas leituras no mesmo dia são agregadas no sumário."""
         for val, ts in [(90, "08:00"), (110, "09:00"), (150, "10:00")]:
-            cgm_client.post("/api/cgm/readings", json={
+            client.post("/api/cgm/readings", json={
                 "timestamp": f"2026-07-21T{ts}:00",
                 "glucose_mgdl": float(val),
             })
-        resp = cgm_client.get("/api/cgm/summary")
+        resp = client.get("/api/cgm/summary")
         data = resp.json()
         # Pega o sumário mais recente (2026-07-21)
         day = next(d for d in data if d["date_ref"] == "2026-07-21")
@@ -270,14 +256,14 @@ class TestEndpointUploadCSV:
         writer.writerows(rows)
         return output.getvalue().encode("utf-8-sig")
 
-    def test_upload_csv_saves_raw_and_derives_summary(self, cgm_client):
+    def test_upload_csv_saves_raw_and_derives_summary(self, client: TestClient):
         """CSV com leituras de 1 dia salva brutas + sumário."""
         csv_bytes = self._make_csv_bytes([
             ["01/07/2026", "08:00", "95"],
             ["01/07/2026", "08:15", "105"],
             ["01/07/2026", "08:30", "130"],
         ])
-        resp = cgm_client.post(
+        resp = client.post(
             "/api/cgm/upload-csv",
             files={"file": ("test.csv", csv_bytes, "text/csv")},
         )
@@ -288,7 +274,7 @@ class TestEndpointUploadCSV:
         assert data["rows_processed"] == 3
         assert data["raw_readings_inserted"] == 3
 
-    def test_upload_csv_multiple_days(self, cgm_client):
+    def test_upload_csv_multiple_days(self, client: TestClient):
         """CSV com 2 dias gera sumários separados."""
         csv_bytes = self._make_csv_bytes([
             ["01/07/2026", "08:00", "95"],
@@ -298,7 +284,7 @@ class TestEndpointUploadCSV:
             ["02/07/2026", "08:15", "125"],
             ["02/07/2026", "08:30", "130"],
         ])
-        resp = cgm_client.post(
+        resp = client.post(
             "/api/cgm/upload-csv",
             files={"file": ("multi.csv", csv_bytes, "text/csv")},
         )
@@ -311,18 +297,18 @@ class TestEndpointUploadCSV:
 class TestEndpointSummaryConsistency:
     """Testa consistência entre leituras brutas e sumário."""
 
-    def test_batch_and_reading_match(self, cgm_client):
+    def test_batch_and_reading_match(self, client: TestClient):
         """Usar /batch + /readings no mesmo dia produz sumário consolidado."""
-        cgm_client.post("/api/cgm/readings", json={
+        client.post("/api/cgm/readings", json={
             "timestamp": "2026-08-01T07:00:00",  # fora do range do batch (08:00+)
             "glucose_mgdl": 80.0,
         })
-        cgm_client.post("/api/cgm/batch", json={
+        client.post("/api/cgm/batch", json={
             "date_ref": "2026-08-01",
             "glucose_readings": [100, 120, 140],
         })
 
-        resp = cgm_client.get("/api/cgm/summary")
+        resp = client.get("/api/cgm/summary")
         data = resp.json()
         day = next(d for d in data if d["date_ref"] == "2026-08-01")
         assert day["total_readings"] == 4  # 1 individual + 3 do batch

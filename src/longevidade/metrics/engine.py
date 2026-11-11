@@ -17,6 +17,7 @@ from longevidade.metrics.derived_catalog import (
 )
 from longevidade.metrics.unit_conversion import (
     NormalizedInput,
+    invalid_observation_units,
     normalize_observation_inputs,
 )
 from longevidade.algorithms.phenoage import calculate_phenoage, PhenoAgeInput
@@ -104,6 +105,7 @@ def evaluate_metric(
 
     # Snapshot das entradas necessárias
     norm_dict: Mapping[str, NormalizedInput]
+    invalid_units = invalid_observation_units(normalized_inputs)
     if any(not isinstance(v, NormalizedInput) for v in normalized_inputs.values()):
         norm_dict = normalize_observation_inputs(normalized_inputs)
     else:
@@ -141,6 +143,18 @@ def evaluate_metric(
     limitations: list[str] = list(spec.limitations)
     latest_measured_at: str | None = None
     has_censored_input = False
+
+    invalid_required = [key for key in spec.input_keys if key in invalid_units]
+    if invalid_required:
+        return {
+            "metric_id": spec.id,
+            "algorithm_version": spec.algorithm_version,
+            "cohort_variant": cohort_clean if spec.category == "biological_age" else None,
+            "status": "invalid_inputs", "value": None, "unit": spec.output_unit,
+            "measured_at": None, "input_snapshot": {}, "missing_input_keys": invalid_required,
+            "limitations": limitations + [invalid_units[key] for key in invalid_required],
+            "source_url": spec.source_url, "calculated_at": now_iso,
+        }
 
     for req_key in spec.input_keys:
         if req_key in norm_dict:
@@ -790,6 +804,7 @@ def evaluate_all_metrics(
         except Exception:
             pass
 
+    invalid_units = invalid_observation_units(inputs_dict)
     normalized = normalize_observation_inputs(inputs_dict, measured_at=ref_date)
     results: dict[str, dict[str, Any]] = {}
     calculated_at = datetime.now(timezone.utc).isoformat()
@@ -798,6 +813,10 @@ def evaluate_all_metrics(
     for metric_id, spec in DERIVED_METRICS_CATALOG.items():
         if spec.id not in {"phenoage_gap", "light_bioage_diff", "gold_bioage_diff"}:
             res = evaluate_metric(metric_id, normalized, cohort_variant=cohort_variant, calculated_at=calculated_at)
+            invalid_required = [key for key in spec.input_keys if key in invalid_units]
+            if invalid_required and res["status"] not in {"blocked_reference", "not_implemented"}:
+                res.update(status="invalid_inputs", value=None, missing_input_keys=invalid_required)
+                res["limitations"] = list(res.get("limitations", [])) + [invalid_units[key] for key in invalid_required]
             results[metric_id] = res
             # Se foi calculada, alimenta o dicionário normalizado como intermediário compartilhável (§2.1)
             if res["status"] == "calculated" and res["value"] is not None:

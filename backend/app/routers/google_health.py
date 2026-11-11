@@ -126,7 +126,7 @@ def get_google_health_status() -> Dict[str, Any]:
         "has_client_secret": has_client_secret,
         "masked_client_id": masked_client_id,
         "token_path": str(token_path),
-        "has_token_file": token_path.is_file(),
+        "has_token_file": bool(creds),
         "token_expiry": expiry_iso,
         "api_version": "v4",
         "service": "Google Health API",
@@ -444,19 +444,15 @@ def save_google_health_credentials(input_data: GoogleHealthCredentialsInput) -> 
 
 @router.post("/disconnect")
 def disconnect_google_health() -> Dict[str, Any]:
-    """Desvincula a conta Google Health removendo os tokens de acesso."""
+    """Desvincula no cofre sem modificar arquivos legados."""
     token_path = get_default_token_path()
-    if token_path.is_file():
-        try:
-            data = json.loads(token_path.read_text(encoding="utf-8"))
-            data["access_token"] = None
-            data["refresh_token"] = None
-            data["expiry"] = None
-            data["reauthentication_required"] = False
-            data["last_error"] = None
-            token_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        except Exception:
-            token_path.unlink(missing_ok=True)
+    creds = GoogleHealthCredentials.from_file(token_path) or GoogleHealthCredentials()
+    creds.access_token = None
+    creds.refresh_token = None
+    creds.expiry = None
+    creds.reauthentication_required = False
+    creds.last_error = None
+    creds.save_to_file(token_path)
 
     return {
         "status": "ok",
@@ -662,9 +658,7 @@ async def google_health_webhook(
         if not secrets.compare_digest(clean_auth, expected_secret):
             raise HTTPException(status_code=401, detail="Credenciais de Authorization inválidas.")
     elif is_verification:
-        # No handshake, a documentação exige rejeitar requisições não autorizadas
-        if not authorization or not authorization.strip():
-            raise HTTPException(status_code=401, detail="Autorização obrigatória para verificação de webhook.")
+        raise HTTPException(status_code=401, detail="Segredo de verificação do webhook não configurado.")
 
     # 2. Handshake de verificação
     if is_verification:
@@ -677,6 +671,8 @@ async def google_health_webhook(
             raise HTTPException(status_code=401, detail="Assinatura GOOGLE-HEALTH-API-SIGNATURE inválida.")
     elif os.environ.get("GOOGLE_HEALTH_REQUIRE_SIGNATURE", "").lower() in ("true", "1"):
         raise HTTPException(status_code=401, detail="Header GOOGLE-HEALTH-API-SIGNATURE obrigatório.")
+    elif not expected_secret:
+        raise HTTPException(status_code=401, detail="Webhook sem autenticação configurada ou assinatura válida.")
 
     # 4. Normalização de batches e extração de eventos (P1.3)
     payloads = normalize_webhook_payloads(body_json)

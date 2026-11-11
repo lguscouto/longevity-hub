@@ -9,7 +9,7 @@ import {
   DRAFT_STORAGE_KEY,
 } from './types';
 
-export function usePhysicalAssessments() {
+export function usePhysicalAssessments(enabled = true) {
   const { showToast } = useToast();
   const [assessments, setAssessments] = useState<PhysicalAssessment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -146,8 +146,9 @@ export function usePhysicalAssessments() {
   };
 
   useEffect(() => {
-    fetchAssessments();
-  }, []);
+    if (enabled) fetchAssessments();
+    else setAssessments([]);
+  }, [enabled]);
 
   // Cleanup blob object URLs
   useEffect(() => {

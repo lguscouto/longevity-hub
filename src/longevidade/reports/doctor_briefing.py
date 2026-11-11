@@ -11,6 +11,7 @@ import numpy as np
 
 from longevidade.db.repository import LongevityRepository
 from longevidade.reports.lab_selection import get_clinical_lab_snapshot
+from longevidade.metrics.unit_conversion import has_canonical_clinical_unit
 
 
 def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None = None, patient_age: float | None = None) -> str:
@@ -125,7 +126,10 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
                 "tgo_ast", "tgp_alt", "ggt",
             }
 
-            if ref_max is not None and val > ref_max:
+            if not has_canonical_clinical_unit(key, unit):
+                status = "⚪ Unidade não normalizada; sem classificação"
+                opt_str = "—"
+            elif ref_max is not None and val > ref_max:
                 status = "🔴 Fora da Ref. (Acima)"
             elif ref_min is not None and val < ref_min:
                 status = "🔴 Fora da Ref. (Abaixo)"

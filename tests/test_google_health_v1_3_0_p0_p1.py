@@ -260,7 +260,7 @@ def test_normalize_webhook_payloads():
     assert len(norm_wrapped) == 2
 
 
-def test_webhook_batch_endpoint_execution(client: TestClient, tmp_path: Path):
+def test_webhook_batch_endpoint_execution(client: TestClient, webhook_auth, tmp_path: Path):
     token_path = tmp_path / "token.json"
     creds = GoogleHealthCredentials(
         client_id="cid",
@@ -296,7 +296,7 @@ def test_webhook_batch_endpoint_execution(client: TestClient, tmp_path: Path):
         assert resp.status_code == 204
 
 
-def test_webhook_lifecycle_revoked_access(client: TestClient, tmp_path: Path):
+def test_webhook_lifecycle_revoked_access(client: TestClient, webhook_auth, tmp_path: Path):
     token_path = tmp_path / "token.json"
     creds = GoogleHealthCredentials(
         client_id="cid",
@@ -328,7 +328,7 @@ def test_webhook_lifecycle_revoked_access(client: TestClient, tmp_path: Path):
 
 # ── P1.4: Mapeamento de healthUserId no Webhook ──────────────────────────────
 
-def test_webhook_mismatched_health_user_id(client: TestClient, tmp_path: Path):
+def test_webhook_mismatched_health_user_id(client: TestClient, webhook_auth, tmp_path: Path):
     token_path = tmp_path / "token.json"
     creds = GoogleHealthCredentials(
         client_id="cid",

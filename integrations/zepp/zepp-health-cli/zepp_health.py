@@ -81,7 +81,11 @@ def _config_search_paths() -> list[Path]:
 def load_config() -> dict[str, Any]:
     """Load config from JSON, with env vars overriding individual keys."""
     cfg: dict[str, Any] = {}
-    for p in _config_search_paths():
+    import keyring
+    stored = keyring.get_password("longevidade.integrations", "zepp_config")
+    if stored is not None:
+        cfg = json.loads(stored)
+    for p in ([] if stored is not None else _config_search_paths()):
         if p.is_file():
             try:
                 cfg = json.loads(p.read_text())
@@ -98,13 +102,9 @@ def load_config() -> dict[str, Any]:
 
 def save_config(data: dict[str, Any], path: Path | None = None) -> Path:
     target = path or (Path.cwd() / "config.json")
-    target.parent.mkdir(parents=True, exist_ok=True)
     clean = {k: v for k, v in data.items() if k in CONFIG_KEYS and v}
-    target.write_text(json.dumps(clean, indent=2) + "\n")
-    try:
-        os.chmod(target, 0o600)
-    except OSError:
-        pass
+    import keyring
+    keyring.set_password("longevidade.integrations", "zepp_config", json.dumps(clean))
     return target
 
 
@@ -546,11 +546,12 @@ def cmd_init(args: argparse.Namespace) -> None:
         merged = existing
     else:
         merged = extracted
-    saved = save_config(merged, target)
-    print(f"Wrote {saved} (mode 600)")
+    save_config(merged, target)
+    print("Credentials saved in the system credential vault.")
     print(f"  user_id: {merged.get('user_id')}")
     print(f"  host:    {merged.get('host')}")
-    masked = (merged.get("app_token") or "")[:6] + "…" + (merged.get("app_token") or "")[-6:]
+    token = merged.get("app_token") or ""
+    masked = token[:6] + "…" + token[-6:] if len(token) > 12 else "***"
     print(f"  token:   {masked}  ({len(merged.get('app_token') or '')} chars)")
 
 
@@ -1039,10 +1040,10 @@ def main() -> None:
 
     init_p = sub.add_parser(
         "init",
-        help="Extract apptoken/user_id/host from a proxy capture (HAR or JSON) into config.json",
+        help="Extract apptoken/user_id/host from a proxy capture into the system credential vault",
     )
     init_p.add_argument("capture", help="Path to a proxy capture (HAR or JSON session export)")
-    init_p.add_argument("-o", "--output", help="Where to write config.json (default ./config.json)")
+    init_p.add_argument("-o", "--output", help="Legacy config to merge, if present; credentials are saved in the vault")
     init_p.add_argument("-f", "--force", action="store_true", help="Overwrite without merging")
     init_p.set_defaults(func=cmd_init)
 

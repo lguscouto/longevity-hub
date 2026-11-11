@@ -109,6 +109,23 @@ def test_shared_clinical_snapshot_excludes_synthetic_from_markdown_and_pdf(tmp_p
     assert "999.0" not in pdf_text
 
 
+def test_briefings_do_not_compare_noncanonical_units_to_canonical_targets(tmp_path, monkeypatch):
+    db_path = tmp_path / "legacy_units.sqlite3"
+    initialize_db(db_path)
+    repo = LongevityRepository(db_path)
+    repo.add_lab_result({
+        "collected_at": "2026-11-01", "metric_key": "glucose_mgdl",
+        "metric_name": "Glicose", "value": 4.995, "unit": "mmol/L",
+        "optimal_target": 85.0, "record_origin": "patient_lab",
+    })
+    markdown = generate_doctor_briefing(repo)
+    assert "4.995 mmol/L" in markdown
+    assert "Unidade não normalizada; sem classificação" in markdown
+    assert "85.0 mmol/L" not in markdown
+    pdf_text = _captured_pdf_text(monkeypatch, repo)
+    assert "Unidade não normalizada" in pdf_text
+
+
 def test_synthetic_labs_are_excluded_from_phenoage_and_ai_context(client):
     from backend.app.config import get_db_path
 

@@ -188,6 +188,9 @@ describe('PersonalTrainerView', () => {
       if (urlStr.includes('/personal/logout')) {
         return createJsonResponse({ status: 'ok' });
       }
+      if (urlStr.includes('/personal/session')) {
+        return createJsonResponse(mockTrainerSession);
+      }
       if (urlStr.includes('/profile') || urlStr.includes('/athlete-profile')) {
         return createJsonResponse(mockProfile);
       }
@@ -635,6 +638,25 @@ describe('PersonalTrainerView', () => {
     expect(screen.queryByText('Gustavo Santos')).not.toBeInTheDocument();
     expect(screen.queryByText('Galeria & Poses')).not.toBeInTheDocument();
     expect(screen.queryByText('Antes & Depois')).not.toBeInTheDocument();
+  });
+
+  it('rejects a revoked saved session before requesting student data', async () => {
+    mockFetch.mockResolvedValue(createJsonResponse({ detail: 'Sessão expirada' }, 401));
+    render(<PersonalTrainerView />);
+
+    expect(await screen.findByText('Acesso Exclusivo do Treinador')).toBeInTheDocument();
+    expect(localStorage.getItem('longevidade_personal_trainer_session_v1')).toBeNull();
+    expect(mockFetch.mock.calls.some(([url]) => String(url).includes('/api/physical-assessments'))).toBe(false);
+    expect(mockFetch.mock.calls.some(([url]) => String(url).includes('/api/profile'))).toBe(false);
+  });
+
+  it('preserves a saved session when verification is temporarily unavailable', async () => {
+    mockFetch.mockRejectedValue(new Error('offline'));
+    render(<PersonalTrainerView />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível verificar a sessão salva');
+    expect(localStorage.getItem('longevidade_personal_trainer_session_v1')).not.toBeNull();
+    expect(mockFetch.mock.calls.some(([url]) => String(url).includes('/api/physical-assessments'))).toBe(false);
   });
 
   it('rejects invalid login credentials and displays error message', async () => {

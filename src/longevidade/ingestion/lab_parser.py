@@ -73,7 +73,7 @@ OPTIMAL_LONGEVITY_TARGETS = {
     # Função Renal
     "creatinine": {"name": "Creatinina Sanguínea", "unit": "mg/dL", "ref_min": 0.7, "ref_max": 1.2, "optimal": 0.9, "category": "Renal"},
     "cystatin_c": {"name": "Cistatina C", "unit": "mg/L", "ref_min": 0.6, "ref_max": 1.0, "optimal": 0.75, "category": "Renal"},
-    "egfr": {"name": "Taxa de Filtração Glomerular (eGFR)", "unit": "mL/min", "ref_min": 90, "ref_max": 120, "optimal": 105.0, "category": "Renal"},
+    "egfr": {"name": "Taxa de Filtração Glomerular (eGFR) por 1,73 m²", "unit": "mL/min/1.73m²", "ref_min": 90, "ref_max": 120, "optimal": 105.0, "category": "Renal"},
     "urea": {"name": "Ureia Sanguínea", "unit": "mg/dL", "ref_min": 15.0, "ref_max": 40.0, "optimal": 25.0, "category": "Renal"},
     "bun": {"name": "Nitrogênio Ureico no Sangue (BUN)", "unit": "mg/dL", "ref_min": 7.0, "ref_max": 20.0, "optimal": 12.0, "category": "Renal"},
 
@@ -138,11 +138,18 @@ def ingest_lab_records(
     phenoage_candidates: list[Dict[str, Any]] = []
 
     # Valida o lote completo antes da primeira gravação para evitar persistência parcial.
-    from longevidade.metrics.unit_conversion import validate_phenoage_lab_unit
+    from longevidade.metrics.unit_conversion import validate_phenoage_lab_unit, validate_clinical_unit
     for rec in records:
+        if normalize_lab_key(rec.get("metric_key")) == "egfr":
+            for candidate in (rec.get("value"), rec.get("raw_value")):
+                if candidate is not None and parse_numeric_or_censored(candidate)[1]:
+                    raise ValueError("egfr: resultado com limite não pode ser salvo como valor exato")
         validate_phenoage_lab_unit(
             str(rec.get("metric_key") or ""), rec.get("raw_unit") or rec.get("unit")
         )
+        validate_clinical_unit(str(rec.get("metric_key") or ""), rec.get("raw_unit") or rec.get("unit"))
+        if rec.get("unit"):
+            validate_clinical_unit(str(rec.get("metric_key") or ""), rec.get("unit"))
 
     for rec in records:
         normalized_rec = normalize_lab_record(rec)
@@ -180,6 +187,17 @@ def ingest_lab_records(
             "raw_value": raw_val_input,
             "raw_unit": raw_unit_input or rec.get("raw_unit") or normalized_rec.get("unit") or target_info.get("unit") or "",
         }
+        # As referências acompanham `unit`; `raw_unit` pode conter a unidade
+        # original de um valor já convertido pelo importador.
+        reference_unit = normalized_rec.get("unit") or raw_unit_input
+        for field in ("ref_min", "ref_max", "optimal_target"):
+            supplied = normalized_rec.get(field)
+            if supplied is not None:
+                converted = normalize_clinical_inputs({key: {"value": supplied, "unit": reference_unit}}, measured_at=dt)
+                canonical_target = INPUT_KEY_TO_CANONICAL.get(key) or INPUT_KEY_TO_CANONICAL.get(normalize_lab_key(key), key)
+                item = converted.get(canonical_target) or next(iter(converted.values()), None)
+                if item is not None:
+                    entry[field] = item.value
         repo.add_lab_result(entry)
         inserted += 1
         if normalized_origin in CLINICALLY_ELIGIBLE_LAB_ORIGINS:

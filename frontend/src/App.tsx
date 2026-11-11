@@ -28,7 +28,6 @@ const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => 
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 const OnboardingModal = lazy(() => import('./components/onboarding/OnboardingModal').then(m => ({ default: m.OnboardingModal })))
-import { PersonalTrainerUnlockModal } from './components/personalTrainer/PersonalTrainerUnlockModal'
 
 
 import { Button, EmptyState, LoadingIndicator, useToast } from './components/ui'
@@ -163,36 +162,11 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDateKey(new Date()))
   const [daysRange, setDaysRange] = useState<number>(30)
 
-  // Trava de isolamento do Portal do Personal Trainer
-  const [isTrainerLocked, setIsTrainerLocked] = useState<boolean>(() => getInitialTab() === 'personal')
-  const [showTrainerUnlockModal, setShowTrainerUnlockModal] = useState(false)
-  const [pendingTabAfterUnlock, setPendingTabAfterUnlock] = useState<Tab | null>(null)
   const prevActiveTabRef = useRef(activeTab)
-  const isTrainerLockedRef = useRef(isTrainerLocked)
-  isTrainerLockedRef.current = isTrainerLocked
-  const activeTabRef = useRef(activeTab)
-  activeTabRef.current = activeTab
 
   const handleSelectTab = (targetTab: string) => {
     const normalized = normalizeTab(targetTab)
-    if (isTrainerLockedRef.current && activeTabRef.current === 'personal' && normalized !== 'personal') {
-      setPendingTabAfterUnlock(normalized)
-      setShowTrainerUnlockModal(true)
-      return
-    }
-    if (normalized === 'personal') {
-      setIsTrainerLocked(true)
-    }
     setActiveTab(normalized)
-  }
-
-  const handleUnlockTrainerMode = () => {
-    setIsTrainerLocked(false)
-    setShowTrainerUnlockModal(false)
-    const nextTab = pendingTabAfterUnlock || 'overview'
-    setPendingTabAfterUnlock(null)
-    setActiveTab(nextTab)
-    window.location.hash = nextTab
   }
 
   useEffect(() => {
@@ -209,15 +183,6 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const normalized = normalizeTab(window.location.hash)
-      if (isTrainerLockedRef.current && activeTabRef.current === 'personal' && normalized !== 'personal') {
-        window.location.hash = 'personal'
-        setPendingTabAfterUnlock(normalized)
-        setShowTrainerUnlockModal(true)
-        return
-      }
-      if (normalized === 'personal') {
-        setIsTrainerLocked(true)
-      }
       setActiveTab(normalized)
     }
     window.addEventListener('hashchange', handleHashChange)
@@ -1079,7 +1044,7 @@ export default function App() {
               >
                 <PersonalTrainerView
                   isIsolated={true}
-                  onRequestUnlock={() => setShowTrainerUnlockModal(true)}
+                  onRequestUnlock={() => { window.location.hash = 'overview' }}
                 />
               </Suspense>
             )}
@@ -1119,15 +1084,6 @@ export default function App() {
           </footer>
 
           <Suspense fallback={null}>
-            <PersonalTrainerUnlockModal
-              isOpen={showTrainerUnlockModal}
-              onClose={() => {
-                setShowTrainerUnlockModal(false)
-                setPendingTabAfterUnlock(null)
-              }}
-              onUnlockSuccess={handleUnlockTrainerMode}
-            />
-
             {activeTab !== 'personal' && showAISettings && (
               <AISettingsModal
                 isOpen={showAISettings}

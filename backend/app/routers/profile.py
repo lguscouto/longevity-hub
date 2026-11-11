@@ -102,7 +102,9 @@ def get_profile():
     elif profile.get("chronological_age") is not None:
         chrono_age = float(profile["chronological_age"])
 
-    google_connected = get_default_token_path().is_file()
+    from longevidade.integrations.google_health.client import GoogleHealthCredentials
+    google_credentials = GoogleHealthCredentials.from_file(get_default_token_path())
+    google_connected = bool(google_credentials and (google_credentials.access_token or google_credentials.refresh_token))
 
     # Cálculo da Relação Cintura-Estatura (WHtR)
     waist_cm = golden.get("waist_cm")

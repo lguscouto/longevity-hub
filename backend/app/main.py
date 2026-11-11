@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.config import get_db_path
+from backend.app.access import router as owner_router, authorization_middleware
 from longevidade import __version__
 from longevidade.db.schema import initialize_db
 
@@ -109,6 +110,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.middleware("http")(authorization_middleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(LOCAL_ALLOWED_ORIGINS),
@@ -136,6 +139,7 @@ app.include_router(interventions.router)
 app.include_router(pipeline.router)
 app.include_router(physical_assessments.router)
 app.include_router(personal_auth.router)
+app.include_router(owner_router)
 app.include_router(quality.router)
 app.include_router(checkins.router)
 app.include_router(daily_guidance.router)

@@ -11,7 +11,7 @@ import secrets
 import sqlite3
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field
 
 from backend.app.config import get_db_path
@@ -40,11 +40,12 @@ class PersonalSessionResponse(BaseModel):
     role: str = "personal_trainer"
     token: str
     expires_at: str
+    requires_password_change: bool = False
 
 
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(..., min_length=1)
-    new_password: str = Field(..., min_length=4, max_length=200)
+    new_password: str = Field(..., min_length=12, max_length=200)
 
 
 def hash_password(password: str) -> str:
@@ -96,7 +97,7 @@ def _ensure_trainer_accounts_table(conn: sqlite3.Connection) -> None:
 
 
 @router.post("/login", response_model=PersonalSessionResponse)
-def login_personal_trainer(payload: PersonalLoginRequest) -> PersonalSessionResponse:
+def login_personal_trainer(payload: PersonalLoginRequest, request: Request, response: Response) -> PersonalSessionResponse:
     username_clean = payload.username.strip().lower()
     password = payload.password
 
@@ -110,8 +111,11 @@ def login_personal_trainer(payload: PersonalLoginRequest) -> PersonalSessionResp
             ).fetchone()
         finally:
             conn.close()
-    except Exception:
-        row = None
+    except sqlite3.Error as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível verificar as credenciais. Tente novamente mais tarde.",
+        ) from exc
 
     is_valid = False
     user_name = DEFAULT_PT_NAME
@@ -122,9 +126,6 @@ def login_personal_trainer(payload: PersonalLoginRequest) -> PersonalSessionResp
             is_valid = True
             user_name = row["name"] or DEFAULT_PT_NAME
             user_role = row["role"] or "personal_trainer"
-    elif username_clean == DEFAULT_PT_USERNAME and password == "1234":
-        is_valid = True
-
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -142,7 +143,12 @@ def login_personal_trainer(payload: PersonalLoginRequest) -> PersonalSessionResp
         "role": user_role,
         "created_at": now.isoformat(),
         "expires_at": expires_at.isoformat(),
+        "requires_password_change": password == "1234" or secrets.compare_digest(row["password_hash"], DEFAULT_PT_HASH),
     }
+    from backend.app.access import TRAINER_COOKIE, _effective_scheme
+    response.set_cookie(TRAINER_COOKIE, token, httponly=True,
+                        secure=_effective_scheme(request) == "https",
+                        samesite="strict", max_age=SESSION_EXPIRATION_DAYS * 86400, path="/")
 
     # Atualiza timestamp de último login no banco de dados
     try:
@@ -165,6 +171,7 @@ def login_personal_trainer(payload: PersonalLoginRequest) -> PersonalSessionResp
         role=user_role,
         token=token,
         expires_at=expires_at.isoformat(),
+        requires_password_change=_ACTIVE_TRAINER_SESSIONS[token]["requires_password_change"],
     )
 
 
@@ -173,6 +180,8 @@ def verify_session(
     token: Optional[str] = Query(None),
     x_personal_token: Optional[str] = Header(None, alias="X-Personal-Token"),
     authorization: Optional[str] = Header(None),
+    request: Request = None,
+    response: Response = None,
 ) -> PersonalSessionResponse:
     effective_token = token or x_personal_token
     if not effective_token and authorization:
@@ -195,6 +204,13 @@ def verify_session(
             detail="Sessão expirada. Faça login novamente.",
         )
 
+    if request is not None and response is not None:
+        from backend.app.access import TRAINER_COOKIE, _effective_scheme
+        remaining = max(0, int((expires_at - datetime.now()).total_seconds()))
+        response.set_cookie(TRAINER_COOKIE, effective_token, httponly=True,
+                            secure=_effective_scheme(request) == "https",
+                            samesite="strict", max_age=remaining, path="/")
+
     return PersonalSessionResponse(
         authenticated=True,
         username=session["username"],
@@ -202,33 +218,40 @@ def verify_session(
         role=session["role"],
         token=effective_token,
         expires_at=session["expires_at"],
+        requires_password_change=session.get("requires_password_change", False),
     )
 
 
 @router.post("/logout")
 def logout_personal_trainer(
+    request: Request,
+    response: Response,
     token: Optional[str] = Query(None),
     x_personal_token: Optional[str] = Header(None, alias="X-Personal-Token"),
 ) -> Dict[str, Any]:
-    effective_token = token or x_personal_token
+    from backend.app.access import TRAINER_COOKIE
+    effective_token = token or x_personal_token or request.cookies.get(TRAINER_COOKIE)
     if effective_token and effective_token in _ACTIVE_TRAINER_SESSIONS:
         del _ACTIVE_TRAINER_SESSIONS[effective_token]
+    response.delete_cookie(TRAINER_COOKIE, path="/")
     return {"status": "ok", "message": "Desconectado do Portal do Personal Trainer com sucesso."}
 
 
 @router.post("/change-password")
 def change_trainer_password(
     payload: ChangePasswordRequest,
+    request: Request,
     x_personal_token: Optional[str] = Header(None, alias="X-Personal-Token"),
 ) -> Dict[str, Any]:
-    if not x_personal_token or x_personal_token not in _ACTIVE_TRAINER_SESSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticação obrigatória para alterar a senha.",
-        )
-
-    session = _ACTIVE_TRAINER_SESSIONS[x_personal_token]
-    username = session["username"]
+    session = verify_session(token=None, x_personal_token=x_personal_token, authorization=None)
+    username = session.username
+    if session.requires_password_change:
+        from backend.app.access import OWNER_COOKIE, _loopback, owner_authenticated
+        peer = request.client.host if request.client else ""
+        local_request = (_loopback(peer) and _loopback(request.url.hostname)
+                         and not request.headers.get("x-forwarded-proto"))
+        if not local_request and not owner_authenticated(request.cookies.get(OWNER_COOKIE)):
+            raise HTTPException(status_code=403, detail="A senha inicial deve ser alterada localmente ou pelo proprietário autenticado.")
 
     conn = _get_connection()
     try:
@@ -252,5 +275,13 @@ def change_trainer_password(
         conn.commit()
     finally:
         conn.close()
+
+    active = _ACTIVE_TRAINER_SESSIONS.get(session.token)
+    if active is not None:
+        active["requires_password_change"] = False
+    # As demais sessões não devem sobreviver à troca de credencial.
+    for token, active_session in list(_ACTIVE_TRAINER_SESSIONS.copy().items()):
+        if token != session.token and active_session.get("username") == username:
+            _ACTIVE_TRAINER_SESSIONS.pop(token, None)
 
     return {"status": "ok", "message": "Senha alterada com sucesso."}

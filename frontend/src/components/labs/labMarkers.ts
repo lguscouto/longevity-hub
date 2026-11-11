@@ -441,8 +441,8 @@ export const LAB_MARKERS_GROUPS: { groupName: string; icon: string; items: Marke
       },
       {
         key: 'egfr',
-        name: 'Taxa de Filtração Glomerular (eGFR)',
-        unit: 'mL/min',
+        name: 'Taxa de Filtração Glomerular (eGFR) por 1,73 m²',
+        unit: 'mL/min/1.73m²',
         ref_min: 90,
         ref_max: 120,
         optimal: 105.0,

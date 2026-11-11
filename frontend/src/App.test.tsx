@@ -291,7 +291,7 @@ describe('App', () => {
     }, { timeout: 3000 })
   })
 
-  it('isolates #personal by hiding main Header and protecting student area with PIN unlock', async () => {
+  it('isolates #personal and directs the student area to owner authentication', async () => {
     window.location.hash = '#personal'
 
     renderApp()
@@ -301,26 +301,12 @@ describe('App', () => {
       expect(screen.queryByRole('navigation', { name: /Navegação Principal/i })).not.toBeInTheDocument()
       expect(screen.getByText('PORTAL DO PERSONAL')).toBeInTheDocument()
       expect(screen.getByText(/Modo Isolado/i)).toBeInTheDocument()
-    })
+    }, { timeout: 4000 })
 
     // Clica no botão de desbloqueio da Área do Aluno
     const unlockBtn = screen.getByRole('button', { name: /Área do Aluno/i })
     fireEvent.click(unlockBtn)
 
-    // Deve abrir o modal de desbloqueio com PIN
-    await waitFor(() => {
-      expect(screen.getByText('Área Restrita do Aluno')).toBeInTheDocument()
-      expect(screen.getByText(/garantir a confidencialidade/i)).toBeInTheDocument()
-    })
-
-    // Digita o PIN correto para desbloquear
-    const pinInput = screen.getByPlaceholderText('••••')
-    fireEvent.change(pinInput, { target: { value: '1234' } })
-    fireEvent.click(screen.getByRole('button', { name: /Desbloquear Área Completa/i }))
-
-    // Com o desbloqueio, o modal fecha
-    await waitFor(() => {
-      expect(screen.queryByText('Área Restrita do Aluno')).not.toBeInTheDocument()
-    })
+    await waitFor(() => expect(window.location.hash).toBe('#overview'))
   })
 })

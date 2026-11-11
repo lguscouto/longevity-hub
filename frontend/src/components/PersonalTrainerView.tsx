@@ -18,7 +18,6 @@ import {
   PersonalTrainerComposition,
   PersonalTrainerNotes,
   PersonalTrainerTopBar,
-  PersonalTrainerUnlockModal,
   PersonalTrainerLabs,
   PersonalTrainerLogin,
   PersonalTrainerSession,
@@ -30,7 +29,7 @@ import {
   PhotoLightbox,
   usePhysicalAssessments,
 } from './physicalAssessments';
-import { requestJson } from '../lib/api';
+import { ApiError, requestJson } from '../lib/api';
 
 export interface PersonalTrainerViewProps {
   initialTab?: PersonalTrainerTab;
@@ -47,9 +46,12 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
   isIsolated = true,
   initialSession,
 }) => {
-  const [session, setSession] = useState<PersonalTrainerSession | null>(() =>
+  const [savedSession] = useState<PersonalTrainerSession | null>(() =>
     initialSession !== undefined ? initialSession : getPersonalTrainerSession()
   );
+  const [session, setSession] = useState<PersonalTrainerSession | null>(null);
+  const [checkingSession, setCheckingSession] = useState(Boolean(savedSession));
+  const [sessionCheckError, setSessionCheckError] = useState(false);
   const [activeTab, setActiveTab] = useState<PersonalTrainerTab>(() => {
     try {
       const hash = window.location.hash.toLowerCase();
@@ -64,7 +66,50 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
   });
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [showInternalUnlockModal, setShowInternalUnlockModal] = useState(false);
+
+  useEffect(() => {
+    if (!savedSession) return;
+    let active = true;
+    if (!savedSession.token) {
+      clearPersonalTrainerSession();
+      setCheckingSession(false);
+      return;
+    }
+    requestJson<PersonalTrainerSession>('/api/personal/session', {
+      headers: { 'X-Personal-Token': savedSession.token },
+    }).then(validated => {
+      if (!validated.authenticated || !validated.token || !validated.username || validated.requires_password_change) throw new ApiError(401, 'Sessão inválida');
+      if (active) setSession(validated);
+    }).catch(error => {
+      if (!active) return;
+      if (error instanceof ApiError && error.status === 401) clearPersonalTrainerSession();
+      else setSessionCheckError(true);
+    }).finally(() => {
+      if (active) setCheckingSession(false);
+    });
+    return () => { active = false; };
+  }, [savedSession]);
+
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    const verify = () => {
+      requestJson<PersonalTrainerSession>('/api/personal/session', {
+        headers: { 'X-Personal-Token': session.token },
+      }).then(validated => {
+        if (!validated.authenticated || validated.requires_password_change) throw new Error('Sessão inválida');
+      }).catch(() => {
+        if (active) {
+          clearPersonalTrainerSession();
+          setSession(null);
+        }
+      });
+    };
+    const timer = window.setInterval(verify, 60_000);
+    const visibility = () => { if (document.visibilityState === 'visible') verify(); };
+    document.addEventListener('visibilitychange', visibility);
+    return () => { active = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visibility); };
+  }, [session]);
 
   // Escuta tecla ESC para sair do modo apresentação
   useEffect(() => {
@@ -91,7 +136,7 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
     comparisonManifest,
     handleRunComparison,
     chartRefreshKey,
-  } = usePhysicalAssessments();
+  } = usePhysicalAssessments(Boolean(session));
 
   // Lightbox compartilhado
   const [activeLightboxPhoto, setActiveLightboxPhoto] = useState<Photo | null>(null);
@@ -99,9 +144,12 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
 
   // Carrega perfil isolado do atleta (sem exames clínicos ou dados médicos)
   useEffect(() => {
+    if (!session) {
+      setProfile(null);
+      return;
+    }
     let isMounted = true;
     requestJson<any>('/api/physical-assessments/athlete-profile')
-      .catch(() => requestJson<any>('/api/profile'))
       .then(data => {
         if (isMounted && data) {
           setProfile(data);
@@ -113,7 +161,7 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [session]);
 
   const handleOpenPhotoInLightbox = (photo: Photo, photoList: Photo[]) => {
     setActiveLightboxPhoto(photo);
@@ -129,9 +177,8 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
   const triggerUnlock = () => {
     if (onRequestUnlock) {
       onRequestUnlock();
-    } else {
-      setShowInternalUnlockModal(true);
-    }
+    } else if (onBackToApp) onBackToApp();
+    else window.location.hash = 'overview';
   };
 
   const handleLogout = () => {
@@ -146,9 +193,13 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
   };
 
   // Se o personal não estiver autenticado, exibe a tela de login exclusiva com usuário e senha
+  if (checkingSession) return <LoadingIndicator />;
   if (!session) {
     return (
       <div className="space-y-6">
+        {sessionCheckError && (
+          <p role="alert">Não foi possível verificar a sessão salva. Verifique a conexão e tente novamente.</p>
+        )}
         {isIsolated && (
           <PersonalTrainerTopBar
             onRequestUnlock={triggerUnlock}
@@ -159,17 +210,6 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
           onLoginSuccess={newSession => setSession(newSession)}
           onRequestStudentUnlock={triggerUnlock}
         />
-        {showInternalUnlockModal && (
-          <PersonalTrainerUnlockModal
-            isOpen={showInternalUnlockModal}
-            onClose={() => setShowInternalUnlockModal(false)}
-            onUnlockSuccess={() => {
-              setShowInternalUnlockModal(false);
-              if (onBackToApp) onBackToApp();
-              else window.location.hash = 'workouts';
-            }}
-          />
-        )}
       </div>
     );
   }
@@ -383,18 +423,6 @@ export const PersonalTrainerView: React.FC<PersonalTrainerViewProps> = ({
         onSelectPhoto={setActiveLightboxPhoto}
       />
 
-      {/* Internal Unlock Modal (caso não seja interceptado pelo container pai) */}
-      {showInternalUnlockModal && (
-        <PersonalTrainerUnlockModal
-          isOpen={showInternalUnlockModal}
-          onClose={() => setShowInternalUnlockModal(false)}
-          onUnlockSuccess={() => {
-            setShowInternalUnlockModal(false);
-            if (onBackToApp) onBackToApp();
-            else window.location.hash = 'workouts';
-          }}
-        />
-      )}
     </div>
   );
 };

@@ -74,6 +74,7 @@ export interface PersonalTrainerSession {
   role: string;
   token: string;
   expires_at?: string;
+  requires_password_change?: boolean;
 }
 
 export const PERSONAL_SESSION_STORAGE_KEY = 'longevidade_personal_trainer_session_v1';

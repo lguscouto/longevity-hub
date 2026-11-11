@@ -19,6 +19,7 @@ import logging
 import os
 import random
 import time as pytime
+import keyring
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -80,10 +81,15 @@ class GoogleHealthCredentials:
     @classmethod
     def from_file(cls, path: str | Path) -> Optional[GoogleHealthCredentials]:
         token_path = Path(path)
-        if not token_path.is_file():
-            return None
         try:
-            data = json.loads(token_path.read_text(encoding="utf-8"))
+            account = hashlib.sha256(str(token_path.resolve()).encode()).hexdigest()
+            stored = keyring.get_password("longevidade-google-health", account)
+            if stored is not None:
+                data = json.loads(stored)
+            elif token_path.is_file():
+                data = json.loads(token_path.read_text(encoding="utf-8"))
+            else:
+                return None
             expiry_dt = None
             if "expiry" in data and data["expiry"]:
                 try:
@@ -109,7 +115,6 @@ class GoogleHealthCredentials:
 
     def save_to_file(self, path: str | Path) -> None:
         token_path = Path(path)
-        token_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
@@ -125,7 +130,8 @@ class GoogleHealthCredentials:
             "healthUserId": self.health_user_id,
             "project_number": self.project_number,
         }
-        token_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        account = hashlib.sha256(str(token_path.resolve()).encode()).hexdigest()
+        keyring.set_password("longevidade-google-health", account, json.dumps(payload))
 
 
 

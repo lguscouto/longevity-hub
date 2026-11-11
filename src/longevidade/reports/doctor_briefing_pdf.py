@@ -16,6 +16,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from longevidade.db.repository import LongevityRepository
 from longevidade.reports.lab_selection import get_clinical_lab_snapshot
+from longevidade.metrics.unit_conversion import has_canonical_clinical_unit
 
 
 def generate_doctor_briefing_pdf(
@@ -139,7 +140,9 @@ def generate_doctor_briefing_pdf(
         ]
         for key, lab in latest_labs.items():
             ref_str = f"{lab.get('ref_min', '')} - {lab.get('ref_max', '')}"
-            target_str = str(lab.get("optimal_target", "—"))
+            target_str = (str(lab.get("optimal_target", "—"))
+                          if has_canonical_clinical_unit(key, lab.get("unit"))
+                          else "Unidade não normalizada")
             labs_table_data.append([
                 Paragraph(html.escape(str(lab.get("metric_name", ""))), body_style),
                 Paragraph(html.escape(f"{lab.get('value', '')} {lab.get('unit', '')}".strip()), body_style),
