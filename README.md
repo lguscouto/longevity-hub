@@ -20,6 +20,8 @@ Para a documentação completa de visão geral do projeto, consulte **[docs/over
 
 Para instalação com locks, backups, restauração isolada, retenção e limites das fontes e mídias, consulte [Operação, backup e fontes](docs/operacao-backup-e-fontes.md).
 
+Para entrada manual, leitura local de PDF ou imagem, instalação do OCR, resumo selecionado e exportação de medições, consulte [Laudos, histórico e portabilidade](docs/importacao-laudos-e-exportacao.md).
+
 ---
 
 ## 🌟 Funcionalidades Principais

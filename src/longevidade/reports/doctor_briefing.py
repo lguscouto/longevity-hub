@@ -13,7 +13,7 @@ import numpy as np
 from longevidade.db.repository import LongevityRepository
 from longevidade.reports.briefing_context import briefing_context
 from longevidade.reports.lab_selection import get_clinical_lab_snapshot
-from longevidade.metrics.unit_conversion import has_canonical_clinical_unit
+from longevidade.reports.lab_reference import lab_reference_status
 
 
 def briefing_identity(profile: dict, patient_name: str | None, patient_age: float | None) -> tuple[str, str]:
@@ -31,7 +31,8 @@ def briefing_goals(profile: dict) -> list[str]:
 
 
 def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None = None, patient_age: float | None = None,
-                             *, questions: list[str] | None = None) -> str:
+                             *, questions: list[str] | None = None, selected_lab_ids: list[int] | None = None,
+                             selected_event_ids: list[str] | None = None) -> str:
     """Gera o relatório Doctor Briefing em Markdown a partir do perfil do repositório."""
     user_prof = repo.get_user_profile() or {}
     name, age_str = briefing_identity(user_prof, patient_name, patient_age)
@@ -40,7 +41,7 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
     daily_90 = repo.get_daily_metrics_between((today - timedelta(days=89)).isoformat(), today.isoformat())
     first_30 = (today - timedelta(days=29)).isoformat()
     daily_30 = [row for row in daily_90 if row["date_ref"] >= first_30]
-    clinical_snapshot = get_clinical_lab_snapshot(repo)
+    clinical_snapshot = get_clinical_lab_snapshot(repo, selected_lab_ids)
     latest_labs = clinical_snapshot.latest_labs
     latest_phenoage = clinical_snapshot.latest_phenoage
 
@@ -109,9 +110,9 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
         "",
         "---",
         "",
-        "## 2. Marcadores Sanguíneos & Comparativo com Alvos de Longevidade",
+        "## 2. Marcadores Sanguíneos e Referências Registradas",
         "",
-        "| Marcador | Valor Recente | Faixa de Ref. Laboratorial | Alvo Ótimo Longevidade | Status |",
+        "| Marcador | Valor Recente | Referência registrada (origem a confirmar) | Meta histórica não validada | Status |",
         "| :--- | :---: | :---: | :---: | :---: |",
     ])
 
@@ -122,46 +123,15 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
             val = lab["value"]
             unit = lab.get("unit", "")
             val_str = f"{val} {unit}".strip()
-            ref_str = f"{lab.get('ref_min', '-')}-{lab.get('ref_max', '-')}"
+            ref_str = f"{lab.get('ref_min') if lab.get('ref_min') is not None else '—'}-{lab.get('ref_max') if lab.get('ref_max') is not None else '—'}"
             opt = lab.get("optimal_target")
             opt_str = f"{opt} {unit}".strip() if opt is not None else "-"
 
-            status = "🟢 Ótimo"
-            ref_min = lab.get("ref_min")
-            ref_max = lab.get("ref_max")
-
-            higher_is_better_keys = {
-                "albumin", "albumin_gdl", "vitamin_d", "vitamin_d_ngml",
-                "hdl", "hdl_cholesterol", "lymphocyte_pct", "apoa1",
-                "testosterone_total", "free_testosterone", "igf1",
-                "b12", "vitamin_b12", "folate", "magnesium", "zinc",
-            }
-            lower_is_better_keys = {
-                "apob", "lpa", "hscrp", "hscrp_mgl", "hba1c",
-                "fasting_glucose", "glucose_mgdl", "fasting_insulin", "insulin_uiu",
-                "homa_ir", "creatinine", "creatinine_mgdl", "homocysteine",
-                "ldl", "ldl_cholesterol", "triglycerides", "tg", "uric_acid",
-                "tgo_ast", "tgp_alt", "ggt",
-            }
-
-            if not has_canonical_clinical_unit(key, unit):
-                status = "⚪ Unidade não normalizada; sem classificação"
+            status = {"in_clinical_range": "Na referência", "out_of_range": "Fora da referência",
+                      "no_reference": "Sem classificação", "noncanonical_unit": "Unidade não normalizada; sem classificação",
+                      "not_eligible": "Origem não verificada"}[lab_reference_status(lab)]
+            if lab_reference_status(lab) == "noncanonical_unit":
                 opt_str = "—"
-            elif ref_max is not None and val > ref_max:
-                status = "🔴 Fora da Ref. (Acima)"
-            elif ref_min is not None and val < ref_min:
-                status = "🔴 Fora da Ref. (Abaixo)"
-            elif opt is not None:
-                if key in lower_is_better_keys and val > opt:
-                    status = "🟡 Acima do Alvo Ótimo"
-                elif key in higher_is_better_keys and val < opt:
-                    status = "🟡 Abaixo do Alvo Ótimo"
-                else:
-                    status = "🟢 Ótimo"
-            elif ref_min is not None or ref_max is not None:
-                status = "🟢 Dentro da Ref."
-            else:
-                status = "⚪ Sem alvo/referência"
 
             lines.append(f"| {lab['metric_name']} | **{val_str}** | {ref_str} | {opt_str} | {status} |")
 
@@ -175,7 +145,7 @@ def generate_doctor_briefing(repo: LongevityRepository, patient_name: str | None
     if goals:
         lines.extend(["", "---", "", "## 3. Objetivos registrados no perfil", ""])
         lines.extend(f"- {goal}" for goal in goals)
-    for title, items in briefing_context(repo, daily_90, clinical_snapshot, today, questions):
+    for title, items in briefing_context(repo, daily_90, clinical_snapshot, today, questions, selected_event_ids):
         lines.extend(["", f"## {title}", ""])
         lines.extend(f"- {item}" for item in items)
     lines.extend(["", "---", "*Documento gerado automaticamente pelo Longevidade Hub.*"])

@@ -6,11 +6,14 @@ import {
   Settings,
   Moon,
   Sun,
+  LogOut,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { SyncStatusBadge, SyncState } from './ui/SyncStatusBadge';
+import { Button } from './ui';
 
 export interface HeaderUtilityActionsProps {
+  onOwnerLogout?: () => void;
   onOpenManualEntry: () => void;
   onOpenDoctorBriefing: () => void;
   onSync?: () => void;
@@ -33,6 +36,7 @@ export interface HeaderUtilityActionsProps {
  * 3. Preferências e Configurações: Configuração de IA e Alternador de Tema
  */
 export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
+  onOwnerLogout,
   onOpenManualEntry,
   onOpenDoctorBriefing,
   onSync,
@@ -104,7 +108,7 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
       <div
         role="group"
         aria-label="Controle de sincronização e configurações"
-        className="flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80"
+        className="flex items-center gap-0 sm:gap-1.5 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-radius-lg border border-slate-200/80 dark:border-slate-800/80"
       >
         <SyncStatusBadge
           state={effectiveSyncState}
@@ -112,7 +116,8 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
           lastSyncTime={lastSyncTime}
           dataCoveredUntil={dataCoveredUntil}
           onClick={onOpenSyncStatus}
-          className="hidden md:inline-flex"
+          wrapLabel
+          className="max-w-[130px] sm:max-w-none"
         />
 
         <button
@@ -171,6 +176,11 @@ export const HeaderUtilityActions: React.FC<HeaderUtilityActionsProps> = ({
             <Moon className="h-4 w-4 text-slate-600 dark:text-slate-300" />
           )}
         </button>
+        {onOwnerLogout && (
+          <Button type="button" variant="ghost" onClick={onOwnerLogout} aria-label="Sair da conta do proprietário" title="Sair da conta do proprietário" className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-radius-md text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none">
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        )}
       </div>
     </div>
   );

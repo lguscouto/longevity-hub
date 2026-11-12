@@ -20,7 +20,6 @@ import {
   LabResult,
   getMarkerMeta,
   getLabMarkerStatus,
-  formatOptimalTargetText,
   normalizeLabMetricKey,
 } from '../labs/labMarkers';
 
@@ -234,20 +233,17 @@ export const PersonalTrainerLabs: React.FC = () => {
 
   // Contadores para o resumo KPI
   const stats = useMemo(() => {
-    let optimalCount = 0;
     let normalCount = 0;
     let alertCount = 0;
 
     labsOnActiveDate.forEach(item => {
       const status = getLabMarkerStatus(item);
-      if (status === 'optimal') optimalCount++;
-      else if (status === 'in_clinical_range') normalCount++;
+      if (status === 'in_clinical_range') normalCount++;
       else if (status === 'out_of_range') alertCount++;
     });
 
     return {
       total: labsOnActiveDate.length,
-      optimal: optimalCount,
       normal: normalCount,
       alert: alertCount,
     };
@@ -370,10 +366,10 @@ export const PersonalTrainerLabs: React.FC = () => {
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
               <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-1">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Ótimos & Normais</span>
+                <span>Na referência registrada</span>
               </div>
               <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">
-                {stats.optimal + stats.normal}
+                {stats.normal}
               </div>
             </div>
 
@@ -483,7 +479,7 @@ export const PersonalTrainerLabs: React.FC = () => {
                       <th className="py-3 px-4">Categoria</th>
                       <th className="py-3 px-4">Resultado</th>
                       <th className="py-3 px-4">Faixa de Referência</th>
-                      <th className="py-3 px-4">Alvo Ótimo</th>
+                      <th className="py-3 px-4">Meta histórica não validada</th>
                       <th className="py-3 px-4 text-center">Status</th>
                     </tr>
                   </thead>
@@ -494,8 +490,8 @@ export const PersonalTrainerLabs: React.FC = () => {
                       const category = categorizeMarkerForTrainer(lab.metric_key, lab.metric_name);
                       const displayName = lab.metric_name || meta?.name || lab.metric_key;
 
-                      const refMin = lab.ref_min ?? meta?.ref_min;
-                      const refMax = lab.ref_max ?? meta?.ref_max;
+                      const refMin = lab.ref_min;
+                      const refMax = lab.ref_max;
                       const refText =
                         refMin != null && refMax != null
                           ? `${refMin} - ${refMax} ${lab.unit}`
@@ -505,7 +501,7 @@ export const PersonalTrainerLabs: React.FC = () => {
                           ? `A partir de ${refMin} ${lab.unit}`
                           : '—';
 
-                      const optimalText = formatOptimalTargetText(meta, lab.optimal_target);
+                      const optimalText = lab.optimal_target != null && status !== 'noncanonical_unit' ? `${lab.optimal_target} ${lab.unit}` : '—';
 
                       return (
                         <tr
@@ -539,11 +535,7 @@ export const PersonalTrainerLabs: React.FC = () => {
                           </td>
 
                           <td className="py-3 px-4 text-center">
-                            {status === 'optimal' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                                <CheckCircle2 className="h-3 w-3" /> Ótimo
-                              </span>
-                            ) : status === 'in_clinical_range' ? (
+                            {status === 'in_clinical_range' ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 Normal
                               </span>
@@ -553,7 +545,7 @@ export const PersonalTrainerLabs: React.FC = () => {
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500">
-                                Observado
+                                {status === 'noncanonical_unit' ? 'Unidade não normalizada' : status === 'no_reference' ? 'Sem classificação' : 'Origem não verificada'}
                               </span>
                             )}
                           </td>

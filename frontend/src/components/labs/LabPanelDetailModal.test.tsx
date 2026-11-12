@@ -23,7 +23,7 @@ describe('LabPanelDetailModal (UX_UI_54)', () => {
     expect(screen.getByText('Marcador adicional')).toBeVisible();
   });
 
-  it('segregates clinical normal vs optimal without turning normal into attention (U22-P1-22 & U22-P1-23)', () => {
+  it('uses recorded references rather than historical targets to classify results', () => {
     const mockResults: LabResult[] = [
       // Ótimo: ApoB <= 60
       {
@@ -83,14 +83,15 @@ describe('LabPanelDetailModal (UX_UI_54)', () => {
       />
     );
 
-    // Deve exibir o badge Ótimo
-    expect(screen.getByText('Ótimo')).toBeInTheDocument();
+    expect(screen.queryByText('Ótimo')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Atenção clínica')).toHaveLength(2);
+    expect(screen.getAllByText(/Meta histórica não validada/)).toHaveLength(4);
 
     // Deve exibir "Na referência" para a Glicose de 92 (NÃO deve ser "Atenção")
     expect(screen.getByText('Na referência')).toBeInTheDocument();
 
     // Deve exibir "Atenção clínica" para o PCR de 4.5
-    expect(screen.getByText('Atenção clínica')).toBeInTheDocument();
+    expect(screen.getAllByText('Atenção clínica')).toHaveLength(2);
 
     // Deve exibir "Não clínico" para o dado sintético
     expect(screen.getByText('Não clínico')).toBeInTheDocument();

@@ -10,19 +10,23 @@ from typing import Any, Dict, Optional
 
 
 def calculate_circadian_windows(
-    wake_time_str: Optional[str] = "07:00",
-    target_bedtime_str: Optional[str] = "23:00",
+    wake_time_str: Optional[str] = None,
+    target_bedtime_str: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Calcula horários ideais de exposição solar e horário limite de cafeína (Cutoff)."""
+    wake_source = "informado" if wake_time_str else "padrão"
+    bedtime_source = "informado" if target_bedtime_str else "padrão"
     try:
         wake_t = datetime.strptime(wake_time_str or "07:00", "%H:%M").time()
     except ValueError:
         wake_t = time(7, 0)
+        wake_source = "padrão"
 
     try:
         bed_t = datetime.strptime(target_bedtime_str or "23:00", "%H:%M").time()
     except ValueError:
         bed_t = time(23, 0)
+        bedtime_source = "padrão"
 
     dummy_date = datetime(2026, 1, 1)
     wake_dt = datetime.combine(dummy_date, wake_t)
@@ -43,8 +47,10 @@ def calculate_circadian_windows(
     return {
         "wake_time": wake_t.strftime("%H:%M"),
         "target_bedtime": bed_t.strftime("%H:%M"),
+        "wake_time_source": wake_source,
+        "target_bedtime_source": bedtime_source,
         "morning_sun_window": f"{morning_sun_start} às {morning_sun_end}",
         "caffeine_cutoff_time": caffeine_cutoff,
         "wind_down_start_time": wind_down_start,
-        "recommendation": f"Consuma seu último café até as {caffeine_cutoff} para não prejudicar a VFC noturna.",
+        "recommendation": "Horários estimados a partir das referências acima; a resposta à cafeína varia entre pessoas.",
     }

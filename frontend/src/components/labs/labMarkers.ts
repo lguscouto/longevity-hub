@@ -16,6 +16,7 @@ export interface LabResult {
   optimal_target?: number;
   category?: string;
   record_origin?: string;
+  reference_status?: 'in_clinical_range' | 'out_of_range' | 'no_reference' | 'noncanonical_unit' | 'not_eligible';
 }
 
 export type OptimalRule = 'max' | 'min' | 'range' | 'unavailable';
@@ -41,7 +42,7 @@ export interface LabBatchRecord {
   unit: string;
   ref_min?: number;
   ref_max?: number;
-  optimal_target: number;
+  optimal_target?: number;
   category: string;
 }
 
@@ -773,7 +774,7 @@ export const isMarkerWithinClinicalRange = (lab: LabResult): boolean => {
   return true;
 };
 
-export type LabMarkerStatus = 'optimal' | 'in_clinical_range' | 'out_of_range' | 'not_eligible';
+export type LabMarkerStatus = 'optimal' | 'in_clinical_range' | 'out_of_range' | 'not_eligible' | 'no_reference' | 'noncanonical_unit';
 
 /**
  * Determina o status clínico e funcional discriminado do exame (U22-P1-22):
@@ -786,13 +787,10 @@ export const getLabMarkerStatus = (lab: LabResult): LabMarkerStatus => {
   if (!isClinicallyEligibleLab(lab)) {
     return 'not_eligible';
   }
-  if (isMarkerOptimal(lab)) {
-    return 'optimal';
-  }
-  if (isMarkerWithinClinicalRange(lab)) {
-    return 'in_clinical_range';
-  }
-  return 'out_of_range';
+  if (lab.reference_status) return lab.reference_status;
+  if (!Number.isFinite(lab.value) || (lab.ref_min == null && lab.ref_max == null)) return 'no_reference';
+  if ((lab.ref_min != null && lab.value < lab.ref_min) || (lab.ref_max != null && lab.value > lab.ref_max)) return 'out_of_range';
+  return 'in_clinical_range';
 };
 
 /**

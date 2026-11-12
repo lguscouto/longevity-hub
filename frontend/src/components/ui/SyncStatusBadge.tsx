@@ -36,6 +36,7 @@ export interface SyncStatusBadgeProps {
   onClick?: () => void;
   disabled?: boolean;
   compact?: boolean;
+  wrapLabel?: boolean;
   className?: string;
 }
 
@@ -151,6 +152,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
   onClick,
   disabled = false,
   compact = false,
+  wrapLabel = false,
   className = '',
 }) => {
   const config = STATE_CONFIGS[state] || STATE_CONFIGS.never;
@@ -175,9 +177,9 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
         <Icon className={`h-3.5 w-3.5 ${config.iconClass}`} aria-hidden="true" />
       </span>
 
-      <span className="flex items-center gap-1.5 min-w-0 truncate">
+      <span className={`flex items-center gap-1.5 min-w-0 ${wrapLabel ? 'whitespace-normal leading-tight sm:truncate' : 'truncate'}`}>
         {/* Mobile ou modo compacto */}
-        <span className={`${compact ? 'inline' : 'inline sm:hidden'} ${config.textClass}`}>
+        <span className={`${compact ? 'inline' : 'inline sm:hidden'} ${wrapLabel ? 'min-w-0 break-words' : ''} ${config.textClass}`}>
           {state === 'syncing' ? 'Sincronizando' : config.badgeLabel}
         </span>
 

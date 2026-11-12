@@ -46,7 +46,7 @@ describe('labMarkers domain logic (UX_UI_54)', () => {
       expect(status).toBe('not_eligible');
     });
 
-    it('returns "optimal" when value meets the optimal target', () => {
+    it('does not classify a historical target without a recorded reference', () => {
       const status = getLabMarkerStatus({
         metric_key: 'apob',
         value: 58,
@@ -56,7 +56,7 @@ describe('labMarkers domain logic (UX_UI_54)', () => {
         metric_name: 'ApoB',
         record_origin: 'patient_lab',
       });
-      expect(status).toBe('optimal');
+      expect(status).toBe('no_reference');
     });
 
     it('returns "in_clinical_range" (NOT "out_of_range") when within standard clinical ref but outside optimal target', () => {

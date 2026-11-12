@@ -1,10 +1,9 @@
 import React from 'react';
-import { AlertCircle, CheckCircle2, Check, Download, FileText, Info } from 'lucide-react';
+import { AlertCircle, Check, Download, FileText, Info } from 'lucide-react';
 import { Modal, Button, TermHelp, GLOSSARY_TERMS } from '../ui';
 import {
   LabResult,
   LAB_MARKERS_GROUPS,
-  formatOptimalTargetText,
   getLabMarkerStatus,
   getMarkerMeta,
   getMetricDisplayName,
@@ -67,11 +66,8 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {matchingResults.map((item, i) => {
                   const status = getLabMarkerStatus(item);
-                  const markerMeta = getMarkerMeta(item.metric_key);
-                  const hasLabReference = item.ref_min != null || item.ref_max != null;
-                  const refMin = hasLabReference ? item.ref_min : markerMeta?.ref_min;
-                  const refMax = hasLabReference ? item.ref_max : markerMeta?.ref_max;
-                  const targetFormatted = formatOptimalTargetText(markerMeta, item.optimal_target);
+                  const refMin = item.ref_min;
+                  const refMax = item.ref_max;
 
                   return (
                     <div
@@ -89,26 +85,19 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
                             )}
                           </div>
 
-                          {status === 'optimal' ? (
-                            <span
-                              className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5 shrink-0"
-                              title="Valor dentro da faixa de acompanhamento definida para este indicador"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Ótimo
-                            </span>
-                          ) : status === 'in_clinical_range' ? (
+                          {status === 'in_clinical_range' ? (
                             <span
                               className="text-xs text-cyan-700 dark:text-cyan-400 font-semibold flex items-center gap-0.5 shrink-0"
-                              title="Dentro da faixa de referência do laboratório, mas fora da faixa de acompanhamento definida no app"
+                              title="Dentro da referência registrada; confirme sua origem no laudo"
                             >
                               <Check className="h-3.5 w-3.5" aria-hidden="true" /> Na referência
                             </span>
-                          ) : status === 'not_eligible' ? (
+                          ) : status === 'not_eligible' || status === 'no_reference' || status === 'noncanonical_unit' ? (
                             <span
                               className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-0.5 shrink-0"
                               title="Sem faixa de acompanhamento definida para este indicador"
                             >
-                              <Info className="h-3 w-3" aria-hidden="true" /> Não clínico
+                              <Info className="h-3 w-3" aria-hidden="true" /> {status === 'noncanonical_unit' ? 'Unidade não normalizada' : status === 'no_reference' ? 'Sem classificação' : 'Não clínico'}
                             </span>
                           ) : (
                             <span
@@ -132,22 +121,20 @@ export const LabPanelDetailModal: React.FC<LabPanelDetailModalProps> = ({ date, 
                             Origem: {recordOriginLabel(item.record_origin)}
                           </span>
                           {(refMin != null || refMax != null) && (
-                            <span className="shrink-0" title={hasLabReference ? 'Referência informada no laudo' : 'Referência geral do catálogo'}>
+                            <span className="shrink-0" title="Referência registrada; origem histórica não confirmada">
                               Ref: {refMin ?? '—'} – {refMax ?? '—'}
                             </span>
                           )}
                         </div>
 
-                        <div className="flex justify-between items-center gap-2">
+                        {item.optimal_target != null && status !== 'noncanonical_unit' && <div className="flex justify-between items-center gap-2">
                           <span
                             className="font-semibold text-emerald-600 dark:text-emerald-400 truncate"
-                            title={`Meta funcional preconizada para longevidade preventiva: ${targetFormatted}${
-                              markerMeta?.provenance ? ` • Fonte: ${markerMeta.provenance}` : ''
-                            }`}
+                            title="Valor histórico registrado; não é uma meta validada individualmente"
                           >
-                            Meta Ótima: {targetFormatted}
+                            Meta histórica não validada: {item.optimal_target} {item.unit}
                           </span>
-                        </div>
+                        </div>}
                       </div>
                     </div>
                   );

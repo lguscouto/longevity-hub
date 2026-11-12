@@ -23,6 +23,10 @@ function extractMessage(payload: unknown): string | undefined {
       const trimmed = candidate.trim()
       return trimmed || undefined
     }
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const message = (candidate as Record<string, unknown>).message
+      if (typeof message === 'string' && message.trim()) return message.trim()
+    }
     if (Array.isArray(candidate) && candidate.length > 0) {
       const first = candidate[0]
       if (first && typeof first === 'object' && typeof (first as Record<string, unknown>).msg === 'string') {

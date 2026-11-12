@@ -13,12 +13,10 @@ import {
   Sparkles,
   User,
   UserCheck,
-  LogOut,
 } from 'lucide-react';
 import { HeaderUtilityActions } from './HeaderUtilityActions';
 import { useScrollActiveIntoView } from '../hooks/useScrollActiveIntoView';
 import { SyncState } from './ui/SyncStatusBadge';
-import { Button } from './ui';
 
 export type PrimaryTab = 'today' | 'health' | 'workouts' | 'interventions' | 'ai' | 'profile';
 
@@ -183,15 +181,11 @@ export const Header: React.FC<HeaderProps> = ({
               </p>
             </div>
           </div>
-          {onOwnerLogout && (
-            <Button type="button" variant="ghost" onClick={onOwnerLogout} aria-label="Sair da conta do proprietário" title="Sair da conta do proprietário" className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-radius-md text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none">
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          )}
         </div>
 
         {/* Ações Utilitárias Modulares: Clínicas, Infraestrutura e Preferências */}
         <HeaderUtilityActions
+          onOwnerLogout={onOwnerLogout}
           onOpenManualEntry={onOpenManualEntry}
           onOpenDoctorBriefing={onOpenDoctorBriefing}
           onSync={onSync || onSyncZepp}

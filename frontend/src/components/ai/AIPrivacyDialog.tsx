@@ -5,6 +5,7 @@ export interface AIPrivacyDialogProps {
   pendingConfirm: {
     actionLabel: string;
     resolve: (ok: boolean) => void;
+    preview: { provider: string; model: string; privacy_mode: string; context: string; system_prompt: string; review_hash: string };
   } | null;
   onClose: () => void;
   onConfirm: () => void;
@@ -42,16 +43,19 @@ export const AIPrivacyDialog: React.FC<AIPrivacyDialogProps> = ({
             )}
             <div className="p-3 rounded-radius-sm bg-slate-100 dark:bg-slate-800 space-y-1 font-mono text-xs">
               <div>
-                <strong>Serviço:</strong> {activeProvider.toUpperCase()}
+                <strong>Serviço:</strong> {(pendingConfirm.preview.provider || activeProvider).toUpperCase()}
               </div>
               <div>
-                <strong>Modelo:</strong> {selectedModel}
+                <strong>Modelo:</strong> {pendingConfirm.preview.model || selectedModel}
               </div>
               <div>
-                <strong>Privacidade:</strong> {privacyModeLabel}
+                <strong>Privacidade:</strong> {pendingConfirm.preview.privacy_mode === 'full' ? 'Contexto ampliado' : privacyModeLabel}
               </div>
             </div>
             <p className="text-slate-500 dark:text-slate-400">{privacyModeDescription}</p>
+            <p>Contexto que será enviado; se os dados mudarem, uma nova revisão será solicitada.</p>
+            <pre className="whitespace-pre-wrap max-h-48 overflow-auto p-2 rounded-radius-sm bg-slate-100 dark:bg-slate-900">{pendingConfirm.preview.context}</pre>
+            <details><summary>Instruções de sistema</summary><pre className="whitespace-pre-wrap max-h-32 overflow-auto">{pendingConfirm.preview.system_prompt}</pre></details>
           </div>
         ) : undefined
       }

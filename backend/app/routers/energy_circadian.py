@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/energy-circadian", tags=["Energy & Circadian Ass
 
 
 @router.get("")
-def get_energy_circadian(date_ref: str, wake_time: str = "07:00", target_bedtime: str = "23:00"):
+def get_energy_circadian(date_ref: str, wake_time: str | None = None, target_bedtime: str | None = None):
     db_path = get_db_path()
     try:
         repo = LongevityRepository(db_path)

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dna, Trash2 } from 'lucide-react';
 import { Modal, Button, FormField, Input } from '../ui';
-import { LAB_MARKERS_GROUPS, LabBatchRecord, formatOptimalTargetText } from './labMarkers';
+import { LAB_MARKERS_GROUPS, LabBatchRecord } from './labMarkers';
 import { formatLocalDateKey } from '../../lib/formatters';
 
 interface LabBatchEntryModalProps {
@@ -64,9 +64,6 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
               metric_name: item.name,
               value: num,
               unit: item.unit,
-              ref_min: item.ref_min,
-              ref_max: item.ref_max,
-              optimal_target: item.optimal,
               category: item.category,
             });
           }
@@ -155,7 +152,6 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {group.items.map((item) => {
                   const errorMsg = errors[item.key];
-                  const targetFormatted = formatOptimalTargetText(item);
 
                   return (
                     <div
@@ -189,14 +185,6 @@ export const LabBatchEntryModal: React.FC<LabBatchEntryModalProps> = ({ isOpen, 
                         />
                       </FormField>
 
-                      <span
-                        className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 block truncate"
-                        title={`Meta funcional preventiva: ${targetFormatted}${
-                          item.provenance ? ` • Fonte: ${item.provenance}` : ''
-                        }`}
-                      >
-                        Alvo Ótimo: {targetFormatted}
-                      </span>
                     </div>
                   );
                 })}

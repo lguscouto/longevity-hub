@@ -670,30 +670,33 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(expData),
       })
-      await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
       await fetchDashboardData()
       showToast('Experimento pessoal criado com sucesso.')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível criar o experimento.')
+      throw caught
     }
   }
 
-  const handleAddBatchLabs = async (recordsToSave: any[]) => {
+  const handleAddBatchLabs = async (recordsToSave: any[], allowDuplicates = false) => {
     try {
-      await requestJson('/api/labs/batch', {
+      await requestJson('/api/labs/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chronological_age: profile.chronological_age ?? undefined,
           records: recordsToSave,
+          confirmed: true,
+          allow_duplicates: allowDuplicates,
         }),
       })
-      await requestJson('/api/kdm/calculate', { method: 'POST' }).catch(() => null)
-      await fetchDashboardData()
-      showToast('Exames registrados com sucesso.')
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Não foi possível salvar os exames.')
+      throw caught
     }
+    let refreshFailed = false
+    try { await requestJson('/api/kdm/calculate', { method: 'POST' }) } catch { refreshFailed = true }
+    try { await fetchDashboardData() } catch { refreshFailed = true }
+    showToast(refreshFailed ? 'Exames salvos. Não foi possível atualizar todos os indicadores.' : 'Exames registrados com sucesso.')
   }
 
   const handleUpdateProfile = async (updatedData: any) => {

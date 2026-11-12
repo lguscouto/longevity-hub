@@ -29,6 +29,16 @@ const renderHeader = (props = {}) => {
 };
 
 describe('Header & Navigation Second Pass (UX_UI_55)', () => {
+  it('keeps logout as the last utility action and calls the logout handler', () => {
+    const onOwnerLogout = vi.fn();
+    renderHeader({ onOwnerLogout });
+    const toolbar = screen.getByRole('toolbar', { name: 'Ações de utilidade e controle' });
+    const buttons = toolbar.querySelectorAll('button');
+    const logout = screen.getByRole('button', { name: 'Sair da conta do proprietário' });
+    expect(buttons[buttons.length - 1]).toBe(logout);
+    fireEvent.click(logout);
+    expect(onOwnerLogout).toHaveBeenCalledTimes(1);
+  });
   it('renders branding and primary navigation tabs', () => {
     renderHeader();
     expect(screen.getByText('LONGEVIDADE')).toBeInTheDocument();

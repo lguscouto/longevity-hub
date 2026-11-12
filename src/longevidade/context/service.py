@@ -55,11 +55,11 @@ class TimelineContextService:
     def __init__(self, db_path: str | Path, secrets_store: Optional[AISecretsStore] = None):
         self.db_path = Path(db_path)
         self.secrets_store = secrets_store
-        from longevidade.db.schema import initialize_db
-        initialize_db(self.db_path)
 
     @contextmanager
     def _get_connection(self) -> Iterator[sqlite3.Connection]:
+        if not self.db_path.is_file():
+            raise FileNotFoundError('Banco de dados da linha do tempo indisponível.')
         conn = get_db_connection(self.db_path)
         try:
             yield conn
@@ -114,7 +114,7 @@ class TimelineContextService:
                     payload.category,
                     payload.title,
                     payload.description,
-                    payload.source or "manual",
+                    "manual",
                     "manual_entry",
                     event_id,
                     source_key,
@@ -135,7 +135,7 @@ class TimelineContextService:
             category=payload.category,
             title=payload.title,
             description=payload.description,
-            source=payload.source or "manual",
+            source="manual",
             source_type="manual_entry",
             source_id=event_id,
             source_key=source_key,
@@ -156,7 +156,7 @@ class TimelineContextService:
         with self._get_connection() as conn:
             cur = conn.execute("SELECT * FROM health_events WHERE id = ?;", (event_id,))
             row = cur.fetchone()
-            if not row:
+            if not row or row['source'] != 'manual' or row['source_type'] != 'manual_entry':
                 return None
 
             fields: List[str] = []
@@ -197,7 +197,7 @@ class TimelineContextService:
                 return _row_to_event(row)
 
             fields.append("updated_at = CURRENT_TIMESTAMP")
-            sql = f"UPDATE health_events SET {', '.join(fields)} WHERE id = ?;"
+            sql = f"UPDATE health_events SET {', '.join(fields)} WHERE id = ? AND source = 'manual' AND source_type = 'manual_entry';"
             values.append(event_id)
             conn.execute(sql, values)
             conn.commit()
@@ -210,7 +210,7 @@ class TimelineContextService:
         """Exclui um evento manual."""
         with self._get_connection() as conn:
             cur = conn.execute(
-                "DELETE FROM health_events WHERE id = ? AND source = 'manual';",
+                "DELETE FROM health_events WHERE id = ? AND source = 'manual' AND source_type = 'manual_entry';",
                 (event_id,),
             )
             conn.commit()

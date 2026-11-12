@@ -48,6 +48,7 @@ function mockAISettings(settings: Record<string, unknown> = {}) {
     if (path === '/api/ai/history') return []
     if (path === '/api/ai/reports/latest') return { status: 'empty', result: null }
     if (path === '/api/ai/reports') return []
+    if (path === '/api/ai/context-preview') return { provider: settings.active_provider || 'openai', model: settings.selected_model || 'gpt-4o-mini', privacy_mode: settings.privacy_mode || 'minimal', context: 'Dados sintéticos', system_prompt: 'Instruções', review_hash: 'a'.repeat(64) }
     if (path === '/api/ai/generate-insights' && init?.method === 'POST') {
       return { result: { summary: 'Resumo fake de teste', insights: [] } }
     }
@@ -137,7 +138,7 @@ describe('AICopilotView external AI privacy consent', () => {
       expect(postedTo('/api/ai/chat')).toBe(true)
     })
     const chatCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/chat' && init?.method === 'POST')
-    expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({ prompt: 'Pergunta fake sem dados reais' })
+    expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({ prompt: 'Pergunta fake sem dados reais', review_hash: 'a'.repeat(64) })
   })
 
   it('sends prompt when clicking contextual quick prompt button like Padrões Encontrados', async () => {
@@ -158,6 +159,7 @@ describe('AICopilotView external AI privacy consent', () => {
     const chatCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/chat' && init?.method === 'POST')
     expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual({
       prompt: 'Quais padrões e correlações pessoais foram detectados no meu histórico?',
+      review_hash: 'a'.repeat(64),
     })
   })
 
@@ -181,6 +183,7 @@ describe('AICopilotView external AI privacy consent', () => {
       if (path === '/api/ai/history') return []
       if (path === '/api/ai/reports/latest') return { status: 'empty', result: null }
       if (path === '/api/ai/reports') return []
+      if (path === '/api/ai/context-preview') return { provider: 'openrouter', model: 'deepseek/deepseek-v4-flash-0731', privacy_mode: 'minimal', context: 'Dados sintéticos', system_prompt: 'Instruções', review_hash: 'a'.repeat(64) }
       if (path === '/api/ai/generate-insights' && init?.method === 'POST') {
         return await insightsPromise
       }
@@ -227,7 +230,7 @@ describe('AICopilotView external AI privacy consent', () => {
       expect(postedTo('/api/ai/generate-insights')).toBe(true)
     })
     const postCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/generate-insights' && init?.method === 'POST')
-    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: '7d' })
+    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: '7d', review_hash: 'a'.repeat(64) })
   })
 
   it('posts today 24h insights with time_window="today" when clicking Hoje (24h)', async () => {
@@ -248,7 +251,7 @@ describe('AICopilotView external AI privacy consent', () => {
       expect(postedTo('/api/ai/generate-insights')).toBe(true)
     })
     const postCall = requestJsonMock.mock.calls.find(([path, init]) => path === '/api/ai/generate-insights' && init?.method === 'POST')
-    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: 'today' })
+    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ time_window: 'today', review_hash: 'a'.repeat(64) })
   })
 
   it('loads and renders the saved latest report on mount with metadata badge', async () => {

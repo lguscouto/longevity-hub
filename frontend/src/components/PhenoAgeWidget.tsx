@@ -268,6 +268,7 @@ const ModelScore: React.FC<ModelScoreProps> = ({
         {usedMarkers.length > 0 && (
           <span className="text-xs text-slate-500 block">Insumos: {formatMarkerList(usedMarkers)}</span>
         )}
+        {usedMarkers.length === 0 && <span className="text-xs text-slate-500 block">Insumos não informados neste registro.</span>}
       </>
     ) : (
       <>
@@ -293,6 +294,8 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
   const phenoComplete = (phenoStatus === 'complete' || phenoStatus === undefined) && phenoAge !== null
   const phenoMissing = firstMarkerList(phenoRecord, ['missing', 'missing_biomarkers', 'missing_markers'])
   const phenoCalculatedAt = firstString(phenoRecord, ['calculated_at', 'date', 'created_at'])
+  const phenoUsed = firstMarkerList(phenoRecord, ['biomarkers_used', 'used_biomarkers', 'markers_used'])
+  const phenoRecordedInputs = ['glucose_mgdl', 'creatinine_mgdl', 'albumin_gdl', 'hscrp_mgl', 'lymphocyte_pct', 'mcv_fl', 'rdw_pct', 'alk_phos_ul', 'wbc_1000ul'].filter(key => firstNumber(phenoRecord, [key]) !== null)
 
   const kdmRecord = nestedOrSelf(latestKdmRecord, ['kdm', 'kdm_result', 'result']) ?? nestedOnly(latestRecord, ['kdm', 'kdm_result'])
   const kdmAge = firstNumber(kdmRecord, ['kdm_age', 'biological_age'])
@@ -342,7 +345,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
             complete={phenoComplete}
             calculatedAt={phenoCalculatedAt}
             missingMarkers={phenoMissing}
-            usedMarkers={phenoComplete ? ['glucose_mgdl', 'creatinine_mgdl', 'albumin_gdl', 'hscrp_mgl', 'lymphocyte_pct', 'mcv_fl', 'rdw_pct', 'alk_phos_ul', 'wbc_1000ul'] : []}
+            usedMarkers={phenoUsed.length ? phenoUsed : phenoRecordedInputs}
           />
 
           <ModelScore
@@ -403,7 +406,7 @@ export const PhenoAgeWidget: React.FC<PhenoAgeWidgetProps> = ({ latestRecord, la
         <div className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1">
           <Sparkles className="h-3 w-3 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
           <span>
-            Estimativa algorítmica baseada em modelos matemáticos (Morgan Levine 2018 / KDM) a partir de exames laboratoriais. Valores só aparecem quando o cálculo está completo; estados incompletos indicam quais biomarcadores faltam. Não substitui diagnóstico médico.
+            Estimativas baseadas em modelos matemáticos e dados disponíveis. Não medem anos de vida ganhos nem substituem avaliação médica; a utilidade individual depende de validação clínica.
           </span>
         </div>
       </div>

@@ -8,11 +8,13 @@ sem bloqueios determinísticos estáticos pré-LLM.
 """
 
 import json
+import hashlib
+import hmac
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Response
+from pydantic import BaseModel, Field
 
 from backend.app.config import get_db_path
 from longevidade.ai.context_builder import build_patient_clinical_context
@@ -62,10 +64,45 @@ class TestConnectionInput(BaseModel):
 
 class AIChatInput(BaseModel):
     prompt: str
+    review_hash: Optional[str] = Field(default=None, pattern=r'^[0-9a-f]{64}$')
 
 
 class GenerateInsightsInput(BaseModel):
     time_window: Optional[str] = "30d"
+    review_hash: Optional[str] = Field(default=None, pattern=r'^[0-9a-f]{64}$')
+
+
+class ContextPreviewInput(BaseModel):
+    action: str
+    time_window: str = '30d'
+    prompt: str = ''
+
+
+def _context_review_hash(provider: str, model: str, privacy_mode: str, time_window: str,
+                         context: str, system_prompt: str, action: str, prompt: str = '') -> str:
+    content = json.dumps([provider, model, privacy_mode, time_window, context, system_prompt, action, prompt], ensure_ascii=False)
+    return hashlib.sha256(content.encode('utf-8')).hexdigest()
+
+
+@router.post('/context-preview')
+def preview_ai_context(input_data: ContextPreviewInput, response: Response):
+    if input_data.action not in {'chat', 'analysis'}:
+        raise HTTPException(422, 'Ação inválida.')
+    window = input_data.time_window if input_data.action == 'analysis' and input_data.time_window in ('today', '7d', '30d') else '30d'
+    repo = _repo_for_current_db()
+    try:
+        settings = repo.get_ai_settings()
+        provider = settings.get('active_provider', 'openrouter')
+        model = settings.get('selected_model', 'deepseek/deepseek-v4-flash-0731')
+        privacy_mode = _normalize_privacy_mode(settings.get('privacy_mode'))
+        context = build_patient_clinical_context(get_db_path(), privacy_mode=privacy_mode, time_window=window)
+        system_prompt = settings.get('system_prompt_custom') or DEFAULT_LONGEVITY_SYSTEM_PROMPT
+    except FileNotFoundError as exc:
+        raise HTTPException(503, 'Banco de dados indisponível para prévia.') from exc
+    response.headers['Cache-Control'] = 'no-store'
+    return {'provider': provider, 'model': model, 'privacy_mode': privacy_mode, 'time_window': window,
+            'context': context, 'system_prompt': system_prompt,
+            'review_hash': _context_review_hash(provider, model, privacy_mode, window, context, system_prompt, input_data.action, input_data.prompt)}
 
 
 def _repo_for_current_db() -> LongevityRepository:
@@ -166,6 +203,8 @@ def generate_insights(input_data: Optional[GenerateInsightsInput] = None):
 
     context_text = build_patient_clinical_context(db_path, privacy_mode=privacy_mode, time_window=time_window)
     system_prompt = settings.get("system_prompt_custom") or DEFAULT_LONGEVITY_SYSTEM_PROMPT
+    if input_data and input_data.review_hash and not hmac.compare_digest(input_data.review_hash, _context_review_hash(provider, model, privacy_mode, time_window, context_text, system_prompt, 'analysis')):
+        raise HTTPException(409, 'Os dados ou configurações mudaram. Revise a prévia novamente.')
     structured_prompt = build_structured_insights_prompt(time_window=time_window)
     user_prompt = f"{context_text}\n\n{structured_prompt}"
 
@@ -259,6 +298,8 @@ def chat_copilot(input_data: AIChatInput):
 
     context_text = build_patient_clinical_context(db_path, privacy_mode=privacy_mode)
     system_prompt = settings.get("system_prompt_custom") or DEFAULT_LONGEVITY_SYSTEM_PROMPT
+    if input_data.review_hash and not hmac.compare_digest(input_data.review_hash, _context_review_hash(provider, model, privacy_mode, '30d', context_text, system_prompt, 'chat', input_data.prompt)):
+        raise HTTPException(409, 'Os dados ou configurações mudaram. Revise a prévia novamente.')
 
     user_prompt = (
         f"--- PRONTUÁRIO CLÍNICO E DADOS DO PACIENTE (CONSULTA DE REFERÊNCIA) ---\n"

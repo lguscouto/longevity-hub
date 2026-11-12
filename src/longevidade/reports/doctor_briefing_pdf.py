@@ -17,14 +17,15 @@ from longevidade.db.repository import LongevityRepository
 from longevidade.reports.doctor_briefing import briefing_goals, briefing_identity
 from longevidade.reports.briefing_context import briefing_context
 from longevidade.reports.lab_selection import get_clinical_lab_snapshot
-from longevidade.metrics.unit_conversion import has_canonical_clinical_unit
+from longevidade.reports.lab_reference import lab_reference_status
 
 
 def generate_doctor_briefing_pdf(
     repo: LongevityRepository,
     patient_name: str | None = None,
     patient_age: float | None = None,
-    *, questions: list[str] | None = None,
+    *, questions: list[str] | None = None, selected_lab_ids: list[int] | None = None,
+    selected_event_ids: list[str] | None = None,
 ) -> bytes:
     """Gera o PDF binário do relatório médico Doctor Briefing."""
     user_prof = repo.get_user_profile() or {}
@@ -127,7 +128,7 @@ def generate_doctor_briefing_pdf(
 
     # Exames Laboratoriais
     elements.append(Paragraph("2. Marcadores Laboratoriais Recentes", h2_style))
-    clinical_snapshot = get_clinical_lab_snapshot(repo)
+    clinical_snapshot = get_clinical_lab_snapshot(repo, selected_lab_ids)
     latest_labs = clinical_snapshot.latest_labs
 
     if not latest_labs:
@@ -138,18 +139,21 @@ def generate_doctor_briefing_pdf(
                 Paragraph("<b>Exame / Biomarcador</b>", body_style),
                 Paragraph("<b>Resultado</b>", body_style),
                 Paragraph("<b>Ref. Lab</b>", body_style),
-                Paragraph("<b>Alvo Ótimo</b>", body_style),
+                Paragraph("<b>Meta histórica não validada</b>", body_style),
             ]
         ]
         for key, lab in latest_labs.items():
             ref_str = f"{lab.get('ref_min', '')} - {lab.get('ref_max', '')}"
-            target_str = (str(lab.get("optimal_target", "—"))
-                          if has_canonical_clinical_unit(key, lab.get("unit"))
-                          else "Unidade não normalizada")
+            target_str = str(lab.get("optimal_target") if lab.get("optimal_target") is not None else "—")
+            status = {"in_clinical_range": "Na referência", "out_of_range": "Fora da referência",
+                      "no_reference": "Sem classificação", "noncanonical_unit": "Unidade não normalizada; sem classificação",
+                      "not_eligible": "Origem não verificada"}[lab_reference_status(lab)]
+            if lab_reference_status(lab) == "noncanonical_unit":
+                target_str = "—"
             labs_table_data.append([
                 Paragraph(html.escape(str(lab.get("metric_name", ""))), body_style),
                 Paragraph(html.escape(f"{lab.get('value', '')} {lab.get('unit', '')}".strip()), body_style),
-                Paragraph(html.escape(ref_str), body_style),
+                Paragraph(html.escape(f"{ref_str} ({status})"), body_style),
                 Paragraph(html.escape(target_str), body_style),
             ])
 
@@ -179,7 +183,7 @@ def generate_doctor_briefing_pdf(
         for goal in goals:
             elements.append(Paragraph(html.escape(goal), body_style))
 
-    for title, items in briefing_context(repo, daily_90, clinical_snapshot, today, questions):
+    for title, items in briefing_context(repo, daily_90, clinical_snapshot, today, questions, selected_event_ids):
         elements.append(Paragraph(html.escape(title), h2_style))
         elements.extend(Paragraph(html.escape(item), body_style) for item in items)
 

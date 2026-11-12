@@ -166,3 +166,12 @@ def test_phenoage_uses_explicit_batch_age_when_profile_has_no_birthdate(client):
     pheno = data["phenoage"]
     assert pheno["status"] == "complete"
     assert pheno["chronological_age"] == 52.0
+
+
+def test_historical_panel_does_not_assume_current_profile_age(client):
+    repo = LongevityRepository(get_db_path())
+    repo.upsert_user_profile({"birthdate": None, "chronological_age": 52.0})
+    response = client.post('/api/labs/batch', json={'records': _full_phenoage_panel_raw_mmol('2020-01-01')})
+    assert response.status_code == 200
+    assert response.json()['phenoage']['status'] == 'incomplete'
+    assert 'chronological_age' in response.json()['phenoage']['missing']

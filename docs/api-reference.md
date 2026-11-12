@@ -6,6 +6,20 @@ Formato padrão: JSON, exceto upload/download de CGM.
 
 > Os exemplos abaixo descrevem os contratos presentes no código. Eles não devem conter chaves de IA nem dados clínicos reais em documentação, testes ou logs.
 
+## Revisão de laudos e portabilidade
+
+| Método | Caminho | Comportamento |
+|---|---|---|
+| `POST` | `/api/labs/preview` | Multipart `file`; extração local de PDF, PNG ou JPEG, sem gravação. Retorna páginas, texto, sugestões e avisos. |
+| `POST` | `/api/labs/validate-preview` | JSON `records`; valida prévia e identifica possíveis duplicatas sem gravar. |
+| `POST` | `/api/labs/confirm` | JSON `records`, `confirmed: true` e, se necessário, `allow_duplicates: true`; cria e verifica backup antes da transação. |
+| `GET` | `/api/timeline/clinical` | Consulta `metric_key`, `start_date` e `end_date`; histórico somente leitura. |
+| `POST` | `/api/ai/context-preview` | Mostra provedor, instruções e contexto da ação escolhida sem chamar modelo externo; retorna hash para conferência posterior. |
+| `GET` | `/api/reports/doctor-briefing/options` | Identificadores disponíveis para seleção de exames e eventos no resumo. |
+| `GET` | `/api/reports/measurements-export` | ZIP de medições e proveniência disponível, sem criptografia e sem credenciais ou fotos. |
+
+Os endpoints `POST /api/reports/doctor-briefing` e `POST /api/reports/doctor-briefing/pdf` aceitam seleções opcionais de `selected_lab_ids` e `selected_event_ids`. `POST /api/n-of-1` aceita opcionalmente `adherence`, `simultaneous_changes` e `save_incomplete`; a ausência de `save_incomplete` mantém o contrato anterior. Consulte [laudos e portabilidade](importacao-laudos-e-exportacao.md) para limites, formato e dependências de OCR.
+
 ## Saúde e Algoritmos Determinísticos
 
 | Método | Caminho | Finalidade |

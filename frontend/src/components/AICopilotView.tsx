@@ -162,10 +162,22 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
   const [pendingConfirm, setPendingConfirm] = useState<{
     actionLabel: string;
     resolve: (ok: boolean) => void;
+    preview: { provider: string; model: string; privacy_mode: string; context: string; system_prompt: string; review_hash: string };
   } | null>(null);
 
-  const confirmExternalAIRequest = (actionLabel: string): Promise<boolean> => {
-    return new Promise((resolve) => setPendingConfirm({ actionLabel, resolve }));
+  const confirmExternalAIRequest = async (actionLabel: string, action: 'chat' | 'analysis', timeWindow: TimeWindow = '30d', prompt = ''): Promise<string | null> => {
+    try {
+      const preview = await requestJson<{ provider: string; model: string; privacy_mode: string; context: string; system_prompt: string; review_hash: string }>('/api/ai/context-preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, time_window: timeWindow, prompt }),
+      });
+      if (!preview?.review_hash || typeof preview.context !== 'string') throw new Error('Prévia indisponível');
+      const accepted = await new Promise<boolean>((resolve) => setPendingConfirm({ actionLabel, resolve, preview }));
+      return accepted ? preview.review_hash : null;
+    } catch {
+      setErrorMsg('Não foi possível preparar a prévia dos dados para envio.');
+      return null;
+    }
   };
 
   const handleSelectReport = async (reportId: number) => {
@@ -196,8 +208,8 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
 
   const handleGenerateAnalysis = async (win: TimeWindow = '30d') => {
     const actionText = TIME_WINDOW_ACTION_TEXTS[win] || 'os insights de saúde';
-    const confirmed = await confirmExternalAIRequest(actionText);
-    if (!confirmed) return;
+    const reviewHash = await confirmExternalAIRequest(actionText, 'analysis', win);
+    if (!reviewHash) return;
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -215,7 +227,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
       }>('/api/ai/generate-insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ time_window: win }),
+        body: JSON.stringify({ time_window: win, review_hash: reviewHash }),
         signal: controller.signal,
       });
       if (body.result) {
@@ -254,8 +266,8 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
   const handleSendChatMessage = async (promptText?: string) => {
     const textToSend = (promptText ?? chatInput).trim();
     if (!textToSend) return;
-    const confirmed = await confirmExternalAIRequest('enviar sua mensagem ao chat do Copiloto');
-    if (!confirmed) return;
+    const reviewHash = await confirmExternalAIRequest('enviar sua mensagem ao chat do Copiloto', 'chat', '30d', textToSend);
+    if (!reviewHash) return;
 
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setChatMessages((prev) => [...prev, { sender: 'user', text: textToSend, time: userTime }]);
@@ -266,7 +278,7 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
       const body = await requestJson<{ reply?: string; detail?: string }>('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: textToSend }),
+        body: JSON.stringify({ prompt: textToSend, review_hash: reviewHash }),
       });
 
       const aiTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -388,8 +400,8 @@ export const AICopilotView: React.FC<AICopilotViewProps> = ({
         }}
         activeProvider={activeProvider}
         selectedModel={selectedModel}
-        privacyModeLabel={privacyModeLabel}
-        privacyModeDescription={privacyModeDescription}
+        privacyModeLabel={pendingConfirm ? PRIVACY_MODE_LABELS[normalizePrivacyMode(pendingConfirm.preview.privacy_mode)] : privacyModeLabel}
+        privacyModeDescription={pendingConfirm ? PRIVACY_MODE_DESCRIPTIONS[normalizePrivacyMode(pendingConfirm.preview.privacy_mode)] : privacyModeDescription}
       />
     </div>
   );

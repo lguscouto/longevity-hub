@@ -12,6 +12,7 @@ export * from './ErrorState';
 export * from './Toast';
 export * from './FormField';
 export * from './Input';
+export * from './Checkbox';
 export * from './Select';
 export * from './Textarea';
 export * from './TermHelp';

@@ -23,6 +23,7 @@ import { TimelineMonthView } from './TimelineMonthView'
 import { TimelineWeekView } from './TimelineWeekView'
 import { InsightDrawer } from '../contextInsights/InsightDrawer'
 import { PersonalAssociationsCard } from '../contextInsights/PersonalAssociationsCard'
+import { ClinicalHistory } from './ClinicalHistory'
 import { ConfirmDialog, InlineError, ErrorState, LoadingIndicator, Select, Button } from '../ui'
 import { formatLocalDateKey } from '../../lib/formatters'
 import type {
@@ -141,6 +142,7 @@ export const TimelineView: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      <ClinicalHistory />
       {/* Barra de Ações e Cabeçalho */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>

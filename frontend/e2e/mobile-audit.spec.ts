@@ -421,7 +421,7 @@ for (const vp of VIEWPORTS) {
         await page.waitForTimeout(300)
 
         // Manual Entry Modal
-        const manualBtn = page.getByRole('button', { name: /registrar/i })
+        const manualBtn = page.getByRole('button', { name: 'Registrar medição manual', exact: true })
         if (await manualBtn.isVisible()) {
           await manualBtn.click()
           await page.waitForTimeout(300)

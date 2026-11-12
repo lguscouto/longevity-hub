@@ -8,6 +8,7 @@ interface MetricItem {
   date_ref: string
   metric_key: string
   source: string
+  observed_at?: string | null
   sample_count?: number
   coverage_pct?: number
   quality_status: string
@@ -125,11 +126,11 @@ export const DataQualityPanel: React.FC = () => {
       {summary && (summary.items || []).length > 0 && (
         <details className="text-sm text-slate-700 dark:text-slate-300">
           <summary className="cursor-pointer font-semibold">Fontes registradas por indicador</summary>
-          <p className="mt-2 text-xs">A fonte refere-se ao registro de qualidade e pode não identificar a última alteração do valor.</p>
+          <p className="mt-2 text-xs">A fonte e a observação referem-se ao registro de qualidade; a proveniência histórica e a última alteração do valor podem estar incompletas.</p>
           <ul className="mt-2 space-y-1">
             {summary.items.map(item => {
               const labels: Record<string, string> = { hrv_ms: 'Variabilidade cardíaca', rhr_bpm: 'Frequência cardíaca de repouso', steps: 'Passos', sleep_minutes: 'Sono', spo2_avg_pct: 'Oxigenação', respiratory_rate_rpm: 'Frequência respiratória', pai_score: 'PAI' }
-              return <li key={item.metric_key}>{labels[item.metric_key] || item.metric_key}: {item.source}</li>
+              return <li key={item.metric_key}>{labels[item.metric_key] || item.metric_key}: {item.source || 'origem não informada'} · Observado em: {item.observed_at || 'não informado'}</li>
             })}
           </ul>
         </details>

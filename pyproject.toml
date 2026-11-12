@@ -24,7 +24,8 @@ dependencies = [
     "keyring>=25.0.0",
     "reportlab>=4.0.0",
     "cryptography>=42.0.0",
-    "python-multipart>=0.0.9"
+    "python-multipart>=0.0.9",
+    "pypdfium2>=5.15.2,<6"
 ]
 
 [project.optional-dependencies]

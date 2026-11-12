@@ -14,6 +14,7 @@ class MetricQualityItem(BaseModel):
     date_ref: str
     metric_key: str
     source: str
+    observed_at: Optional[str] = None
     sample_count: Optional[int] = None
     coverage_pct: Optional[float] = None
     quality_status: str
@@ -48,6 +49,7 @@ def get_daily_quality_summary(date_ref: str):
             date_ref=i["date_ref"],
             metric_key=i["metric_key"],
             source=i.get("source", "Zepp"),
+            observed_at=i.get("observed_at"),
             sample_count=i.get("sample_count"),
             coverage_pct=i.get("coverage_pct"),
             quality_status=i.get("quality_status", "high"),

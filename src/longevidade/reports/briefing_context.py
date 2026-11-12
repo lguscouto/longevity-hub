@@ -106,6 +106,7 @@ def _experiments(repo, start: str, end: str) -> list[str]:
 def briefing_context(
     repo: LongevityRepository, rows: list[dict], labs: ClinicalLabSnapshot, today: date,
     questions: list[str] | None = None,
+    selected_event_ids: list[str] | None = None,
 ) -> list[tuple[str, list[str]]]:
     start = (today - timedelta(days=89)).isoformat()
     end = today.isoformat()
@@ -137,8 +138,17 @@ def briefing_context(
     if tags:
         checkin_lines.append("Marcadores mais registrados: " + ", ".join(f"{_text(tag)} ({count})" for tag, count in tags.most_common(5)) + ".")
     sections.append(("Sintomas e check-ins", checkin_lines))
-    timeline = _timeline(repo, start, end)
-    sections.append(("Linha do tempo de intervenções", timeline or ["Sem mudanças registradas no período."]))
+    if selected_event_ids is None:
+        timeline = _timeline(repo, start, end)
+    elif not selected_event_ids:
+        timeline = []
+    else:
+        placeholders = ','.join('?' for _ in selected_event_ids)
+        with repo._get_connection() as conn:
+            events = conn.execute(f'SELECT date_ref, title, description, source FROM health_events WHERE id IN ({placeholders}) ORDER BY date_ref DESC, id', selected_event_ids).fetchall()
+        timeline = [f"{_date_label(row['date_ref'])} — {_text(row['title'])} ({_text(row['source']) or 'origem indisponível'})" + (f" — {_text(row['description'])}" if row['description'] else '') for row in events]
+    sections.append(("Eventos selecionados" if selected_event_ids is not None else "Linha do tempo de intervenções",
+                     timeline or (["Nenhum evento selecionado."] if selected_event_ids is not None else ["Sem mudanças registradas no período."])))
     experiments = _experiments(repo, start, end)
     sections.append(("Experimentos N-of-1", experiments or ["Sem experimentos registrados no período."]))
     if questions := [_text(question) for question in (questions or []) if _text(question)]:

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dna, Plus, AlertCircle, CheckCircle2, Trash2, Eye, FileText, Download } from 'lucide-react';
+import { Dna, Plus, AlertCircle, Trash2, Eye, FileText, Download } from 'lucide-react';
 
 import { ApiError, requestJson } from '../lib/api';
 import { ConfirmDialog, EmptyState, InlineError, Button, IconButton, ResponsiveDataTable, DataColumn } from './ui';
@@ -8,19 +8,21 @@ import {
   getLabMarkerStatus,
   getMetricDisplayName,
   isClinicallyEligibleLab,
-  isMarkerOptimal,
   pickHighlights,
 } from './labs/labMarkers';
 import { CardiovascularRatios } from './labs/CardiovascularRatios';
 import { DerivedBiomarkersPanel } from './labs/DerivedBiomarkersPanel';
 import { LabPanelDetailModal } from './labs/LabPanelDetailModal';
 import { LabBatchEntryModal } from './labs/LabBatchEntryModal';
+import { LabReviewModal } from './labs/LabReviewModal';
+import { LabCompareModal } from './labs/LabCompareModal';
+import type { LabBatchRecord } from './labs/labMarkers';
 
 export type { LabResult };
 
 interface LabResultsTableProps {
   labs: LabResult[];
-  onAddBatchLabs: (records: any[]) => void;
+  onAddBatchLabs: (records: any[], allowDuplicates?: boolean) => Promise<void> | void;
   onRefreshData?: () => void;
 }
 
@@ -30,14 +32,17 @@ interface PanelRow {
   totalCount: number;
   clinicalCount: number;
   nonClinicalCount: number;
-  optimalCount: number;
   inRangeCount: number;
   attentionCount: number;
+  unclassifiedCount: number;
   highlights: LabResult[];
 }
 
 export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onAddBatchLabs, onRefreshData }) => {
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [reviewRecords, setReviewRecords] = useState<LabBatchRecord[]>([]);
   const [selectedPanelDate, setSelectedPanelDate] = useState<string | null>(null);
   const [deleteConfirmDate, setDeleteConfirmDate] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -65,15 +70,15 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
     const clinicalCount = clinicalItems.length;
     const nonClinicalCount = totalCount - clinicalCount;
 
-    let optimalCount = 0;
     let inRangeCount = 0;
     let attentionCount = 0;
+    let unclassifiedCount = 0;
 
     clinicalItems.forEach((item) => {
       const status = getLabMarkerStatus(item);
-      if (status === 'optimal') optimalCount += 1;
-      else if (status === 'in_clinical_range') inRangeCount += 1;
+      if (status === 'in_clinical_range') inRangeCount += 1;
       else if (status === 'out_of_range') attentionCount += 1;
+      else unclassifiedCount += 1;
     });
 
     const highlights = pickHighlights(items, 3);
@@ -83,9 +88,9 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
       totalCount,
       clinicalCount,
       nonClinicalCount,
-      optimalCount,
       inRangeCount,
       attentionCount,
+      unclassifiedCount,
       highlights,
     };
   });
@@ -163,11 +168,6 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         <div className="flex items-center gap-2 flex-wrap">
           {row.clinicalCount > 0 ? (
             <>
-              {row.optimalCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-radius-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                  <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> {row.optimalCount} Ótimos
-                </span>
-              )}
               {row.inRangeCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-radius-sm bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">
                   {row.inRangeCount} Na referência
@@ -184,6 +184,7 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               <AlertCircle className="h-3 w-3" aria-hidden="true" /> {row.attentionCount} Atenção clínica
             </span>
           )}
+          {row.unclassifiedCount > 0 && <span className="text-xs text-slate-600 dark:text-slate-300">{row.unclassifiedCount} sem classificação</span>}
         </div>
       ),
     },
@@ -250,6 +251,9 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
               Baixar Todos (CSV)
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={() => window.open('/api/reports/measurements-export', '_blank')} leftIcon={Download}>
+            Exportar medições (ZIP)
+          </Button>
 
           <Button
             variant="primary"
@@ -259,6 +263,12 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
             className="w-full sm:w-auto shrink-0"
           >
             Novo Painel de Exames
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => { setReviewRecords([]); setShowReviewModal(true) }}>
+            Importar laudo
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowCompareModal(true)} disabled={sortedDates.length < 2}>
+            Comparar coletas
           </Button>
         </div>
       </div>
@@ -338,10 +348,13 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
         isOpen={showBatchModal}
         onClose={() => setShowBatchModal(false)}
         onSubmit={(records) => {
-          onAddBatchLabs(records);
+          setReviewRecords(records);
           setShowBatchModal(false);
+          setShowReviewModal(true);
         }}
       />
+      <LabReviewModal isOpen={showReviewModal} records={reviewRecords} onClose={() => setShowReviewModal(false)} onSubmit={async (records, allowDuplicates) => { await onAddBatchLabs(records, allowDuplicates) }} />
+      <LabCompareModal isOpen={showCompareModal} dates={sortedDates} labs={safeLabs} onClose={() => setShowCompareModal(false)} />
     </div>
   );
 };

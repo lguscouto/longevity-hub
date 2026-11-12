@@ -67,12 +67,8 @@ def calculate_energy_bank(
         # Com dados de atividade incompletos, não promover a "excelente para atividades exigentes"
         current_level = min(current_level, 70)
         recommendation = "Bateria calculada com atividade parcial. Sincronize passos e carga de treino do dia para avaliação completa."
-    elif current_level >= 70:
-        recommendation = "Nível de energia excelente. Bom momento para atividades exigentes."
-    elif current_level >= 40:
-        recommendation = "Bateria moderada. Alterne trabalho focado com pausas ativas."
     else:
-        recommendation = "Energia em nível crítico. Evite cafeína tardia e priorize descanso."
+        recommendation = "Índice estimado a partir dos dados registrados; não determina sua capacidade para atividades."
 
     return {
         "status": status,

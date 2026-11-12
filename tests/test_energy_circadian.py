@@ -31,3 +31,12 @@ def test_calculate_circadian_windows():
     res = calculate_circadian_windows("07:00", "23:00")
     assert res["caffeine_cutoff_time"] == "13:00"
     assert res["wind_down_start_time"] == "21:00"
+    assert res["wake_time_source"] == "informado"
+    assert res["target_bedtime_source"] == "informado"
+    assert "prejudicar a VFC" not in res["recommendation"]
+
+
+def test_circadian_marks_default_and_invalid_times():
+    res = calculate_circadian_windows(None, "inválido")
+    assert (res["wake_time"], res["wake_time_source"]) == ("07:00", "padrão")
+    assert (res["target_bedtime"], res["target_bedtime_source"]) == ("23:00", "padrão")

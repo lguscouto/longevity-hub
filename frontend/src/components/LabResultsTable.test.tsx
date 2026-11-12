@@ -3,6 +3,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { LabResultsTable } from './LabResultsTable'
+import { requestJson } from '../lib/api'
+
+vi.mock('../lib/api', () => ({ requestJson: vi.fn(), ApiError: class ApiError extends Error {} }))
 
 describe('LabResultsTable', () => {
   it('normalizes legacy HDL/LDL aliases for cardiovascular ratios', () => {
@@ -34,6 +37,14 @@ describe('LabResultsTable', () => {
     await user.type(screen.getByLabelText(/Colesterol HDL/i), '62')
     await user.type(screen.getByLabelText(/Colesterol LDL/i), '91')
     await user.click(screen.getByRole('button', { name: /salvar painel completo/i }))
+    expect(onAddBatchLabs).not.toHaveBeenCalled()
+    vi.mocked(requestJson).mockResolvedValueOnce({ records: [
+      { normalized_value: 62, normalized_unit: 'mg/dL', duplicate: false, error: null },
+      { normalized_value: 91, normalized_unit: 'mg/dL', duplicate: false, error: null },
+    ] })
+    await user.click(screen.getByRole('button', { name: /validar prévia/i }))
+    await user.click(await screen.findByLabelText('Conferi os resultados com o laudo.'))
+    await user.click(screen.getByRole('button', { name: /confirmar e salvar/i }))
 
     expect(onAddBatchLabs).toHaveBeenCalledTimes(1)
     const records = onAddBatchLabs.mock.calls[0][0] as Array<{ metric_key: string; metric_name: string }>

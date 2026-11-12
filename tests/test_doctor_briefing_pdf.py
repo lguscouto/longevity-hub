@@ -100,3 +100,26 @@ def test_report_context_and_questions_match_pdf_without_writing(client: TestClie
     assert client.post("/api/reports/doctor-briefing/pdf", json={"questions": ["x" * 301]}).status_code == 422
     with repo._get_connection() as conn:
         assert list(conn.iterdump()) == before
+
+
+def test_briefing_selects_labs_events_and_questions(client: TestClient, monkeypatch):
+    from reportlab import rl_config
+    from backend.app.config import get_db_path
+
+    monkeypatch.setattr(rl_config, 'pageCompression', 0)
+    repo = LongevityRepository(get_db_path())
+    selected = repo.add_lab_result({'collected_at': '2026-01-01', 'metric_key': 'apob', 'metric_name': 'ApoB escolhido',
+                                    'value': 80, 'unit': 'mg/dL', 'record_origin': 'patient_lab'})
+    repo.add_lab_result({'collected_at': '2026-01-02', 'metric_key': 'hba1c', 'metric_name': 'HbA1c omitido',
+                         'value': 5, 'unit': '%', 'record_origin': 'patient_lab'})
+    event = client.post('/api/timeline/events', json={'date_ref': '2026-01-03', 'event_type': 'symptom',
+                        'category': 'symptom', 'title': 'Evento escolhido'}).json()
+    options = client.get('/api/reports/doctor-briefing/options').json()
+    assert any(lab['id'] == selected for lab in options['labs'])
+    payload = {'selected_lab_ids': [selected], 'selected_event_ids': [event['id']], 'questions': ['Pergunta sintética?']}
+    markdown = client.post('/api/reports/doctor-briefing', json=payload).json()['markdown']
+    assert 'ApoB escolhido' in markdown and 'HbA1c omitido' not in markdown
+    assert 'Evento escolhido' in markdown and 'Pergunta sintética?' in markdown
+    pdf = client.post('/api/reports/doctor-briefing/pdf', json=payload)
+    assert pdf.status_code == 200 and b'Evento escolhido' in pdf.content and b'ApoB escolhido' in pdf.content
+    assert b'HbA1c omitido' not in pdf.content

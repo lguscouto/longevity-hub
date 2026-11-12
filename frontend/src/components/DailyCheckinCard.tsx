@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Sparkles, Smile, Activity, Zap, Check } from 'lucide-react'
 import { requestJson } from '../lib/api'
+import { CheckinEvents } from './CheckinEvents'
 
 interface DailyCheckinCardProps {
   selectedDate: string
@@ -386,6 +387,7 @@ export const DailyCheckinCard: React.FC<DailyCheckinCardProps> = ({ selectedDate
           })}
         </div>
       </div>
+      <CheckinEvents selectedDate={selectedDate} onUpdated={onCheckinUpdated} />
     </div>
   )
 }

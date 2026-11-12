@@ -16,6 +16,8 @@ O produto combina:
 - relatório Markdown para consulta médica;
 - copiloto com provedores OpenAI, Anthropic ou OpenRouter.
 
+Os fluxos de revisão local de laudos, OCR, histórico conectado e pacote portátil estão em [Laudos, histórico e portabilidade](docs/importacao-laudos-e-exportacao.md). A prévia do copiloto identifica provedor e contexto antes da chamada externa. Nenhuma dessas funcionalidades substitui revisão clínica.
+
 ## Arquitetura em uma página
 
 ```text

@@ -19,11 +19,17 @@ interface NOf1Experiment {
   p_value?: number;
   statistically_significant?: number | boolean;
   status?: string;
+  adherence?: string;
+  simultaneous_changes?: string;
+  control_observations?: number;
+  treatment_observations?: number;
+  control_missing?: number;
+  treatment_missing?: number;
 }
 
 interface NOf1TrackerProps {
   experiments: NOf1Experiment[];
-  onCreateExperiment: (expData: any) => void;
+  onCreateExperiment: (expData: any) => Promise<void>;
 }
 
 export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateExperiment }) => {
@@ -38,13 +44,15 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
     control_end: todayStr,
     treatment_start: todayStr,
     treatment_end: todayStr,
-    status: 'em_andamento'
+    status: 'em_andamento',
+    adherence: '',
+    simultaneous_changes: '',
+    save_incomplete: true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onCreateExperiment(formData);
-    setShowModal(false);
+    try { await onCreateExperiment(formData); setShowModal(false); } catch { /* Erro exibido pelo aplicativo. */ }
   };
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-radius-md p-2 text-slate-900 dark:text-white font-medium focus:border-violet-500 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none";
@@ -57,6 +65,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
             <FlaskConical className="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true" /> Experimentos pessoais
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400">Compare períodos diferentes para observar se uma mudança coincide com alterações nos seus indicadores.</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Estatísticas exploratórias não demonstram causalidade nem substituem avaliação clínica.</p>
         </div>
 
         <Button
@@ -95,7 +104,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{exp.title}</h4>
                   </div>
                   <span className={`px-2 py-0.5 rounded-radius-sm text-xs font-bold ${isSig ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
-                    {isSig ? 'Significativo (p < 0.05)' : 'Em andamento'}
+                    {exp.p_value == null ? 'Dados insuficientes' : isSig ? 'p < 0,05 (exploratório)' : 'Resultado exploratório'}
                   </span>
                 </div>
 
@@ -104,6 +113,9 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
                     💡 <strong className="text-slate-900 dark:text-slate-200">Hipótese:</strong> {exp.hypothesis}
                   </p>
                 )}
+                <p className="text-xs mb-2">Controle: {exp.control_start} a {exp.control_end} · observações: {exp.control_observations ?? '—'} · dias sem dados até hoje: {exp.control_missing ?? '—'}</p>
+                <p className="text-xs mb-2">Intervenção: {exp.treatment_start} a {exp.treatment_end} · observações: {exp.treatment_observations ?? '—'} · dias sem dados até hoje: {exp.treatment_missing ?? '—'}</p>
+                <p className="text-xs mb-2">Aderência informada: {exp.adherence || 'não informada'} · Mudanças simultâneas: {exp.simultaneous_changes || 'não informadas'}</p>
 
                 <div className="grid grid-cols-2 gap-2 text-center text-xs bg-slate-50 dark:bg-slate-900/80 p-3 rounded-radius-md border border-slate-200 dark:border-slate-800">
                   <div>
@@ -177,6 +189,12 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
               onChange={e => setFormData({...formData, hypothesis: e.target.value})}
             />
           </FormField>
+          <FormField id="nof1-adherence" label="Aderência observada (opcional)">
+            <Input id="nof1-adherence" value={formData.adherence} onChange={e => setFormData({...formData, adherence: e.target.value})} />
+          </FormField>
+          <FormField id="nof1-changes" label="Outras mudanças no período (opcional)">
+            <Input id="nof1-changes" value={formData.simultaneous_changes} onChange={e => setFormData({...formData, simultaneous_changes: e.target.value})} />
+          </FormField>
 
           <FormField id="nof1-metric" label="Métrica Testada">
             <Select
@@ -245,7 +263,7 @@ export const NOf1Tracker: React.FC<NOf1TrackerProps> = ({ experiments, onCreateE
               size="sm"
               className="bg-violet-600 hover:bg-violet-500"
             >
-              Criar e analisar
+              Salvar experimento
             </Button>
           </div>
         </form>

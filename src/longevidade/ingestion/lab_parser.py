@@ -130,6 +130,7 @@ def ingest_lab_records(
     repo: LongevityRepository,
     chronological_age: float | None = None,
     record_origin: str = UNVERIFIED_LAB_ORIGIN,
+    *, connection=None,
 ) -> Dict[str, Any]:
     """Ingere exames, normaliza aliases e unidades e só calcula PhenoAge se o painel estiver completo."""
     normalized_origin = normalize_lab_record_origin(record_origin)
@@ -178,9 +179,9 @@ def ingest_lab_records(
             "metric_name": normalized_rec.get("metric_name") or target_info.get("name") or LAB_MARKER_LABELS.get(key) or key.upper(),
             "value": val,
             "unit": unit,
-            "ref_min": normalized_rec.get("ref_min") if normalized_rec.get("ref_min") is not None else target_info.get("ref_min"),
-            "ref_max": normalized_rec.get("ref_max") if normalized_rec.get("ref_max") is not None else target_info.get("ref_max"),
-            "optimal_target": normalized_rec.get("optimal_target") if normalized_rec.get("optimal_target") is not None else target_info.get("optimal"),
+            "ref_min": normalized_rec.get("ref_min"),
+            "ref_max": normalized_rec.get("ref_max"),
+            "optimal_target": normalized_rec.get("optimal_target"),
             "category": normalized_rec.get("category") or target_info.get("category") or "Geral",
             "notes": normalized_rec.get("notes"),
             "record_origin": normalized_origin,
@@ -198,7 +199,10 @@ def ingest_lab_records(
                 item = converted.get(canonical_target) or next(iter(converted.values()), None)
                 if item is not None:
                     entry[field] = item.value
-        repo.add_lab_result(entry)
+        if connection is None:
+            repo.add_lab_result(entry)
+        else:
+            repo.add_lab_result(entry, connection=connection)
         inserted += 1
         if normalized_origin in CLINICALLY_ELIGIBLE_LAB_ORIGINS:
             latest_values[key] = val
@@ -246,8 +250,8 @@ def ingest_lab_records(
         if effective_age is None and chronological_age is not None:
             effective_age = float(chronological_age)
 
-        # 3. Idade cadastrada no perfil
-        if effective_age is None and profile and profile.get("chronological_age") is not None:
+        # A idade atual do perfil só representa a idade na coleta quando a coleta é de hoje.
+        if effective_age is None and profile and panel.collected_at == date.today().isoformat() and profile.get("chronological_age") is not None:
             effective_age = float(profile["chronological_age"])
 
         # 4. Se ausente: não inventar 40.0; retornar incomplete com missing: ["chronological_age"]
@@ -263,7 +267,7 @@ def ingest_lab_records(
         pheno_input: PhenoAgeInput = build_phenoage_input(panel.values, effective_age)  # type: ignore[assignment]
         p_res = calculate_phenoage(pheno_input)
         if p_res.get("status") == "complete":
-            repo.add_phenoage_record({
+            pheno_entry = {
                 "calculated_at": panel.collected_at,
                 "chronological_age": p_res["chronological_age"],
                 "pheno_age": p_res["pheno_age"],
@@ -279,7 +283,11 @@ def ingest_lab_records(
                 "wbc_1000ul": pheno_input["wbc_1000ul"],
                 "notes": f"Cálculo automatizado PhenoAge via exames. Risco 10 anos: {p_res['mortality_risk_10yr_pct']}%",
                 "record_origin": normalized_origin,
-            })
+            }
+            if connection is None:
+                repo.add_phenoage_record(pheno_entry)
+            else:
+                repo.add_phenoage_record(pheno_entry, connection=connection)
         pheno_result = p_res
 
     return {"status": "ok", "inserted": inserted, "phenoage": pheno_result}

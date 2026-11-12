@@ -6,8 +6,9 @@ Fornece endpoints para feed cronológico, agregações semanais/mensais, CRUD de
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+from datetime import date
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from pydantic import BaseModel
 
 from backend.app.config import get_db_path
@@ -27,8 +28,39 @@ from longevidade.context.service import TimelineContextService, get_timeline_ser
 router = APIRouter(prefix="/api/timeline", tags=["Timeline"])
 
 
+@router.get('/clinical')
+def get_clinical_history(response: Response, metric_key: str = Query(..., min_length=1, max_length=100),
+                         start_date: date = Query(...), end_date: date = Query(...)):
+    """Retorna dados registrados em um período, sem executar reconciliação."""
+    response.headers['Cache-Control'] = 'no-store'
+    if start_date > end_date:
+        raise HTTPException(status_code=422, detail='A data inicial deve ser anterior à data final.')
+    from longevidade.context.clinical_history import clinical_history
+    from longevidade.db.repository import LongevityRepository
+    try:
+        return clinical_history(LongevityRepository(get_db_path()), metric_key, start_date, end_date)
+    except FileNotFoundError:
+        return {'metric_key': metric_key, 'start_date': start_date.isoformat(), 'end_date': end_date.isoformat(),
+                'labs': [], 'interventions': [], 'symptoms': [], 'symptom_events': [], 'changes': []}
+
+
 def _get_service() -> TimelineContextService:
     return get_timeline_service(get_db_path())
+
+
+def _validate_checkin_event(metadata: dict) -> None:
+    if not metadata.get('checkin_event'):
+        return
+    severity = metadata.get('severity')
+    if not isinstance(severity, int) or isinstance(severity, bool) or not 1 <= severity <= 5:
+        raise HTTPException(422, 'A intensidade deve estar entre 1 e 5.')
+    intervention_id = metadata.get('intervention_id')
+    if intervention_id is not None:
+        from longevidade.db.repository import LongevityRepository
+        if not isinstance(intervention_id, int) or isinstance(intervention_id, bool):
+            raise HTTPException(422, 'Intervenção inválida.')
+        if not any(item['id'] == intervention_id for item in LongevityRepository(get_db_path()).get_interventions()):
+            raise HTTPException(422, 'Intervenção não encontrada.')
 
 
 @router.get("", response_model=TimelineResponse)
@@ -80,6 +112,7 @@ def get_monthly_summary(
 @router.post("/events", response_model=HealthEvent, status_code=status.HTTP_201_CREATED)
 def create_manual_health_event(payload: HealthEventCreate):
     """Registra manualmente um novo evento de contexto na Timeline."""
+    _validate_checkin_event(payload.metadata)
     service = _get_service()
     return service.create_manual_event(payload)
 
@@ -87,6 +120,8 @@ def create_manual_health_event(payload: HealthEventCreate):
 @router.patch("/events/{event_id}", response_model=HealthEvent)
 def update_health_event(event_id: str, payload: HealthEventUpdate):
     """Atualiza campos de um evento manual existente."""
+    if payload.metadata is not None:
+        _validate_checkin_event(payload.metadata)
     service = _get_service()
     updated = service.update_manual_event(event_id, payload)
     if not updated:

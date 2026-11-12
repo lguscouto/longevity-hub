@@ -576,7 +576,7 @@ class LongevityRepository:
             return result
 
     # --- LAB RESULTS ---
-    def add_lab_result(self, data: Dict[str, Any]) -> int:
+    def add_lab_result(self, data: Dict[str, Any], connection=None) -> int:
         record_origin = normalize_lab_record_origin(data.get("record_origin"))
         raw_val = data.get("raw_value")
         if raw_val is None:
@@ -603,6 +603,8 @@ class LongevityRepository:
             raw_val,
             raw_u,
         )
+        if connection is not None:
+            return connection.execute(sql, values).lastrowid
         with self._get_connection() as conn:
             cursor = conn.execute(sql, values)
             conn.commit()
@@ -776,7 +778,7 @@ class LongevityRepository:
             return int(conn.execute(sql, tuple(CLINICALLY_ELIGIBLE_LAB_ORIGINS)).fetchone()[0])
 
     # --- PHENOAGE ---
-    def add_phenoage_record(self, data: Dict[str, Any]) -> int:
+    def add_phenoage_record(self, data: Dict[str, Any], connection=None) -> int:
         record_origin = normalize_lab_record_origin(data.get("record_origin"))
         sql = """
         INSERT INTO phenoage_records (
@@ -802,6 +804,8 @@ class LongevityRepository:
             data.get("notes"),
             record_origin,
         )
+        if connection is not None:
+            return connection.execute(sql, values).lastrowid
         with self._get_connection() as conn:
             cursor = conn.execute(sql, values)
             conn.commit()
