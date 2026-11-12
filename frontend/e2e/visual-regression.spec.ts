@@ -2,6 +2,11 @@ import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
+const PACKAGE_VERSION = JSON.parse(
+  fs.readFileSync(new URL('../package.json', import.meta.url), 'utf-8'),
+).version as string;
+const BASELINE_VERSION = `v${PACKAGE_VERSION}`;
+
 const mockApi = async (page: Page) => {
   await page.route('**/api/**', async (route) => {
     await route.fulfill({
@@ -367,7 +372,7 @@ test.describe('Comparação visual — 24 telas de referência', () => {
 
       const allBaselines = Array.from(mergedMap.values());
       const manifest = {
-        version: '2.2.0',
+        version: PACKAGE_VERSION,
         platform: process.platform,
         generated_at: new Date().toISOString(),
         reduced_motion: true,
@@ -385,7 +390,7 @@ test.describe('Comparação visual — 24 telas de referência', () => {
   for (const vp of BASELINE_VIEWPORTS) {
     for (const theme of THEMES) {
       for (const view of CANONICAL_VIEWS) {
-        const testTitle = `[v2.2.0] ${view.title} (${view.id}) on ${vp.name} [${theme}]`;
+        const testTitle = `[${BASELINE_VERSION}] ${view.title} (${view.id}) on ${vp.name} [${theme}]`;
 
         test(testTitle, async ({ page }) => {
           await page.setViewportSize({ width: vp.width, height: vp.height });
@@ -401,7 +406,7 @@ test.describe('Comparação visual — 24 telas de referência', () => {
           await expect(page.locator('main')).toBeVisible();
           await expect(page.getByText(/ChunkLoadError|ReferenceError|Erro ao carregar componente/)).not.toBeVisible();
 
-          const filename = `v2.2.0_${view.id}_${vp.key}_${theme}_normal.png`;
+          const filename = `${BASELINE_VERSION}_${view.id}_${vp.key}_${theme}_normal.png`;
           await expect(page).toHaveScreenshot([filename], {
             fullPage: false,
             animations: 'disabled',
@@ -411,7 +416,7 @@ test.describe('Comparação visual — 24 telas de referência', () => {
           // Registra metadados estruturados (U22-P2-22)
           collectedBaselines.push({
             id: `${view.id}_${vp.key}_${theme}_normal`,
-            version: '2.2.0',
+            version: PACKAGE_VERSION,
             view: view.id,
             view_title: view.title,
             viewport: {

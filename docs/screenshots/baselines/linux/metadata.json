@@ -1,7 +1,7 @@
 {
-  "version": "2.2.0",
+  "version": "2.4.6",
   "platform": "linux",
-  "generated_at": "2026-11-11T18:50:58.451Z",
+  "generated_at": "2026-11-12T12:18:21.636Z",
   "reduced_motion": true,
   "canonical_viewports": [
     {
@@ -51,7 +51,7 @@
   "baselines": [
     {
       "id": "overview_375x667_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "overview",
       "view_title": "Hoje",
       "viewport": {
@@ -63,12 +63,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_overview_375x667_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:17.355Z"
+      "filename": "v2.4.6_overview_375x667_dark_normal.png",
+      "captured_at": "2026-11-12T12:17:44.550Z"
     },
     {
       "id": "labs_375x667_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "labs",
       "view_title": "Saúde",
       "viewport": {
@@ -80,12 +80,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_labs_375x667_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:19.437Z"
+      "filename": "v2.4.6_labs_375x667_dark_normal.png",
+      "captured_at": "2026-11-12T12:17:46.120Z"
     },
     {
       "id": "workouts_375x667_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "workouts",
       "view_title": "Treinos",
       "viewport": {
@@ -97,12 +97,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_workouts_375x667_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:21.178Z"
+      "filename": "v2.4.6_workouts_375x667_dark_normal.png",
+      "captured_at": "2026-11-12T12:17:47.810Z"
     },
     {
       "id": "supplements_375x667_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "supplements",
       "view_title": "Intervenções",
       "viewport": {
@@ -114,12 +114,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_supplements_375x667_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:22.883Z"
+      "filename": "v2.4.6_supplements_375x667_dark_normal.png",
+      "captured_at": "2026-11-12T12:17:49.457Z"
     },
     {
       "id": "ai_375x667_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "ai",
       "view_title": "IA e Copiloto",
       "viewport": {
@@ -131,12 +131,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_ai_375x667_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:24.581Z"
+      "filename": "v2.4.6_ai_375x667_dark_normal.png",
+      "captured_at": "2026-11-12T12:17:51.072Z"
     },
     {
       "id": "profile_375x667_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "profile",
       "view_title": "Perfil",
       "viewport": {
@@ -148,12 +148,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_profile_375x667_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:26.181Z"
+      "filename": "v2.4.6_profile_375x667_dark_normal.png",
+      "captured_at": "2026-11-12T12:17:52.421Z"
     },
     {
       "id": "overview_375x667_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "overview",
       "view_title": "Hoje",
       "viewport": {
@@ -165,12 +165,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_overview_375x667_light_normal.png",
-      "captured_at": "2026-11-11T18:50:27.948Z"
+      "filename": "v2.4.6_overview_375x667_light_normal.png",
+      "captured_at": "2026-11-12T12:17:54.076Z"
     },
     {
       "id": "labs_375x667_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "labs",
       "view_title": "Saúde",
       "viewport": {
@@ -182,12 +182,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_labs_375x667_light_normal.png",
-      "captured_at": "2026-11-11T18:50:29.599Z"
+      "filename": "v2.4.6_labs_375x667_light_normal.png",
+      "captured_at": "2026-11-12T12:17:55.418Z"
     },
     {
       "id": "workouts_375x667_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "workouts",
       "view_title": "Treinos",
       "viewport": {
@@ -199,12 +199,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_workouts_375x667_light_normal.png",
-      "captured_at": "2026-11-11T18:50:31.250Z"
+      "filename": "v2.4.6_workouts_375x667_light_normal.png",
+      "captured_at": "2026-11-12T12:17:57.002Z"
     },
     {
       "id": "supplements_375x667_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "supplements",
       "view_title": "Intervenções",
       "viewport": {
@@ -216,12 +216,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_supplements_375x667_light_normal.png",
-      "captured_at": "2026-11-11T18:50:32.868Z"
+      "filename": "v2.4.6_supplements_375x667_light_normal.png",
+      "captured_at": "2026-11-12T12:17:58.570Z"
     },
     {
       "id": "ai_375x667_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "ai",
       "view_title": "IA e Copiloto",
       "viewport": {
@@ -233,12 +233,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_ai_375x667_light_normal.png",
-      "captured_at": "2026-11-11T18:50:34.578Z"
+      "filename": "v2.4.6_ai_375x667_light_normal.png",
+      "captured_at": "2026-11-12T12:18:00.175Z"
     },
     {
       "id": "profile_375x667_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "profile",
       "view_title": "Perfil",
       "viewport": {
@@ -250,12 +250,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_profile_375x667_light_normal.png",
-      "captured_at": "2026-11-11T18:50:36.316Z"
+      "filename": "v2.4.6_profile_375x667_light_normal.png",
+      "captured_at": "2026-11-12T12:18:01.531Z"
     },
     {
       "id": "overview_1280x800_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "overview",
       "view_title": "Hoje",
       "viewport": {
@@ -267,12 +267,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_overview_1280x800_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:38.180Z"
+      "filename": "v2.4.6_overview_1280x800_dark_normal.png",
+      "captured_at": "2026-11-12T12:18:03.321Z"
     },
     {
       "id": "labs_1280x800_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "labs",
       "view_title": "Saúde",
       "viewport": {
@@ -284,12 +284,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_labs_1280x800_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:40.110Z"
+      "filename": "v2.4.6_labs_1280x800_dark_normal.png",
+      "captured_at": "2026-11-12T12:18:04.771Z"
     },
     {
       "id": "workouts_1280x800_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "workouts",
       "view_title": "Treinos",
       "viewport": {
@@ -301,12 +301,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_workouts_1280x800_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:41.829Z"
+      "filename": "v2.4.6_workouts_1280x800_dark_normal.png",
+      "captured_at": "2026-11-12T12:18:06.600Z"
     },
     {
       "id": "supplements_1280x800_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "supplements",
       "view_title": "Intervenções",
       "viewport": {
@@ -318,12 +318,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_supplements_1280x800_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:43.686Z"
+      "filename": "v2.4.6_supplements_1280x800_dark_normal.png",
+      "captured_at": "2026-11-12T12:18:08.275Z"
     },
     {
       "id": "ai_1280x800_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "ai",
       "view_title": "IA e Copiloto",
       "viewport": {
@@ -335,12 +335,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_ai_1280x800_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:45.495Z"
+      "filename": "v2.4.6_ai_1280x800_dark_normal.png",
+      "captured_at": "2026-11-12T12:18:10.048Z"
     },
     {
       "id": "profile_1280x800_dark_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "profile",
       "view_title": "Perfil",
       "viewport": {
@@ -352,12 +352,12 @@
       "theme": "dark",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_profile_1280x800_dark_normal.png",
-      "captured_at": "2026-11-11T18:50:47.307Z"
+      "filename": "v2.4.6_profile_1280x800_dark_normal.png",
+      "captured_at": "2026-11-12T12:18:11.533Z"
     },
     {
       "id": "overview_1280x800_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "overview",
       "view_title": "Hoje",
       "viewport": {
@@ -369,12 +369,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_overview_1280x800_light_normal.png",
-      "captured_at": "2026-11-11T18:50:49.247Z"
+      "filename": "v2.4.6_overview_1280x800_light_normal.png",
+      "captured_at": "2026-11-12T12:18:13.338Z"
     },
     {
       "id": "labs_1280x800_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "labs",
       "view_title": "Saúde",
       "viewport": {
@@ -386,12 +386,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_labs_1280x800_light_normal.png",
-      "captured_at": "2026-11-11T18:50:51.125Z"
+      "filename": "v2.4.6_labs_1280x800_light_normal.png",
+      "captured_at": "2026-11-12T12:18:14.770Z"
     },
     {
       "id": "workouts_1280x800_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "workouts",
       "view_title": "Treinos",
       "viewport": {
@@ -403,12 +403,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_workouts_1280x800_light_normal.png",
-      "captured_at": "2026-11-11T18:50:52.993Z"
+      "filename": "v2.4.6_workouts_1280x800_light_normal.png",
+      "captured_at": "2026-11-12T12:18:16.511Z"
     },
     {
       "id": "supplements_1280x800_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "supplements",
       "view_title": "Intervenções",
       "viewport": {
@@ -420,12 +420,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_supplements_1280x800_light_normal.png",
-      "captured_at": "2026-11-11T18:50:54.805Z"
+      "filename": "v2.4.6_supplements_1280x800_light_normal.png",
+      "captured_at": "2026-11-12T12:18:18.311Z"
     },
     {
       "id": "ai_1280x800_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "ai",
       "view_title": "IA e Copiloto",
       "viewport": {
@@ -437,12 +437,12 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_ai_1280x800_light_normal.png",
-      "captured_at": "2026-11-11T18:50:56.551Z"
+      "filename": "v2.4.6_ai_1280x800_light_normal.png",
+      "captured_at": "2026-11-12T12:18:20.018Z"
     },
     {
       "id": "profile_1280x800_light_normal",
-      "version": "2.2.0",
+      "version": "2.4.6",
       "view": "profile",
       "view_title": "Perfil",
       "viewport": {
@@ -454,8 +454,8 @@
       "theme": "light",
       "reduced_motion": true,
       "state": "normal",
-      "filename": "v2.2.0_profile_1280x800_light_normal.png",
-      "captured_at": "2026-11-11T18:50:58.328Z"
+      "filename": "v2.4.6_profile_1280x800_light_normal.png",
+      "captured_at": "2026-11-12T12:18:21.493Z"
     }
   ]
 }
