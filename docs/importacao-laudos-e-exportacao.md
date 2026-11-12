@@ -2,6 +2,8 @@
 
 ## Dependências locais para leitura de laudos
 
+Na área Saúde, **Exames** reúne os laudos e as ações de importação, comparação e exportação. **Biomarcadores** apresenta as razões cardiovasculares e os indicadores derivados, com seleção da data do laudo quando disponível.
+
 Instale as dependências Python do projeto a partir do lock existente: `pip install -r backend/requirements-lock.txt`. O pacote `pypdfium2` fornece o PDFium para extração e renderização local. Para OCR, instale o Tesseract no computador servidor, incluindo os dados do idioma português (`por`), e coloque o executável `tesseract` no `PATH` do processo do servidor. No Windows, uma instalação típica fica em `C:\Program Files\Tesseract-OCR`; inclua essa pasta no PATH se necessário e reinicie o servidor. Confira com `tesseract --version` e `tesseract --list-langs`; a lista precisa conter `por`. Use o instalador e os dados de idioma disponibilizados pela distribuição escolhida e verifique sua procedência.
 
 Em Exames, escolha **Importar laudo** e informe PDF, PNG ou JPEG, ou preencha manualmente. O arquivo é lido localmente; não é enviado a provedor externo. A extração limita o arquivo a 16 MB, o PDF a 20 páginas, a imagem renderizada a 20 megapixels e o processamento a 60 segundos. Páginas sem texto suficiente passam por OCR; se o OCR falhar, a prévia informa o problema e continua permitindo preenchimento manual. A identificação automática é conservadora e não reconhece todos os formatos. Compare os campos com o original: nome, página, data, valor e unidade originais, referências e método. A unidade normalizada aparece após validação. Página e método informados são preservados nas observações do registro.

@@ -10,8 +10,6 @@ import {
   isClinicallyEligibleLab,
   pickHighlights,
 } from './labs/labMarkers';
-import { CardiovascularRatios } from './labs/CardiovascularRatios';
-import { DerivedBiomarkersPanel } from './labs/DerivedBiomarkersPanel';
 import { LabPanelDetailModal } from './labs/LabPanelDetailModal';
 import { LabBatchEntryModal } from './labs/LabBatchEntryModal';
 import { LabReviewModal } from './labs/LabReviewModal';
@@ -280,12 +278,6 @@ export const LabResultsTable: React.FC<LabResultsTableProps> = ({ labs = [], onA
           {excludedLabsCount} resultado(s) sem origem verificável continuam visíveis no histórico, mas não entram nos cálculos e análises porque a origem não pôde ser verificada.
         </div>
       )}
-
-      {/* Cartões de Razões Cardiovasculares Avançadas */}
-      <CardiovascularRatios clinicalLabs={clinicalLabs} />
-
-      {/* Painel Modular de Biomarcadores Derivados & Modelos Clínicos */}
-      <DerivedBiomarkersPanel currentSelectedDate={selectedPanelDate} onRefreshData={onRefreshData} />
 
       {/* Tabela / Cards de Laudos Consolidada */}
       {panelRows.length === 0 ? (

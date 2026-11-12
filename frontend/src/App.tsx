@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 // Lazy-loaded heavy components
 const PhenoAgeWidget = lazy(() => import('./components/PhenoAgeWidget').then(m => ({ default: m.PhenoAgeWidget })))
 const LabResultsTable = lazy(() => import('./components/LabResultsTable').then(m => ({ default: m.LabResultsTable })))
+const BiomarkersView = lazy(() => import('./components/labs/BiomarkersView').then(m => ({ default: m.BiomarkersView })))
 const NOf1Tracker = lazy(() => import('./components/NOf1Tracker').then(m => ({ default: m.NOf1Tracker })))
 const CGMDashboard = lazy(() => import('./components/CGMDashboard').then(m => ({ default: m.CGMDashboard })))
 const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })))
@@ -49,6 +50,7 @@ type Tab =
   | 'timeline'
   | 'workouts'
   | 'labs'
+  | 'biomarkers'
   | 'steps'
   | 'health'
   | 'supplements'
@@ -109,6 +111,7 @@ const VALID_TABS: Tab[] = [
   'timeline',
   'workouts',
   'labs',
+  'biomarkers',
   'steps',
   'health',
   'supplements',
@@ -129,6 +132,7 @@ function normalizeTab(rawTab: string | null | undefined): Tab {
   const clean = rawTab.replace(/^#/, '').trim().split(/[?&#/]/)[0].toLowerCase()
   if (clean === 'today') return 'overview'
   if (clean === 'health') return 'labs'
+  if (clean === 'biomarcadores') return 'biomarkers'
   if (clean === 'interventions') return 'supplements'
   if (clean === 'diagnostics') return 'system'
   if (clean === 'trainer' || clean === 'treinador' || clean === 'personal-trainer') return 'personal'
@@ -986,9 +990,9 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
                 <WorkoutsView onSyncZepp={handleSyncZepp} isSyncingZepp={isSyncing} />
               </Suspense>
             )}
-            {(activeTab === 'labs' || activeTab === 'steps') && (
+            {(activeTab === 'labs' || activeTab === 'biomarkers' || activeTab === 'steps') && (
               <div className="space-y-4">
-                <div className="w-full overflow-x-auto no-scrollbar py-0.5">
+                <nav aria-label="Exames, biomarcadores e passos" className="w-full overflow-x-auto no-scrollbar py-0.5">
                   <div className="flex items-center gap-1.5 p-1 rounded-radius-lg bg-slate-200/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 w-max">
                     <Button
                       type="button"
@@ -996,9 +1000,21 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
                       size="sm"
                       onClick={() => setActiveTab('labs')}
                       leftIcon={Dna}
+                      aria-current={activeTab === 'labs' ? 'page' : undefined}
                       className="text-xs min-h-[36px] shrink-0"
                     >
-                      Exames e Biomarcadores
+                      Exames
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={activeTab === 'biomarkers' ? 'primary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveTab('biomarkers')}
+                      leftIcon={Activity}
+                      aria-current={activeTab === 'biomarkers' ? 'page' : undefined}
+                      className="text-xs min-h-[36px] shrink-0"
+                    >
+                      Biomarcadores
                     </Button>
                     <Button
                       type="button"
@@ -1006,12 +1022,13 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
                       size="sm"
                       onClick={() => setActiveTab('steps')}
                       leftIcon={Footprints}
+                      aria-current={activeTab === 'steps' ? 'page' : undefined}
                       className="text-xs min-h-[36px] shrink-0"
                     >
                       Passos Diários (Zepp)
                     </Button>
                   </div>
-                </div>
+                </nav>
 
                 {activeTab === 'labs' && (moduleErrors['Exames'] ? <div role="status">Não foi possível carregar os exames.</div> : (
                   <LabResultsTable
@@ -1020,6 +1037,10 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
                     onRefreshData={fetchDashboardData}
                   />
                 ))}
+
+                {activeTab === 'biomarkers' && (
+                  <BiomarkersView labs={labs} labsLoadError={Boolean(moduleErrors['Exames'])} onRefreshData={fetchDashboardData} />
+                )}
 
                 {activeTab === 'steps' && (
                   <Suspense

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React, { Suspense } from 'react'
 
@@ -183,6 +183,23 @@ describe('App', () => {
     // Click 'Perfil' tab
     await user.click(screen.getByRole('button', { name: /perfil/i }))
     expect(await screen.findByText(/perfil do longevidade hub/i)).toBeInTheDocument()
+  })
+
+  it('separates exam history from biomarkers and supports direct navigation', async () => {
+    window.location.hash = '#biomarcadores'
+    const user = userEvent.setup()
+    renderApp()
+    const navigation = await screen.findByRole('navigation', { name: 'Exames, biomarcadores e passos' })
+    expect(await screen.findByText(/Painel de Biomarcadores Derivados/i)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Exames laboratoriais e referências/i })).not.toBeInTheDocument()
+    await waitFor(() => expect(window.location.hash).toBe('#biomarkers'))
+    await user.click(within(navigation).getByRole('button', { name: /^Exames$/ }))
+    expect(await screen.findByRole('heading', { name: /Exames laboratoriais e referências/i })).toBeInTheDocument()
+    expect(screen.queryByText(/Painel de Biomarcadores Derivados/i)).not.toBeInTheDocument()
+    expect(window.location.hash).toBe('#labs')
+    await user.click(within(navigation).getByRole('button', { name: 'Biomarcadores' }))
+    expect(await screen.findByText(/Painel de Biomarcadores Derivados/i)).toBeInTheDocument()
+    expect(window.location.hash).toBe('#biomarkers')
   })
 
   it('keeps a pending check-in autosave alive when navigating away from overview', async () => {

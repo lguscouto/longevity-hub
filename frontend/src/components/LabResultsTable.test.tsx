@@ -8,25 +8,6 @@ import { requestJson } from '../lib/api'
 vi.mock('../lib/api', () => ({ requestJson: vi.fn(), ApiError: class ApiError extends Error {} }))
 
 describe('LabResultsTable', () => {
-  it('normalizes legacy HDL/LDL aliases for cardiovascular ratios', () => {
-    render(
-      <LabResultsTable
-        labs={[
-          { collected_at: '2026-07-30', metric_key: 'triglycerides', metric_name: 'Triglicérides', value: 90, unit: 'mg/dL', record_origin: 'patient_lab' },
-          { collected_at: '2026-07-30', metric_key: 'hdl', metric_name: 'Colesterol HDL', value: 60, unit: 'mg/dL', record_origin: 'patient_lab' },
-          { collected_at: '2026-07-30', metric_key: 'total_cholesterol', metric_name: 'Colesterol Total', value: 180, unit: 'mg/dL', record_origin: 'patient_lab' },
-          { collected_at: '2026-07-30', metric_key: 'ldl', metric_name: 'Colesterol LDL', value: 100, unit: 'mg/dL', record_origin: 'patient_lab' },
-        ]}
-        onAddBatchLabs={vi.fn()}
-      />,
-    )
-
-    expect(screen.getByText('1.50')).toBeInTheDocument()
-    expect(screen.getByText('20.0 mg/dL')).toBeInTheDocument()
-    expect(screen.queryByText('(Sem TG/HDL)')).not.toBeInTheDocument()
-    expect(screen.queryByText('(Sem dados)')).not.toBeInTheDocument()
-  })
-
   it('submits canonical cardiovascular metric keys from the batch form labels', async () => {
     const user = userEvent.setup()
     const onAddBatchLabs = vi.fn()
@@ -68,21 +49,6 @@ describe('LabResultsTable', () => {
 
     expect(screen.queryByRole('button', { name: /9 marcadores phenoage/i })).not.toBeInTheDocument()
     expect(screen.getByText(/preencha apenas os exames que aparecem no seu laudo/i)).toBeInTheDocument()
-  })
-
-  it('does not calculate cardiovascular ratios from labs without clinical provenance', () => {
-    render(
-      <LabResultsTable
-        labs={[
-          { collected_at: '2026-07-30', metric_key: 'triglycerides', metric_name: 'Triglicérides', value: 90, unit: 'mg/dL' },
-          { collected_at: '2026-07-30', metric_key: 'hdl', metric_name: 'Colesterol HDL', value: 60, unit: 'mg/dL' },
-        ]}
-        onAddBatchLabs={vi.fn()}
-      />,
-    )
-
-    expect(screen.getByText('(Sem TG/HDL)')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent(/não entram nos cálculos/i)
   })
 
   it('renders EmptyState when no lab reports are available', () => {

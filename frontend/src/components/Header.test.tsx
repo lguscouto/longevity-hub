@@ -100,7 +100,8 @@ describe('Header & Navigation Second Pass (UX_UI_55)', () => {
     renderHeader({ activeTab: 'labs', onSelectTab });
 
     expect(screen.getByRole('navigation', { name: 'Sub-navegação de Saúde' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Exames e PhenoAge/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Exames$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Biomarcadores$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Passos Diários/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Sono/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Linha do Tempo/i })).toBeInTheDocument();
