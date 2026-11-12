@@ -16,13 +16,15 @@ export interface TimeRangeControlProps<T extends string | number = string | numb
   id?: string;
   className?: string;
   size?: 'sm' | 'md';
-  activeColor?: 'emerald' | 'indigo' | 'slate';
+  activeColor?: 'emerald' | 'indigo' | 'slate' | 'cyan' | 'violet';
 }
 
-const ACTIVE_COLOR_STYLES: Record<'emerald' | 'indigo' | 'slate', string> = {
+const ACTIVE_COLOR_STYLES: Record<NonNullable<TimeRangeControlProps['activeColor']>, string> = {
   emerald: 'bg-emerald-500 text-slate-950 font-black shadow-xs',
   indigo: 'bg-indigo-600 text-white font-bold shadow-xs',
   slate: 'bg-slate-800 text-white dark:bg-slate-700 font-bold shadow-xs',
+  cyan: 'bg-cyan-400 text-slate-950 font-black shadow-xs',
+  violet: 'bg-violet-700 text-white font-bold shadow-xs',
 };
 
 export function TimeRangeControl<T extends string | number = string | number>({

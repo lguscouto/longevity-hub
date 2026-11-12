@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState, Suspense, lazy } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState, Suspense, lazy } from 'react'
+import { createPortal } from 'react-dom'
 import { Activity, ChevronDown, Dna, Flame, Footprints, Heart, Moon, PlusCircle, RefreshCw, Shield, Wind, Zap } from 'lucide-react'
 
 import { Header } from './components/Header'
@@ -29,9 +30,13 @@ const WorkoutsTable = lazy(() => import('./components/WorkoutsTable').then(m => 
 const WorkoutsView = lazy(() => import('./components/WorkoutsView').then(m => ({ default: m.WorkoutsView })))
 const TimelineView = lazy(() => import('./components/timeline/TimelineView').then(m => ({ default: m.TimelineView })))
 const OnboardingModal = lazy(() => import('./components/onboarding/OnboardingModal').then(m => ({ default: m.OnboardingModal })))
+const DashboardCoverage = lazy(() => import('./components/dashboard/DashboardSeries').then(m => ({ default: m.DashboardCoverage })))
+const DashboardHistoryChart = lazy(() => import('./components/dashboard/DashboardSeries').then(m => ({ default: m.DashboardHistoryChart })))
+const DashboardMetricTile = lazy(() => import('./components/dashboard/DashboardSeries').then(m => ({ default: m.DashboardMetricTile })))
+const DashboardTrendChart = lazy(() => import('./components/dashboard/DashboardSeries').then(m => ({ default: m.DashboardTrendChart })))
 
 
-import { Button, EmptyState, LoadingIndicator, useToast } from './components/ui'
+import { Button, EmptyState, LoadingIndicator, Modal, Select, useToast } from './components/ui'
 import { DateNavigator } from './components/DateNavigator'
 import { DataConfidenceBadge } from './components/DataConfidenceBadge'
 import { DailyGuidanceCard } from './components/DailyGuidanceCard'
@@ -43,6 +48,18 @@ import { formatLocalDateKey, formatLastSyncDisplay } from './lib/formatters'
 import type { PipelineRun } from './components/PipelineStatusPanel'
 import type { SyncState } from './components/ui/SyncStatusBadge'
 import type { SyncResult } from './components/SyncProgressModal'
+import { DashboardEditor } from './components/dashboard/DashboardEditor'
+import { CustomDashboard } from './components/dashboard/CustomDashboard'
+import { calendarRange } from './components/dashboard/dateRange'
+import {
+  DASHBOARD_MODELS,
+  DASHBOARD_STORAGE_KEY,
+  readDashboardPreferences,
+  type CustomModel,
+  type DashboardLayout,
+  type DashboardPreferences,
+  type WidgetId,
+} from './components/dashboard/preferences'
 
 type Tab =
   | 'overview'
@@ -165,6 +182,39 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
   const [activeTab, setActiveTab] = useState<Tab>(getInitialTab)
   const [selectedDate, setSelectedDate] = useState<string>(() => formatLocalDateKey(new Date()))
   const [daysRange, setDaysRange] = useState<number>(30)
+  const [dashboardPreferences, setDashboardPreferences] = useState<DashboardPreferences>(readDashboardPreferences)
+  const [isDashboardEditorOpen, setIsDashboardEditorOpen] = useState(false)
+  const [isCheckinDialogOpen, setIsCheckinDialogOpen] = useState(false)
+  const [dashboardStorageError, setDashboardStorageError] = useState(false)
+  const [customMetrics, setCustomMetrics] = useState<DailyMetric[]>([])
+  const [customMetricsState, setCustomMetricsState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  const [customMetricsError, setCustomMetricsError] = useState<string | null>(null)
+  const [customMetricsRetry, setCustomMetricsRetry] = useState(0)
+  const [checkinPortalContainer] = useState(() => document.createElement('div'))
+  const checkinSlotRef = useRef<HTMLDivElement | null>(null)
+  const setCheckinSlot = useCallback((node: HTMLDivElement | null) => {
+    checkinSlotRef.current = node
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(dashboardPreferences))
+      setDashboardStorageError(false)
+    } catch {
+      setDashboardStorageError(true)
+    }
+  }, [dashboardPreferences])
+
+  useLayoutEffect(() => {
+    const slot = checkinSlotRef.current
+    if (slot) {
+      if (checkinPortalContainer.parentElement !== slot) slot.appendChild(checkinPortalContainer)
+    } else {
+      checkinPortalContainer.remove()
+    }
+  })
+
+  useLayoutEffect(() => () => checkinPortalContainer.remove(), [checkinPortalContainer])
 
   const prevActiveTabRef = useRef(activeTab)
 
@@ -172,6 +222,10 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
     const normalized = normalizeTab(targetTab)
     setActiveTab(normalized)
   }
+
+  useEffect(() => {
+    if (activeTab !== 'overview') setIsCheckinDialogOpen(false)
+  }, [activeTab])
 
   useEffect(() => {
     try {
@@ -198,6 +252,10 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
       void fetchDashboardData()
     }
     prevActiveTabRef.current = activeTab
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab !== 'overview') setIsDashboardEditorOpen(false)
   }, [activeTab])
 
   const [metrics, setMetrics] = useState<DailyMetric[]>([])
@@ -251,6 +309,49 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
 
   const activeMetric = metrics.find((metric) => metric.date_ref === selectedDate) ?? null
   const hasMetric = Boolean(activeMetric)
+  const activeCustomLayout = dashboardPreferences.active === 'classic'
+    ? null
+    : dashboardPreferences.layouts[dashboardPreferences.active]
+  const customWidgetsKey = activeCustomLayout?.widgets.map(widget => widget.id).sort().join(',') ?? ''
+  const customNeedsMetricRange = activeCustomLayout?.widgets.some(widget =>
+    ['metrics', 'training', 'sleep', 'steps', 'chart', 'coverage', 'sleepChart', 'stepsChart'].includes(widget.id),
+  ) ?? false
+  const customDateRange = calendarRange(selectedDate, daysRange)
+
+  useEffect(() => {
+    if (activeTab !== 'overview' || !activeCustomLayout || !customNeedsMetricRange) {
+      setCustomMetrics([])
+      setCustomMetricsError(null)
+      setCustomMetricsState('idle')
+      return
+    }
+    if (loading) {
+      setCustomMetrics([])
+      setCustomMetricsError(null)
+      setCustomMetricsState('loading')
+      return
+    }
+    let isCurrent = true
+    const query = new URLSearchParams({ start_date: customDateRange.startDate, end_date: customDateRange.endDate })
+    setCustomMetrics([])
+    setCustomMetricsError(null)
+    setCustomMetricsState('loading')
+    requestJson<DailyMetric[]>(`/api/metrics?${query.toString()}`)
+      .then(rows => {
+        if (!isCurrent) return
+        setCustomMetrics(Array.isArray(rows) ? rows : [])
+        setCustomMetricsState('loaded')
+      })
+      .catch(caught => {
+        if (!isCurrent) return
+        setCustomMetrics([])
+        setCustomMetricsError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar o histórico do painel.')
+        setCustomMetricsState('error')
+      })
+    return () => { isCurrent = false }
+  }, [activeTab, dashboardPreferences.active, customWidgetsKey, customNeedsMetricRange, selectedDate, daysRange, loading, customMetricsRetry])
+
+  const customActiveMetric = customMetrics.find(metric => metric.date_ref === selectedDate) ?? null
 
   const primaryMetricCards = [
     {
@@ -739,8 +840,156 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
     setGuidanceRevision((prev) => prev + 1)
   }
 
+  const saveDashboardLayout = (layout: DashboardLayout) => {
+    const model = dashboardPreferences.active
+    if (model === 'classic') return
+    setDashboardPreferences(current => ({
+      ...current,
+      layouts: { ...current.layouts, [model]: layout },
+    }))
+    setIsDashboardEditorOpen(false)
+    showToast('Composição do painel salva neste navegador.')
+  }
+
+  const renderCustomWidget = (id: WidgetId): React.ReactNode => {
+    switch (id) {
+      case 'guidance':
+        return <DailyGuidanceCard selectedDate={selectedDate} refreshKey={guidanceRevision} presentation="editorial" />
+      case 'metrics':
+        return (
+          <section aria-label="Indicadores do dia" className="divide-y divide-amber-300/80 dark:divide-emerald-900/70">
+            {[
+              { title: 'Sono', value: customActiveMetric?.sleep_minutes != null ? formatSleepMinutes(customActiveMetric.sleep_minutes) : null },
+              { title: 'Passos', value: customActiveMetric?.steps != null ? `${customActiveMetric.steps.toLocaleString('pt-BR')}` : null },
+              { title: 'VFC', value: customActiveMetric?.hrv_ms != null ? `${Math.round(customActiveMetric.hrv_ms)} ms` : null },
+            ].map(row => (
+              <div key={row.title} className="flex min-h-[68px] items-center justify-between gap-4 px-2 py-3 sm:min-h-[78px] sm:px-4">
+                <h3 className="text-base font-semibold text-emerald-950 dark:text-emerald-50 sm:text-lg">{row.title}</h3>
+                <p className="text-right text-2xl font-semibold tracking-tight text-emerald-950 dark:text-emerald-50 sm:text-3xl">
+                  {customMetricsState === 'loading' ? 'Carregando…' : customMetricsState === 'error' ? 'Indisponível' : row.value ?? 'Sem registro'}
+                </p>
+              </div>
+            ))}
+          </section>
+        )
+      case 'checkin':
+        return (
+          <section className={`rounded-radius-xl border p-4 ${dashboardPreferences.active === 'modular' ? 'border-violet-200 bg-white dark:border-violet-900/60 dark:bg-slate-900' : 'border-amber-300/70 bg-white/50 dark:border-emerald-900/60 dark:bg-slate-900/50'}`} aria-label="Check-in">
+            <h3 className={`text-xl font-semibold ${dashboardPreferences.active === 'day' ? 'font-serif text-emerald-950 dark:text-emerald-50' : 'text-slate-900 dark:text-slate-100'}`}>Check-in</h3>
+            <Button
+              variant="primary"
+              className={`mt-3 min-h-11 w-full justify-center ${dashboardPreferences.active === 'modular' ? 'border-violet-700 bg-violet-700 text-white hover:bg-violet-800' : ''}`}
+              onClick={() => setIsCheckinDialogOpen(true)}
+            >Registrar check-in</Button>
+          </section>
+        )
+      case 'routine':
+        return (
+          <details className="group border-b border-amber-300/80 py-3 dark:border-emerald-900/70">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-radius-md text-base font-semibold text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-50">
+              <span>Rotina</span><span className="text-sm font-normal text-slate-600 group-open:hidden dark:text-slate-400">Ver registros ›</span><span className="hidden text-sm font-normal text-slate-600 group-open:inline dark:text-slate-400">Fechar</span>
+            </summary>
+            <div className="pt-3"><DailyComplianceWidget selectedDate={selectedDate} /></div>
+          </details>
+        )
+      case 'training':
+        return (
+          <details className="group border-b border-amber-300/80 py-3 dark:border-emerald-900/70">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-radius-md text-base font-semibold text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-50">
+              <span>Treino</span>
+              <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
+                {customMetricsState === 'loading' ? 'Carregando…' : customMetricsState === 'error' ? 'Indisponível' : customActiveMetric?.workout_count == null ? 'Sem registro' : customActiveMetric.workout_count > 0 ? 'Realizado' : 'Sem treino registrado'}
+              </span>
+            </summary>
+            <div className="pt-3">
+              <TrainingLoadWidget
+                dailyLoad={customActiveMetric?.training_load_daily}
+                rollingLoad={customActiveMetric?.training_load_rolling}
+                optimalMin={customActiveMetric?.training_load_optimal_min}
+                optimalMax={customActiveMetric?.training_load_optimal_max}
+                workoutCount={customActiveMetric?.workout_count}
+                workoutDurationMin={customActiveMetric?.workout_duration_min}
+              />
+            </div>
+          </details>
+        )
+      case 'energy':
+        return <EnergyCircadianWidget selectedDate={selectedDate} />
+      case 'age':
+        return moduleErrors['PhenoAge'] || moduleErrors['KDM']
+          ? <div role="status" className="surface-card rounded-radius-xl p-4">Não foi possível carregar as estimativas de idade biológica.</div>
+          : <PhenoAgeWidget latestRecord={phenoHistory[0]} latestKdmRecord={latestKdmRecord} onRecalculate={handleRecalculatePheno} />
+      case 'glucose':
+        {
+          const selectedCgmSummary = cgmSummaries.find(summary => summary.date_ref === selectedDate)
+          return (
+            <section className="rounded-radius-xl border border-violet-200 bg-white p-4 shadow-xs dark:border-violet-900/60 dark:bg-slate-900" aria-label="Glicemia">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Glicemia</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Resumo do monitor contínuo para {selectedDate}</p>
+                </div>
+                {moduleErrors['Glicemia'] ? (
+                  <p role="status" className="text-sm text-rose-700 dark:text-rose-300">Falha ao carregar</p>
+                ) : selectedCgmSummary ? (
+                  <p className="text-xl font-bold text-violet-800 dark:text-violet-300">{selectedCgmSummary.mean_glucose} mg/dL</p>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <span aria-hidden="true" className="text-xl text-violet-600 dark:text-violet-400">◌</span>
+                    <span>Sem dados para esta data</span>
+                  </div>
+                )}
+              </div>
+              <details className="group mt-3 border-t border-violet-100 pt-2 dark:border-violet-900/50">
+                <summary className="flex min-h-11 cursor-pointer items-center text-xs font-semibold text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-300">Importar CSV e ver detalhes</summary>
+                <div className="pt-2">
+                  {moduleErrors['Glicemia']
+                    ? <p role="status" className="text-sm text-rose-700 dark:text-rose-300">Não foi possível carregar os dados de glicemia.</p>
+                    : <CGMDashboard summaries={selectedCgmSummary ? [selectedCgmSummary] : []} onRefreshData={fetchDashboardData} />}
+                </div>
+              </details>
+            </section>
+          )
+        }
+      case 'sleep':
+        return (
+          <Suspense fallback={<div role="status" className="surface-card rounded-radius-xl p-4">Carregando histórico de sono…</div>}>
+            <DashboardMetricTile metric="sleep_minutes" rows={customMetrics} selectedDate={selectedDate} range={customDateRange} loading={customMetricsState === 'loading'} error={customMetricsState === 'error'} />
+          </Suspense>
+        )
+      case 'steps':
+        return (
+          <Suspense fallback={<div role="status" className="surface-card rounded-radius-xl p-4">Carregando histórico de passos…</div>}>
+            <DashboardMetricTile metric="steps" rows={customMetrics} selectedDate={selectedDate} range={customDateRange} loading={customMetricsState === 'loading'} error={customMetricsState === 'error'} />
+          </Suspense>
+        )
+      case 'sleepChart':
+      case 'stepsChart':
+        return (
+          <Suspense fallback={<div role="status" className="surface-card rounded-radius-xl p-4">Carregando histórico…</div>}>
+            <DashboardHistoryChart metric={id === 'sleepChart' ? 'sleep_minutes' : 'steps'} rows={customMetrics} startDate={customDateRange.startDate} endDate={selectedDate} loading={customMetricsState === 'loading'} error={customMetricsState === 'error'} />
+          </Suspense>
+        )
+      case 'chart':
+        return (
+          <Suspense fallback={<div role="status" className="surface-card rounded-radius-xl p-4">Carregando gráfico…</div>}>
+            <DashboardTrendChart rows={customMetrics} metric={activeCustomLayout?.trendMetric ?? 'hrv_ms'} startDate={customDateRange.startDate} endDate={selectedDate} loading={customMetricsState === 'loading'} error={customMetricsState === 'error'} />
+          </Suspense>
+        )
+      case 'coverage':
+        return (
+          <Suspense fallback={<div role="status" className="surface-card rounded-radius-xl p-4">Carregando resumo…</div>}>
+            <DashboardCoverage rows={customMetrics} metric={activeCustomLayout?.trendMetric ?? 'hrv_ms'} startDate={customDateRange.startDate} endDate={selectedDate} loading={customMetricsState === 'loading'} error={customMetricsState === 'error'} />
+          </Suspense>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 font-sans">
+      {createPortal(<DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={handleCheckinUpdated} />, checkinPortalContainer)}
       {activeTab !== 'personal' && (
         <Header
           onOwnerLogout={onOwnerLogout}
@@ -807,7 +1056,7 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
 
             {showManualModal && activeTab !== 'personal' && <ManualEntryModal isOpen={showManualModal} onClose={closeManualEntry} onSaveMetric={handleSaveMetric} />}
 
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && dashboardPreferences.active === 'classic' && (
               <>
                 <DateNavigator
                   selectedDate={selectedDate}
@@ -816,14 +1065,37 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
                   onDaysRangeChange={setDaysRange}
                 />
 
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                  <div className="w-full sm:max-w-xs space-y-1">
+                    <label htmlFor="dashboard-model" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Modelo</label>
+                    <Select
+                      id="dashboard-model"
+                      value={dashboardPreferences.active}
+                      onChange={event => setDashboardPreferences(current => ({ ...current, active: event.target.value as DashboardPreferences['active'] }))}
+                    >
+                      {Object.entries(DASHBOARD_MODELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </Select>
+                  </div>
+                  {dashboardPreferences.active !== 'classic' && (
+                    <Button variant="outline" onClick={() => setIsDashboardEditorOpen(true)}>Personalizar</Button>
+                  )}
+                  {dashboardStorageError && (
+                    <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Não foi possível salvar as preferências neste navegador.</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === 'overview' && dashboardPreferences.active === 'classic' && (
+              <>
                 <section aria-label="Cabeçalho do Dia" className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Visão Geral</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">{dashboardPreferences.active === 'classic' ? 'Visão Geral' : 'Resumo do dia'}</h2>
                     <DataConfidenceBadge selectedDate={selectedDate} />
                   </div>
                   <button
                     aria-label="Atualizar dados"
-                    onClick={() => void fetchDashboardData()}
+                    onClick={() => { void fetchDashboardData(); setCustomMetricsRetry(value => value + 1) }}
                     className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
                   >
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -911,11 +1183,11 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
               </>
             )}
 
-            <div className={activeTab === 'overview' ? undefined : 'hidden'} aria-hidden={activeTab !== 'overview'}>
-              <DailyCheckinCard selectedDate={selectedDate} onCheckinUpdated={handleCheckinUpdated} />
-            </div>
+            {activeTab === 'overview' && dashboardPreferences.active === 'classic' && (
+              <div ref={setCheckinSlot} data-testid="dashboard-checkin-slot" />
+            )}
 
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && dashboardPreferences.active === 'classic' && (
               <>
                 {/* Camada 2: Contexto Operacional & Recuperação */}
                 <OverviewSection
@@ -977,6 +1249,44 @@ export default function App({ onOwnerLogout }: { onOwnerLogout?: () => void } = 
                   </div>
                 </OverviewSection>
               </>
+            )}
+
+            {activeTab === 'overview' && activeCustomLayout && (
+              <CustomDashboard
+                model={dashboardPreferences.active as CustomModel}
+                layout={activeCustomLayout}
+                selectedDate={selectedDate}
+                daysRange={daysRange}
+                onDateChange={setSelectedDate}
+                onDaysRangeChange={setDaysRange}
+                onModelChange={model => setDashboardPreferences(current => ({ ...current, active: model }))}
+                renderWidget={renderCustomWidget}
+                storageError={dashboardStorageError}
+                metricLoadError={customMetricsError}
+                onRetry={() => setCustomMetricsRetry(value => value + 1)}
+                onCustomize={() => setIsDashboardEditorOpen(true)}
+              />
+            )}
+
+            {activeTab === 'overview' && activeCustomLayout && isDashboardEditorOpen && (
+              <DashboardEditor
+                model={dashboardPreferences.active as CustomModel}
+                layout={activeCustomLayout}
+                onSave={saveDashboardLayout}
+                onClose={() => setIsDashboardEditorOpen(false)}
+              />
+            )}
+
+            {activeTab === 'overview' && activeCustomLayout && isCheckinDialogOpen && (
+              <Modal
+                isOpen
+                onClose={() => setIsCheckinDialogOpen(false)}
+                title="Check-in diário"
+                description={`Registros de energia, humor, estresse e observações para ${selectedDate}.`}
+                size="xl"
+              >
+                <div ref={setCheckinSlot} data-testid="dashboard-checkin-slot" />
+              </Modal>
             )}
 
             {activeTab === 'timeline' && (

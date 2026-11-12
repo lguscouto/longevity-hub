@@ -22,9 +22,10 @@ interface GuidanceResponse {
 interface DailyGuidanceCardProps {
   selectedDate: string
   refreshKey?: number
+  presentation?: 'default' | 'editorial'
 }
 
-export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDate, refreshKey }) => {
+export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDate, refreshKey, presentation = 'default' }) => {
   const [guidance, setGuidance] = useState<GuidanceResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -50,8 +51,8 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
     }
   }, [selectedDate, refreshKey])
 
-  if (failed) return <div role="status" className="surface-card p-4 text-sm">Não foi possível carregar a orientação diária. Tente atualizar os dados.</div>
-  if (!guidance) return loading ? <div role="status" className="surface-card p-4 text-sm">Carregando orientação diária...</div> : null
+  if (failed) return <div role="status" className={`surface-card p-4 text-sm ${presentation === 'editorial' ? 'rounded-radius-xl' : ''}`}>Não foi possível carregar a orientação diária. Tente atualizar os dados.</div>
+  if (!guidance) return loading ? <div role="status" className={`surface-card p-4 text-sm ${presentation === 'editorial' ? 'rounded-radius-xl' : ''}`}>Carregando orientação diária...</div> : null
 
   const stateKey = guidance?.state in { optimal: 1, moderate: 1, recover: 1, insufficient_data: 1 }
     ? guidance.state
@@ -69,6 +70,27 @@ export const DailyGuidanceCard: React.FC<DailyGuidanceCardProps> = ({ selectedDa
   const guidanceLabel = !guidance.label || /^(unavailable|insufficient_data)$/i.test(guidance.label.trim())
     ? 'Dados insuficientes'
     : guidance.label
+
+  if (presentation === 'editorial') {
+    return (
+      <section aria-label="Orientação do dia" className="rounded-radius-xl border border-emerald-200 bg-emerald-100/80 p-5 sm:p-7 dark:border-emerald-900/70 dark:bg-emerald-950/35">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-lg font-bold text-emerald-950 dark:text-emerald-100">Orientação do dia</h3>
+          <span className="rounded-radius-full border border-emerald-800/15 bg-white/50 px-2.5 py-1 text-xs font-semibold text-emerald-900 dark:border-emerald-200/15 dark:bg-slate-950/30 dark:text-emerald-100">
+            {guidanceLabel}
+          </span>
+        </div>
+        <p className="mt-3 max-w-4xl font-serif text-xl leading-relaxed text-emerald-950 sm:text-2xl dark:text-emerald-50">
+          {guidance.primary_action || 'Confira seus registros e observe como você está hoje.'}
+        </p>
+        {limitationsList.length > 0 && (
+          <p className="mt-3 text-xs leading-relaxed text-emerald-900/80 dark:text-emerald-100/75">
+            Dados limitados: {limitationsList.join('; ')}
+          </p>
+        )}
+      </section>
+    )
+  }
 
   return (
     <div className={`p-6 rounded-radius-xl surface-card border ${stateColors} shadow-sm space-y-4`}>

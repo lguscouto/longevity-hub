@@ -1,5 +1,5 @@
 import threading
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -53,10 +53,21 @@ class DailyMetricInput(BaseModel):
 
 
 @router.get("", response_model=List[Dict[str, Any]])
-def get_metrics(days: Optional[int] = Query(None, ge=1)):
+def get_metrics(
+    days: Optional[int] = Query(None, ge=1),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+):
+    if start_date is not None or end_date is not None:
+        if start_date is None or end_date is None or days is not None:
+            raise HTTPException(422, "Informe as duas datas do intervalo sem o parâmetro days.")
+        if not 0 <= (end_date - start_date).days < 90:
+            raise HTTPException(422, "O intervalo deve conter de 1 a 90 dias, em ordem cronológica.")
     db_path = get_db_path()
     try:
         repo = LongevityRepository(db_path)
+        if start_date is not None and end_date is not None:
+            return repo.get_daily_metrics_between(start_date.isoformat(), end_date.isoformat())
         days_to_fetch = days if days is not None else 3650
         return repo.get_daily_metrics(days=days_to_fetch)
     except FileNotFoundError:

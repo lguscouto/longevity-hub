@@ -220,6 +220,55 @@ describe('App', () => {
     }, { timeout: 1500 })
   })
 
+  it('keeps one pending check-in save while changing models and hiding its widget', async () => {
+    renderApp()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Energia nível 3' })).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Energia nível 3' }))
+    fireEvent.change(screen.getByLabelText('Modelo'), { target: { value: 'day' } })
+    fireEvent.change(screen.getByLabelText('Modelo'), { target: { value: 'modular' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Personalizar' }))
+
+    const editor = screen.getByRole('dialog', { name: 'Personalizar painel' })
+    fireEvent.click(within(editor).getByRole('button', { name: 'Remover Check-in' }))
+    fireEvent.click(within(editor).getByRole('button', { name: 'Salvar alterações' }))
+    expect(screen.getByTestId('dashboard-modular')).toBeInTheDocument()
+    expect(screen.queryByTestId('dashboard-checkin-slot')).not.toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/api\/checkins\//),
+        expect.objectContaining({ method: 'PUT' }),
+      )
+    }, { timeout: 1500 })
+  })
+
+  it('matches the focused day layout and opens the same check-in in a dialog', async () => {
+    renderApp()
+
+    fireEvent.change(screen.getByLabelText('Modelo'), { target: { value: 'day' } })
+    expect(await screen.findByTestId('dashboard-day')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Orientação do dia' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Conteúdo principal do dia' })).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'Contexto e rotina do dia' })).toBeInTheDocument()
+    expect(screen.queryByTestId('dashboard-checkin-slot')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar check-in' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Check-in diário' })
+    expect(within(dialog).getByRole('button', { name: 'Energia nível 3' })).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Energia nível 2' }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/api\/checkins\//),
+        expect.objectContaining({ method: 'PUT' }),
+      )
+    }, { timeout: 1500 })
+  })
+
   it('persists selected tab across refresh via localStorage', async () => {
     localStorage.setItem('longevidade_active_tab', 'supplements')
     renderApp()

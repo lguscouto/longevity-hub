@@ -14,13 +14,17 @@ interface DateNavigatorProps {
   onDateChange: (dateStr: string) => void;
   daysRange: number;
   onDaysRangeChange: (range: number) => void;
+  compact?: boolean;
+  rangeAccent?: 'emerald' | 'indigo' | 'slate' | 'cyan' | 'violet';
 }
 
 export const DateNavigator: React.FC<DateNavigatorProps> = ({
   selectedDate,
   onDateChange,
   daysRange,
-  onDaysRangeChange
+  onDaysRangeChange,
+  compact = false,
+  rangeAccent = 'emerald',
 }) => {
   // Converte string 'YYYY-MM-DD' para objeto Date local
   const getCurrentDateObj = () => {
@@ -59,9 +63,11 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
   });
 
   return (
-    <div className="surface-card border border-slate-200 dark:border-slate-800 rounded-radius-xl p-2.5 sm:p-4 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4 shadow-sm max-w-full min-w-0">
+    <div className={`${compact
+      ? 'flex min-w-0 max-w-full flex-wrap items-center justify-between gap-2'
+      : 'surface-card max-w-full min-w-0 rounded-radius-xl border border-slate-200 p-2.5 shadow-sm dark:border-slate-800 sm:p-4 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4'}`}>
       {/* Esquerda: Seletor de Data & Navegação Dia-a-Dia */}
-      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full lg:w-auto justify-between lg:justify-start">
+      <div className={`flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3 ${compact ? 'w-auto max-w-full justify-start' : 'w-full justify-between lg:w-auto lg:justify-start'}`}>
         <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100/90 dark:bg-slate-950 p-1 sm:p-1.5 rounded-radius-xl border border-slate-200 dark:border-slate-800 min-w-0">
           <button
             onClick={handlePrevDay}
@@ -77,7 +83,8 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
             <input
               type="date"
               value={selectedDate}
-              onChange={e => onDateChange(e.target.value)}
+              aria-label="Data do painel"
+              onChange={e => { if (e.target.value) onDateChange(e.target.value) }}
               className="bg-transparent text-slate-900 dark:text-white font-bold text-xs rounded-radius-sm px-0.5 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-950 focus-visible:outline-none cursor-pointer max-w-[110px] sm:max-w-none"
             />
           </div>
@@ -103,19 +110,20 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({
       </div>
 
       {/* Centro: Exibição da Data por Extenso */}
-      <div className="text-center lg:text-left">
+      <div className={`${compact ? 'hidden' : 'text-center lg:text-left'}`}>
         <span className="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize">
           {formattedDateStr}
         </span>
       </div>
 
       {/* Direita: Intervalo de Gráficos (7, 30, 90 dias) */}
-      <div className="w-full sm:w-auto flex justify-center lg:justify-end overflow-x-auto no-scrollbar max-w-full">
+      <div className={`max-w-full overflow-x-auto no-scrollbar ${compact ? 'flex w-full justify-start sm:w-auto sm:justify-end' : 'flex w-full justify-center lg:justify-end sm:w-auto'}`}>
         <TimeRangeControl<number>
           value={daysRange}
           onChange={onDaysRangeChange}
           options={DAYS_RANGE_OPTIONS}
           label="Período"
+          activeColor={rangeAccent}
         />
       </div>
     </div>
