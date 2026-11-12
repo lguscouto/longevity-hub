@@ -1,6 +1,6 @@
 # Validação final do Longevidade Hub — fase 7
 
-O relatório confronta os achados A01–A19 da [análise inicial](analise-inicial-completa-2026-11-08.md) e da [reavaliação](reavaliacao-plano-ux-2026-11-11.md) com o plano aprovado. Os ensaios usaram bancos temporários, provedores simulados e fixtures de navegador. A instalação limpa com locks e a resposta HTTP do backend isolado foram verificadas na fase 6.
+O relatório confronta os achados A01–A19 registrados na análise inicial histórica de 08/11/2026 (documento removido) e na [reavaliação](reavaliacao-plano-ux-2026-11-11.md) com o plano aprovado. Os ensaios usaram bancos temporários, provedores simulados e fixtures de navegador. A instalação limpa com locks e a resposta HTTP do backend isolado foram verificadas na fase 6.
 
 As situações e contagens abaixo registram a validação original da fase 7. O aditivo ao final registra a conclusão posterior da fase 5 e da fase 8 e atualiza o item A10.
 

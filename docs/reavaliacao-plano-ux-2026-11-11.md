@@ -1,6 +1,6 @@
 # Reavaliação do plano e análise inicial de UX/UI — 11/11/2026
 
-Referência: [análise de 08/11/2026](analise-inicial-completa-2026-11-08.md). Estado inspecionado: commit `2df34b7`, com alteração preexistente no documento original. Esta avaliação não altera o plano nem o código da aplicação.
+Referência histórica: análise inicial de 08/11/2026 (documento removido em 12/11/2026). Estado inspecionado: commit `2df34b7`, com alteração preexistente no documento à época. Esta avaliação não altera o plano nem o código da aplicação.
 
 ## Situação dos 19 itens
 

@@ -2,9 +2,9 @@
 
 ## Leitura obrigatória antes de trabalhar no projeto
 
-- Leia integralmente [Análise inicial completa — 08/11/2026](docs/analise-inicial-completa-2026-11-08.md) antes de analisar, planejar, modificar ou validar o projeto.
-- Considere a arquitetura, os achados priorizados, as evidências de teste e os limites de validação registrados nesse documento. Ele descreve a árvore de trabalho da data indicada; confirme no código atual qualquer comportamento que possa ter mudado.
-- Preserve as alterações locais preexistentes e os dados pessoais. Não interprete recomendações do relatório como autorização para apagar dados, mudar produção, publicar ou alterar credenciais.
+- Leia integralmente o [README](README.md), o [guia de desenvolvimento e validação](docs/development-and-validation.md) e a [validação final da fase 7](docs/validacao-final-fase-7.md) antes de analisar, planejar, modificar ou validar o projeto.
+- O relatório de análise inicial de 08/11/2026 foi removido em 12/11/2026. As referências aos seus achados em avaliações antigas são históricas; confirme qualquer comportamento no código atual.
+- Preserve as alterações locais preexistentes e os dados pessoais. Não interprete recomendações de documentos como autorização para apagar dados, mudar produção, publicar ou alterar credenciais.
 ## Testes e Isolamento de Ambiente (Pytest / FastAPI)
 
 - **Fixture `client` Obrigatório:** Em qualquer arquivo de teste dentro de `tests/`, sempre injete o fixture `client: TestClient` como parâmetro das funções de teste que realizam requisições HTTP.
